@@ -11,6 +11,7 @@
 import type { InkDoc, LevelV2, RectCells, SceneObject } from '../../core/types.gen.ts';
 import { CAMERA, WORLD } from '../../core/params.ts';
 import { strokesBBox } from '../../editor/geom.ts';
+import { loadSkinImage } from '../../engine/index.ts';
 import { h, prefersReducedMotion } from '../dom.ts';
 import { currentPlayer } from '../identity.ts';
 import type { Stage, StageShow } from '../stage.ts';
@@ -42,12 +43,6 @@ interface ScreenRect {
 }
 
 type RectLike = { x: number; y: number; width?: number; height?: number; w?: number; h?: number };
-
-/** What the preview asks the engine (GameHandle.objectScreenRect, lane 3); the stage geometry is the fallback. */
-interface EngineScreenApi {
-  objectScreenRect?(objectId: string): RectLike | null;
-  worldToScreen?(rect: RectCells): RectLike | null;
-}
 
 function toScreenRect(r: RectLike | null | undefined): ScreenRect | null {
   if (!r) return null;
@@ -273,14 +268,14 @@ export function mountCreativePreview(o: { draftId: string; stage: Stage; ink: ()
     return sk ? JSON.stringify([sk.backdrop?.url ?? '', (sk.objects ?? []).map((x) => `${x.url}|${x.mode}|${(x.stroke_ids ?? []).join(',')}`)]) : '';
   }
 
-  /** Put the current level back on stage with the landed skin (no morphs; waits for a safe moment while playing). */
+  /** Re-skin the level on stage with what has landed: in place, the sim keeps running (Stage.setSkin). */
   function reshow(): void {
     if (!lastShow || destroyed) return;
     const d = dress(lastShow);
     const sig = sigOf(d.level);
     if (sig === shownSig) return;
     shownSig = sig;
-    rawShow({ ...d, morphs: undefined });
+    stage.setSkin(d.level.skin ?? null);
   }
 
   // ---- the draft's skin ---------------------------------------------------------------------------------------------
@@ -374,13 +369,18 @@ export function mountCreativePreview(o: { draftId: string; stage: Stage; ink: ()
   }
 
   function landBackdrop(): void {
-    if (backdropLanded || !backdropSkin()) return;
+    const bd = backdropSkin();
+    if (backdropLanded || !bd) return;
     backdropLanded = true;
-    reshow();
-    if (!reduced) {
-      stage.el.classList.add('cr-bd-flash');
-      later(700, () => stage.el.classList.remove('cr-bd-flash'));
-    }
+    const token = runToken;
+    void Promise.race([loadSkinImage(bd.url, 'backdrop').catch(() => null), new Promise((r) => window.setTimeout(r, 2500))]).then(() => {
+      if (destroyed || token !== runToken || !backdropLanded) return;
+      reshow();
+      if (!reduced) {
+        stage.el.classList.add('cr-bd-flash');
+        later(700, () => stage.el.classList.remove('cr-bd-flash'));
+      }
+    });
   }
 
   function queueFlight(e: Entry, token: number): void {
@@ -420,7 +420,11 @@ export function mountCreativePreview(o: { draftId: string; stage: Stage; ink: ()
     flying.add(e.key);
     tray.render();
     const img = h('img', { class: 'cr-flyer', src: e.job.url, alt: '', draggable: false });
-    await Promise.race([img.decode().catch(() => undefined), new Promise((r) => window.setTimeout(r, 1200))]);
+    // the flyer's picture and the engine's sprite both ready (no ink flash on landing), but never wait long
+    await Promise.race([
+      Promise.all([img.decode().catch(() => undefined), loadSkinImage(e.job.url).catch(() => null)]),
+      new Promise((r) => window.setTimeout(r, 1500)),
+    ]);
     if (destroyed || token !== runToken) {
       flying.delete(e.key);
       return;
@@ -437,10 +441,6 @@ export function mountCreativePreview(o: { draftId: string; stage: Stage; ink: ()
   }
 
   // ---- where an object is on screen -----------------------------------------------------------------------------------
-  function engineApi(): EngineScreenApi | null {
-    return (stage as unknown as { handle?: EngineScreenApi | null }).handle ?? null;
-  }
-
   function objectCells(e: Entry, level: LevelV2, ob: SceneObject | null): RectCells | null {
     const body = ob?.shape.k === 'body' ? shapeBox(ob) : null;
     if (body) return body;
@@ -452,13 +452,9 @@ export function mountCreativePreview(o: { draftId: string; stage: Stage; ink: ()
   function targetRect(e: Entry, level: LevelV2): ScreenRect | null {
     const ob = bestObject(level, e.stroke_ids);
     const cells = objectCells(e, level, ob);
-    const api = engineApi();
-    try {
-      const r = toScreenRect(ob ? api?.objectScreenRect?.(ob.id) : null) ?? toScreenRect(cells ? api?.worldToScreen?.(cells) : null);
-      if (r) return onStage(r);
-    } catch {
-      /* fall back to the stage geometry */
-    }
+    // the engine knows where things are (camera, zoom, canvas scaling); the stage geometry is the fallback
+    const r = toScreenRect(ob ? stage.objectScreenRect(ob.id) : null) ?? toScreenRect(cells ? stage.worldToScreen(cells) : null);
+    if (r) return onStage(r);
     if (!cells) return null;
     const canvas = stage.el.querySelector<HTMLCanvasElement>('.dalg-stage canvas') ?? stage.el.querySelector<HTMLCanvasElement>('.stage-host canvas');
     const cr = canvas?.getBoundingClientRect();

@@ -6,6 +6,7 @@
  */
 import type { Behavior, InkStroke, RectCells, Role } from '../../core/types.gen.ts';
 import type { EditorDocData } from '../../editor/doc.ts';
+import { loadSkinImage } from '../../engine/index.ts';
 import { ApiError } from '../api.ts';
 import { creativeApi, type BackdropBody, type LibraryKind } from './api.ts';
 import { isWorking, type CreativeStatus, type Job, type SkinMode } from './types.ts';
@@ -138,6 +139,8 @@ export class CreativeDoc {
   private missing = new Map<string, number>();
   private emitQueued = false;
   private loaded: Promise<void> | null = null;
+  /** Art urls already handed to the engine's picture cache. */
+  private preloaded = new Set<string>();
 
   constructor(docId: string, gameId: string | null) {
     this.docId = docId;
@@ -168,6 +171,7 @@ export class CreativeDoc {
     this.emitQueued = true;
     queueMicrotask(() => {
       this.emitQueued = false;
+      this.preload();
       for (const fn of [...this.listeners]) {
         try {
           fn();
@@ -234,6 +238,25 @@ export class CreativeDoc {
       }).catch(() => undefined);
     }
     return this.loaded;
+  }
+
+  /**
+   * Finished art goes into the engine's picture cache as soon as it is done (only the objects still on the drawing and
+   * the backdrop), so the fly-in lands on a ready sprite instead of flashing the ink.
+   */
+  private preload(): void {
+    const want: Job[] = [];
+    for (const r of this.objects.values()) {
+      const j = this.jobOf(r);
+      if (j) want.push(j);
+    }
+    const b = this.backdropJob();
+    if (b) want.push(b);
+    for (const j of want) {
+      if (j.status !== 'done' || !j.url || this.preloaded.has(j.url)) continue;
+      this.preloaded.add(j.url);
+      loadSkinImage(j.url, j.kind === 'backdrop' ? 'backdrop' : 'sprite').catch(() => null);
+    }
   }
 
   setJob(j: Job): void {

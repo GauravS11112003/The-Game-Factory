@@ -83,8 +83,9 @@ export function levelThumb(card: LevelCard): HTMLElement {
       ok = drawLevelThumb(c, level);
     }
     box.replaceChildren(c);
-    // skinned levels repaint once their Firefly pictures load: cache that repaint, not the ink-only first frame
-    if (painted) ok = await painted.catch(() => false) || !level.skin;
+    // skinned levels repaint once their Firefly pictures load: cache that repaint, not the ink-only first frame.
+    // (false = nothing was pending, the first paint already had every picture; this canvas is never repainted by others)
+    if (painted) await painted.catch(() => false);
     if (ok) {
       try {
         await thumbPut(key, c.toDataURL('image/png'));

@@ -3,9 +3,9 @@
  * In the preview (not playing) swaps are immediate with morphs; while playing they wait for the next respawn, pause
  * or goal ("never yank the level mid-jump", §3.11). Mode changes (preview ↔ test, ghosts) remount.
  */
-import type { CellXY, GameRules, InkDoc, LevelV2, Morph } from '../core/types.gen.ts';
+import type { CellXY, GameRules, InkDoc, LevelSkin, LevelV2, Morph, RectCells } from '../core/types.gen.ts';
 import { mountGame, type GameHandle, type GhostOption, type OverlaySpec } from '../engine/index.ts';
-import type { GameEvent } from '../engine/types.ts';
+import type { GameEvent, ScreenRect } from '../engine/types.ts';
 import { h, prefersReducedMotion } from './dom.ts';
 import { t } from './messages.ts';
 import { store } from './store.ts';
@@ -118,6 +118,40 @@ export class Stage {
   replay(): ReturnType<GameHandle['replay']> | null {
     try {
       return this.handle?.replay() ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  // ---- v3 skins (generated art; cosmetic, never gameplay) ------------------------------------------------------------
+
+  /** Re-skin the level on stage in place (the sim keeps running); null brings the kid's ink back. Remounts keep it. */
+  setSkin(skin: LevelSkin | null): void {
+    if (this.current) {
+      const level: LevelV2 = { ...this.current.level, skin };
+      if (!skin) delete level.skin;
+      this.current = { ...this.current, level };
+    }
+    try {
+      this.handle?.setSkin(skin);
+    } catch (e) {
+      console.warn('setSkin failed', e);
+    }
+  }
+
+  /** Where a level object (scene object id, entity id or 'player') is on screen now, in viewport CSS px. */
+  objectScreenRect(objectId: string): ScreenRect | null {
+    try {
+      return this.handle?.objectScreenRect(objectId) ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** A world rect (cells) on screen now, in viewport CSS px. */
+  worldToScreen(rect: RectCells): ScreenRect | null {
+    try {
+      return this.handle?.worldToScreen(rect) ?? null;
     } catch {
       return null;
     }
