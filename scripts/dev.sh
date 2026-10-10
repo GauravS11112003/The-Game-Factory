@@ -4,6 +4,15 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Local secrets (ANTHROPIC_API_KEY=...) live in <root>/.env, which git ignores.
+if [[ -f "$ROOT/.env" ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$ROOT/.env"
+  set +a
+fi
+
 API_PORT="${DAL_PORT:-8000}"
 WEB_PORT="${WEB_PORT:-5173}"
 LAN_IP="$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo 127.0.0.1)"
@@ -35,7 +44,7 @@ cat <<EOF
   ------------
   web   : http://localhost:${WEB_PORT}   (phone: http://${LAN_IP}:${WEB_PORT})
   api   : http://localhost:${API_PORT}   (health: http://${LAN_IP}:${API_PORT}/api/health)
-  llm   : ${ANTHROPIC_API_KEY:+live}${ANTHROPIC_API_KEY:-fake (ANTHROPIC_API_KEY unset)}
+  llm   : ${ANTHROPIC_API_KEY:+live (key loaded)}${ANTHROPIC_API_KEY:+}$( [[ -z "${ANTHROPIC_API_KEY:-}" ]] && echo "fake (ANTHROPIC_API_KEY unset)" )
 
   Ctrl-C stops both.
 
