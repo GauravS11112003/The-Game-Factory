@@ -1,5 +1,5 @@
 /** Engine and render API (PLAN_V2 §11.3g): lane E provides, lane F consumes. Additions beyond §11.3g are optional. */
-import type { CellXY, LevelV2, Morph, RectCells, Replay, Theme } from '../core/types.gen.ts';
+import type { CellXY, LevelSkin, LevelV2, Morph, RectCells, Replay, Theme } from '../core/types.gen.ts';
 import type { InkStroke } from '../core/types.gen.ts';
 import type { GameRules } from '../core/types.gen.ts';
 
@@ -11,6 +11,9 @@ export interface OverlaySpec {
 }
 
 export type GameEvent = 'ready' | 'win' | 'die' | 'coin' | 'big_coin' | 'checkpoint' | 'entity_error';
+
+/** A rect in viewport CSS px: a DOMRect (x, y, width, height, left, top, …) that also carries `w` / `h`. */
+export type ScreenRect = DOMRect & { readonly w: number; readonly h: number };
 
 /** Who a ghost is (label colour, sounds); inferred from the label ("bot") when omitted. */
 export type GhostKind = 'pb' | 'you' | 'leader' | 'challenger' | 'bot' | 'other';
@@ -42,6 +45,8 @@ export interface MountOptions {
   reducedMotion?: boolean;
   record?: boolean;
   debug?: boolean;
+  /** The "Art: Adobe Firefly · drawn by …" pill while a Firefly skin shows (default true). */
+  credits?: boolean;
 }
 
 export interface GameHandle {
@@ -67,6 +72,23 @@ export interface GameHandle {
   snapshot(o?: { hud?: boolean }): Promise<Blob | null>;
   /** The ghosts' live status. */
   ghosts(): GhostResult[];
+  // ---- additions (v3 lane 3, skins) ----
+  /**
+   * Show a level skin (generated art) on the level being played, in place: only the pictures that changed are added
+   * or replaced and the sim never restarts. null removes it (the kid's ink comes back). swapLevel with a level that
+   * differs only in `skin` takes this same path.
+   */
+  setSkin(skin: LevelSkin | null): void;
+  /**
+   * Where a level object is on screen now, in viewport CSS px (accounts for the camera, zoom and canvas scaling):
+   * a scene object id, an entity id, or 'player'. Moving things report where they are this frame. Null when the object
+   * is unknown or the game isn't ready.
+   */
+  objectScreenRect(objectId: string): ScreenRect | null;
+  /** A world rect (cells) on screen now, in viewport CSS px (e.g. a creative job's bbox_cells); null before ready. */
+  worldToScreen(rect: RectCells): ScreenRect | null;
+  /** The Firefly credit pill on / off (MountOptions.credits). */
+  setCredits(on: boolean): void;
 }
 
 export interface GhostResult {

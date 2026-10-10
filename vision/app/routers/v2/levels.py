@@ -1,6 +1,9 @@
 """Levels (PLAN_V2 §11.3e): publish with server-side verification, get (any version), and the remix tree.
 
-POST /levels             {draft_id, tier, author, title?, statuses, level_hash} → {level} | 409 {message_key, args}
+POST /levels             {draft_id, tier, author, title?, statuses, level_hash, quest_id?} → {level} | 409 {message_key, args}
+                         with X-DP-Player into a game the player doesn't keep: {level, submission: {id, status: "pending",
+                         game_id, game_title, level_id, quest_id}} (the level is stored unlisted); 403
+                         collab.invite_only for an invite-only game the player is not a member of
 GET  /levels/{id}[?version=]  → {level, stats: {plays, clears, clear_rate, best}, children}
 GET  /levels/{id}/tree        → the whole remix family (from the root ancestor), each node with author, versions and
                                 the objects it changed vs its parent; the requested level is marked `current`
@@ -45,11 +48,19 @@ async def post_level(request: Request) -> Any:
         return err(400, "error.bad_request", {"field": "publish", "errors": min(e.error_count(), 99)})
     except Exception:  # noqa: BLE001
         return err(400, "error.bad_request")
+    player = None
+    try:  # v3 identity (CONTRACTS_V3): X-DP-Player; absent or wrong → today's anonymous publish
+        from app.collab.identity import player_from_request
+
+        player = player_from_request(request)
+    except Exception:  # noqa: BLE001
+        player = None
+    extra: dict[str, Any] = {}
     try:
-        level = await publish(body.model_dump(mode="json"))
+        level = await publish(body.model_dump(mode="json"), player=player, extra=extra)
     except DraftError as e:
         return err(e.status, e.message_key, e.args)
-    return {"level": level}
+    return {"level": level, **extra}
 
 
 @router.post("/levels/{level_id}/moderate")

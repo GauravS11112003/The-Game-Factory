@@ -15,6 +15,12 @@ is recomputed and compared, and the recomputed level is re-analyzed by the bot. 
 
 A refusal (PERCEIVE or MODERATE) publishes the level unlisted with `safety: held`. With the model offline it
 publishes with `safety: unchecked` ("not checked yet"), unless DAL_REQUIRE_MODERATION=1, which holds it.
+
+v3 (CONTRACTS_V3, lane 4): with an `X-DP-Player` profile (`player`), publishing into a game the player does not keep
+stores the level unlisted and opens a submission (app.collab.submissions: `publish_mode` / `after_publish`); the
+submission comes back in `extra["submission"]`. 403 collab.invite_only for an invite-only game the player is not in.
+Without a profile nothing changes. The draft state's `skin` (lane 1, art only, not in level_hash) is copied into the
+level; a skin the format rejects is dropped rather than blocking the publish.
 """
 from __future__ import annotations
 
@@ -118,7 +124,69 @@ async def _safety(state: dict[str, Any], draft_id: str, title: str, author: str,
     return "unchecked", True
 
 
-async def publish(body: dict[str, Any]) -> dict[str, Any]:
+def _collab_mode(game_id: str | None, player: dict[str, Any] | None, level_id: str | None,
+                 parent_id: str | None) -> str:
+    """"direct" (today's behaviour) or "submit" (unlisted + a submission). Fails open: a collab error never blocks a
+    publish, except the deliberate 403 for invite-only games."""
+    if player is None:
+        return "direct"
+    try:
+        from app.collab import submissions as csub
+        from app.collab.errors import CollabError
+    except Exception:  # noqa: BLE001
+        log.exception("collab unavailable")
+        return "direct"
+    try:
+        return csub.publish_mode(game_id, player, level_id=level_id, parent_id=parent_id)
+    except CollabError as e:
+        raise DraftError(e.status, e.key, e.args_) from None
+    except Exception:  # noqa: BLE001
+        log.exception("collab publish mode for %s", game_id)
+        return "direct"
+
+
+def _collab_after(level: dict[str, Any], player: dict[str, Any] | None, mode: str, listed: bool,
+                  quest_id: Any) -> dict[str, Any]:
+    try:
+        from app.collab import submissions as csub
+
+        return csub.after_publish(level, player, mode=mode, listed=listed, quest_id=quest_id) or {}
+    except Exception:  # noqa: BLE001 - the level is stored; the feed and credits must not fail the publish
+        log.exception("collab after publish of %s", level.get("id"))
+        return {}
+
+
+def _draft_skin(draft_id: str) -> dict[str, Any] | None:
+    """The art skin lane 1 stored on the draft (`state.skin`, PUT /drafts/{id}/skin), freshly read."""
+    s = (drafts.load_state(draft_id) or {}).get("skin")
+    if not isinstance(s, dict):
+        s = drafts.read_json(draft_id, "skin.json")
+    if not isinstance(s, dict) or not (s.get("objects") or s.get("backdrop")):
+        return None
+    return copy.deepcopy(s)
+
+
+def _validate(out: dict[str, Any], level_id: str) -> None:
+    try:
+        LevelV2.model_validate(out)
+        return
+    except ValidationError as e:
+        if "skin" not in out:
+            log.warning("published level %s fails the format: %s", level_id, e.errors()[:3])
+            raise DraftError(422, "error.build_failed", {"why": "invalid_level"}) from None
+        log.warning("published level %s: skin dropped, it fails the format: %s", level_id, e.errors()[:3])
+    out.pop("skin", None)  # art never blocks a publish: the level ships with the kid's ink
+    try:
+        LevelV2.model_validate(out)
+    except ValidationError as e:
+        log.warning("published level %s fails the format: %s", level_id, e.errors()[:3])
+        raise DraftError(422, "error.build_failed", {"why": "invalid_level"}) from None
+
+
+async def publish(body: dict[str, Any], *, player: dict[str, Any] | None = None,
+                  extra: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Verify and store the level; returns it. With `player` (X-DP-Player) the collab result (a submission) is
+    written into `extra`."""
     draft_id = body["draft_id"]
     tier = body["tier"]
     if not drafts.exists(draft_id):
@@ -133,8 +201,13 @@ async def publish(body: dict[str, Any]) -> dict[str, Any]:
         for e in stored.get("edits") or []:
             if e.get("required") and statuses.get(e.get("id")) == "undone":
                 raise DraftError(409, "publish.required_undone")
-        extra = _apply_default_asks(state, statuses)
+        extra_records = _apply_default_asks(state, statuses)
         _check_sheets(state, drafts.read_json(draft_id, "ink.json") or {})
+        prev = state.get("published") or {}
+        parent_id = state.get("parent_id")
+        parent = drafts.read_json(draft_id, "parent.json")
+        game_id = state.get("game_id") or (parent or {}).get("game_id")
+        mode = _collab_mode(game_id, player, prev.get("level_id"), parent_id)
 
         # recompute: the tier's own records (its P/C edits reproduce the tier) + the draft's intent, statuses applied
         st = copy.deepcopy(state)
@@ -147,7 +220,7 @@ async def publish(body: dict[str, Any]) -> dict[str, Any]:
                 if r["id"] in statuses:
                     r["status"] = statuses[r["id"]]
                 records[r["id"]] = r
-        for r in intent_edits(st, understood=understood(st), known=known) + extra:
+        for r in intent_edits(st, understood=understood(st), known=known) + extra_records:
             records[r["id"]] = r
         inp = base_input(draft_id, st, list(records.values()))
         res = await rpc("build", {**inp, "tier": tier})
@@ -179,14 +252,17 @@ async def publish(body: dict[str, Any]) -> dict[str, Any]:
                               or "My level", TITLE_CHARS)
         author = sanitize.text(body.get("author") or "", 16)
         safety, listed = await _safety(state, draft_id, title, author, ink)
+        if mode == "submit":
+            listed = False  # stored unlisted until a keeper accepts the submission
 
-        prev = state.get("published") or {}
         level_id = prev.get("level_id") or new_level_id()
         version = db_v2.next_level_version(level_id)
-        parent_id = state.get("parent_id")
-        parent = drafts.read_json(draft_id, "parent.json")
-        game_id = state.get("game_id") or (parent or {}).get("game_id")
-        order_index = db_v2.count_sequence(game_id) if game_id and version == 1 else int(prev.get("order_index") or 0)
+        if game_id and version == 1:
+            order_index = db_v2.count_sequence(game_id)
+        else:  # a new version keeps the level's place (an accepted submission may have been moved to the end)
+            last = db_v2.get_level_row(level_id) if version > 1 else None
+            order_index = int((last or {}).get("order_index") if (last or {}).get("order_index") is not None
+                              else (prev.get("order_index") or 0))
 
         out = copy.deepcopy(level)
         out.update({"id": level_id, "version": version, "game_id": game_id, "parent_id": parent_id,
@@ -222,17 +298,16 @@ async def publish(body: dict[str, Any]) -> dict[str, Any]:
             src["sheets"] = [{**sh, "sketch_url": sketches.get(int(sh.get("index", -1)), sh.get("sketch_url"))}
                              for sh in src["sheets"] if isinstance(sh, dict)]
         out["source"] = src
+        skin = _draft_skin(draft_id)
+        if skin is not None:
+            out["skin"] = skin  # art only: level_hash covers gameplay, so the hash above still holds
         try:
             from app.build.levels_io import embedded_library
 
             out["embedded_library"] = embedded_library(out, game_id)  # exports and remixes stay self-contained (§8.1)
         except Exception as e:  # noqa: BLE001
             log.info("embedded library for %s: %s", level_id, e)
-        try:
-            LevelV2.model_validate(out)
-        except ValidationError as e:
-            log.warning("published level %s fails the format: %s", level_id, e.errors()[:3])
-            raise DraftError(422, "error.build_failed", {"why": "invalid_level"}) from None
+        _validate(out, level_id)
 
         design = out.get("design") or {}
         db_v2.insert_level({
@@ -249,6 +324,9 @@ async def publish(body: dict[str, Any]) -> dict[str, Any]:
         fresh["published"] = {"level_id": level_id, "version": version, "order_index": order_index}
         fresh["statuses"] = statuses
         drafts.save_state(draft_id, fresh)
+        result = _collab_after(out, player, mode, listed, body.get("quest_id") or state.get("quest_id"))
+        if extra is not None:
+            extra.update(result)
         return out
 
 

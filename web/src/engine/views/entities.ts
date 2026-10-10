@@ -4,6 +4,10 @@
  * away over 300 ms. Flags wave; checkpoints unfurl; saws spin; spikes shimmer 1 px; moving platforms trail speed ticks
  * above 2 c/s; crumbles shake. Designer pencil additions sketch themselves in (400 ms reveal) on first sight.
  * Every view is built behind a guard: a broken entity is switched off and reported (`entity_error`), never fatal.
+ *
+ * Skins (docs/v3 "Skin on levels"): an entity with a generated picture swaps its ink for that picture (on the skin
+ * layer, outside the ink boil) and keeps every bit of juice: waddle, squash and stretch, the stomp puff, door slides,
+ * the goal's cheer; a skinned enemy also mirrors when it turns around (drawn the way it faced at spawn).
  */
 import Phaser from 'phaser';
 import type { ArtDoc, ArtPath, ArtSprite } from '../../core/art/types.ts';
@@ -25,6 +29,10 @@ export interface EntityHost {
   layer: Phaser.GameObjects.Layer;
   reduced: boolean;
   onError(e: Entity, err: unknown): void;
+  /** The entity's skin picture (origin = the sprite anchor), or null for its ink. */
+  skinFor?(e: Entity): Baked | null;
+  /** Where skinned entities live (a camera without the ink boil); defaults to `layer`. */
+  skinLayer?: Phaser.GameObjects.Layer;
 }
 
 export interface FrameCtx {
@@ -78,47 +86,23 @@ class EView {
   private readonly phase0: number;
   private lastX = NaN;
   private cheerT = -1; // the win moment: the goal flag flaps hard and bounces
+  private skin: Baked | null = null; // the generated picture standing in for the ink
+  private inkKeys: string[] = []; // textures this view baked from ink (dropped when a picture replaces them)
+  private face0 = 0; // a skinned enemy's facing at spawn (the way its picture is drawn)
+  private faceNow = 0;
+  private popAt = -1; // ms the "just arrived" pop started; -2 = on the next frame
 
-  constructor(host: EntityHost, e: Entity, sprite: ArtSprite) {
+  constructor(host: EntityHost, e: Entity, sprite: ArtSprite, skin: Baked | null = null) {
     this.host = host;
     this.e = e;
     this.sprite = sprite;
     const s = host.scene;
     this.root = s.add.container(sprite.anchor[0] * CELL, sprite.anchor[1] * CELL);
-    host.layer.add(this.root);
     this.phase0 = (sprite.anchor[0] * 0.37) % 1;
     const name = `e_${e.id}`;
-    const isFlag = e.type === 'goal' || e.type === 'checkpoint';
-    const clothPaths = isFlag ? sprite.paths.filter((p) => p.part === 'cloth') : [];
-    const eyePaths = e.type === 'enemy' ? sprite.paths.filter((p) => p.part === 'eye') : [];
     const fireballs = e.type === 'firebar';
-    const mainPaths = sprite.paths.filter((p) => !clothPaths.includes(p) && !eyePaths.includes(p));
-    if (mainPaths.length) {
-      this.mainBaked = bake(host.bank, host.doc, name, mainPaths, BAKE_PX);
-      this.main = imageOf(s, this.mainBaked);
-      this.root.add(this.main);
-    }
-    for (const p of eyePaths) {
-      const b = boxOf([p]);
-      const c: [number, number] = [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2];
-      const img = imageOf(s, bake(host.bank, host.doc, `${name}_eye`, [p], BAKE_PX * 2, c), c[0] * CELL, c[1] * CELL);
-      this.root.add(img);
-      this.eyes.push({ img, base: [c[0] * CELL, c[1] * CELL] });
-    }
-    if (clothPaths.length) {
-      const poleX = 0;
-      const b = boxOf(clothPaths);
-      const box: [number, number, number, number] = [b[0] - 0.2, b[1] - 0.25, b[2] + 0.2, b[3] + 0.25];
-      const w = (box[2] - box[0]) * CELL * BAKE_PX;
-      const h = (box[3] - box[1]) * CELL * BAKE_PX;
-      const tex = host.bank.canvas(`${name}_cloth`, w, h);
-      if (tex) {
-        const img = s.add.image(box[0] * CELL, box[1] * CELL, tex).setOrigin(0, 0).setScale(1 / BAKE_PX);
-        this.root.add(img);
-        this.cloth = { tex, img, paths: clothPaths, box, poleX };
-        this.drawCloth(0);
-      }
-    }
+    this.buildLook(skin);
+    this.placeRoot();
     if (fireballs && e.type === 'firebar') {
       // a filled ink fireball (fire_core: fill + red outline)
       const ring: number[] = [];
@@ -137,6 +121,62 @@ class EView {
       this.ticks = s.add.graphics();
       this.root.add(this.ticks);
     }
+    if (e.type === 'checkpoint') this.unfurl = 0.28;
+    if (sprite.designer && !host.reduced) {
+      this.revealT = -2; // waiting for first sight
+      this.root.setAlpha(0);
+    }
+  }
+
+  /** The look: the generated picture, or the kid's ink (main body, watching eyes, waving cloth). Bottom of the root. */
+  private buildLook(skin: Baked | null): void {
+    const host = this.host;
+    const s = host.scene;
+    const e = this.e;
+    const sprite = this.sprite;
+    const name = `e_${e.id}`;
+    let at = 0;
+    this.skin = skin;
+    if (skin) {
+      this.mainBaked = skin;
+      this.main = imageOf(s, skin);
+      this.root.addAt(this.main, at++);
+    } else {
+      const isFlag = e.type === 'goal' || e.type === 'checkpoint';
+      const clothPaths = isFlag ? sprite.paths.filter((p) => p.part === 'cloth') : [];
+      const eyePaths = e.type === 'enemy' ? sprite.paths.filter((p) => p.part === 'eye') : [];
+      const mainPaths = sprite.paths.filter((p) => !clothPaths.includes(p) && !eyePaths.includes(p));
+      if (mainPaths.length) {
+        this.mainBaked = bake(host.bank, host.doc, name, mainPaths, BAKE_PX);
+        this.inkKeys.push(this.mainBaked.key);
+        this.main = imageOf(s, this.mainBaked);
+        this.root.addAt(this.main, at++);
+      }
+      for (const p of eyePaths) {
+        const b = boxOf([p]);
+        const c: [number, number] = [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2];
+        const bk = bake(host.bank, host.doc, `${name}_eye`, [p], BAKE_PX * 2, c);
+        this.inkKeys.push(bk.key);
+        const img = imageOf(s, bk, c[0] * CELL, c[1] * CELL);
+        this.root.addAt(img, at++);
+        this.eyes.push({ img, base: [c[0] * CELL, c[1] * CELL] });
+      }
+      if (clothPaths.length) {
+        const poleX = 0;
+        const b = boxOf(clothPaths);
+        const box: [number, number, number, number] = [b[0] - 0.2, b[1] - 0.25, b[2] + 0.2, b[3] + 0.25];
+        const w = (box[2] - box[0]) * CELL * BAKE_PX;
+        const h = (box[3] - box[1]) * CELL * BAKE_PX;
+        const tex = host.bank.canvas(`${name}_cloth`, w, h);
+        if (tex) {
+          this.inkKeys.push(tex.key);
+          const img = s.add.image(box[0] * CELL, box[1] * CELL, tex).setOrigin(0, 0).setScale(1 / BAKE_PX);
+          this.root.addAt(img, at++);
+          this.cloth = { tex, img, paths: clothPaths, box, poleX };
+          this.drawCloth(0);
+        }
+      }
+    }
     if (e.type === 'enemy' && this.main && this.main.preFX) {
       try {
         this.main.preFX.setPadding(6);
@@ -146,11 +186,53 @@ class EView {
         this.glow = null;
       }
     }
-    if (e.type === 'checkpoint') this.unfurl = 0.28;
-    if (sprite.designer && !host.reduced) {
-      this.revealT = -2; // waiting for first sight
-      this.root.setAlpha(0);
+  }
+
+  private clearLook(): void {
+    this.main?.destroy();
+    this.main = null;
+    this.mainBaked = null;
+    this.glow = null;
+    for (const eye of this.eyes) eye.img.destroy();
+    this.eyes = [];
+    this.cloth?.img.destroy();
+    this.cloth = null;
+    for (const k of this.inkKeys) this.host.bank.remove(k);
+    this.inkKeys = [];
+  }
+
+  /** Skinned views live on the skin layer (no ink boil), above the static pictures; ink views stay on the ink layer. */
+  private placeRoot(): void {
+    const layer = this.skin && this.host.skinLayer ? this.host.skinLayer : this.host.layer;
+    layer.add(this.root);
+    this.root.setDepth(this.skin ? ART.depths.entities : 0);
+  }
+
+  /** Swap the look in place (a fly-in landing, a picture that finished loading); the entity's state is untouched. */
+  setSkin(skin: Baked | null, pop: boolean): void {
+    if ((skin?.key ?? null) === (this.skin?.key ?? null)) return;
+    this.clearLook();
+    this.buildLook(skin);
+    this.placeRoot();
+    if (this.revealT >= 0) this.revealT = -1;
+    if (this.revealT === -1 && this.main) this.main.setCrop();
+    if (pop && skin && !this.host.reduced) this.popAt = -2;
+  }
+
+  get skinned(): boolean {
+    return !!this.skin;
+  }
+
+  /** World px box of what is drawn, at the view's current position (rotation and squash ignored). */
+  worldBox(): [number, number, number, number] {
+    const x = this.root.x;
+    const y = this.root.y;
+    if (this.mainBaked && this.skin) {
+      const b = this.mainBaked;
+      return [x - b.ox * b.w, y - b.oy * b.h, x + (1 - b.ox) * b.w, y + (1 - b.oy) * b.h];
     }
+    const bb = this.sprite.bbox;
+    return [x + bb[0] * CELL, y + bb[1] * CELL, x + bb[2] * CELL, y + bb[3] * CELL];
   }
 
   private drawCloth(t: number): void {
@@ -172,6 +254,7 @@ class EView {
         break;
       case 'checkpoint':
         this.unfurl = Math.max(this.unfurl, 0.3);
+        if (this.skin && !this.host.reduced) this.popAt = -2; // a picture has no cloth to unfurl: it hops instead
         break;
       case 'spring':
         this.squashT = 0;
@@ -231,7 +314,8 @@ class EView {
     let oy = 0;
     switch (e.type) {
       case 'enemy': {
-        const moving = Number.isFinite(this.lastX) && Math.abs(x - this.lastX) > 0.05;
+        const x0 = this.lastX;
+        const moving = Number.isFinite(x0) && Math.abs(x - x0) > 0.05;
         this.lastX = x;
         if (moving && !this.host.reduced) {
           rot = Math.sin(t * Math.PI * 2 * RIG.enemy.waddle_hz) * RIG.enemy.waddle_deg * DEG;
@@ -285,7 +369,15 @@ class EView {
           else eye.img.clearTint();
         }
         const facing = cur?.facing ?? (e.params?.facing === 'left' ? -1 : 1);
-        if (this.sprite.source === 'house' && (e.archetype === 'shooter' || e.archetype === 'chaser' || e.archetype === 'crusher')) sx *= facing;
+        if (this.skin) {
+          // the picture is drawn the way the enemy faced at spawn: mirror it whenever it walks the other way
+          const f = cur?.facing ?? (moving ? (x > x0 ? 1 : -1) : 0);
+          if (f) {
+            if (!this.face0) this.face0 = f;
+            this.faceNow = f;
+          }
+          if (this.face0 && this.faceNow) sx *= this.faceNow * this.face0;
+        } else if (this.sprite.source === 'house' && (e.archetype === 'shooter' || e.archetype === 'chaser' || e.archetype === 'crusher')) sx *= facing;
         break;
       }
       case 'coin':
@@ -412,6 +504,15 @@ class EView {
       sx *= 2 - el;
       if (k >= 1) this.squashT = -1;
     }
+    // a picture that just arrived (fly-in) lands with a little bounce, in real time (also while paused)
+    if (this.popAt !== -1) {
+      if (this.popAt === -2) this.popAt = f.now;
+      const k = Math.min(1, (f.now - this.popAt) / 280);
+      const b = 1 + 0.2 * Math.sin(k * Math.PI) * (1 - k * 0.5);
+      sx *= b;
+      sy *= b;
+      if (k >= 1) this.popAt = -1;
+    }
     if (this.morph.t >= 0) {
       this.morph.t += f.dt;
       const k = Math.min(1, this.morph.t / this.morph.dur);
@@ -460,7 +561,7 @@ export class EntityViews {
       const sp = byId.get(e.id);
       if (!sp) continue;
       try {
-        this.views.set(e.id, new EView(host, e, sp));
+        this.views.set(e.id, new EView(host, e, sp, host.skinFor?.(e) ?? null));
       } catch (err) {
         host.onError(e, err);
       }
@@ -469,6 +570,38 @@ export class EntityViews {
 
   get(id: string): EView | undefined {
     return this.views.get(id);
+  }
+
+  /** Swap one entity's look for its skin picture (null = back to the kid's ink) without rebuilding anything else. */
+  reskin(id: string, skin: Baked | null, pop: boolean): void {
+    const v = this.views.get(id);
+    if (!v) return;
+    try {
+      v.setSkin(skin, pop);
+    } catch (err) {
+      console.warn('entity reskin failed; keeping its drawing', id, err);
+      try {
+        v.setSkin(null, false);
+      } catch {
+        this.host.onError(v.e, err);
+        v.destroy();
+        this.views.delete(id);
+      }
+    }
+  }
+
+  /** World px box of an entity (by its id, or by a scene object it draws) where it is now. */
+  worldBox(id: string): [number, number, number, number] | null {
+    let v = this.views.get(id);
+    if (!v) {
+      for (const x of this.views.values()) {
+        if (x.sprite.object_ids.includes(id)) {
+          v = x;
+          break;
+        }
+      }
+    }
+    return v ? v.worldBox() : null;
   }
 
   event(ev: SimEvent, f: FrameCtx): void {

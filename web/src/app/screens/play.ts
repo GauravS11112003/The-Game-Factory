@@ -23,6 +23,7 @@ import { showResults, type ResultsHandle, type WinInfo } from '../results.ts';
 import { navigate } from '../router.ts';
 import { Stage } from '../stage.ts';
 import { store, type GhostPrefs } from '../store.ts';
+import { creditsAfterWin } from './credits.ts'; // v3 lane 5: "See who made this" after a game's last level
 
 type Ghost = GhostOption;
 type Board = 'any' | 'collector';
@@ -288,6 +289,7 @@ export function playScreen(root: HTMLElement, id: string, query: URLSearchParams
           return saving;
         },
       });
+      creditsAfterWin(level, results.el);
     });
 
     const onKey = (e: KeyboardEvent): void => {

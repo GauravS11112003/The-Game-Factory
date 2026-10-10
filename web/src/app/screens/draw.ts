@@ -14,6 +14,8 @@ import { navigate } from '../router.ts';
 import { DEFAULT_RULES } from '../rules.ts';
 import { store } from '../store.ts';
 import { createEditor, emptyDoc, isDoc, type EditorDocData, type EditorHandle } from '../../editor/index.ts';
+import { liveDoc, liveRoom, mountLive } from '../live/index.ts';
+import { mountCreativeDraw } from '../creative/index.ts';
 
 async function loadRemix(levelId: string): Promise<{ doc: EditorDocData; level: LevelV2 }> {
   const { level } = await api.level(levelId);
@@ -43,6 +45,8 @@ async function gameRules(gameId: string | null): Promise<GameRules> {
 
 export function drawScreen(root: HTMLElement, query: URLSearchParams): () => void {
   let editor: EditorHandle | null = null;
+  let offLive: (() => void) | null = null;
+  let offCreative: (() => void) | null = null; // v3 lane 2: tray + background art
   let disposed = false;
   const wrap = h('div', { class: 'draw-screen' });
   root.append(wrap);
@@ -53,8 +57,11 @@ export function drawScreen(root: HTMLElement, query: URLSearchParams): () => voi
     const from = query.get('from');
     let doc: EditorDocData;
     let parentLevel: LevelV2 | null = null;
+    const liveAt = liveRoom(query);
+    const live = liveAt ? liveDoc(liveAt, gameId) : null; // live drawing: #/draw?live=<room>
     try {
-      if (remix) ({ doc, level: parentLevel } = await loadRemix(remix));
+      if (live) doc = live.doc;
+      else if (remix) ({ doc, level: parentLevel } = await loadRemix(remix));
       else if (from) doc = store.editorDoc() ?? (from === 'prompt' ? null : store.draftDoc(from)) ?? emptyDoc({ gameId });
       else if (query.get('new')) doc = emptyDoc({ gameId });
       else {
@@ -87,11 +94,13 @@ export function drawScreen(root: HTMLElement, query: URLSearchParams): () => voi
 
     editor = createEditor(host, {
       doc, rules, canSaveToLibrary: !!doc.gameId, parentLevel,
-      onChange: (d) => store.setEditorDoc(d),
+      onChange: (d) => store.setEditorDoc(d, live?.slot),
       onSubmit: async (d: EditorDocData, ink: InkDoc) => submit({ ...d, title: title.value.trim() }, ink, rules, editor?.lastBuild() ?? null),
       onSaveCharacter: doc.gameId ? (strokes, rig) => saveCharacter(doc.gameId!, strokes, rig) : undefined,
     });
     title.oninput = () => editor?.doc.setMeta({ title: title.value });
+    offLive = mountLive({ head, editor, join: live && liveAt ? { room: liveAt, role: live.role } : null });
+    offCreative = mountCreativeDraw({ editor, root: host, rules });
     const stampId = query.get('stamp');
     if (doc.gameId) {
       api.library(doc.gameId).then((lib) => {
@@ -108,6 +117,8 @@ export function drawScreen(root: HTMLElement, query: URLSearchParams): () => voi
 
   return () => {
     disposed = true;
+    offLive?.();
+    offCreative?.();
     editor?.destroy();
   };
 }

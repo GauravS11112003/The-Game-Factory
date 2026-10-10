@@ -230,6 +230,11 @@ async def post_attempts(level_id: str, request: Request) -> Response:
     c = min(a, body.clears)  # a clear is always an attempt
     if a or d or c:
         db_v2.add_attempts(level_id, a, d, c)
+        try:  # v3 collab (lane 4): "played 10/100 times" and "someone beat your level" notifications; never fails a post
+            from app.collab.activity import on_attempts
+            on_attempts(request, level_id, a, c)
+        except Exception:  # noqa: BLE001
+            pass
     return Response(status_code=204)
 
 

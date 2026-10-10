@@ -12,7 +12,8 @@ export default defineConfig({
     // '..' is the project root, so shared/fixtures/levels/*.json can be imported in dev.
     fs: { allow: ['..'] },
     proxy: {
-      '/api': { target: API, changeOrigin: true },
+      // ws: live drawing (WebSocket /api/v2/live/<room>, docs/v3/CONTRACTS_V3.md)
+      '/api': { target: API, changeOrigin: true, ws: true },
       '/uploads': { target: API, changeOrigin: true },
     },
   },

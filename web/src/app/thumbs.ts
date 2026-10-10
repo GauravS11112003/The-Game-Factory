@@ -74,8 +74,17 @@ export function levelThumb(card: LevelCard): HTMLElement {
     const level = card.level ?? (await api.level(card.id, card.version).then((r) => r.level).catch(() => null));
     if (!level) return;
     const c = h('canvas', { width: 640, height: 360 });
-    const ok = drawLevelThumb(c, level);
+    let ok = false;
+    let painted: Promise<boolean> | null = null;
+    try {
+      painted = renderThumbnail(c, level, inkFromLevel(level));
+      ok = true;
+    } catch {
+      ok = drawLevelThumb(c, level);
+    }
     box.replaceChildren(c);
+    // skinned levels repaint once their Firefly pictures load: cache that repaint, not the ink-only first frame
+    if (painted) ok = await painted.catch(() => false) || !level.skin;
     if (ok) {
       try {
         await thumbPut(key, c.toDataURL('image/png'));

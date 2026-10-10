@@ -9,6 +9,8 @@ import type {
   Tier, TierSetSummary,
 } from '../core/types.gen.ts';
 import { hasMessage } from './messages.ts';
+import { authHeaders } from './identity.ts';
+import { afterPublish, withContribution } from './collab/contribute.ts';
 
 const BASE = '/api/v2';
 
@@ -47,6 +49,7 @@ async function request<T>(method: string, path: string, body?: unknown, o: { raw
       init.body = JSON.stringify(body);
       init.headers = { 'content-type': 'application/json' };
     }
+    init.headers = { ...authHeaders(), ...(init.headers as Record<string, string> | undefined) }; // v3 identity (lane 5): X-DP-Player
     r = await fetch(`${BASE}${path}`, init);
   } catch {
     throw new ApiError(0, 'error.network');
@@ -317,7 +320,7 @@ export const api = {
     request('POST', `/drafts/${encodeURIComponent(id)}/critic`, { telemetry }),
 
   // ---- levels ----
-  publish: (body: PublishBody): Promise<{ level: LevelV2 }> => request('POST', '/levels', body),
+  publish: async (body: PublishBody): Promise<{ level: LevelV2 }> => afterPublish(await request<{ level: LevelV2 }>('POST', '/levels', await withContribution(body))), // v3 lane 5: quest_id / jam_id, submissions
   level: (id: string, version?: number): Promise<LevelResponse> =>
     request('GET', `/levels/${encodeURIComponent(id)}${version ? `?version=${version}` : ''}`),
   async tree(id: string): Promise<TreeNode> {

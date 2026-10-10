@@ -5,6 +5,7 @@
  */
 import Phaser from 'phaser';
 import type { ArtDoc, ArtPath } from '../core/art/types.ts';
+import type { ScreenRect } from './types.ts';
 import type { RectCells } from '../core/types.gen.ts';
 import { PERF } from '../core/params.ts';
 import { bakePaths, rasterizeChunk } from '../render/canvas_ink.ts';
@@ -53,6 +54,11 @@ export interface Baked {
   px: number; // canvas px per logical px
   w: number; // logical px
   h: number;
+}
+
+/** A DOMRect that also answers `w` / `h` (GameHandle.objectScreenRect / worldToScreen). */
+export function screenRect(x: number, y: number, w: number, h: number): ScreenRect {
+  return Object.assign(new DOMRect(x, y, w, h), { w, h });
 }
 
 export function boxOf(paths: readonly ArtPath[]): RectCells {

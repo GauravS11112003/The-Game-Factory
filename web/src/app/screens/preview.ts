@@ -33,6 +33,7 @@ import { rolesFor } from '../../editor/chips.ts';
 import { navigate } from '../router.ts';
 import { typeThumb } from './library.ts';
 import { shareCardPNG } from '../../engine/index.ts';
+import { mountCreativePreview, showSubmission } from '../creative/index.ts';
 
 const ROLE_ICON: Partial<Record<Role, string>> = {
   ground: '▁', platform: '═', wall: '▮', ceiling: '▔', spikes: '▲', lava: '〰', saw: '✺', enemy: '👾', coin: '●', big_coin: '★',
@@ -192,6 +193,8 @@ export function previewScreen(root: HTMLElement, draftId: string, query: URLSear
   let rejectedOpen = false;
   let followStop: (() => void) | null = null;
   const extraStops: (() => void)[] = [];
+  const creative = mountCreativePreview({ draftId, stage, ink: () => model.ink }); // v3 lane 2: the art fly-in on Build
+  extraStops.push(() => creative.destroy());
 
   // ---- DOM ------------------------------------------------------------------------------------------------------
   const stageChips = h('div', { class: 'stage-chips' });
@@ -1066,7 +1069,7 @@ export function previewScreen(root: HTMLElement, draftId: string, query: URLSear
       });
       const level = res.level;
       void uploadThumb(level);
-      showPublished(level, g.unlisted ?? false);
+      if (!showSubmission(res)) showPublished(level, g.unlisted ?? false); // a submission waits for the game's review
     } catch (e) {
       toast(t(e instanceof ApiError ? e.messageKey : 'error.build_failed', e instanceof ApiError ? e.args : {}));
     } finally {

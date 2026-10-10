@@ -4,10 +4,14 @@
  * Arcade bodies are never used.
  *
  * Cameras (all origin 0, zoom = render scale r, so physics stays in logical px):
- *   bg   paper + far/mid parallax              (no boil)
+ *   bg   paper + skin backdrop + far/mid parallax  (no boil)
  *   ink  decoration, terrain chunks, entities  (InkBoilFX)
+ *   skin generated pictures (skinned entities, static object pictures): crisp, no boil
  *   act  player, ghosts, particles, foreground, overlays (in-scene, so they follow the level)
  *   hud  plates, ghost edge markers; no zoom change, no shake
+ *
+ * Skins (docs/v3 "Skin on levels") are cosmetic: a swap that only changes the level's `skin` (or setSkin) re-skins
+ * in place, replacing just the pictures that changed, and never restarts the sim.
  *
  * The win moment (§7.9): the canvas plays 0.5× slow motion for 400 ms with a 1.1 zoom, 60 confetti scribbles, a gold
  * ink flash and the goal jingle; the music fades out, the flag flaps, the stopped clock pops gold and the character
@@ -22,19 +26,19 @@ import { decodeGrid, isFloor, at as tileAt } from '../core/art/terrain.ts';
 import { CORE_VERSION, encodeReplay, levelHash, profileHash } from '../core/index.ts';
 import type { CameraState, Sim, SimEvent, SimSnapshot, SimView } from '../core/sim/types.ts';
 import { PROFILES } from '../core/sim/profiles.ts';
-import type { CellXY, GameRules, InkDoc, LevelInk, LevelV2, Morph, Replay, Theme } from '../core/types.gen.ts';
+import type { CellXY, GameRules, InkDoc, LevelInk, LevelV2, Morph, RectCells, Replay, Theme } from '../core/types.gen.ts';
 import { ART, CAMERA, DAMAGE, PERF, RIG, SCORING, SIM } from '../core/params.ts';
 import type { Mixer, MusicTheme } from '../audio/index.ts';
 import { INK_BOIL_KEY, InkBoilFX, registerInkBoil } from '../render/boil_fx.ts';
 import { paperBase, paperTile, vignetteCanvas } from '../render/paper.ts';
 import type { Chrome } from './chrome.ts';
 import { loadHandFont as loadHudFont } from '../render/fonts.ts';
-import { bake, boxOf, CELL, ChunkLayer, imageOf, TexBank, VIEW_H_PX, VIEW_W_PX } from './gfx.ts';
+import { bake, boxOf, CELL, ChunkLayer, imageOf, screenRect, TexBank, VIEW_H_PX, VIEW_W_PX } from './gfx.ts';
 import type { Input } from './input.ts';
 import { deriveMorphs } from './morphs.ts';
 import { makeSim, makeStaticSim } from './simhost.ts';
 import type { SimHost } from './simhost.ts';
-import type { GameEvent, MountOptions, OverlaySpec } from './types.ts';
+import type { GameEvent, MountOptions, OverlaySpec, ScreenRect } from './types.ts';
 import { EntityViews } from './views/entities.ts';
 import type { FrameCtx } from './views/entities.ts';
 import { Ghosts } from './views/ghosts.ts';
@@ -45,6 +49,10 @@ import { Juice } from './views/juice.ts';
 import { LavaView } from './views/lava.ts';
 import { Overlays } from './views/overlays.ts';
 import { PlayerSprite } from './views/player.ts';
+import { SkinView } from './views/skin.ts';
+import type { SkinChange } from './views/skin.ts';
+import { objectArtBox, sameExceptSkin, withSkin } from '../core/art/skin.ts';
+import type { LevelSkin } from '../core/types.gen.ts';
 
 const STEP_MS = 1000 / SIM.hz;
 /** Input bit 32 = RESTART (die now, cause "restart"): recorded in the replay like any input (docs/v2/requests/E-1.md). */
@@ -121,10 +129,12 @@ export class PlayScene extends Phaser.Scene {
   // display
   private lBg!: Phaser.GameObjects.Layer;
   private lInk!: Phaser.GameObjects.Layer;
+  private lSkin!: Phaser.GameObjects.Layer;
   private lAct!: Phaser.GameObjects.Layer;
   private lHudX!: Phaser.GameObjects.Layer; // HUD-camera extras that survive HUD rebuilds (ghost edge markers)
   private camBg!: Phaser.Cameras.Scene2D.Camera;
   private camInk!: Phaser.Cameras.Scene2D.Camera;
+  private camSkin!: Phaser.Cameras.Scene2D.Camera;
   private camAct!: Phaser.Cameras.Scene2D.Camera;
   private camHud!: Phaser.Cameras.Scene2D.Camera;
   private paper!: Phaser.GameObjects.TileSprite;
@@ -148,6 +158,8 @@ export class PlayScene extends Phaser.Scene {
   private morphDone: (() => void) | null = null;
   private debugG: Phaser.GameObjects.Graphics | null = null;
   private underlay: Underlay | null = null;
+  private skin!: SkinView;
+  private morphExclude: ReadonlySet<string> | undefined;
 
   constructor(d: SceneDeps) {
     super({ key: 'dal-play' });
@@ -170,7 +182,12 @@ export class PlayScene extends Phaser.Scene {
 
   /** Make a layer visible to exactly one camera. */
   private route(layer: Phaser.GameObjects.Layer, cam: Phaser.Cameras.Scene2D.Camera): void {
-    for (const c of [this.camBg, this.camInk, this.camAct, this.camHud]) if (c !== cam) c.ignore(layer);
+    for (const c of [this.camBg, this.camInk, this.camSkin, this.camAct, this.camHud]) if (c !== cam) c.ignore(layer);
+  }
+
+  /** The drawing the art comes from (the mount's ink, else the level's own). */
+  private inkSrc(): InkDoc | LevelInk | null {
+    return this.d.ink ?? this.level.ink ?? null;
   }
 
   create(): void {
@@ -181,8 +198,12 @@ export class PlayScene extends Phaser.Scene {
     this.vmax = prof.run_max ?? prof.walk_max;
     this.lBg = this.add.layer().setDepth(0);
     this.lInk = this.add.layer().setDepth(40);
+    this.lSkin = this.add.layer().setDepth(55);
     this.lAct = this.add.layer().setDepth(70);
     this.lHudX = this.add.layer().setDepth(1001);
+    // the level's skin first: the ink chunks, entity views and the player are built knowing which pictures are ready
+    this.skin = new SkinView({ scene: this, bank: this.bank, world: this.lSkin, bg: this.lBg, reduced: this.d.reduced, changed: (c) => this.onSkinChanged(c) });
+    this.skin.set(level, this.inkSrc(), this.doc, { notify: false, pop: false });
     this.buildBackground();
     this.buildWorld();
     this.juice = new Juice(this, this.bank, this.lAct, this.hud.layer, this.d.reduced);
@@ -195,14 +216,17 @@ export class PlayScene extends Phaser.Scene {
     this.camBg = this.cameras.main;
     this.camBg.setSize(W, H).setOrigin(0, 0).setZoom(this.r).setBackgroundColor(paperBase(this.doc.theme));
     this.camInk = this.cameras.add(0, 0, W, H).setOrigin(0, 0).setZoom(this.r);
+    this.camSkin = this.cameras.add(0, 0, W, H).setOrigin(0, 0).setZoom(this.r);
     this.camAct = this.cameras.add(0, 0, W, H).setOrigin(0, 0).setZoom(this.r);
     this.camHud = this.cameras.add(0, 0, W, H).setOrigin(0, 0).setZoom(this.r);
     this.route(this.lBg, this.camBg);
     this.route(this.lInk, this.camInk);
+    this.route(this.lSkin, this.camSkin);
     this.route(this.lAct, this.camAct);
     this.route(this.hud.layer, this.camHud);
     this.route(this.lHudX, this.camHud);
     this.setupBoil();
+    this.applySkinLook();
     // "my original sketch" underlay (paper levels), off unless asked for
     this.underlay = new Underlay(this, this.lBg, this.bank, underlaySheets(level));
     const ul = this.d.mount.underlay;
@@ -271,9 +295,9 @@ export class PlayScene extends Phaser.Scene {
     const doc = this.doc;
     const level = this.level;
     const r = this.r;
-    this.inkChunks = new ChunkLayer(this, this.lInk, this.bank, { doc, ids: INK_IDS, scroll: 1, r, lru: PERF.chunk_lru, depth: ART.depths.terrain, widthPx: level.world.w * CELL });
+    this.inkChunks = new ChunkLayer(this, this.lInk, this.bank, { doc: this.skin.inkDoc(doc), ids: INK_IDS, scroll: 1, r, lru: PERF.chunk_lru, depth: ART.depths.terrain, widthPx: level.world.w * CELL });
     this.fgChunks = new ChunkLayer(this, this.lAct, this.bank, { doc, ids: ['foreground'], scroll: ART.parallax.fg, r, lru: 2, depth: ART.depths.foreground, widthPx: layerWidth(level.world.w, ART.parallax.fg) * CELL });
-    this.entities = new EntityViews({ scene: this, bank: this.bank, doc, layer: this.lInk, reduced: this.d.reduced, onError: (e, err) => this.entityError(e.id, e.type, (e as { x?: number }).x ?? 0, err) }, level);
+    this.entities = this.makeEntities(level);
     this.lava = new LavaView(this, this.lInk, doc.lava, this.d.reduced);
     this.buildPlayer();
     if (!this.hud) this.hud = new Hud(this, this.bank, level, { r, rightReserve: this.d.chrome?.reserve ?? 0 });
@@ -283,7 +307,15 @@ export class PlayScene extends Phaser.Scene {
   private buildPlayer(): void {
     const wasHidden = this.player?.isHidden ?? false;
     this.player?.destroy();
-    this.player = new PlayerSprite(this, this.bank, { kind: 'vector', doc: this.doc, art: this.doc.player }, { name: 'p' });
+    // the character's skin picture when it has one ready, else the kid's drawing
+    const src = this.skin?.playerSource() ?? { kind: 'vector' as const, doc: this.doc, art: this.doc.player };
+    try {
+      this.player = new PlayerSprite(this, this.bank, src, { name: 'p' });
+    } catch (e) {
+      if (src.kind !== 'raster') throw e;
+      console.warn('character picture failed; drawing the character', e);
+      this.player = new PlayerSprite(this, this.bank, { kind: 'vector', doc: this.doc, art: this.doc.player }, { name: 'p' });
+    }
     this.player.root.setDepth(ART.depths.player);
     this.player.shards.container.setDepth(ART.depths.player + 1);
     this.lAct.add([this.player.root, this.player.shards.container]);
@@ -291,7 +323,12 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private makeEntities(level: LevelV2): EntityViews {
-    return new EntityViews({ scene: this, bank: this.bank, doc: this.doc, layer: this.lInk, reduced: this.d.reduced, onError: (e, err) => this.entityError(e.id, e.type, (e as { x?: number }).x ?? 0, err) }, level);
+    return new EntityViews({
+      scene: this, bank: this.bank, doc: this.doc, layer: this.lInk, reduced: this.d.reduced,
+      onError: (e, err) => this.entityError(e.id, e.type, (e as { x?: number }).x ?? 0, err),
+      skinFor: (e) => this.skin?.entityTex(e.id) ?? null,
+      skinLayer: this.lSkin,
+    }, level);
   }
 
   /** Ghosts for the current level: race in play / test, free (looping, camera-followed) in the preview. */
@@ -719,12 +756,14 @@ export class PlayScene extends Phaser.Scene {
     const z = this.r * this.zoomK;
     const scrollX = px - (px - this.camShown) / this.zoomK + sx;
     const scrollY = py - py / this.zoomK + sy;
-    for (const c of [this.camBg, this.camInk, this.camAct]) {
+    for (const c of [this.camBg, this.camInk, this.camSkin, this.camAct]) {
       c.setZoom(z);
       c.setScroll(scrollX, scrollY);
     }
     // paper scrolls with the world (its dot grid is the cell grid)
     this.paper.tilePositionX = scrollX * this.r;
+    // skin pictures that finished loading land here (before the ink chunks, which may drop the ink they replace)
+    this.skin.update(scrollX, now);
     this.inkChunks.update(scrollX);
     this.farChunks.update(scrollX);
     this.midChunks.update(scrollX);
@@ -894,12 +933,24 @@ export class PlayScene extends Phaser.Scene {
 
   swapLevel(level: LevelV2, o: { morphs?: Morph[]; when?: 'now' | 'safe' } = {}): void {
     const playing = (this.d.mount.mode === 'play' || this.d.mount.mode === 'test') && !this.paused && !this.won && this.firstInput !== null;
+    // only the skin (or fields the engine never reads) changed: re-skin in place, the run goes on
+    if (this.pending && sameExceptSkin(this.pending.level, level)) {
+      this.pending = { level, morphs: this.pending.morphs };
+      if ((o.when ?? 'now') === 'now' || !playing) this.applyPending();
+      else this.reskin(withSkin(this.level, level.skin ?? null));
+      return;
+    }
+    if (!this.pending && sameExceptSkin(this.level, level)) {
+      this.reskin(level);
+      return;
+    }
     // no morphs given: derive them (moved pieces slide, added ones sketch in, removed ones erase)
     const morphs = o.morphs ?? deriveMorphs(this.level, level);
     if ((o.when ?? 'now') === 'safe' && playing) {
       this.pending = { level, morphs };
       return;
     }
+    this.pending = null; // an immediate swap supersedes a deferred one (it would otherwise bring the older level back)
     this.applySwap(level, morphs);
   }
 
@@ -922,11 +973,13 @@ export class PlayScene extends Phaser.Scene {
     }
     this.level = level;
     this.doc = this.art(level);
+    const sc = this.skin.set(level, this.inkSrc(), this.doc, { notify: false, pop: false });
     const reduced = this.d.reduced;
     const moving = morphs.filter((m) => m.kind === 'move' || m.kind === 'relabel' || m.kind === 'appear');
     const entityIds = new Set(level.compiled.entities.map((e) => e.id));
     const terrainMorph = new Set(moving.filter((m) => !entityIds.has(m.object_id)).map((m) => m.object_id));
-    this.inkChunks.setDoc(this.doc, reduced ? undefined : terrainMorph);
+    this.morphExclude = reduced || !terrainMorph.size ? undefined : terrainMorph;
+    this.inkChunks.setDoc(this.skin.inkDoc(this.doc), this.morphExclude);
     this.inkChunks.setWidth(level.world.w * CELL);
     this.fgChunks.setDoc(this.doc);
     this.fgChunks.setWidth(layerWidth(level.world.w, ART.parallax.fg) * CELL);
@@ -946,6 +999,7 @@ export class PlayScene extends Phaser.Scene {
     }
     this.entities.destroy();
     this.entities = this.makeEntities(level);
+    if (sc.player) this.buildPlayer();
     this.lava.destroy();
     this.lava = new LavaView(this, this.lInk, this.doc.lava, reduced);
     this.hud.destroy();
@@ -956,7 +1010,100 @@ export class PlayScene extends Phaser.Scene {
     this.newSim(startAt);
     if (!this.host.real) this.hud.setNote('Look around with ← and →');
     this.overlays.set(this.overlaySpec, decodeGrid(level));
+    this.applySkinLook();
+    this.skin.gc();
     if (wasWon && !this.paused) this.startMusic(); // the loop faded at the goal: the next level brings it back
+  }
+
+  // ---- skin ---------------------------------------------------------------------------------------------------
+
+  /** A level that differs only in its skin: the pictures that changed are replaced in place; the sim keeps running. */
+  private reskin(level: LevelV2): void {
+    this.level = level;
+    if (!this.skin || !this.doc) return;
+    this.skin.set(level, this.inkSrc(), this.doc, { notify: true, pop: !this.d.reduced });
+  }
+
+  /** Apply a skin to the level being shown (GameHandle.setSkin); a pending swap gets it too. */
+  setSkin(skin: LevelSkin | null): void {
+    if (this.pending) this.pending = { level: withSkin(this.pending.level, skin), morphs: this.pending.morphs };
+    this.reskin(withSkin(this.level, skin));
+  }
+
+  /** A live skin change (setSkin, a skin-only swap, a picture that finished loading): update just those views. */
+  private onSkinChanged(c: SkinChange): void {
+    if (this.destroyed) return;
+    for (const id of c.entities) this.entities.reskin(id, this.skin.entityTex(id), c.pop);
+    if (c.player) {
+      const facing = this.cur?.player.facing ?? 1;
+      this.buildPlayer();
+      this.player.reset(facing);
+      if (c.pop && !this.d.reduced && !this.player.isHidden) this.player.land(0.9); // lands with a squash
+    }
+    if (c.hidden) this.inkChunks.setDoc(this.skin.inkDoc(this.doc), this.morphExclude);
+    if (c.backdrop || c.credit) this.applySkinLook();
+  }
+
+  /** The backdrop replaces the paper's graphite parallax (hills, clouds, the notebook margin); the credit pill. */
+  private applySkinLook(): void {
+    if (!this.skin) return;
+    const on = this.skin.backdropOn;
+    this.farChunks?.setAlpha(on ? 0 : 1);
+    this.midChunks?.setAlpha(on ? 0 : 1);
+    for (const c of this.clouds) c.img.setVisible(!on);
+    this.margin?.setVisible(!on);
+    this.d.chrome?.setCredit(this.skin.credit);
+  }
+
+  /**
+   * Where a level object is on screen right now, in CSS px of the viewport (for the creative fly-in to aim at):
+   * an entity id or a scene object id (moving things where they are this frame), or 'player'. Null when unknown.
+   */
+  objectScreenRect(id: string): ScreenRect | null {
+    if (this.destroyed || !this.camInk || !this.doc) return null;
+    let box: [number, number, number, number] | null = null;
+    const playerBox = (): [number, number, number, number] => {
+      const p = this.cur.player;
+      const b = this.skin.placementOf('player')?.box ?? this.doc.player.bbox;
+      return [(p.x + b[0]) * CELL, (p.y + b[1]) * CELL, (p.x + b[2]) * CELL, (p.y + Math.min(0, b[3])) * CELL];
+    };
+    if (id === 'player') box = playerBox();
+    else {
+      box = this.entities.worldBox(id);
+      if (!box) {
+        const pl = this.skin.placementOf(id);
+        if (pl?.target.kind === 'player') box = playerBox();
+        else if (pl?.target.kind === 'entity') box = this.entities.worldBox(pl.target.id);
+        else if (pl) box = [pl.box[0] * CELL, pl.box[1] * CELL, pl.box[2] * CELL, pl.box[3] * CELL];
+      }
+      if (!box) {
+        const objs = this.level.objects ?? [];
+        const byId = new Map(objs.map((x) => [x.id, x]));
+        const obj = byId.get(id);
+        if (obj) {
+          const ids = [id, ...(obj.rel?.parts ?? []), ...objs.filter((x) => x.rel?.part_of === id).map((x) => x.id)];
+          const b = objectArtBox(this.doc, ids, byId);
+          if (b) box = [b[0] * CELL, b[1] * CELL, b[2] * CELL, b[3] * CELL];
+        }
+      }
+    }
+    return box ? this.toScreen(box) : null;
+  }
+
+  /** A world rect (cells) on screen now, viewport CSS px. */
+  worldToScreen(r: RectCells): ScreenRect | null {
+    if (this.destroyed || !this.camInk) return null;
+    return this.toScreen([r[0] * CELL, r[1] * CELL, r[2] * CELL, r[3] * CELL]);
+  }
+
+  /** World px → viewport CSS px through the world cameras (scroll, render scale, win zoom) and the canvas fit. */
+  private toScreen(box: [number, number, number, number]): ScreenRect | null {
+    const canvas = this.game.canvas;
+    const rect = canvas.getBoundingClientRect();
+    if (!(rect.width > 0) || !(canvas.width > 0)) return null;
+    const cam = this.camInk;
+    const k = (cam.zoom * rect.width) / canvas.width;
+    return screenRect(rect.left + (box[0] - cam.scrollX) * k, rect.top + (box[1] - cam.scrollY) * k, (box[2] - box[0]) * k, (box[3] - box[1]) * k);
   }
 
   private pathsOf(doc: ArtDoc, id: string): ArtPath[] {
@@ -992,14 +1139,19 @@ export class PlayScene extends Phaser.Scene {
         continue;
       }
       if (!terrainMorph.has(m.object_id)) continue;
-      const paths = this.pathsOf(this.doc, m.object_id);
+      const paths = this.pathsOf(this.skin.inkDoc(this.doc), m.object_id);
       if (!paths.length) continue;
       const bk = bake(this.bank, this.doc, `morph_${m.object_id}`, paths, Math.min(2, this.r));
       const img = imageOf(this, bk, 0, 0).setDepth(ART.depths.terrain + 1);
       this.lInk.add(img);
       this.morphTemps.push({ img, t: 0, dur: m.kind === 'appear' ? ART.pencil.reveal_ms : 300, kind: m.kind === 'appear' ? 'appear' : 'move', dx: m.kind === 'move' ? dx : 0, dy: m.kind === 'move' ? dy : 0, x: 0, y: 0 });
     }
-    this.morphDone = terrainMorph.size ? () => this.inkChunks.setDoc(this.doc) : null;
+    this.morphDone = terrainMorph.size
+      ? () => {
+          this.morphExclude = undefined;
+          this.inkChunks.setDoc(this.skin.inkDoc(this.doc));
+        }
+      : null;
   }
 
   private updateMorphs(dt: number): void {
@@ -1056,7 +1208,8 @@ export class PlayScene extends Phaser.Scene {
     if (theme === this.theme || !this.camBg) return;
     this.theme = theme;
     this.doc = this.art(this.level);
-    this.inkChunks.setDoc(this.doc);
+    this.skin.set(this.level, this.inkSrc(), this.doc, { notify: false, pop: false });
+    this.inkChunks.setDoc(this.skin.inkDoc(this.doc), this.morphExclude);
     this.fgChunks.setDoc(this.doc);
     this.farChunks.setDoc(this.doc);
     this.midChunks.setDoc(this.doc);
@@ -1068,6 +1221,8 @@ export class PlayScene extends Phaser.Scene {
     this.lava = new LavaView(this, this.lInk, this.doc.lava, this.d.reduced);
     this.buildPlayer();
     if (this.ghosts) this.buildGhosts();
+    this.applySkinLook();
+    this.skin.gc();
     this.d.chrome?.setTheme(theme);
     if (this.d.mixer?.musicPlaying) this.startMusic();
   }
@@ -1166,13 +1321,14 @@ export class PlayScene extends Phaser.Scene {
     const W = VIEW_W_PX * r;
     const H = VIEW_H_PX * r;
     this.scale.setGameSize(W, H);
-    for (const c of [this.camBg, this.camInk, this.camAct, this.camHud]) c.setSize(W, H).setZoom(r);
+    for (const c of [this.camBg, this.camInk, this.camSkin, this.camAct, this.camHud]) c.setSize(W, H).setZoom(r);
     // paper tile at the new scale
     this.rebuildPaper();
     this.inkChunks.setScale(r);
     this.fgChunks.setScale(r);
     this.hud.setResolution(r);
     this.buildClouds();
+    this.applySkinLook();
   }
 
   get frameNow(): number {
@@ -1188,5 +1344,6 @@ export class PlayScene extends Phaser.Scene {
     this.d.mixer?.music(false, { fadeMs: 0 });
     this.underlay?.destroy();
     this.ghosts?.destroy();
+    this.skin?.destroy();
   }
 }

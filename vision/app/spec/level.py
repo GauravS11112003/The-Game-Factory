@@ -2,6 +2,7 @@
 
 `world`, `rules`, `compiled` are normative for playing; `ink`, `objects`, `setpieces`, `edits` for editing;
 `design` and `meta.build` are informative (§2.3). `level_hash` covers gameplay only (§2.5).
+`skin` (v3) is generated art over the kid's strokes; it is art only and never part of `level_hash`.
 """
 import hashlib
 import json
@@ -317,6 +318,36 @@ class LevelSource(Spec):
     sheets: list[LevelSheet] = Field(default_factory=list)
 
 
+# ---- skin (v3, docs/v3/CONTRACTS_V3.md "Skin on levels"): generated art, NEVER part of level_hash ----------------
+
+
+class SkinCredit(Spec):
+    by: str | None = None  # the kid who made it ("Maya")
+    tool: str | None = None  # "Adobe Firefly" | "Claude"
+    prompt: str | None = None
+
+
+class SkinBackdrop(Spec):
+    url: str
+    credit: SkinCredit | None = None
+
+
+class SkinObject(Spec):
+    stroke_ids: list[str] = Field(default_factory=list)  # the drawing strokes this art replaces
+    object_id: str | None = None  # filled when the build is known
+    url: str | None = None  # transparent PNG or SVG
+    label: str = ""
+    credit: SkinCredit | None = None
+    mode: Literal["life", "ink"] = "life"  # ink = the kid chose "My drawing"
+
+
+class LevelSkin(Spec):
+    provider: Literal["firefly", "claude-svg"]
+    style_id: str | None = None
+    backdrop: SkinBackdrop | None = None
+    objects: list[SkinObject] = Field(default_factory=list)
+
+
 class LevelV2(Spec):
     format: Literal["dal-level"]
     schema_version: Literal[2]
@@ -342,6 +373,7 @@ class LevelV2(Spec):
     design: DesignBlock | None = None
     embedded_library: list[LibraryType] = Field(default_factory=list)
     meta: LevelMeta
+    skin: LevelSkin | None = None  # art only (v3); gameplay_view() never reads it, so level_hash ignores it
 
     @model_validator(mode="after")
     def _tiles_fit_world(self) -> "LevelV2":
@@ -414,6 +446,7 @@ def level_hash(level: dict[str, Any]) -> str:
 EXPORTS: list[Any] = [
     EPlayerStart, ESpikes, EEnemy, ECoin, EBigCoin, ECheckpoint, EGoal, EKey, EDoor, ESpring, ESaw, EFirebar,
     EMovingPlatform, ECrumble, EFalling, EHintArrow, Entity, Trigger, Tiles, PlayerSprite, Sprites, Compiled,
-    DesignSegment, Reach, DesignBlock, StageTime, ModelCallMeta, BuildMeta, LevelMeta, LevelSheet, LevelSource, LevelV2,
+    DesignSegment, Reach, DesignBlock, StageTime, ModelCallMeta, BuildMeta, LevelMeta, LevelSheet, LevelSource,
+    SkinCredit, SkinBackdrop, SkinObject, LevelSkin, LevelV2,
 ]
 ROOT = LevelV2

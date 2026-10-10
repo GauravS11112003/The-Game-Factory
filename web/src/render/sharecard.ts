@@ -13,7 +13,9 @@ import { drawCharacter, stillPose } from './rig2d.ts';
 import { HAND_FONT, loadHandFont } from './fonts.ts';
 import { clipText, coinIcon, fitText, inkDrop, plate, roundRectPath, skull, stamp, starIcon, tape, underline } from './paper2d.ts';
 import { fmtClock, msg } from './text.ts';
-import { artFor } from './thumbnail.ts';
+import { skinOf } from '../core/art/skin.ts';
+import { drawSkinFitted, skinImagesReady } from './skin.ts';
+import { artFor, drawLevelArt, playerSkin } from './thumbnail.ts';
 
 const CELL = 16;
 const P = ART.palette;
@@ -82,12 +84,21 @@ function drawPicture(ctx: CanvasRenderingContext2D, level: LevelV2, ink: InkDoc 
     if (at) hero = { at, state: 'idle' };
   }
   const layers = hero ? doc.layers.map((l) => String(l.id)).filter((id) => id !== 'player') : undefined;
-  drawInk(ctx, doc, view, layers ? { layers } : {});
+  // the level's skin (generated art over the objects, its backdrop behind) when it has one, else the plain ink
+  const sk = skinOf(level) ? drawLevelArt(ctx, level, ink, doc, view, layers ? { layers } : {}) : null;
+  if (!sk) drawInk(ctx, doc, view, layers ? { layers } : {});
   if (!hero) return;
   const scale = Math.min(W / ((view[2] - view[0]) * CELL), H / ((view[3] - view[1]) * CELL));
   ctx.save();
   ctx.setTransform(scale, 0, 0, scale, -view[0] * CELL * scale, -view[1] * CELL * scale);
-  drawCharacter(ctx, doc, doc.player, stillPose(doc.player, { state: hero.state }), hero.at[0] * CELL, hero.at[1] * CELL);
+  const pic = sk ? playerSkin(sk) : null;
+  if (pic) {
+    // the character's generated picture stands where the drawn hero would (feet on the ground)
+    const b = pic.p.box;
+    const x = hero.at[0];
+    const y = hero.at[1];
+    drawSkinFitted(ctx, pic.img, [(b[0] + x) * CELL, (b[1] + y) * CELL, (b[2] + x) * CELL, (b[3] + y) * CELL], pic.p.fit);
+  } else drawCharacter(ctx, doc, doc.player, stillPose(doc.player, { state: hero.state }), hero.at[0] * CELL, hero.at[1] * CELL);
   ctx.restore();
 }
 
@@ -229,6 +240,8 @@ export async function shareCardCanvas(level: LevelV2, ink: InkDoc | LevelInk | n
   const ctx = c.getContext('2d');
   if (!ctx) return c;
   if ((o.style ?? 'card') === 'card') await loadHandFont();
+  // skin pictures first (bounded wait): a card is a one-off render, so it waits instead of repainting
+  if (!o.picture) await skinImagesReady(skinOf(level), 5000);
   ctx.save();
   // the picture, clipped to the card's rounded corners
   roundRectPath(ctx, 0, 0, c.width, c.height, 14 * Math.min(c.width / 640, c.height / 360));

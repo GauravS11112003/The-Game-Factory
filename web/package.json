@@ -15,7 +15,8 @@
     "starter:build": "node src/core/cli.ts starter:build",
     "starter:verify": "node src/core/cli.ts starter:verify",
     "gen:spec-data": "node src/core/cli.ts gen-spec-data",
-    "bench:core": "node src/core/cli.ts bench"
+    "bench:core": "node src/core/cli.ts bench",
+    "build:export": "vite build --config vite.export.config.ts"
   },
   "dependencies": {
     "phaser": "^3.90.0"

@@ -3,6 +3,7 @@
  * alias). v1 stays reachable at /v1.html.
  * Routes: home feed, draw (long-canvas editor), scan (pack tray), prompt (tell me a level), preview/:draft, play/:id,
  * game/:id, game/:id/rules, game/:id/library (or library?game=), tree/:id, dev.
+ * v3 collaboration (lane 5): bible/:game, review/:game, quests/:game, credits/:game, profile/:id, me, activity, jams.
  * Chrome is paper and ink (§7.9); every sentence comes from shared/spec/messages.json.
  */
 import './style.css';
@@ -21,6 +22,17 @@ import { promptScreen } from './screens/prompt.ts';
 import { rulesScreen } from './screens/rules.ts';
 import { scanScreen } from './screens/scan.ts';
 import { treeScreen } from './screens/tree.ts';
+// v3 lane 5: collaboration screens, the bell and identity
+import { activityScreen } from './screens/activity.ts';
+import { bibleScreen } from './screens/bible.ts';
+import { creditsScreen } from './screens/credits.ts';
+import { jamsScreen } from './screens/jams.ts';
+import { profileScreen } from './screens/profile.ts';
+import { questsScreen } from './screens/quests.ts';
+import { reviewScreen } from './screens/review.ts';
+import { collabChrome } from './collab/bell.ts';
+import { captureContribution } from './collab/contribute.ts';
+import { refreshPlayer } from './identity.ts';
 
 type Cleanup = (() => void) | void;
 
@@ -48,7 +60,9 @@ function header(): HTMLElement {
       h('a', { href: '#/', data: { nav: '' } }, icon('home'), h('span', null, t('ui.home'))),
       h('a', { href: '#/draw', data: { nav: 'draw' } }, icon('marker'), h('span', null, t('home.draw'))),
       h('a', { href: '#/scan', data: { nav: 'scan' } }, icon('camera'), h('span', null, t('home.scan'))),
-      h('a', { href: '#/prompt', data: { nav: 'prompt' } }, icon('pencil'), h('span', null, t('home.prompt')))),
+      h('a', { href: '#/prompt', data: { nav: 'prompt' } }, icon('pencil'), h('span', null, t('home.prompt'))),
+      h('a', { href: '#/jams', data: { nav: 'jams' } }, h('span', { class: 'emo' }, '🎪'), h('span', null, t('collab.jams.nav')))),
+    collabChrome(),
     mute);
 }
 
@@ -71,6 +85,7 @@ function route(): void {
   const [first = '', second] = path;
   for (const a of head.querySelectorAll<HTMLAnchorElement>('nav a')) a.classList.toggle('on', a.dataset.nav === first);
   document.body.dataset.screen = first || 'home';
+  if (first === 'draw' || first === 'scan' || first === 'prompt' || (first === 'game' && path[2] === 'library')) captureContribution(query);
   try {
     switch (first) {
       case '':
@@ -109,6 +124,31 @@ function route(): void {
       case 'dev':
         cleanup = devScreen(app);
         break;
+      // ---- v3 collaboration (lane 5) ----
+      case 'bible':
+        if (second) cleanup = bibleScreen(app, second);
+        break;
+      case 'review':
+        if (second) cleanup = reviewScreen(app, second);
+        break;
+      case 'quests':
+        if (second) cleanup = questsScreen(app, second);
+        break;
+      case 'credits':
+        if (second) cleanup = creditsScreen(app, second);
+        break;
+      case 'profile':
+        cleanup = profileScreen(app, second ?? null);
+        break;
+      case 'me':
+        cleanup = profileScreen(app, null);
+        break;
+      case 'activity':
+        cleanup = activityScreen(app, query);
+        break;
+      case 'jams':
+        cleanup = jamsScreen(app, query);
+        break;
       default:
         app.append(card(null, h('p', null, t('error.not_found'))));
     }
@@ -120,3 +160,4 @@ function route(): void {
 
 window.addEventListener('hashchange', route);
 route();
+void refreshPlayer();

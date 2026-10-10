@@ -19,3 +19,8 @@ export type { RigAnimOptions, RigInput, RigPose, RigState } from './anim.ts';
 export { bestView, sampleLevel, SAMPLE_VIEW, standPoint, standY, viewHasStart } from './frame.ts';
 export type { ViewOptions } from './frame.ts';
 export type { PlayerArtOptions } from './player.ts';
+export {
+  fitRects, hideSkinned, joinNames, normalizeSkin, objectArtBox, placementWorldBox, resolveSkin, sameExceptSkin, shapeBox,
+  SKIN_PARALLAX, skinCredits, skinOf, skinSignature, skinTargetOf, withSkin,
+} from './skin.ts';
+export type { LevelSkin, SkinCredits, SkinEntry, SkinFit, SkinPlacement, SkinSpec, SkinTarget } from './skin.ts';

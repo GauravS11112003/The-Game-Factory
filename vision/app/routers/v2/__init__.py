@@ -25,9 +25,21 @@ PREFIX = "/api/v2"
 BOOT_DELAY_S = 1.5  # let uvicorn finish starting (and the first requests through) before the background work
 
 
+# v3 routers (docs/v3/CONTRACTS_V3.md); each is optional so a half-built module never takes the API down.
+V3_MODULES = ("creative", "collab", "live", "export_phaser")
+
+
 def mount(app: FastAPI) -> None:
-    modules = (health, builds, drafts, levels, runs, games, library, rules, prompts, packs, transfer, stubs)
-    for module in modules:  # stubs last: real routes win
+    import importlib
+
+    modules = [health, builds, drafts, levels, runs, games, library, rules, prompts, packs, transfer]
+    for name in V3_MODULES:
+        try:
+            modules.append(importlib.import_module(f"app.routers.v2.{name}"))
+        except Exception as e:  # noqa: BLE001
+            log.warning("v3 router %s not mounted: %s", name, e)
+    modules.append(stubs)  # stubs last: real routes win
+    for module in modules:
         app.include_router(module.router, prefix=PREFIX, tags=["v2"])
 
 

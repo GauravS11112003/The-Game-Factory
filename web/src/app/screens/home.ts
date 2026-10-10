@@ -9,6 +9,9 @@ import { navigate } from '../router.ts';
 import { drops } from '../readout.ts';
 import { store } from '../store.ts';
 import { levelThumb } from '../thumbs.ts';
+import { currentPlayer, ensurePlayer } from '../identity.ts'; // v3 lane 5
+import { joinStrip } from '../collab/hub.ts';
+import { collab } from '../collab/api.ts';
 
 const SORTS: Sort[] = ['new', 'hot', 'hard', 'cleared'];
 let lastSort: Sort = 'new';
@@ -57,7 +60,7 @@ export function homeScreen(root: HTMLElement): () => void {
   const feed = h('div', { class: 'feed' }, h('p', { class: 'muted' }, t('ui.loading')));
   const tabs = h('div', { class: 'tabs', role: 'tablist' });
   const newTitle = h('input', { type: 'text', class: 'text', maxLength: 40, placeholder: t('home.game_title') });
-  const newAuthor = h('input', { type: 'text', class: 'text', maxLength: 16, placeholder: t('ui.your_name'), value: store.author() });
+  const newAuthor = h('input', { type: 'text', class: `text${currentPlayer() ? ' hidden' : ''}`, maxLength: 16, placeholder: t('ui.your_name'), value: currentPlayer()?.name || store.author() });
   const newForm = h('form', { class: 'new-game hidden row wrap' }, newTitle, newAuthor, h('button', { type: 'submit', class: 'pill primary small' }, t('home.make_game')));
   newForm.onsubmit = async (e) => {
     e.preventDefault();
@@ -66,7 +69,10 @@ export function homeScreen(root: HTMLElement): () => void {
     if (!title || !author) return;
     store.setAuthor(author);
     try {
-      const g = await api.createGame(title, author);
+      // v3: the maker's profile owns the game: its name is the author, and joining right away claims it
+      const p = await ensurePlayer().catch(() => null);
+      const g = await api.createGame(title, p?.name || author);
+      if (p) await collab.join(g.id).catch(() => null);
       navigate(`#/game/${encodeURIComponent(g.id)}`);
     } catch (err) {
       toast(t(err instanceof ApiError ? err.messageKey : 'error.build_failed'));
@@ -99,7 +105,7 @@ export function homeScreen(root: HTMLElement): () => void {
       h('button', { type: 'button', class: 'pill big', onclick: () => { newForm.classList.toggle('hidden'); newTitle.focus(); } }, icon('plus'), t('home.new_game')),
       h('button', { type: 'button', class: 'pill', title: t('export.import_help'), onclick: () => importIn.click() }, icon('plus'), t('export.import'))),
     newForm, h('div', { class: 'row between wrap' }, status, h('a', { class: 'small muted', href: '/v1.html' }, t('home.v1_link'))), importIn);
-  root.append(hero, tabs, feed);
+  root.append(hero, joinStrip(), tabs, feed);
 
   const load = async (sort: Sort): Promise<void> => {
     lastSort = sort;

@@ -9,18 +9,20 @@
  * `setMusic`). The player's own sound settings (mute M, music ♪) persist across levels.
  */
 import Phaser from 'phaser';
-import type { GameRules, InkDoc, LevelInk, LevelV2, Morph, RectCells, Replay, Theme } from '../core/types.gen.ts';
+import type { GameRules, InkDoc, LevelInk, LevelSkin, LevelV2, Morph, RectCells, Replay, Theme } from '../core/types.gen.ts';
 import { ART, PERF } from '../core/params.ts';
 import { createMixer } from '../audio/index.ts';
 import { paperBase } from '../render/paper.ts';
-import { renderThumbnail as renderThumb } from '../render/thumbnail.ts';
+import { artFor, renderThumbnail as renderThumb } from '../render/thumbnail.ts';
+import { objectArtBox, placementWorldBox, resolveSkin, sameExceptSkin, skinOf, withSkin } from '../core/art/skin.ts';
 import { resolveTheme } from '../render/themes.ts';
 import { createChrome } from './chrome.ts';
 import { Input } from './input.ts';
 import { PlayScene } from './scene.ts';
-import type { GameEvent, GameHandle, MountOptions, OverlaySpec } from './types.ts';
+import type { GameEvent, GameHandle, MountOptions, OverlaySpec, ScreenRect } from './types.ts';
+import { screenRect } from './gfx.ts';
 
-export type { DiePayload, GameEvent, GameHandle, GhostKind, GhostOption, GhostResult, MountOptions, OverlaySpec, ReadyPayload, WinPayload } from './types.ts';
+export type { DiePayload, GameEvent, GameHandle, GhostKind, GhostOption, GhostResult, MountOptions, OverlaySpec, ReadyPayload, ScreenRect, WinPayload } from './types.ts';
 export { drawInk } from '../render/canvas_ink.ts';
 export { thumbnailURL } from '../render/thumbnail.ts';
 export { shareCardCanvas, shareCardFile, shareCardPNG } from '../render/sharecard.ts';
@@ -32,6 +34,11 @@ export type { Mixer, Sfx } from '../audio/index.ts';
 export { auditionMusic } from '../audio/index.ts';
 export { drawCharacter, RigPreview, stillPose } from '../render/rig2d.ts';
 export { RigAnimator } from '../core/art/anim.ts';
+// skins (v3): mapping strokes → objects, the shared picture cache, the skin-aware 2D drawing
+export { normalizeSkin, sameExceptSkin, skinCredits, skinOf, skinTargetOf, withSkin } from '../core/art/skin.ts';
+export type { LevelSkin, SkinPlacement, SkinSpec } from '../core/art/skin.ts';
+export { loadSkinImage, skinImagesReady } from '../render/skin.ts';
+export { drawLevelArt } from '../render/thumbnail.ts';
 
 const VIEW_W = 768;
 const VIEW_H = 432;
@@ -52,9 +59,49 @@ function prefersReduced(): boolean {
   }
 }
 
-/** Feed thumbnails: the same ArtDoc → Canvas2D path as play (entities, player and goal included). */
-export function renderThumbnail(c: HTMLCanvasElement, level: LevelV2, ink: InkDoc | LevelInk | null, o?: { view?: RectCells; theme?: Theme }): void {
-  renderThumb(c, level, ink, o);
+/**
+ * Feed thumbnails: the same ArtDoc → Canvas2D path as play (entities, player and goal included) with the level's skin.
+ * Skin pictures not loaded yet show as the kid's ink first; the promise resolves true after the canvas repainted with
+ * them (cache the canvas after awaiting it).
+ */
+export function renderThumbnail(c: HTMLCanvasElement, level: LevelV2, ink: InkDoc | LevelInk | null, o?: { view?: RectCells; theme?: Theme }): Promise<boolean> {
+  return renderThumb(c, level, ink, o);
+}
+
+const THUMB_VIEW: RectCells = [0, 0, 48, 27];
+
+/** A world rect (cells) on a thumbnail canvas (the first screen, letterboxed like drawInk), viewport CSS px. */
+function thumbRect(c: HTMLCanvasElement, b: RectCells): ScreenRect | null {
+  const rect = c.getBoundingClientRect();
+  if (!(rect.width > 0) || !(c.width > 0)) return null;
+  const v = THUMB_VIEW;
+  const scale = Math.min(c.width / ((v[2] - v[0]) * 16), c.height / ((v[3] - v[1]) * 16)); // canvas px per world px
+  const k = (scale * rect.width) / c.width;
+  return screenRect(rect.left + (b[0] - v[0]) * 16 * k, rect.top + (b[1] - v[1]) * 16 * k, (b[2] - b[0]) * 16 * k, (b[3] - b[1]) * 16 * k);
+}
+
+/** objectScreenRect for a thumbnail canvas. */
+function thumbObjectRect(c: HTMLCanvasElement, level: LevelV2, ink: InkDoc | LevelInk | null, theme: Theme, id: string): ScreenRect | null {
+  const doc = artFor(level, ink, 1, theme);
+  let b: RectCells | null = null;
+  const skin = skinOf(level);
+  const pl = skin ? resolveSkin(level, ink ?? level.ink ?? null, doc, skin).find((p) => (id === 'player' ? p.target.kind === 'player' : p.target.kind !== 'player' && (p.target.id === id || p.hide.includes(id)))) : undefined;
+  if (pl) b = placementWorldBox(pl);
+  else if (id === 'player') {
+    const st = level.compiled.entities.find((e) => e.type === 'player_start');
+    const [x, y] = st ? [st.x, st.y] : [2, 22];
+    const pb = doc.player.bbox;
+    b = [x + pb[0], y + pb[1], x + pb[2], y + pb[3]];
+  } else {
+    const sp = doc.sprites.find((s) => s.id === id || s.object_ids.includes(id));
+    if (sp) b = [sp.anchor[0] + sp.bbox[0], sp.anchor[1] + sp.bbox[1], sp.anchor[0] + sp.bbox[2], sp.anchor[1] + sp.bbox[3]];
+    else {
+      const objs = level.objects ?? [];
+      const byId = new Map(objs.map((x) => [x.id, x]));
+      if (byId.has(id)) b = objectArtBox(doc, [id, ...objs.filter((x) => x.rel?.part_of === id).map((x) => x.id)], byId);
+    }
+  }
+  return b ? thumbRect(c, b) : null;
 }
 
 /** The level's music loop: the mount option, else the game's rules, else the level's snapshot (default on). */
@@ -92,7 +139,7 @@ export function mountGame(el: HTMLElement, level: LevelV2, ink: InkDoc | LevelIn
     el.replaceChildren(c);
     let cur = level;
     let theme: Theme = resolveTheme(o.rules, level.rules);
-    renderThumb(c, cur, ink, { theme });
+    void renderThumb(c, cur, ink, { theme });
     queueMicrotask(() => emit('ready', { mode: 'thumbnail', theme }));
     const noop = (): void => undefined;
     return {
@@ -103,8 +150,9 @@ export function mountGame(el: HTMLElement, level: LevelV2, ink: InkDoc | LevelIn
         if (ev === 'ready' && readyPayload) fn(readyPayload);
       },
       swapLevel(next) {
+        const same = sameExceptSkin(cur, next) && JSON.stringify(skinOf(cur)) === JSON.stringify(skinOf(next));
         cur = next;
-        renderThumb(c, cur, ink, { theme });
+        if (!same) void renderThumb(c, cur, ink, { theme });
       },
       setOverlays: noop,
       pause: noop,
@@ -119,11 +167,26 @@ export function mountGame(el: HTMLElement, level: LevelV2, ink: InkDoc | LevelIn
       },
       setTheme(t) {
         theme = t;
-        renderThumb(c, cur, ink, { theme });
+        void renderThumb(c, cur, ink, { theme });
       },
       setRules(r: Partial<GameRules>) {
         if (r.theme) this.setTheme(r.theme);
       },
+      setSkin(skin: LevelSkin | null) {
+        cur = withSkin(cur, skin);
+        void renderThumb(c, cur, ink, { theme });
+      },
+      objectScreenRect(id: string): ScreenRect | null {
+        try {
+          return thumbObjectRect(c, cur, ink, theme, id);
+        } catch {
+          return null;
+        }
+      },
+      worldToScreen(r: RectCells): ScreenRect | null {
+        return thumbRect(c, r);
+      },
+      setCredits: noop,
       setMusic: noop,
       setUnderlay: () => false,
       snapshot() {
@@ -157,6 +220,7 @@ export function mountGame(el: HTMLElement, level: LevelV2, ink: InkDoc | LevelIn
     onRestart: () => scene?.restart('checkpoint'),
     onPause: () => (scene?.isPaused ? scene.resumeGame() : scene?.pauseGame()),
     music: mixer ? { available: music0, on: mixer.musicEnabled, onToggle: () => scene?.toggleMusicSetting() } : undefined,
+    credits: o.credits !== false,
   });
   const r0 = renderScaleFor(chrome.root.clientWidth || el.clientWidth || VIEW_W);
   scene = new PlayScene({ level, ink, mount: o, theme: theme0, music: music0, r: r0, reduced, emit, input, mixer, chrome });
@@ -265,6 +329,28 @@ export function mountGame(el: HTMLElement, level: LevelV2, ink: InkDoc | LevelIn
     },
     ghosts() {
       return scene?.ghostStatus ?? [];
+    },
+    setSkin(skin: LevelSkin | null) {
+      whenReady(() => scene?.setSkin(skin));
+    },
+    objectScreenRect(objectId: string): ScreenRect | null {
+      if (!scene || !ready || destroyed) return null;
+      try {
+        return scene.objectScreenRect(objectId);
+      } catch {
+        return null;
+      }
+    },
+    worldToScreen(r: RectCells): ScreenRect | null {
+      if (!scene || !ready || destroyed) return null;
+      try {
+        return scene.worldToScreen(r);
+      } catch {
+        return null;
+      }
+    },
+    setCredits(on: boolean) {
+      chrome.setCreditsOn(on);
     },
     destroy() {
       if (destroyed) return;

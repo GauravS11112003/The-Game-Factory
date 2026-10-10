@@ -61,7 +61,19 @@ export interface EditorHandle {
   /** The remix parent arrived (Back to drawing on a remix). */
   setParentLevel(level: LevelV2 | null): void;
   destroy(): void;
+  // ---- live drawing hooks (lane 6, src/editor/live.ts) ----
+  readonly view: View;
+  readonly canvas: HTMLCanvasElement;
+  /** The stroke being drawn right now (shared with the room as an in-progress stroke). */
+  liveStroke(): { pts: readonly Pt[]; color: InkColor } | null;
+  /** Painted on top of every frame; return true while it animates. */
+  setOverlay(fn: EditorOverlay | null): void;
+  /** Pass the pencil: while set, drawing tools are off (pan and zoom still work) and a press calls `onBlocked`. */
+  setReadOnly(onBlocked: (() => void) | null): void;
+  requestDraw(): void;
 }
+
+export type EditorOverlay = (ctx: CanvasRenderingContext2D, view: View, now: number) => boolean | void;
 
 /** Marker colour for a draft object's role when it is inked (§8.3 "Ink it", K1). */
 const ROLE_INK: Partial<Record<Role, InkColor>> = {
@@ -120,6 +132,9 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
   let remixAdded: Set<string> | null = null; // strokes the object-level remix diff calls new
   let showChanges = !store.flag('hideChanges'); // remix outlines are on until the kid hides them
   let groundWinsTold = false;
+  let overlay: EditorOverlay | null = null; // live drawing: remote cursors and strokes
+  let overlayAnim = false;
+  let readOnly: (() => void) | null = null; // live drawing: someone else holds the pencil
 
   // ---- DOM -----------------------------------------------------------------------------------------------------
   const canvas = h('canvas', { class: 'ed-canvas', tabIndex: 0, 'aria-label': t('editor.canvas_label') });
@@ -606,7 +621,7 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
   function frame(now: number): void {
     if (destroyed) return;
     raf = requestAnimationFrame(frame);
-    const animating = (hints && !hints.solvable && hintsOn) || [...chipUntil.values()].some((u) => u > now) || flash > 0;
+    const animating = (hints && !hints.solvable && hintsOn) || [...chipUntil.values()].some((u) => u > now) || flash > 0 || overlayAnim;
     if (!dirty && !animating) return;
     dirty = false;
     if (flash > 0) flash = Math.max(0, flash - 0.06);
@@ -630,6 +645,7 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
     };
     if (mode.k === 'flag') st.doc = { ...st.doc, startAt: mode.at };
     render(ctx, st);
+    overlayAnim = overlay ? overlay(ctx, view, now) === true : false;
     // "+ Add screen" sits on the world's right edge.
     const [rx] = view.toPx(view.worldW, 0);
     addScreenBtn.style.left = `${Math.min(view.w - 44, Math.max(4, rx + 6))}px`;
@@ -696,6 +712,10 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
     const flagAt = doc.data.startAt ?? hints?.start ?? null;
     if (flagAt && flagHit(flagAt, view, px, py)) {
       mode = { k: 'flag', pid: e.pointerId, at: flagAt, px0: [px, py], movedPx: 0 };
+      return;
+    }
+    if (readOnly) {
+      readOnly();
       return;
     }
     switch (tool) {
@@ -1258,6 +1278,17 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
       stopTestPlay();
       shell.remove();
     },
+    view,
+    canvas,
+    liveStroke: () => (mode.k === 'draw' ? { pts: mode.raw, color } : null),
+    setOverlay(fn: EditorOverlay | null) {
+      overlay = fn;
+      requestDraw();
+    },
+    setReadOnly(onBlocked: (() => void) | null) {
+      readOnly = onBlocked;
+    },
+    requestDraw,
   };
 }
 

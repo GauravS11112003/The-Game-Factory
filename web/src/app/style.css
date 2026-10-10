@@ -571,3 +571,251 @@ ol.pack-tray { list-style: none; padding: 0; display: grid; grid-template-column
 /* fatal build error in the preview (replaces the endless "still building" wait) */
 .fatal-panel { margin: 8px 0; padding: 12px 16px; border-left: 4px solid var(--red); }
 .fatal-panel p { margin: 0 0 10px; font-size: 1.05rem; }
+
+/* ================================================================================================================
+   v3 lane 5: collaboration (identity sheet, bell, game hub, bible, review, quests, profile, credits, jams).
+   Every class here starts with `collab-`. Append-only section owned by lane 5.
+   ================================================================================================================ */
+.modal-back.collab-top { z-index: 70; }
+.collab-big-emoji { font-size: 3rem; line-height: 1; text-align: center; }
+.collab-screen { max-width: 1100px; margin: 0 auto; }
+.collab-head h1 { margin-bottom: 0.1em; }
+.collab-count {
+  display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; margin-left: 6px;
+  border-radius: 999px; background: var(--ink); color: var(--paper); font-family: var(--hand); font-size: 0.85rem; line-height: 1;
+}
+.collab-count.hot { background: var(--red); color: #fff; }
+.collab-form-body { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+.collab-quest-form summary, .collab-jam-form summary { list-style: none; cursor: pointer; display: inline-flex; }
+.collab-quest-form summary::-webkit-details-marker, .collab-jam-form summary::-webkit-details-marker { display: none; }
+.collab-quest-form, .collab-jam-form { margin: 6px 0 12px; }
+
+/* ---- "Who are you?" sheet ---- */
+.collab-who h2 { margin-top: 0; }
+.collab-name-in { font-family: var(--hand); font-size: 1.3rem; }
+.collab-face { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+.collab-face-pad {
+  width: 168px; height: 168px; border-radius: 50%; border: 3px solid var(--ink); background: #fffdf6;
+  touch-action: none; cursor: crosshair; box-shadow: var(--shadow);
+}
+.collab-face-side { display: flex; flex-direction: column; gap: 10px; }
+.collab-face-colors { max-width: 120px; }
+.collab-who-err:empty { display: none; }
+.collab-code-box { margin-top: 8px; }
+.collab-code-box .text { flex: 1; min-width: 180px; }
+
+/* ---- avatars and player chips ---- */
+.collab-av {
+  display: inline-grid; place-items: center; flex: none; border-radius: 50%; border: 2px solid var(--ink); background: #fffdf6;
+  object-fit: cover; font-family: var(--hand); color: var(--ink); line-height: 1; overflow: hidden;
+}
+.collab-av.more { font-size: 0.75rem; background: var(--tint); }
+.collab-chip { display: inline-flex; align-items: center; gap: 5px; text-decoration: none; color: var(--ink); font-family: var(--hand); font-size: 1rem; }
+a.collab-chip:hover .collab-who-name { text-decoration: underline; }
+.collab-stack { display: inline-flex; align-items: center; }
+.collab-stack > .collab-av + .collab-av { margin-left: -8px; }
+.collab-role { display: inline-block; font-family: var(--hand); font-size: 0.85rem; padding: 0 8px; border-radius: 999px; border: 1.5px solid var(--ink-soft); color: var(--ink-soft); margin-left: 4px; }
+.collab-role.role-owner { border-color: #b8621b; color: #b8621b; background: #fff6cf; }
+.collab-role.role-maintainer { border-color: var(--pencil); color: var(--pencil); }
+
+/* ---- the bell and my face in the top bar ---- */
+.collab-chrome { display: flex; align-items: center; gap: 6px; }
+.collab-bell-wrap { position: relative; }
+.collab-bell { position: relative; height: 40px; }
+.collab-bell .emo { font-size: 1.3rem; }
+.collab-bell .collab-count { position: absolute; top: 0; right: 0; margin: 0; background: var(--red); color: #fff; min-width: 18px; height: 18px; font-size: 0.75rem; }
+.collab-bell-menu {
+  position: absolute; right: -40px; top: 46px; z-index: 50; width: min(92vw, 380px); max-height: 70vh; overflow: auto; padding: 10px 12px;
+}
+.collab-bell-title { font-family: var(--hand); font-size: 1.2rem; }
+.collab-bell-list { display: flex; flex-direction: column; gap: 2px; margin: 8px 0; }
+.collab-bell-all { display: block; text-align: center; }
+.collab-me { display: inline-flex; text-decoration: none; }
+.collab-me .collab-av { box-shadow: 0 0 0 2px var(--hi); }
+.collab-hello { white-space: nowrap; }
+.app-head nav a .emo { font-size: 1.05rem; }
+@media (max-width: 760px) {
+  .collab-hello .lbl { display: none; }
+  .app-head nav a[data-nav='jams'] { display: none; }
+}
+
+/* ---- activity feed ---- */
+.collab-feed { display: flex; flex-direction: column; gap: 4px; }
+.collab-feed-row {
+  display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 10px; text-decoration: none; color: var(--ink);
+  border: 1.5px solid transparent;
+}
+.collab-feed-row:hover { background: var(--tint); }
+.collab-feed-row.unread { background: #fff6cf; border-color: rgba(31, 27, 24, 0.25); }
+.collab-feed-emo { font-size: 1.3rem; flex: none; width: 1.6em; text-align: center; }
+.collab-feed-text { flex: 1; line-height: 1.3; }
+
+/* ---- game hub ---- */
+.collab-add-level { font-size: 1.35rem; }
+.collab-bible-sum { display: flex; gap: 14px; align-items: flex-start; margin: 8px 0 12px; flex-wrap: wrap; }
+.collab-style-thumb { width: 150px; aspect-ratio: 4 / 3; object-fit: cover; border: 2.5px solid var(--ink); border-radius: 12px 10px 13px 11px; transform: rotate(-1.5deg); box-shadow: var(--shadow); }
+.collab-bible-text { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 6px; }
+.collab-pitch { font-family: var(--hand); font-size: 1.35rem; margin: 0; }
+.collab-mech summary { cursor: pointer; font-family: var(--hand); font-size: 1.1rem; }
+.collab-mechanics { white-space: pre-wrap; line-height: 1.45; background: var(--paper-2); border-radius: 10px; padding: 8px 10px; margin-top: 4px; }
+.collab-starters-mini { gap: 4px; }
+.collab-starter.mini canvas { border-radius: 6px; border: 1.5px solid rgba(31, 27, 24, 0.3); }
+.collab-team-row { gap: 6px; }
+.collab-join-slot { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.collab-made-by { padding: 0 4px; }
+.collab-hub { padding-top: 10px; }
+.collab-hub-tabs .tab { display: inline-flex; align-items: center; }
+.collab-hub .level-list { margin: 0; }
+
+/* ---- home: join a game ---- */
+.collab-join-card h2 { margin: 0; }
+.collab-join-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(210px, 250px); gap: 12px; overflow-x: auto; padding: 8px 2px 6px; }
+.collab-join-game {
+  display: flex; flex-direction: column; text-decoration: none; color: var(--ink); background: #fff; overflow: hidden;
+  border: 2px solid var(--ink); border-radius: 12px 10px 13px 11px; transition: transform 0.1s;
+}
+.collab-join-game:hover { transform: rotate(-0.8deg) translateY(-2px); }
+.collab-join-img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-bottom: 2px solid var(--ink); display: block; }
+.collab-join-img.empty { display: grid; place-items: center; font-size: 2rem; background: var(--paper-2); }
+.collab-join-meta { padding: 6px 8px; display: flex; flex-direction: column; gap: 3px; }
+.collab-join-meta strong { font-family: var(--hand); font-size: 1.15rem; font-weight: normal; }
+.collab-quest-chip { border: 1.5px solid #b8621b; color: #b8621b; background: #fff6cf; border-radius: 999px; padding: 0 8px; font-family: var(--hand); }
+
+/* ---- bible ---- */
+.collab-style-img { max-width: 100%; width: 320px; border: 2.5px solid var(--ink); border-radius: 12px; display: block; box-shadow: var(--shadow); }
+.collab-style-row { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-start; }
+.collab-style-box { width: min(100%, 320px); }
+.collab-style-empty { aspect-ratio: 4 / 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 2.4rem; border: 2.5px dashed rgba(31, 27, 24, 0.35); border-radius: 12px; background: var(--paper); }
+.collab-style-side { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 8px; }
+.collab-mech-in { font-size: 1.05rem; line-height: 1.45; }
+.collab-starters { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+.collab-starter { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.collab-starter.pick { border: 2px solid rgba(31, 27, 24, 0.25); border-radius: 12px; background: #fff; padding: 6px; cursor: pointer; }
+.collab-starter.pick.on { border-color: var(--ink); background: var(--hi); box-shadow: var(--shadow); }
+.collab-open-for { display: flex; flex-direction: column; gap: 8px; }
+.collab-save-row { margin: 4px 0 18px; }
+.collab-members { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.collab-member { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 4px 6px; border-bottom: 1.5px dotted rgba(31, 27, 24, 0.25); }
+.collab-member-actions { margin-left: auto; }
+.collab-add-member .text { flex: 1; min-width: 200px; }
+
+/* ---- review queue ---- */
+.collab-sub { overflow: hidden; transition: opacity 0.35s, transform 0.35s; }
+.collab-sub.status-accepted { border-color: var(--green); }
+.collab-sub.status-declined { opacity: 0.75; }
+.collab-sub.collab-leaving { opacity: 0; transform: translateX(30px) rotate(1deg); }
+.collab-sub-body { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-start; }
+.collab-sub-thumb { width: min(100%, 300px); flex: none; border: 2px solid var(--ink); border-radius: 12px; overflow: hidden; display: block; }
+.collab-sub-thumb .thumb { border-bottom: none; }
+.collab-sub-meta { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 6px; }
+.collab-sub-meta h3 { margin: 0; }
+.collab-verdict { display: inline-flex; align-items: center; gap: 2px; font-family: var(--hand); font-size: 1.05rem; }
+.collab-verdict.ok { color: var(--green); }
+.collab-verdict.bad { color: var(--red); }
+.collab-verdict .ico { width: 18px; height: 18px; }
+.collab-review-note { background: #fffaf0; border-left: 4px solid #b8621b; padding: 4px 8px; margin: 0; }
+.collab-comments { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.collab-comments li { background: var(--paper-2); border-radius: 10px; padding: 4px 8px; }
+.collab-comment-row .text { flex: 1; }
+.collab-review-actions { margin-top: 4px; }
+.collab-note-box { display: flex; flex-direction: column; gap: 6px; }
+.collab-status { font-family: var(--hand); border-radius: 999px; padding: 0 8px; border: 1.5px solid var(--ink-soft); }
+.collab-status.st-accepted, .collab-status.st-done { border-color: var(--green); color: var(--green); background: #eef8ec; }
+.collab-status.st-changes, .collab-status.st-claimed { border-color: #b8621b; color: #b8621b; background: #fff6cf; }
+.collab-status.st-declined { border-color: var(--graphite); color: var(--graphite); }
+.collab-status.st-pending, .collab-status.st-open { border-color: var(--blue); color: var(--blue); }
+.collab-stamp-host { position: absolute; right: 18px; top: 14px; z-index: 3; pointer-events: none; }
+.collab-stamp {
+  font-family: var(--hand); font-size: 1.8rem; color: var(--green); border: 4px solid var(--green); border-radius: 12px; padding: 2px 14px;
+  background: rgba(238, 248, 236, 0.85); transform: rotate(-10deg); animation: slap 0.3s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+.collab-confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 4; }
+.collab-confetti span { position: absolute; top: 40%; font-size: 1.5rem; animation: collab-pop 1.8s ease-out forwards; }
+@keyframes collab-pop {
+  0% { transform: translate(0, 0) scale(0.4); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translate(var(--dx, 0), -160px) rotate(220deg) scale(1.1); opacity: 0; }
+}
+
+/* ---- quests ---- */
+.collab-quest-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.collab-quest {
+  display: flex; gap: 12px; padding: 12px; background: #fff; border: 2.5px solid var(--ink); border-radius: 14px 11px 16px 12px; box-shadow: var(--shadow);
+}
+.collab-quest.st-done { opacity: 0.6; border-style: dashed; }
+.collab-quest-emo { font-size: 2.6rem; line-height: 1; flex: none; }
+.collab-quest-body { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.collab-quest-body h3 { margin: 0; }
+.collab-quest-body p { margin: 0; }
+.collab-kind { font-family: var(--hand); font-size: 0.95rem; background: var(--tint); border-radius: 6px; padding: 0 8px; }
+.collab-reward { color: #b8621b; font-family: var(--hand); font-size: 1.05rem; }
+
+/* ---- profile ---- */
+.collab-profile-head .row { gap: 18px; align-items: center; }
+.collab-profile-head .collab-av { border-width: 3px; box-shadow: var(--shadow); }
+.collab-stats { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+.collab-stat { display: flex; flex-direction: column; align-items: center; min-width: 74px; padding: 4px 10px; border: 2px solid var(--ink); border-radius: 12px; background: #fff; }
+.collab-stat-n { font-family: var(--hand); font-size: 1.4rem; }
+.collab-badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+.collab-badge {
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; padding: 10px 6px;
+  border: 2.5px dashed rgba(31, 27, 24, 0.3); border-radius: 16px; background: var(--paper); filter: grayscale(1); opacity: 0.6;
+}
+.collab-badge.earned { border: 3px solid var(--ink); background: #fff6cf; filter: none; opacity: 1; box-shadow: var(--shadow); transform: rotate(-1.5deg); }
+.collab-badge.earned:nth-child(even) { transform: rotate(1.5deg); }
+.collab-badge-emo { font-size: 2.6rem; line-height: 1.1; }
+.collab-badge-name { font-family: var(--hand); font-size: 1.1rem; }
+.collab-level-item { display: flex; flex-direction: column; gap: 4px; }
+.collab-plays { font-family: var(--hand); font-size: 1rem; padding-left: 4px; }
+.collab-my-subs { display: flex; flex-direction: column; gap: 6px; }
+.collab-my-sub { display: flex; gap: 10px; align-items: flex-start; padding: 8px; border: 2px solid var(--ink); border-radius: 12px; background: #fff; }
+.collab-my-sub.st-accepted { border-color: var(--green); }
+.collab-my-sub.st-changes { border-color: #b8621b; }
+.collab-my-sub.st-declined { border-style: dashed; opacity: 0.8; }
+.collab-my-sub-body { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.collab-code { font-family: ui-monospace, Menlo, monospace; font-size: 0.85rem; background: var(--paper-2); padding: 4px 8px; border-radius: 8px; word-break: break-all; }
+
+/* ---- credits roll ---- */
+.collab-roll-wrap { display: flex; flex-direction: column; gap: 10px; }
+.collab-roll {
+  --dur: 40s;
+  position: relative; height: 68vh; min-height: 320px; overflow: hidden; border: 2.5px solid var(--ink); border-radius: 14px;
+  background: radial-gradient(rgba(31, 27, 24, 0.06) 1px, transparent 1.2px) 0 0 / 16px 16px, #fffdf6;
+  -webkit-mask-image: linear-gradient(transparent, #000 9%, #000 91%, transparent);
+  mask-image: linear-gradient(transparent, #000 9%, #000 91%, transparent);
+}
+.collab-roll.short { height: 52vh; min-height: 260px; }
+.collab-roll-inner { display: flex; flex-direction: column; align-items: center; gap: 26px; padding: 30px 16px 60px; text-align: center; animation: collab-roll var(--dur) linear forwards; }
+.collab-roll.paused .collab-roll-inner, .collab-roll:hover .collab-roll-inner { animation-play-state: paused; }
+@keyframes collab-roll { from { transform: translateY(68vh); } to { transform: translateY(-100%); } }
+.collab-roll.short .collab-roll-inner { animation-name: collab-roll-short; }
+@keyframes collab-roll-short { from { transform: translateY(52vh); } to { transform: translateY(-100%); } }
+.collab-roll-title h1 { font-size: 2.6rem; margin: 0; }
+.collab-roll-person { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.collab-roll-person .collab-av { border-width: 3px; box-shadow: var(--shadow); }
+.collab-roll-name { font-family: var(--hand); font-size: 1.6rem; }
+.collab-roll-line { font-size: 1.02rem; color: var(--ink-soft); max-width: 520px; }
+.collab-roll-art h3 { margin-bottom: 6px; }
+.collab-roll-end h2 { font-size: 2rem; margin-bottom: 0; }
+.collab-roll-sheet { width: min(100%, 640px) !important; }
+.collab-credits-cta { margin-top: 10px; padding-top: 8px; border-top: 2px dotted rgba(31, 27, 24, 0.3); display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.collab-credits-cta p { margin: 0; font-family: var(--hand); font-size: 1.2rem; }
+.collab-people { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.collab-person { display: flex; flex-direction: column; gap: 3px; padding: 8px; border: 2px solid var(--ink); border-radius: 12px; background: #fff; }
+@media (prefers-reduced-motion: reduce) {
+  .collab-roll { height: auto; min-height: 0; -webkit-mask-image: none; mask-image: none; }
+  .collab-roll-inner { transform: none; }
+}
+
+/* ---- jams ---- */
+.collab-jams { display: flex; flex-direction: column; }
+.collab-jam h2 { margin: 4px 0 2px; }
+.collab-jam.phase-live { border-color: var(--red); box-shadow: 3px 4px 0 rgba(224, 69, 58, 0.25); }
+.collab-jam.phase-over { opacity: 0.8; }
+.collab-jam-theme { font-family: var(--hand); font-size: 1.25rem; margin: 0; color: var(--pencil); }
+.collab-phase { font-family: var(--hand); font-size: 0.9rem; border-radius: 999px; padding: 0 10px; border: 2px solid var(--ink); }
+.collab-phase.ph-live { background: var(--red); border-color: var(--red); color: #fff; }
+.collab-phase.ph-soon { background: #e3eefc; }
+.collab-phase.ph-over { background: var(--tint); color: var(--ink-soft); }
+.tab.on .collab-count:not(.hot) { background: var(--paper); color: var(--ink); }
+.collab-made-by .collab-chip { font-size: 0.95rem; }

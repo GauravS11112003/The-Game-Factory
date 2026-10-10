@@ -3,9 +3,11 @@
  * drawInk(ctx, doc, view) fills the canvas with the view rect (cells) of an ArtDoc.
  */
 export { bakePaths, drawInk, drawLayer, drawPath, drawPaths, rasterizeChunk } from './canvas_ink.ts';
-export type { DrawOpts } from './canvas_ink.ts';
+export type { DrawInkOptions, DrawOpts } from './canvas_ink.ts';
 export { paintPaper, paintVignette, paperBase, paperTile, vignetteCanvas } from './paper.ts';
-export { artFor, renderThumbnail, thumbnailURL } from './thumbnail.ts';
+export { artFor, drawLevelArt, renderThumbnail, skinnedArt, thumbnailURL } from './thumbnail.ts';
+export { composeSkin, drawBackdrop, drawSkinFitted, loadSkinImage, peekSkinImage, skinImagesReady } from './skin.ts';
+export type { SkinImage, SkinImageKind } from './skin.ts';
 export { shareCardCanvas, shareCardFile, shareCardPNG } from './sharecard.ts';
 export type { ShareCardOptions, ShareCardRun } from './sharecard.ts';
 export { auditionTheme, renderThemeSwatch, resolveTheme, themeCatalog, themeInfo, themeSwatch, THEME_IDS } from './themes.ts';

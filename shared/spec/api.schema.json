@@ -5056,6 +5056,54 @@
       "title": "LevelSheet",
       "type": "object"
     },
+    "LevelSkin": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "provider": {
+          "enum": [
+            "firefly",
+            "claude-svg"
+          ],
+          "type": "string"
+        },
+        "style_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "backdrop": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SkinBackdrop"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "objects": {
+          "items": {
+            "$ref": "#/$defs/SkinObject"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "provider"
+      ],
+      "title": "LevelSkin",
+      "type": "object"
+    },
     "LevelSource": {
       "additionalProperties": false,
       "patternProperties": {
@@ -5283,6 +5331,17 @@
         },
         "meta": {
           "$ref": "#/$defs/LevelMeta"
+        },
+        "skin": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LevelSkin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -8902,6 +8961,137 @@
         "bottom"
       ],
       "type": "string"
+    },
+    "SkinBackdrop": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "credit": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SkinCredit"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "title": "SkinBackdrop",
+      "type": "object"
+    },
+    "SkinCredit": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tool": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "prompt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "SkinCredit",
+      "type": "object"
+    },
+    "SkinObject": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "stroke_ids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "object_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "label": {
+          "default": "",
+          "type": "string"
+        },
+        "credit": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SkinCredit"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "mode": {
+          "default": "life",
+          "enum": [
+            "life",
+            "ink"
+          ],
+          "type": "string"
+        }
+      },
+      "title": "SkinObject",
+      "type": "object"
     },
     "Slot": {
       "additionalProperties": false,

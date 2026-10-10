@@ -3,6 +3,8 @@
  * mute / music / restart / pause buttons (marker-outlined paper pills, sized in stage % so they line up with the HUD
  * plates at any scale) and the landscape touch controls (left thumb ◀ ▶ with slide-between, a big Jump on the right,
  * a small ↓ above it, "Always run"). Styles are injected once and prefixed.
+ * A level skinned with Adobe Firefly art carries a small credit pill at the bottom centre ("Art: Adobe Firefly ·
+ * drawn by Maya"); a click folds it to "✦ Art" (remembered), and the host can switch it off.
  */
 import { paperBase } from '../render/paper.ts';
 import { loadHandFont } from '../render/fonts.ts';
@@ -39,7 +41,14 @@ const CSS = `
 .dalg-run{position:absolute;left:2%;bottom:36%;pointer-events:auto;border:2px solid rgba(31,27,24,.7);border-radius:999px;
   background:rgba(255,253,246,.7);padding:2px 10px;font-size:clamp(11px,1.8vw,15px);color:#1F1B18}
 .dalg-run[aria-pressed=true]{background:rgba(62,158,79,.3)}
-@media (prefers-reduced-motion: reduce){.dalg-btn,.dalg-btn:nth-child(2){transform:none}}
+.dalg-credit{position:absolute;left:50%;bottom:1.6%;transform:translateX(-50%) rotate(-.6deg);pointer-events:auto;cursor:pointer;
+  border:1.5px solid rgba(31,27,24,.5);border-radius:999px;background:rgba(255,253,246,.8);color:#1F1B18;font:inherit;
+  font-size:clamp(9px,1.45cqw,13px);line-height:1.3;padding:1px 10px 2px;max-width:62%;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;opacity:.8;box-shadow:1px 1px 0 rgba(31,27,24,.14);transition:opacity .2s}
+.dalg-credit:hover,.dalg-credit:focus-visible{opacity:1}
+.dalg-credit[hidden]{display:none}
+.dalg-credit.min{padding:1px 8px 2px;opacity:.6}
+@media (prefers-reduced-motion: reduce){.dalg-btn,.dalg-btn:nth-child(2){transform:none}.dalg-credit{transform:translateX(-50%)}}
 `;
 
 let injected = false;
@@ -77,7 +86,30 @@ export interface Chrome {
   setMusicOn(on: boolean): void;
   setTheme(t: Theme): void;
   showTouch(on: boolean): void;
+  /** The skin credit line ("Art: Adobe Firefly · drawn by Maya"); null hides the pill. */
+  setCredit(text: string | null): void;
+  /** The credit pill allowed at all (MountOptions.credits / GameHandle.setCredits). */
+  setCreditsOn(on: boolean): void;
   destroy(): void;
+}
+
+const CREDIT_MIN_KEY = 'dal.skin_credit_min';
+
+function readCreditMin(): boolean {
+  try {
+    return localStorage.getItem(CREDIT_MIN_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writeCreditMin(on: boolean): void {
+  try {
+    if (on) localStorage.setItem(CREDIT_MIN_KEY, '1');
+    else localStorage.removeItem(CREDIT_MIN_KEY);
+  } catch {
+    /* storage refused: the fold just isn't remembered */
+  }
 }
 
 const BTN_PCT = 4.4; // button size, % of the stage width (≈ 34 logical px)
@@ -90,6 +122,8 @@ export function createChrome(
     theme: Theme; buttons: boolean; touch: boolean; input: Input | null; onMute(): void; onRestart(): void; onPause(): void; muted: boolean;
     /** The ♪ toggle (the player's music setting); omitted = no music button. */
     music?: { available: boolean; on: boolean; onToggle(): void };
+    /** The skin credit pill may show (default true). */
+    credits?: boolean;
   },
 ): Chrome {
   injectCss();
@@ -239,6 +273,33 @@ export function createChrome(
     cleanups.push(() => root.removeEventListener('touchstart', firstTouch));
   }
 
+  // the skin credit pill (bottom centre: clear of the HUD plates, the buttons and both thumbs' touch controls)
+  const credit = document.createElement('button');
+  credit.type = 'button';
+  credit.className = 'dalg-credit';
+  credit.dataset.role = 'credit';
+  credit.hidden = true;
+  let creditText: string | null = null;
+  let creditsOn = o.credits !== false;
+  let creditMin = readCreditMin();
+  const syncCredit = (): void => {
+    credit.hidden = !creditText || !creditsOn;
+    if (!creditText) return;
+    credit.textContent = creditMin ? '✦ Art' : `✦ ${creditText}`;
+    credit.title = creditText;
+    credit.setAttribute('aria-label', creditText);
+    credit.setAttribute('aria-expanded', String(!creditMin));
+    credit.classList.toggle('min', creditMin);
+  };
+  credit.addEventListener('click', (e) => {
+    e.preventDefault();
+    creditMin = !creditMin;
+    writeCreditMin(creditMin);
+    syncCredit();
+    root.focus({ preventScroll: true });
+  });
+  ui.append(credit);
+
   const visibleButtons = (): number => (musicBtn && musicBtn.hidden ? nButtons - 1 : nButtons);
   return {
     root,
@@ -281,6 +342,14 @@ export function createChrome(
     },
     showTouch(on) {
       touch.classList.toggle('on', on);
+    },
+    setCredit(text) {
+      creditText = text && text.trim() ? text.trim() : null;
+      syncCredit();
+    },
+    setCreditsOn(on) {
+      creditsOn = on;
+      syncCredit();
     },
     destroy() {
       for (const c of cleanups) c();

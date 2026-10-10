@@ -9,3 +9,5 @@ data/
 *.egg-info/
 out/
 .env
+web/dist-export/
+vision/data/live/

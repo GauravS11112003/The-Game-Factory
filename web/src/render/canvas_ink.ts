@@ -172,12 +172,33 @@ export function drawLayer(ctx: Ctx2D, doc: ArtDoc, l: ArtLayer, o: DrawOpts = {}
 export const INK_LAYERS = ['decoration', 'signs', 'terrain'] as const;
 const UNDERLAY_LAYERS = new Set(['decoration', 'signs', 'terrain', 'entities']);
 
+export interface DrawInkOptions {
+  style?: 'final' | 'underlay';
+  layers?: string[];
+  /** Layer ids not to draw (e.g. the graphite parallax under a skin backdrop). */
+  skip?: ReadonlySet<string>;
+  /** Called in world px (the view transform) after the paper ('paper') and after each drawn layer (its id). */
+  hook?: (ctx: CanvasRenderingContext2D, after: string) => void;
+}
+
+function runHook(ctx: CanvasRenderingContext2D, o: DrawInkOptions, after: string): void {
+  if (!o.hook) return;
+  ctx.save();
+  try {
+    o.hook(ctx, after);
+  } catch (e) {
+    console.warn('drawInk hook failed', after, e);
+  }
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+
 /**
  * Draw the view rect (cells) of an ArtDoc to fill the context's canvas (§11.3g).
  * style 'final': paper, parallax, ink, entities, player, foreground and vignette.
  * style 'underlay': only the ink, in remix gray, for drawing over (editor underlays).
  */
-export function drawInk(ctx: CanvasRenderingContext2D, doc: ArtDoc, view: RectCells, o: { style?: 'final' | 'underlay'; layers?: string[] } = {}): void {
+export function drawInk(ctx: CanvasRenderingContext2D, doc: ArtDoc, view: RectCells, o: DrawInkOptions = {}): void {
   const style = o.style ?? 'final';
   const W = ctx.canvas.width;
   const H = ctx.canvas.height;
@@ -188,15 +209,20 @@ export function drawInk(ctx: CanvasRenderingContext2D, doc: ArtDoc, view: RectCe
   const camY = view[1] * CELL;
   ctx.save();
   ctx.setTransform(scale, 0, 0, scale, -camX * scale, -camY * scale);
-  if (style === 'final' && (!o.layers || o.layers.includes('paper'))) paintPaper(ctx, doc.theme, camX, camY, vw, vh, scale);
+  if (style === 'final' && (!o.layers || o.layers.includes('paper'))) {
+    paintPaper(ctx, doc.theme, camX, camY, vw, vh, scale);
+    runHook(ctx, o, 'paper');
+  }
   const clip: [number, number, number, number] = [camX, camY, camX + vw, camY + vh];
   const layers = [...doc.layers].sort((a, b) => a.depth - b.depth);
   for (const l of layers) {
     if (l.id === 'paper') continue;
     if (o.layers && !o.layers.includes(String(l.id))) continue;
+    if (o.skip?.has(String(l.id))) continue;
     if (style === 'underlay' && !UNDERLAY_LAYERS.has(String(l.id))) continue;
     const dx = (1 - l.scroll) * camX;
     drawLayer(ctx, doc, l, style === 'underlay' ? { dx, recolor: '#B0B0B0', alpha: 0.75, strokesOnly: true } : { dx }, clip);
+    runHook(ctx, o, String(l.id));
   }
   if (style === 'final' && (!o.layers || o.layers.includes('paper'))) paintVignette(ctx, camX, camY, vw, vh);
   ctx.restore();
