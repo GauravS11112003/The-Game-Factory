@@ -1,0 +1,111 @@
+{
+  "$comment": "Printed template layout, PLAN.md section 5. All positions are millimetres on an A4 landscape page, [x, y, w, h] from the top-left corner. The template generator (vision/app/template) and the CV rectifier (vision/app/cv) both read this file; neither hardcodes a coordinate.",
+  "version": 1,
+  "page": {
+    "size_mm": [297, 210],
+    "px_per_mm": 10,
+    "canvas_px": [2970, 2100],
+    "orientation": "landscape"
+  },
+  "markers": {
+    "dictionary": "DICT_4X4_50",
+    "size_mm": 15,
+    "$comment": "outer_corner_index is the index into the 4 corners cv2.aruco returns for a marker (0 TL, 1 TR, 2 BR, 3 BL). For every marker it equals the marker id. Homography maps the four outer corners to the canonical canvas; print scale does not matter.",
+    "ids": [
+      { "id": 0, "position": "TL", "rect_mm": [8, 8, 15, 15], "outer_corner_index": 0, "outer_corner_mm": [8, 8] },
+      { "id": 1, "position": "TR", "rect_mm": [274, 8, 15, 15], "outer_corner_index": 1, "outer_corner_mm": [289, 8] },
+      { "id": 2, "position": "BR", "rect_mm": [274, 187, 15, 15], "outer_corner_index": 2, "outer_corner_mm": [289, 202] },
+      { "id": 3, "position": "BL", "rect_mm": [8, 187, 15, 15], "outer_corner_index": 3, "outer_corner_mm": [8, 202] }
+    ],
+    "outer_corners_mm": [[8, 8], [289, 8], [289, 202], [8, 202]],
+    "min_markers_for_rectify": 3
+  },
+  "header": {
+    "rect_mm": [28, 8, 140, 15],
+    "title": "DRAW A LEVEL",
+    "name_label": "Level name: ______________________",
+    "remix_title_format": "Remix of {title} by {author}"
+  },
+  "legend": {
+    "rect_mm": [170, 8, 78, 15],
+    "items": [
+      { "color": "black", "label": "ground" },
+      { "color": "red", "label": "spikes / enemies" },
+      { "color": "green", "label": "goal" },
+      { "color": "blue", "label": "coins / keys" }
+    ],
+    "hint": "Write rules below. Draw arrows a finger-width away from things."
+  },
+  "qr": {
+    "rect_mm": [250, 8, 15, 15],
+    "payload_grammar": {
+      "prefix": "dal1",
+      "separator": "|",
+      "forms": ["dal1|blank", "dal1|game|<game_id>", "dal1|lvl|<level_id>"],
+      "regex": "^dal1\\|(blank|game\\|[A-Za-z0-9_-]+|lvl\\|[A-Za-z0-9_-]+)$"
+    }
+  },
+  "drawing_area": {
+    "rect_mm": [28, 26, 240, 135],
+    "border_color": "#C8C8C8",
+    "border_width_mm": 0.3,
+    "dot_grid_spacing_mm": 5,
+    "dot_grid_color": "#DCDCDC",
+    "dot_radius_mm": 0.2,
+    "grid_cells": [48, 27],
+    "cell_mm": 5,
+    "working_px": [2400, 1350],
+    "cell_working_px": 50,
+    "backdrop_px": [768, 432]
+  },
+  "character_box": {
+    "rect_mm": [28, 165, 34, 34],
+    "label": "Draw your character",
+    "sprite_px": [32, 48]
+  },
+  "rules_box": {
+    "rect_mm": [66, 165, 164, 34],
+    "label": "Rules (plain words)",
+    "ruled_lines": 3,
+    "line_color": "#C8C8C8"
+  },
+  "swatches": {
+    "rect_mm": [234, 165, 34, 34],
+    "patch_mm": 11,
+    "gap_mm": 0.5,
+    "columns": 3,
+    "rows": 2,
+    "$comment": "Row-major: black, red, green on the top row; blue, gray, paper on the bottom row. 'paper' is an outlined empty square and samples the paper white.",
+    "patches": [
+      { "name": "black", "hex": "#000000", "rect_mm": [234, 165, 11, 11] },
+      { "name": "red", "hex": "#E53935", "rect_mm": [245.5, 165, 11, 11] },
+      { "name": "green", "hex": "#43A047", "rect_mm": [257, 165, 11, 11] },
+      { "name": "blue", "hex": "#1E88E5", "rect_mm": [234, 176.5, 11, 11] },
+      { "name": "gray", "hex": "#B0B0B0", "rect_mm": [245.5, 176.5, 11, 11] },
+      { "name": "paper", "hex": "#FFFFFF", "rect_mm": [257, 176.5, 11, 11], "outlined": true }
+    ],
+    "label": "swatches (do not draw here)",
+    "label_y_mm": 189
+  },
+  "remix": {
+    "ink_color": "#B0B0B0",
+    "component_number_color": "#B0B0B0",
+    "component_number_height_mm": 3,
+    "$comment": "The parent backdrop is converted to light gray ink inside the drawing area; each parent component's id is printed small next to its bbox top-left. The CV classifier maps the gray class to background so only new ink becomes the child level."
+  },
+  "colors": {
+    "black": "#000000",
+    "red": "#E53935",
+    "green": "#43A047",
+    "blue": "#1E88E5",
+    "gray": "#B0B0B0",
+    "paper": "#FFFFFF",
+    "annotation_magenta": "#FF00FF"
+  },
+  "canvas_mode": {
+    "$comment": "In canvas mode the uploaded image is the drawing area itself; it is resized to working_px and the swatch colors above are used as ideal class centers.",
+    "input_px": [768, 432],
+    "brush_px": 8,
+    "character_canvas_px": [128, 128]
+  }
+}

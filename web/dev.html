@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <title>Engine dev: Starter World</title>
+    <link rel="stylesheet" href="/src/style.css" />
+    <style>
+      .dev-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+      .dev-bar select { width: auto; min-width: 240px; }
+      .dev-bar label { display: inline-flex; align-items: center; gap: 6px; }
+      #solver { font-family: ui-monospace, Menlo, monospace; font-size: 0.9rem; }
+      #solver.ok { color: #43a047; }
+      #solver.bad { color: #e53935; }
+      #log { list-style: none; padding: 0; margin: 0; font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; }
+      #thumbs { display: flex; flex-wrap: wrap; gap: 12px; }
+      #thumbs figure { margin: 0; cursor: pointer; }
+      #thumbs canvas { display: block; border: 1px solid var(--line); border-radius: 6px; }
+      #thumbs figcaption { font-size: 0.85rem; color: var(--fg-muted); margin-top: 4px; }
+      kbd { background: var(--bg-elev); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; font-family: inherit; }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <h1>Engine dev page</h1>
+      <div class="dev-bar">
+        <select id="fixture" aria-label="fixture"></select>
+        <label><input type="checkbox" id="debug" style="width:auto" /> debug (collision tiles, bodies, solver overlay)</label>
+        <button id="restart" type="button">Restart (R)</button>
+      </div>
+      <p class="muted">
+        <kbd>&larr;</kbd><kbd>&rarr;</kbd> or <kbd>A</kbd><kbd>D</kbd> run, <kbd>Space</kbd>/<kbd>&uarr;</kbd>/<kbd>W</kbd> jump (hold for higher), <kbd>R</kbd> restart.
+        Solver: <span id="solver"></span>
+      </p>
+      <div id="stage" class="game-stage"></div>
+      <h2 style="margin-top: 16px">Events</h2>
+      <ul id="log"></ul>
+      <h2 style="margin-top: 16px">Thumbnails (renderThumbnail)</h2>
+      <div id="thumbs"></div>
+    </div>
+    <script type="module" src="/src/dev/main.ts"></script>
+  </body>
+</html>

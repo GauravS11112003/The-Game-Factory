@@ -1,0 +1,17 @@
+{
+  "title": "First Jump",
+  "annotation_component_ids": [],
+  "bindings": [
+    {
+      "component_id": 2,
+      "behavior": "bounce",
+      "params": {
+        "strength": 1.5
+      }
+    }
+  ],
+  "timer_seconds": null,
+  "notes_transcript": "the platform is bouncy",
+  "safety_ok": true,
+  "safety_reason": null
+}

@@ -1,0 +1,738 @@
+/* Draw-a-Level: dark chrome around a paper-white game, mobile-first, large touch targets. Owned by lane D. */
+:root {
+  --bg: #111318;
+  --bg-elev: #1a1d24;
+  --bg-elev-2: #23272f;
+  --fg: #e8e8ec;
+  --fg-muted: #9a9fab;
+  --line: #2a2e38;
+  --accent: #1e88e5;
+  --accent-fg: #ffffff;
+  --good: #43a047;
+  --bad: #e53935;
+  --paper: #ffffff;
+  --ink-black: #000000;
+  --ink-red: #e53935;
+  --ink-green: #43a047;
+  --ink-blue: #1e88e5;
+  --ink-gray: #b0b0b0;
+  --radius: 10px;
+  --gutter: 16px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.4;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior: none;
+}
+
+#app {
+  min-height: calc(100dvh - 52px);
+  padding: var(--gutter) var(--gutter) calc(var(--gutter) + var(--safe-bottom));
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0 0 0.4em;
+  line-height: 1.2;
+}
+h1 {
+  font-size: 1.6rem;
+}
+h2 {
+  font-size: 1.2rem;
+}
+h3 {
+  font-size: 1.05rem;
+}
+p {
+  margin: 0 0 0.8em;
+}
+ul,
+ol {
+  margin: 0 0 0.8em;
+  padding-left: 1.2em;
+}
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+  background: var(--bg-elev);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+.small {
+  font-size: 0.875rem;
+}
+.muted {
+  color: var(--fg-muted);
+}
+.center {
+  text-align: center;
+  justify-content: center;
+}
+
+/* --- nav ------------------------------------------------------------------ */
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 52px;
+  padding: var(--safe-top) var(--gutter) 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-elev);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.nav .brand {
+  color: var(--fg);
+  font-weight: 700;
+  font-size: 1.05rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.nav .brand-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: var(--paper);
+  color: var(--ink-black);
+  font-size: 1rem;
+}
+.nav-spacer {
+  flex: 1;
+}
+.nav-link {
+  color: var(--fg-muted);
+  font-weight: 600;
+  padding: 10px 6px;
+}
+body.playing .nav {
+  display: none;
+}
+
+/* --- controls --------------------------------------------------------------- */
+button,
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-elev-2);
+  color: var(--fg);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.btn:hover {
+  text-decoration: none;
+  border-color: var(--fg-muted);
+}
+button.primary,
+.btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+button.big,
+.btn.big {
+  min-height: 52px;
+  padding: 0 22px;
+  font-size: 1.05rem;
+}
+button.tool,
+.btn.tool {
+  min-height: 40px;
+  padding: 0 14px;
+  font-weight: 500;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.like {
+  color: #ff6b81;
+}
+
+input,
+textarea,
+select {
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg-elev-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  width: 100%;
+  min-height: 44px;
+}
+input.invalid {
+  border-color: var(--bad);
+}
+textarea {
+  resize: vertical;
+  min-height: 88px;
+}
+label {
+  display: grid;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.form-grid {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+@media (min-width: 640px) {
+  .form-grid {
+    grid-template-columns: 1fr 2fr;
+  }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.file-btn {
+  position: relative;
+  cursor: pointer;
+}
+.file-btn:focus-within {
+  outline: 2px solid var(--accent);
+}
+
+/* --- layout bits ----------------------------------------------------------- */
+.card {
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+.card.error {
+  border-color: var(--bad);
+  background: #2a1517;
+}
+.card.center {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  padding: 40px 14px;
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.stack {
+  display: grid;
+  gap: 12px;
+}
+.badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--line);
+  color: var(--fg-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  vertical-align: middle;
+}
+.badge.warn {
+  color: #ffb74d;
+  border-color: #ffb74d;
+}
+.notice {
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  font-weight: 600;
+}
+.notice.good {
+  border-color: var(--good);
+  color: #9be29e;
+}
+.notice.bad {
+  border-color: var(--bad);
+  color: #ff8a80;
+}
+.warnings {
+  margin: 0 0 12px;
+  padding: 10px 14px 10px 30px;
+  border-radius: var(--radius);
+  background: #2b2415;
+  border: 1px solid #6b5520;
+  color: #ffd27a;
+}
+.tips {
+  margin: 0;
+  color: var(--fg-muted);
+}
+.tips li {
+  margin: 4px 0;
+}
+.page-head {
+  margin-bottom: 12px;
+}
+.footer {
+  margin-top: 32px;
+}
+
+.progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--fg-muted);
+  font-weight: 600;
+  padding: 10px 0;
+}
+.spinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 3px solid var(--line);
+  border-top-color: var(--accent);
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- thumbnails ------------------------------------------------------------ */
+.thumb {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  background: var(--paper);
+  border-radius: 8px;
+  overflow: hidden;
+  display: block;
+}
+.thumb img,
+.thumb canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: auto;
+}
+.thumb-empty {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  color: #888;
+  font-size: 0.85rem;
+}
+
+/* --- home ------------------------------------------------------------------- */
+.hero {
+  padding: 8px 0 20px;
+}
+.hero h1 {
+  font-size: 2rem;
+}
+.lead {
+  font-size: 1.05rem;
+  max-width: 60ch;
+}
+.cards {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+.game-card {
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.card-thumb {
+  display: block;
+  border-bottom: 1px solid var(--line);
+}
+.card-thumb .thumb {
+  border-radius: 0;
+}
+.card-body {
+  padding: 12px 14px 14px;
+  display: grid;
+  gap: 4px;
+}
+.card-body p {
+  margin: 0;
+}
+.card-body .row {
+  margin-top: 8px;
+}
+.meta {
+  color: var(--fg-muted);
+  font-size: 0.9rem;
+}
+
+/* --- game page -------------------------------------------------------------- */
+.level-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+  display: grid;
+  gap: 10px;
+}
+.level-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+.level-thumb .thumb {
+  width: 120px;
+}
+.level-body h3 {
+  margin-bottom: 2px;
+}
+.level-body p {
+  margin-bottom: 6px;
+}
+@media (min-width: 640px) {
+  .level-row {
+    grid-template-columns: 200px 1fr;
+  }
+  .level-thumb .thumb {
+    width: 200px;
+  }
+}
+
+/* --- game stage ------------------------------------------------------------ */
+.stage-wrap {
+  position: relative;
+  width: 100%;
+  max-width: calc((100dvh - 150px) * 16 / 9);
+  margin: 0 auto 12px;
+}
+.game-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--paper);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.game-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.game-stage.static {
+  display: grid;
+  place-items: center;
+}
+.overlay-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  border-radius: var(--radius);
+}
+.overlay-canvas.pulse {
+  animation: pulse 1.2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+.overlay-toggles {
+  margin-bottom: 8px;
+}
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+  font-weight: 600;
+  cursor: pointer;
+}
+.toggle input {
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  margin: 0;
+  accent-color: var(--accent);
+}
+.win-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 12px;
+  text-align: center;
+  background: rgba(17, 19, 24, 0.82);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.win-overlay h2 {
+  font-size: 1.8rem;
+}
+.publish {
+  margin-top: 8px;
+}
+.publish-status {
+  margin-top: 10px;
+}
+
+/* --- play page -------------------------------------------------------------- */
+.play-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.play-title h1 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+.play-hint {
+  text-align: center;
+}
+body.playing #app {
+  max-width: none;
+}
+
+/* Landscape phone: the game fills the height, chrome shrinks to a strip. */
+@media (orientation: landscape) and (max-height: 500px) {
+  body.playing #app {
+    padding: 4px 8px var(--safe-bottom);
+    min-height: 100dvh;
+  }
+  body.playing .play-head {
+    margin-bottom: 4px;
+  }
+  body.playing .play-title h1 {
+    font-size: 1rem;
+  }
+  body.playing .play-actions .btn,
+  body.playing .play-actions button {
+    min-height: 32px;
+    padding: 0 10px;
+    font-size: 0.85rem;
+  }
+  body.playing .play-hint {
+    display: none;
+  }
+  .stage-wrap {
+    max-width: calc((100dvh - 48px) * 16 / 9);
+    margin-bottom: 0;
+  }
+  .game-stage,
+  .overlay-canvas {
+    border-radius: 4px;
+  }
+}
+
+/* --- draw screen ---------------------------------------------------------- */
+.toolbar .row {
+  gap: 8px;
+}
+.toolbar .legend {
+  margin: 8px 0 0;
+}
+.swatch {
+  width: 48px;
+  min-width: 48px;
+  height: 48px;
+  min-height: 48px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--swatch);
+  border: 3px solid var(--line);
+  box-shadow: inset 0 0 0 2px var(--bg-elev);
+}
+.swatch.active {
+  border-color: var(--paper);
+  transform: scale(1.1);
+}
+.tool.active {
+  border-color: var(--paper);
+  background: var(--bg-elev);
+}
+.draw-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 768px;
+  aspect-ratio: 16 / 9;
+  background: var(--paper);
+  border-radius: 8px;
+  overflow: hidden;
+  touch-action: none;
+  margin: 0 auto;
+  background-image: radial-gradient(#dcdcdc 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+.draw-wrap canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+.draw-wrap .under-canvas {
+  pointer-events: none;
+}
+.draw-wrap .draw-canvas {
+  cursor: crosshair;
+}
+.draw-side {
+  display: grid;
+  gap: 12px;
+}
+@media (min-width: 640px) {
+  .draw-side {
+    grid-template-columns: auto 1fr;
+    align-items: start;
+  }
+}
+.char-canvas {
+  display: block;
+  width: 160px;
+  height: 160px;
+  background: var(--paper);
+  border-radius: 8px;
+  touch-action: none;
+  cursor: crosshair;
+  margin-bottom: 8px;
+  background-image: radial-gradient(#dcdcdc 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+.rules {
+  min-height: 120px;
+}
+
+/* --- remix ---------------------------------------------------------------- */
+.remix-grid {
+  display: grid;
+  gap: 16px;
+}
+@media (min-width: 800px) {
+  .remix-grid {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+.steps li {
+  margin-bottom: 8px;
+}
+
+/* --- tree ----------------------------------------------------------------- */
+.tree,
+.tree ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tree ul {
+  margin-left: 22px;
+  padding-left: 18px;
+  border-left: 2px solid var(--line);
+}
+.tree li {
+  position: relative;
+  padding: 6px 0;
+}
+.tree ul > li::before {
+  content: "";
+  position: absolute;
+  left: -18px;
+  top: 50%;
+  width: 18px;
+  height: 2px;
+  background: var(--line);
+}
+.tree-node {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 12px;
+  align-items: center;
+  max-width: 560px;
+}
+.tree-node.current {
+  border-color: var(--accent);
+}
+.tree-thumb .thumb {
+  width: 110px;
+}
+.tree-body h3 {
+  margin-bottom: 2px;
+}
+.tree-body p {
+  margin-bottom: 6px;
+}
+@media (max-width: 480px) {
+  .tree ul {
+    margin-left: 8px;
+    padding-left: 10px;
+  }
+  .tree ul > li::before {
+    left: -10px;
+    width: 10px;
+  }
+  .tree-node {
+    grid-template-columns: 80px 1fr;
+  }
+  .tree-thumb .thumb {
+    width: 80px;
+  }
+}

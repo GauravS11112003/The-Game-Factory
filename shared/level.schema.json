@@ -1,0 +1,198 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://draw-a-level.local/schemas/level.schema.json",
+  "title": "Level",
+  "description": "Draw-a-Level level document (PLAN.md section 3). Single source of truth; vision/app/models.py and web/src/types.ts mirror it by hand. All coordinates are grid cells, origin top-left, x right, y down. bbox is [x0, y0, x1, y1] inclusive.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "title", "author", "created_at", "source", "grid", "sprites", "components", "entities", "rules", "meta"],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1, "default": 1 },
+    "id": { "$ref": "#/$defs/recordId" },
+    "game_id": { "oneOf": [{ "$ref": "#/$defs/recordId" }, { "type": "null" }], "default": null },
+    "parent_id": { "oneOf": [{ "$ref": "#/$defs/recordId" }, { "type": "null" }], "default": null },
+    "order_index": { "type": "integer", "minimum": 0, "default": 0 },
+    "title": { "type": "string", "minLength": 1 },
+    "author": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "format": "date-time" },
+    "source": { "$ref": "#/$defs/Source" },
+    "grid": { "$ref": "#/$defs/Grid" },
+    "sprites": { "$ref": "#/$defs/Sprites" },
+    "components": { "type": "array", "items": { "$ref": "#/$defs/Component" } },
+    "entities": { "type": "array", "items": { "$ref": "#/$defs/Entity" } },
+    "rules": { "type": "array", "items": { "$ref": "#/$defs/Rule" } },
+    "meta": { "$ref": "#/$defs/Meta" }
+  },
+  "$defs": {
+    "recordId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "description": "Level or game id, e.g. lvl_8f2a1c3d, game_0a1b2c3d, lvl_starter1."
+    },
+    "entityId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_]+$",
+      "description": "Entity id, unique within a level; referenced by rules as collect:<id>, touch:<id>, open:<id>."
+    },
+    "cellX": { "type": "integer", "minimum": 0, "maximum": 47 },
+    "cellY": { "type": "integer", "minimum": 0, "maximum": 26 },
+    "cellPoint": {
+      "type": "array",
+      "prefixItems": [{ "$ref": "#/$defs/cellX" }, { "$ref": "#/$defs/cellY" }],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "bbox": {
+      "type": "array",
+      "description": "[x0, y0, x1, y1] inclusive grid cells.",
+      "prefixItems": [
+        { "$ref": "#/$defs/cellX" },
+        { "$ref": "#/$defs/cellY" },
+        { "$ref": "#/$defs/cellX" },
+        { "$ref": "#/$defs/cellY" }
+      ],
+      "items": false,
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "color": { "type": "string", "enum": ["black", "red", "green", "blue"] },
+    "Source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": { "type": "string", "enum": ["paper", "canvas", "fixture"] },
+        "photo_url": { "type": ["string", "null"], "default": null },
+        "backdrop_url": { "type": ["string", "null"], "default": null, "description": "768x432 PNG; null means the engine draws a plain background." },
+        "template_version": { "type": "integer", "minimum": 1, "default": 1 }
+      }
+    },
+    "Grid": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rows"],
+      "properties": {
+        "w": { "type": "integer", "const": 48, "default": 48 },
+        "h": { "type": "integer", "const": 27, "default": 27 },
+        "cell": { "type": "integer", "const": 16, "default": 16 },
+        "rows": {
+          "type": "array",
+          "description": "27 strings of 48 chars. 0 empty, 1 solid, 2 hazard. Row 0 is the top, row 26 the bottom.",
+          "minItems": 27,
+          "maxItems": 27,
+          "items": { "type": "string", "pattern": "^[012]{48}$" }
+        }
+      }
+    },
+    "Sprites": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "player": { "type": ["string", "null"], "default": null, "description": "URL of the drawn character PNG (32x48 RGBA); null means the default doodle." }
+      }
+    },
+    "Meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "solvable": { "type": ["boolean", "null"], "default": null },
+        "warnings": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "notes_transcript": { "type": "string", "default": "" }
+      }
+    },
+    "Component": {
+      "type": "object",
+      "description": "A connected blob of one ink color found by CV. Kept on the level so remixes can reference parent components and the remix sheet can print their numbers.",
+      "additionalProperties": false,
+      "required": ["id", "color", "bbox", "area_cells"],
+      "properties": {
+        "id": { "type": "integer", "minimum": 1 },
+        "color": { "$ref": "#/$defs/color" },
+        "bbox": { "$ref": "#/$defs/bbox" },
+        "area_cells": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "Entity": {
+      "type": "object",
+      "description": "Point entities (player_start, goal, coin, key, checkpoint) use x/y. Area entities (moving_platform, enemy, door, bounce_pad) use bbox. A cell owned by a dynamic entity (moving_platform, enemy, door) is 0 in grid.rows.",
+      "additionalProperties": false,
+      "required": ["id", "type"],
+      "properties": {
+        "id": { "$ref": "#/$defs/entityId" },
+        "type": {
+          "type": "string",
+          "enum": ["player_start", "goal", "coin", "moving_platform", "enemy", "bounce_pad", "key", "door", "checkpoint"]
+        },
+        "x": { "oneOf": [{ "$ref": "#/$defs/cellX" }, { "type": "null" }] },
+        "y": { "oneOf": [{ "$ref": "#/$defs/cellY" }, { "type": "null" }] },
+        "component_id": { "type": ["integer", "null"], "minimum": 1 },
+        "bbox": { "oneOf": [{ "$ref": "#/$defs/bbox" }, { "type": "null" }] },
+        "image_url": { "type": ["string", "null"], "description": "Crop of the component from the drawing (RGBA PNG); null means the engine draws a placeholder." },
+        "path": {
+          "oneOf": [
+            { "type": "array", "items": { "$ref": "#/$defs/cellPoint" }, "minItems": 2 },
+            { "type": "null" }
+          ],
+          "description": "moving_platform: bbox top-left positions to ping-pong between."
+        },
+        "speed": { "type": ["number", "null"], "minimum": 0, "description": "cells per second" },
+        "patrol": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["dx", "speed"],
+              "properties": {
+                "dx": { "type": "integer", "description": "cells walked to the right of the start before turning" },
+                "speed": { "type": "number", "minimum": 0, "description": "cells per second" }
+              }
+            },
+            { "type": "null" }
+          ]
+        },
+        "strength": { "type": ["number", "null"], "exclusiveMinimum": 0, "description": "bounce_pad multiplier of BOUNCE_VY" },
+        "opens": { "oneOf": [{ "$ref": "#/$defs/entityId" }, { "type": "null" }], "description": "key: id of the door it opens" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "enum": ["player_start", "goal", "coin", "key", "checkpoint"] } } },
+          "then": { "required": ["x", "y"], "properties": { "x": { "type": "integer" }, "y": { "type": "integer" } } }
+        },
+        {
+          "if": { "properties": { "type": { "enum": ["moving_platform", "enemy", "door", "bounce_pad"] } } },
+          "then": { "required": ["bbox"], "properties": { "bbox": { "type": "array" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "moving_platform" } } },
+          "then": { "required": ["path"], "properties": { "path": { "type": "array" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "enemy" } } },
+          "then": { "required": ["patrol"], "properties": { "patrol": { "type": "object" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "key" } } },
+          "then": { "required": ["opens"], "properties": { "opens": { "type": "string" } } }
+        }
+      ]
+    },
+    "Rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["when", "then"],
+      "properties": {
+        "when": {
+          "type": "string",
+          "pattern": "^(collect:[A-Za-z0-9_]+|touch:[A-Za-z0-9_]+|timer:[0-9]+)$",
+          "description": "collect:<entity id>, touch:<entity id>, timer:<seconds>"
+        },
+        "then": {
+          "type": "string",
+          "pattern": "^(open:[A-Za-z0-9_]+|win|lose)$",
+          "description": "open:<entity id>, win, lose"
+        }
+      }
+    }
+  }
+}

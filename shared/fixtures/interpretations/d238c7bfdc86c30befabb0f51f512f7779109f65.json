@@ -1,0 +1,40 @@
+{
+  "title": "Rules Demo",
+  "annotation_component_ids": [
+    1
+  ],
+  "bindings": [
+    {
+      "component_id": 2,
+      "behavior": "move",
+      "params": {
+        "dx": 10,
+        "speed": 2
+      }
+    },
+    {
+      "component_id": 6,
+      "behavior": "patrol",
+      "params": {
+        "dx": 6,
+        "speed": 3
+      }
+    },
+    {
+      "component_id": 3,
+      "behavior": "door",
+      "params": {}
+    },
+    {
+      "component_id": 5,
+      "behavior": "key",
+      "params": {
+        "opens_component_id": 3
+      }
+    }
+  ],
+  "timer_seconds": 90,
+  "notes_transcript": "platform moves right 10. enemy walks. key opens the door. 90 seconds",
+  "safety_ok": true,
+  "safety_reason": null
+}
