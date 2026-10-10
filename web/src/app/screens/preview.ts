@@ -234,7 +234,27 @@ export function previewScreen(root: HTMLElement, draftId: string, query: URLSear
   const handle = h('button', { type: 'button', class: 'sheet-handle', 'aria-label': t('preview.report'), onclick: () => report.classList.toggle('open') });
   const report = h('aside', { class: 'report card paper', data: { tab: 'saw' } }, handle, tabs, noteBox, sawSec, changedSec, asksSec, sugSec, playsSec, footer);
   const layout = h('div', { class: 'preview-layout' }, stage.el, report);
-  root.append(h('div', { class: 'preview' }, top, layout));
+  // A fatal build error replaces the "still building" wait with the reason and a way out.
+  const fatalBox = h('div', { class: 'fatal-panel card paper hidden', role: 'alert' });
+  root.append(h('div', { class: 'preview' }, top, fatalBox, layout));
+
+  function fatalError(): { message_key: string; args?: Record<string, unknown> } | null {
+    return model.errors.slice().reverse().find((e) => e.fatal) ?? null;
+  }
+
+  function renderFatal(): void {
+    const e = fatalError();
+    fatalBox.classList.toggle('hidden', !e || !!currentView());
+    if (!e || currentView()) return;
+    const isPaper = store.draftDoc(draftId) == null;
+    fatalBox.replaceChildren(
+      h('p', { class: 'bad' }, tMaybe(e.message_key, e.args ?? {}) ?? t('error.build_failed')),
+      h('div', { class: 'row wrap' },
+        isPaper
+          ? h('button', { type: 'button', class: 'pill primary', onclick: () => navigate('#/scan') }, icon('camera'), t('scan.title'))
+          : h('button', { type: 'button', class: 'pill primary', onclick: () => backToDrawing(false) }, t('editor.back_to_drawing')),
+        h('button', { type: 'button', class: 'pill', onclick: () => navigate('#/') }, t('ui.home'))));
+  }
 
   // Phone: the report is a swipe-up sheet (§7.10 layout).
   let swipeY: number | null = null;
@@ -412,7 +432,10 @@ export function previewScreen(root: HTMLElement, draftId: string, query: URLSear
 
   function gate(): Gate {
     const v = currentView();
-    if (!v) return { ok: false, key: 'preview.wait_build' };
+    if (!v) {
+      const e = fatalError();
+      return e ? { ok: false, key: e.message_key, args: e.args ?? {} } : { ok: false, key: 'preview.wait_build' };
+    }
     const tier = v.tier;
     if (!v.level.compiled.entities.some((e) => e.type === 'goal')) return { ok: false, key: 'publish.needs_goal', fix: { label: t('editor.back_to_drawing'), run: () => backToDrawing(false) } };
     const reqUndone = model.editsFor(tier).filter((e) => e.required && model.statusOf(e) === 'undone');
@@ -1182,6 +1205,7 @@ export function previewScreen(root: HTMLElement, draftId: string, query: URLSear
   function renderAll(): void {
     if (disposed) return;
     renderTop();
+    renderFatal();
     renderNote();
     renderSaw();
     renderChanged();

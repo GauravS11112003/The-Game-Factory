@@ -656,9 +656,15 @@ class Run:
                 parent_lookup=lambda lid: (db_v2.get_level_row(lid) or {}).get("level"))
         except Exception as e:  # noqa: BLE001 - ScanV2Error carries the kid-facing message
             log.info("scan failed: %s", e)
-            self.stage("cv", "failed")
             msg = _as_dict(getattr(e, "message", None))
             key = msg.get("key") if isinstance(msg, dict) and msg.get("key") else "error.no_drawing"
+            # No printed template in the photo (a drawing on plain paper, a whiteboard, a screenshot of a game):
+            # read the whole picture as a drawing instead of giving up.
+            if key == "error.paper_missing" and len(req.photos) == 1:
+                free = await self.scan_free_picture(req.photos[0])
+                if free is not None:
+                    return free
+            self.stage("cv", "failed")
             self.emit("error", {"message_key": key, "args": (msg or {}).get("args") or {}, "fatal": True})
             return None
         ink = _as_dict(getattr(scan, "ink", None))
@@ -730,6 +736,27 @@ class Run:
                      "scanned_at": db_v2.now_iso()} for sh in ink.get("sheets") or []])
             except Exception as e:  # noqa: BLE001 - the tray checklist is a convenience, never a failed build
                 log.info("pack %s sheets not recorded: %s", pack_id, e)
+        self.stage("cv", "done")
+        return ink
+
+    async def scan_free_picture(self, photo: bytes) -> dict[str, Any] | None:
+        """Any picture without the printed sheet's markers → InkDoc via the raster path (screens from the aspect
+        ratio). Returns None when the picture holds no usable ink."""
+        try:
+            from app.cv.raster_ingest import ingest_raster  # type: ignore[import-not-found]  # lane C
+            ink_doc = await asyncio.to_thread(ingest_raster, photo, 0, source="paper")
+        except Exception as e:  # noqa: BLE001 - fall through to the original paper error
+            log.info("free-picture scan failed: %s", e)
+            return None
+        ink = _as_dict(ink_doc)
+        if not isinstance(ink, dict) or not ink.get("strokes"):
+            return None
+        drafts.write_bytes(self.id, "sheets/1.jpg", photo)
+        for sh in ink.get("sheets") or []:
+            if int(sh.get("index", 0)) == 0:
+                sh["photo_url"] = f"/uploads/drafts/{self.id}/sheets/1.jpg"
+        self.mutate(lambda st: st.update({"scan_complete": True, "playable_screens": len(ink.get("sheets") or []) or 1}))
+        self.warn("warning.free_picture", {}, once=True)
         self.stage("cv", "done")
         return ink
 

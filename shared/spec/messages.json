@@ -259,7 +259,8 @@
     "error.not_found": "I couldn't find that.",
     "error.bad_request": "Something was missing. Try again?",
     "error.rate_limited": "Slow down a little, then try again.",
-    "error.paper_missing": "I couldn't find the paper corners. Show the whole sheet.",
+    "warning.free_picture": "No printed sheet found, so I read your whole picture as a drawing.",
+    "error.paper_missing": "I couldn't find the paper corners. Show the whole sheet, or try a clear photo of your drawing.",
 
     "publish.ok": "Published! Share it with a friend.",
     "publish.unsolvable": "Nobody can finish this yet. Fix the red part first.",
