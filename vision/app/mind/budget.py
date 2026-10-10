@@ -11,7 +11,7 @@ from app.mind import ledger
 # Conservative pre-call estimates (§3.14) so a call that would cross the cap is not started.
 ESTIMATE_USD: dict[str, float] = {
     "perceive": 0.05, "design": 0.06, "refine": 0.04, "critic": 0.04, "plan": 0.04, "creature": 0.02,
-    "moderate": 0.02, "look": 0.08,
+    "moderate": 0.02, "look": 0.08, "handwriting": 0.02,
 }
 
 

@@ -18,4 +18,4 @@ Writing
 
 Code clamps every number to the band (for example, easy gaps are 2 to 4 cells, hard gaps 6 to 8 with a 3-cell run-up), lays the beats left to right along a ground line, stretches flats and rests to fill the screens, and inserts checkpoints so no segment costs more than about 30 seconds of replay. If the bot finds a beat impossible, a deterministic fixer shrinks it first; you may be asked once more with the failing beat described in plain words. The same generator authors the game's Starter World, so plans that read like a hand-made level are the goal: a clear idea per section, variety between sections, and a satisfying final climb or run to the flag.
 
-Use only beat kinds and values from the catalogue. Keep the output concise.
+Every beat in the output lists all fields: fill the ones its kind uses (see the catalogue) and leave the others at none, 0 or false. Use only beat kinds and values from the catalogue. Keep the output concise.

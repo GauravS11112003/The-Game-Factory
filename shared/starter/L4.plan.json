@@ -1,0 +1,155 @@
+{
+  "title": "Keyhole Castle",
+  "theme": "notebook",
+  "screens": 5,
+  "band": "normal",
+  "kid_summary": "Find the key, survive the keep.",
+  "safety_ok": true,
+  "sections": [
+    {
+      "role": "teach",
+      "beats": [
+        {
+          "kind": "flat",
+          "length": 8,
+          "enemy": "none",
+          "coins": 3,
+          "spikes": "none"
+        },
+        {
+          "kind": "enemy_gauntlet",
+          "archetype": "crusher",
+          "n": 2
+        },
+        {
+          "kind": "flat",
+          "length": 6,
+          "enemy": "none",
+          "coins": 0,
+          "spikes": "none"
+        },
+        {
+          "kind": "gap",
+          "width": 4,
+          "floor": "void"
+        },
+        {
+          "kind": "flat",
+          "length": 8,
+          "enemy": "walker",
+          "coins": 3,
+          "spikes": "none"
+        }
+      ]
+    },
+    {
+      "role": "test",
+      "beats": [
+        {
+          "kind": "tower",
+          "tiers": 3,
+          "rise": 3,
+          "oneway": true
+        },
+        {
+          "kind": "flat",
+          "length": 8,
+          "enemy": "none",
+          "coins": 0,
+          "spikes": "none"
+        },
+        {
+          "kind": "checkpoint"
+        },
+        {
+          "kind": "gap",
+          "width": 5,
+          "floor": "spikes"
+        },
+        {
+          "kind": "floaters",
+          "n": 3,
+          "dy": 2,
+          "spacing": 3,
+          "oneway": false
+        }
+      ]
+    },
+    {
+      "role": "twist",
+      "beats": [
+        {
+          "kind": "step",
+          "rise": -4,
+          "length": 4
+        },
+        {
+          "kind": "spring_up",
+          "height": 5
+        },
+        {
+          "kind": "flat",
+          "length": 10,
+          "enemy": "chaser",
+          "coins": 0,
+          "spikes": "none"
+        },
+        {
+          "kind": "key",
+          "place": "guarded"
+        },
+        {
+          "kind": "stairs",
+          "n": 3,
+          "rise": -2,
+          "run": 3
+        },
+        {
+          "kind": "checkpoint"
+        }
+      ]
+    },
+    {
+      "role": "test",
+      "beats": [
+        {
+          "kind": "saw_corridor",
+          "length": 12,
+          "saws": 2
+        },
+        {
+          "kind": "crumble_run",
+          "n": 4,
+          "floor": "void"
+        },
+        {
+          "kind": "pillars",
+          "n": 3,
+          "spacing": 3,
+          "hazard": "spikes"
+        },
+        {
+          "kind": "door"
+        },
+        {
+          "kind": "checkpoint"
+        }
+      ]
+    },
+    {
+      "role": "finale",
+      "beats": [
+        {
+          "kind": "stairs",
+          "n": 3,
+          "rise": 2,
+          "run": 4
+        },
+        {
+          "kind": "goal",
+          "style": "flag"
+        }
+      ]
+    }
+  ]
+}

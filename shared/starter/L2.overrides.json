@@ -1,0 +1,150 @@
+{
+  "id": "L2",
+  "seed": 1002,
+  "designer_note": "Land on the safe side, hop low under the spiky roof.",
+  "patches": [
+    {
+      "beat": "*",
+      "auto_checkpoints": false
+    },
+    {
+      "beat": "0.5",
+      "coins": 0
+    },
+    {
+      "beat": "1.0",
+      "pillar_w": 2
+    },
+    {
+      "beat": "1.1",
+      "floor": "spikes",
+      "ledge_w": 6
+    },
+    {
+      "beat": "2.1",
+      "floor_strips": true,
+      "strip_every": 4,
+      "strip_w": 1
+    },
+    {
+      "beat": "2.2",
+      "enemy_interval": 1.6
+    },
+    {
+      "beat": "3.3",
+      "enemy_speed": 1.5
+    },
+    {
+      "beat": "3.4",
+      "over": "spikes",
+      "floater_w": 6
+    },
+    {
+      "beat": "3.1",
+      "coins": 0
+    }
+  ],
+  "draw": [
+    {
+      "kind": "spikes",
+      "beat": "0.1",
+      "dx": 5,
+      "dy": -2,
+      "w": 3,
+      "face": "top"
+    },
+    {
+      "kind": "platform",
+      "beat": "0.5",
+      "dx": 2,
+      "dy": -3,
+      "w": 6
+    },
+    {
+      "kind": "spikes",
+      "beat": "0.5",
+      "dx": 2,
+      "dy": 0,
+      "w": 2,
+      "face": "top"
+    },
+    {
+      "kind": "spikes",
+      "beat": "0.5",
+      "dx": 6,
+      "dy": 0,
+      "w": 2,
+      "face": "top"
+    },
+    {
+      "kind": "big_coin",
+      "beat": "0.5",
+      "dx": 5,
+      "dy": -0.9
+    },
+    {
+      "kind": "enemy",
+      "beat": "1.1",
+      "dx": 4,
+      "dy": -9,
+      "arch": "walker",
+      "params": {
+        "speed": 1.5
+      }
+    },
+    {
+      "kind": "platform",
+      "beat": "2.0",
+      "dx": -6,
+      "dy": -4,
+      "w": 3
+    },
+    {
+      "kind": "big_coin",
+      "beat": "2.0",
+      "dx": -4.5,
+      "dy": -4.9
+    },
+    {
+      "kind": "platform",
+      "beat": "2.2",
+      "dx": 3,
+      "dy": -4,
+      "w": 5
+    },
+    {
+      "kind": "spikes",
+      "beat": "2.2",
+      "dx": 3,
+      "dy": -4,
+      "w": 2,
+      "face": "top"
+    },
+    {
+      "kind": "big_coin",
+      "beat": "2.2",
+      "dx": 7,
+      "dy": -4.9
+    },
+    {
+      "kind": "enemy",
+      "beat": "3.4",
+      "dx": 6,
+      "dy": -1,
+      "arch": "walker",
+      "params": {
+        "speed": 1.5
+      }
+    },
+    {
+      "kind": "enemy",
+      "beat": "3.4",
+      "dx": 24,
+      "dy": -1,
+      "arch": "walker",
+      "params": {
+        "speed": 1.5
+      }
+    }
+  ]
+}

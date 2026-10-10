@@ -1,0 +1,138 @@
+{
+  "title": "Spike Garden",
+  "theme": "sketchbook",
+  "screens": 4,
+  "band": "normal",
+  "kid_summary": "Spikes point away from where they sit.",
+  "safety_ok": true,
+  "sections": [
+    {
+      "role": "teach",
+      "beats": [
+        {
+          "kind": "flat",
+          "length": 12,
+          "enemy": "none",
+          "coins": 3,
+          "spikes": "middle"
+        },
+        {
+          "kind": "step",
+          "rise": 2,
+          "length": 8
+        },
+        {
+          "kind": "step",
+          "rise": -2,
+          "length": 4
+        },
+        {
+          "kind": "gap",
+          "width": 3,
+          "floor": "spikes"
+        },
+        {
+          "kind": "flat",
+          "length": 8,
+          "enemy": "none",
+          "coins": 0,
+          "spikes": "far_end"
+        },
+        {
+          "kind": "rest",
+          "length": 10
+        }
+      ]
+    },
+    {
+      "role": "test",
+      "beats": [
+        {
+          "kind": "pillars",
+          "n": 3,
+          "spacing": 3,
+          "hazard": "spikes"
+        },
+        {
+          "kind": "tower",
+          "tiers": 4,
+          "rise": 3,
+          "oneway": true
+        },
+        {
+          "kind": "flat",
+          "length": 6,
+          "enemy": "none",
+          "coins": 0,
+          "spikes": "none"
+        },
+        {
+          "kind": "checkpoint"
+        }
+      ]
+    },
+    {
+      "role": "twist",
+      "beats": [
+        {
+          "kind": "step",
+          "rise": -12,
+          "length": 4
+        },
+        {
+          "kind": "ceiling",
+          "length": 16,
+          "spikes": true,
+          "headroom": 4
+        },
+        {
+          "kind": "flat",
+          "length": 10,
+          "enemy": "hopper",
+          "coins": 0,
+          "spikes": "none"
+        },
+        {
+          "kind": "gap",
+          "width": 4,
+          "floor": "spikes"
+        }
+      ]
+    },
+    {
+      "role": "finale",
+      "beats": [
+        {
+          "kind": "checkpoint"
+        },
+        {
+          "kind": "rest",
+          "length": 3
+        },
+        {
+          "kind": "step",
+          "rise": 1,
+          "length": 2
+        },
+        {
+          "kind": "flat",
+          "length": 12,
+          "enemy": "walker",
+          "coins": 3,
+          "spikes": "none"
+        },
+        {
+          "kind": "floaters",
+          "n": 3,
+          "dy": 1,
+          "spacing": 3,
+          "oneway": true
+        },
+        {
+          "kind": "goal",
+          "style": "flag"
+        }
+      ]
+    }
+  ]
+}

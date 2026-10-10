@@ -3,6 +3,10 @@
 Each persisted line is an envelope `{"seq": n, "event": name, "data": payload}` (vision/app/spec/events.py
 BuildEvent). On the wire: `id: <seq>`, `event: <name>`, `data: <payload JSON>`.
 
+A draft has one `events.jsonl`; every build on the draft (the first build, Redesign, "Why is this hard?") appends
+to it, so seq is monotonic per draft and `Last-Event-ID` resumes exactly. A build's own stream starts at its
+`builds.first_seq` and ends at its `done`.
+
     cd vision && uv run --no-sync python -m app.build.events --write-sample
 regenerates shared/spec/conformance/events/sample_build.jsonl from the core's stub fixtures.
 """
@@ -11,6 +15,7 @@ from __future__ import annotations
 import argparse
 import copy
 import json
+import os
 import subprocess
 import threading
 from pathlib import Path
@@ -27,25 +32,77 @@ class EventSink(Protocol):
     def closed(self) -> bool: ...
 
 
+_PATH_LOCKS: dict[str, threading.Lock] = {}
+_PATH_LOCKS_GUARD = threading.Lock()
+
+
+def _lock_for(path: Path) -> threading.Lock:
+    key = str(path)
+    with _PATH_LOCKS_GUARD:
+        lock = _PATH_LOCKS.get(key)
+        if lock is None:
+            lock = _PATH_LOCKS[key] = threading.Lock()
+        return lock
+
+
+def last_seq(path: Path) -> int:
+    """The seq of the last complete line (0 for a missing or empty file). Reads only the file's tail."""
+    if not path.exists():
+        return 0
+    size = path.stat().st_size
+    if size == 0:
+        return 0
+    with path.open("rb") as f:
+        chunk = 1 << 16
+        pos = size
+        buf = b""
+        while pos > 0:
+            step = min(chunk, pos)
+            pos -= step
+            f.seek(pos)
+            buf = f.read(step) + buf
+            lines = [ln for ln in buf.split(b"\n") if ln.strip()]
+            # the first element may be a partial line unless we reached the file start
+            usable = lines if pos == 0 else lines[1:]
+            for ln in reversed(usable):
+                try:
+                    return int(json.loads(ln)["seq"])
+                except (ValueError, KeyError, TypeError):
+                    continue
+    return 0
+
+
 class JsonlEventSink:
-    """Appends envelopes to drafts/<draft_id>/events.jsonl; seq continues from what is already there."""
+    """Appends envelopes to drafts/<draft_id>/events.jsonl; seq continues from what is already there.
+
+    Several sinks may write the same file (a redesign while a late plan is still arriving): writes and seq
+    allocation share one per-file lock, and seq is re-read from the file under that lock."""
 
     def __init__(self, path: Path) -> None:
         self.path = path
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self._lock = threading.Lock()
-        self._seq = len(read_events(path))
+        self._lock = _lock_for(path)
         self._closed = False
+        self.first_seq: int | None = None
+        self.last: int = last_seq(path)
 
     def emit(self, event: str, data: dict[str, Any]) -> int:
         with self._lock:
-            self._seq += 1
-            line = json.dumps({"seq": self._seq, "event": event, "data": data}, separators=(",", ":"), ensure_ascii=False)
+            seq = last_seq(self.path) + 1
+            line = json.dumps({"seq": seq, "event": event, "data": data}, separators=(",", ":"), ensure_ascii=False)
             with self.path.open("a", encoding="utf-8") as f:
                 f.write(line + "\n")
+                f.flush()
+            if self.first_seq is None:
+                self.first_seq = seq
+            self.last = seq
             if event == "done":
                 self._closed = True
-            return self._seq
+            return seq
+
+    def next_seq(self) -> int:
+        with self._lock:
+            return last_seq(self.path) + 1
 
     def closed(self) -> bool:
         return self._closed
@@ -57,10 +114,38 @@ def read_events(path: Path, since: int = 0) -> list[dict[str, Any]]:
     out = []
     for line in path.read_text(encoding="utf-8").splitlines():
         if line.strip():
-            env = json.loads(line)
-            if env["seq"] > since:
+            try:
+                env = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if env.get("seq", 0) > since:
                 out.append(env)
     return out
+
+
+def read_events_from(path: Path, offset: int) -> tuple[list[dict[str, Any]], int]:
+    """Complete lines appended after byte `offset`; returns (envelopes, new offset). A partially written last line
+    is left for the next read."""
+    try:
+        size = os.stat(path).st_size
+    except FileNotFoundError:
+        return [], offset
+    if size <= offset:
+        return [], offset if size == offset else 0
+    with path.open("rb") as f:
+        f.seek(offset)
+        data = f.read(size - offset)
+    end = data.rfind(b"\n")
+    if end < 0:
+        return [], offset
+    out = []
+    for raw in data[: end + 1].split(b"\n"):
+        if raw.strip():
+            try:
+                out.append(json.loads(raw))
+            except json.JSONDecodeError:
+                continue
+    return out, offset + end + 1
 
 
 def format_sse(env: dict[str, Any]) -> str:

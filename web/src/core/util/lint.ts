@@ -12,7 +12,7 @@ export interface LintIssue {
 }
 
 /** Files that run only in Node (they may import node:* modules). Paths are relative to web/src/core. */
-export const NODE_ONLY = [/^cli\.ts$/, /^worker\/main\.ts$/, /^worker\/pool\.ts$/, /^worker\/stub\.ts$/, /^__tests__\//];
+export const NODE_ONLY = [/^cli\.ts$/, /^worker\/main\.ts$/, /^worker\/pool\.ts$/, /^worker\/thread\.ts$/, /^worker\/stub\.ts$/, /^__tests__\//];
 /** Directories whose step code must be deterministic (§5.2). */
 export const DETERMINISTIC_DIRS = ['sim/', 'bot/', 'replay/'];
 

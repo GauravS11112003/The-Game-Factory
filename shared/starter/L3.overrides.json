@@ -1,0 +1,112 @@
+{
+  "id": "L3",
+  "seed": 1003,
+  "designer_note": "Don't stop on the crumbly bits, and ride past the saws.",
+  "patches": [
+    {
+      "beat": "*",
+      "auto_checkpoints": false
+    },
+    {
+      "beat": "1.0",
+      "gap": 2,
+      "delay_s": 0.65
+    },
+    {
+      "beat": "1.2",
+      "platforms": 1,
+      "speed_cs": 2.5
+    },
+    {
+      "beat": "2.0",
+      "coins": 4
+    },
+    {
+      "beat": "3.3",
+      "platforms": 1,
+      "speed_cs": 2.5
+    },
+    {
+      "beat": "3.0",
+      "path": 4
+    }
+  ],
+  "draw": [
+    {
+      "kind": "saw",
+      "beat": "2.0",
+      "dx": 2,
+      "dy": -5.75,
+      "r": 0.75
+    },
+    {
+      "kind": "saw",
+      "beat": "2.0",
+      "dx": 4.5,
+      "dy": -5.75,
+      "r": 0.75
+    },
+    {
+      "kind": "spring",
+      "beat": "2.1",
+      "dx": 2,
+      "dy": 0,
+      "strength": 1.0
+    },
+    {
+      "kind": "big_coin",
+      "beat": "2.1",
+      "dx": 2,
+      "dy": -7
+    },
+    {
+      "kind": "saw",
+      "beat": "2.2",
+      "dx": 1.5,
+      "dy": -3.8,
+      "r": 0.75,
+      "dir": "up",
+      "cells": 3,
+      "speed": 3
+    },
+    {
+      "kind": "big_coin",
+      "beat": "2.2",
+      "dx": 1.5,
+      "dy": -5.2
+    },
+    {
+      "kind": "saw",
+      "beat": "2.3",
+      "dx": -0.9,
+      "dy": -7,
+      "r": 0.75
+    },
+    {
+      "kind": "saw",
+      "beat": "3.3",
+      "dx": 5,
+      "dy": -4,
+      "r": 0.75,
+      "dir": "down",
+      "cells": 2,
+      "speed": 2
+    },
+    {
+      "kind": "saw",
+      "beat": "3.3",
+      "dx": 9,
+      "dy": -4,
+      "r": 0.75,
+      "dir": "down",
+      "cells": 2,
+      "speed": 2
+    },
+    {
+      "kind": "big_coin",
+      "beat": "3.3",
+      "dx": 7,
+      "dy": -5.2
+    }
+  ]
+}

@@ -63,6 +63,20 @@ export const PAPER = {
   omr_fill: 0.15,
   photo_long_edge_px: 2400,
   qr_regex: '^dal2\\|(p|rules|lib)\\|[A-Za-z0-9_-]{4,32}(\\|[1-6]/[1-6])?$',
+  // lane C's vectorize constants (C-1 §3; read by Python from shared/template_spec_v2.json, mirrored for the spec)
+  dot_max_aspect: 2.0,
+  tap_dot_max_side_c: 1.3,
+  tap_dot_min_fill: 0.6,
+  tap_dot_min_circ: 0.7,
+  blob_core_min_c2: 1.0,
+  blob_hole_max_c2: 0.5,
+  blob_approx_eps_c: 0.08,
+  spur_keep_protrusion_c: 0.25,
+  closed_gap_c: 0.4,
+  closed_gap_w: 2,
+  end_extend_max_dt: 1.5,
+  raster_px_per_cell: 32,
+  paper_px_per_cell: 50,
 } as const;
 
 // ---- grouping (§3.3, core/scene/group.ts) ----------------------------------------------------------
@@ -570,6 +584,59 @@ export const PROMPT_LEVEL = {
     spacing: { easy: [2, 3], normal: [3, 4], hard: [4, 6] },
     hard_landing_c: 2,
     tower_rise: { easy: [3, 3], normal: [3, 3], hard: [3, 4] },
+    // the rest of the beat catalogue (§8.3 "code chooses the exact geometry")
+    stairs_n: [2, 5],
+    stairs_run: { easy: [3, 5], normal: [2, 4], hard: [2, 3] },
+    floaters_n: [2, 5],
+    floaters_dy: { easy: [1, 2], normal: [1, 3], hard: [2, 3] },
+    floater_w_c: { easy: 4, normal: 3, hard: 2 },
+    pillars_n: [2, 5],
+    pillar_w_c: { easy: 3, normal: 2, hard: 2 },
+    ceiling_len: [6, 24],
+    ceiling_headroom: [2, 6],
+    tap_corridor_headroom_c: 4, // a tap hop (1.1 cells) clears 1-cell floor strips; a full jump hits the ceiling
+    wall_height: { easy: [1, 2], normal: [2, 3], hard: [3, 4] },
+    bridge_gap: { easy: [5, 6], normal: [6, 9], hard: [8, 12] },
+    bridge_platforms: { easy: 1, normal: 2, hard: 3 },
+    bridge_platform_w_c: 3,
+    lift_rise: [4, 8],
+    crumble_n: { easy: [2, 4], normal: [3, 5], hard: [4, 6] },
+    crumble_gap_c: { easy: 1, normal: 2, hard: 2 },
+    crumble_w_c: 2,
+    crumble_delay_s: { easy: 0.8, normal: 0.5, hard: 0.4 },
+    saw_corridor_len: [8, 24],
+    saws: { easy: [1, 2], normal: [1, 3], hard: [2, 4] },
+    saw_path_c: 3,
+    tower_tiers: [2, 5],
+    tower_ledge_w_c: 4,
+    gauntlet_n: { easy: [1, 1], normal: [1, 2], hard: [2, 4] },
+    gauntlet_spacing_c: 5,
+    spring_height: [4, 6],
+    flat_len: [3, 30],
+    rest_len: [3, 20],
+    spikes_w_c: { easy: 2, normal: 3, hard: 3 },
+    enemy_speed: { easy: 'slow', normal: 'normal', hard: 'fast' },
+  },
+  layout: {
+    ground_row: 22,
+    min_row: 7, // the highest ground or ledge top a beat may reach
+    max_row: 25, // the lowest ground top
+    pit_depth_rows: 3, // a spike pit floor sits this far below the ground
+    lava_drop_rows: 2, // a lava surface sits this far below the ground
+    start_flat_c: 6,
+    end_tail_c: 3,
+    goal_room_c: 16, // a beat that would start this close to the right edge is skipped (the goal always fits)
+    stretch_max_c: 14, // per flat / rest when filling 48·screens
+    checkpoint_every_c: 56,
+    checkpoint_min_x_c: 24,
+    checkpoint_flat_c: 4,
+    marker_w_c: 0.75,
+    solid_w_c: 1.0, // a fat line reads as a solid ledge (N6: w > 0.9)
+    spike_w_c: 0.5,
+    pole_w_c: 0.4,
+    wobble_c: 0.06,
+    wobble_knot_c: 2,
+    resample_c: 0.5,
   },
   fixer_max: 3,
   plan_retries: 1,

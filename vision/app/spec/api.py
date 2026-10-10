@@ -13,13 +13,14 @@ from typing_extensions import TypeAliasType
 
 from app.spec.behavior import Behavior
 from app.spec.common import (
+    Archetype,
     ChallengeBand, Dial, DifficultyWish, LlmMode, MessageArgs, MessageRef, Role, SetpieceKind, Spec, Tier,
 )
 from app.spec.edits import Candidate, EditOp, EditRecord
 from app.spec.events import BuildEvent
 from app.spec.ink import InkDoc, InkStroke
 from app.spec.level import LevelV2
-from app.spec.library import LibraryType
+from app.spec.library import LibraryArt, LibrarySymbol, LibraryType
 from app.spec.report import PlaytestReport
 from app.spec.rules import GameRules
 from app.spec.scene import SceneGraph
@@ -296,7 +297,7 @@ WorkerMethod = TypeAliasType(
     Literal[
         "ping", "perceive_heuristic", "merge_perception", "parse_rules", "build", "build_tiers", "apply_plan",
         "transfer_plan", "digest", "analyze", "layout_plan", "keyword_plan", "remix_diff", "migrate_v1", "verify_run",
-        "level_hash", "art_svg",
+        "level_hash", "art_svg", "generate_level", "rules_check", "library_check",
     ],
 )
 
@@ -442,6 +443,10 @@ class GameCreate(Spec):
 class AffectedLevel(Spec):
     level_id: str
     reason_key: str
+    # v1.3 (optional): can a Faithful repair fix it under the new rules? The repairs are shown per level (§8.2).
+    repairable: bool | None = None
+    repairs: list[EditRecord] = Field(default_factory=list)
+    level_hash: str | None = None  # the repaired level's hash, when repairable
 
 
 class RulesCheck(Spec):
@@ -491,6 +496,32 @@ class PromptLevelBody(Spec):
 class RulesSheetResult(Spec):
     patch: dict[str, Any]
     asks: list[MessageRef] = Field(default_factory=list)
+    # v1.3 (C-6): the "My world is…" line as a draft-relative JPEG, and the game the sheet's QR names
+    story_crop: str | None = None
+    game_id: str | None = None
+
+
+class LibraryDraft(Spec):
+    """One box of a scanned Library Sheet (§8.1), before the creator saves it as a LibraryType (C-6)."""
+
+    box: int
+    name: str
+    name_source: Literal["default", "model", "kid"] = "default"
+    name_has_ink: bool = False
+    name_crop: str | None = None
+    letter: str | None = None
+    kind: Literal["creature"] = "creature"
+    archetype: Archetype | None = None
+    speed: Literal["slow", "normal", "fast"] = "normal"
+    spiky: bool = False
+    behavior: Behavior
+    collision: Literal["solid", "one_way", "none"] = "none"
+    art: LibraryArt
+    symbol: LibrarySymbol | None = None
+    symbol_samples: int = 0
+    ticks: dict[str, float] = Field(default_factory=dict)
+    asks: list[MessageRef] = Field(default_factory=list)
+    warnings: list[MessageRef] = Field(default_factory=list)
 
 
 EXPORTS: list[Any] = [
@@ -502,6 +533,6 @@ EXPORTS: list[Any] = [
     Health, BuildAccepted, DraftState, EditsBody, TierSummary, TierSetSummary, AnswerBody, DialBody, Accepted,
     DeathEvent, Telemetry, CriticBody, PublishBody, ApiMessage, LevelStats, LevelResponse, AttemptsBody, GameCreate,
     AffectedLevel, RulesCheck, PackCreate, PackCreated, CreatureSpecJson, InterpretBody, InterpretResult,
-    PromptLevelBody, RulesSheetResult,
+    PromptLevelBody, RulesSheetResult, LibraryDraft,
 ]
 ROOT = None

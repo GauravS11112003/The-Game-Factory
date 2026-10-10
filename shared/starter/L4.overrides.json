@@ -1,0 +1,95 @@
+{
+  "id": "L4",
+  "seed": 1004,
+  "designer_note": "Watch the crushers shake, grab the key up top, then climb the keep.",
+  "patches": [
+    {
+      "beat": "*",
+      "auto_checkpoints": false
+    },
+    {
+      "beat": "0.1",
+      "headroom": 6,
+      "spacing": 5
+    },
+    {
+      "beat": "0.4",
+      "enemy_speed": 2
+    },
+    {
+      "beat": "1.0",
+      "floor": "spikes"
+    },
+    {
+      "beat": "2.2",
+      "enemy_speed": 4
+    },
+    {
+      "beat": "3.0",
+      "speed_cs": 4,
+      "mode": "vertical",
+      "path": 4
+    },
+    {
+      "beat": "3.1",
+      "gap": 2
+    }
+  ],
+  "draw": [
+    {
+      "kind": "enemy",
+      "beat": "1.1",
+      "dx": 6,
+      "dy": 0,
+      "arch": "shooter",
+      "w": 1.25,
+      "h": 1.5,
+      "params": {
+        "facing": "toward_player",
+        "interval": 2.5
+      }
+    },
+    {
+      "kind": "big_coin",
+      "beat": "0.1",
+      "dx": 6.5,
+      "dy": -2.5
+    },
+    {
+      "kind": "big_coin",
+      "beat": "1.4",
+      "dx": 7.5,
+      "dy": -6.4
+    },
+    {
+      "kind": "big_coin",
+      "beat": "2.2",
+      "dx": 6,
+      "dy": -4.6
+    },
+    {
+      "kind": "enemy",
+      "beat": "4.0",
+      "dx": 6,
+      "dy": -5,
+      "arch": "flyer",
+      "params": {
+        "pattern": "circle",
+        "radius": 2,
+        "period": 4
+      }
+    },
+    {
+      "kind": "enemy",
+      "beat": "4.0",
+      "dx": 10,
+      "dy": -7,
+      "arch": "flyer",
+      "params": {
+        "pattern": "circle",
+        "radius": 1.75,
+        "period": 3.5
+      }
+    }
+  ]
+}

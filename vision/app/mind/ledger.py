@@ -33,6 +33,7 @@ class CallRecord:
 def record(rec: CallRecord, path: Path | None = None) -> None:
     """Append one row; a ledger failure is logged, never raised into a build."""
     try:
+        db_v2.ensure(path)  # the table exists even when the v2 lifespan has not run (scripts, a fresh data dir)
         with closing(db_v2.connect(path)) as conn, conn:
             conn.execute(
                 """INSERT INTO model_calls (draft_id, kind, effort, latency_ms, in_tok, out_tok, cache_read_tok, cost_usd,

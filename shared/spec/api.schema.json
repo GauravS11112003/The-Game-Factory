@@ -69,6 +69,34 @@
         },
         "reason_key": {
           "type": "string"
+        },
+        "repairable": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "repairs": {
+          "items": {
+            "$ref": "#/$defs/EditRecord"
+          },
+          "type": "array"
+        },
+        "level_hash": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -5340,6 +5368,141 @@
       "title": "LibraryArt",
       "type": "object"
     },
+    "LibraryDraft": {
+      "additionalProperties": false,
+      "description": "One box of a scanned Library Sheet (§8.1), before the creator saves it as a LibraryType (C-6).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "box": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "name_source": {
+          "default": "default",
+          "enum": [
+            "default",
+            "model",
+            "kid"
+          ],
+          "type": "string"
+        },
+        "name_has_ink": {
+          "default": false,
+          "type": "boolean"
+        },
+        "name_crop": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "letter": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "kind": {
+          "const": "creature",
+          "default": "creature",
+          "type": "string"
+        },
+        "archetype": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Archetype"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "speed": {
+          "default": "normal",
+          "enum": [
+            "slow",
+            "normal",
+            "fast"
+          ],
+          "type": "string"
+        },
+        "spiky": {
+          "default": false,
+          "type": "boolean"
+        },
+        "behavior": {
+          "$ref": "#/$defs/Behavior"
+        },
+        "collision": {
+          "default": "none",
+          "enum": [
+            "solid",
+            "one_way",
+            "none"
+          ],
+          "type": "string"
+        },
+        "art": {
+          "$ref": "#/$defs/LibraryArt"
+        },
+        "symbol": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LibrarySymbol"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "symbol_samples": {
+          "default": 0,
+          "type": "integer"
+        },
+        "ticks": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "type": "object"
+        },
+        "asks": {
+          "items": {
+            "$ref": "#/$defs/MessageRef"
+          },
+          "type": "array"
+        },
+        "warnings": {
+          "items": {
+            "$ref": "#/$defs/MessageRef"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "box",
+        "name",
+        "behavior",
+        "art"
+      ],
+      "title": "LibraryDraft",
+      "type": "object"
+    },
     "LibrarySymbol": {
       "additionalProperties": false,
       "patternProperties": {
@@ -8167,6 +8330,28 @@
             "$ref": "#/$defs/MessageRef"
           },
           "type": "array"
+        },
+        "story_crop": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "game_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -9358,7 +9543,10 @@
         "migrate_v1",
         "verify_run",
         "level_hash",
-        "art_svg"
+        "art_svg",
+        "generate_level",
+        "rules_check",
+        "library_check"
       ],
       "type": "string"
     },

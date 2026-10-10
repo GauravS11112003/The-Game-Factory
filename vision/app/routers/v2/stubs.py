@@ -6,45 +6,10 @@ from fastapi.responses import JSONResponse
 
 router = APIRouter()
 
-# (method, path) for every §11.3(e) endpoint except /health, POST /builds, GET /builds/{id}/events, GET /drafts/{id}.
-NOT_YET: list[tuple[str, str]] = [
-    ("PUT", "/drafts/{draft_id}/edits"),
-    ("POST", "/drafts/{draft_id}/answers"),
-    ("POST", "/drafts/{draft_id}/dial"),
-    ("POST", "/drafts/{draft_id}/redesign"),
-    ("POST", "/drafts/{draft_id}/critic"),
-    ("POST", "/levels"),
-    ("GET", "/levels/{level_id}"),
-    ("GET", "/levels/{level_id}/tree"),
-    ("POST", "/levels/{level_id}/moderate"),
-    ("POST", "/levels/{level_id}/runs"),
-    ("GET", "/levels/{level_id}/runs"),
-    ("GET", "/runs/{run_id}"),
-    ("POST", "/levels/{level_id}/attempts"),
-    ("PUT", "/levels/{level_id}/thumbnail"),
-    ("GET", "/levels/{level_id}/export"),
-    ("GET", "/games"),
-    ("POST", "/games"),
-    ("GET", "/games/{game_id}"),
-    ("GET", "/games/{game_id}/rules"),
-    ("PUT", "/games/{game_id}/rules"),
-    ("POST", "/games/{game_id}/rules/check"),
-    ("GET", "/games/{game_id}/library"),
-    ("POST", "/games/{game_id}/library"),
-    ("GET", "/games/{game_id}/export"),
-    ("POST", "/scan/rules-sheet"),
-    ("POST", "/scan/library-sheet"),
-    ("GET", "/library/{type_id}"),
-    ("POST", "/library/{type_id}/versions"),
-    ("POST", "/library/interpret"),
-    ("POST", "/prompt-levels"),
-    ("POST", "/packs"),
-    ("GET", "/packs/{pack_id}"),
-    ("GET", "/templates/pack/{pack_id}.pdf"),
-    ("GET", "/templates/rules.pdf"),
-    ("GET", "/templates/library.pdf"),
-    ("POST", "/import"),
-]
+# (method, path) for every §11.3(e) endpoint not implemented yet. Each route that depends on another lane's part that
+# is not there yet (lane C's sheet readers and rules/library PDFs, the core's layout_plan) answers its own 501 with
+# error.not_implemented instead, so it starts working the moment that part lands.
+NOT_YET: list[tuple[str, str]] = []  # every §11.3(e) route is live (lane D, wave 2)
 
 
 def _make(method: str, path: str):  # noqa: ANN202

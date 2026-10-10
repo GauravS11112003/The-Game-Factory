@@ -1,5 +1,5 @@
 {
-  "$comment": "Printed template layout v2 (PLAN_V2 §6.4, §8.1, §8.2), lane C. Millimetres on an A4 landscape page, [x, y, w, h] from the top-left. The v1 layout (shared/template_spec.json) is kept for the drawing sheet; v2 adds multi-sheet packs, seam marks, the QR v2 grammar and the rules/library sheets. P0 initial version: lane C finalizes the rules_sheet and library_sheet box positions.",
+  "$comment": "Printed template layout v2 (PLAN_V2 §6.4, §8.1, §8.2), lane C. Millimetres on an A4 landscape page, [x, y, w, h] from the top-left. The v1 layout (shared/template_spec.json) is kept for the drawing sheet; v2 adds multi-sheet packs, seam marks, the QR v2 grammar and the rules/library sheets. Read by vision/app/template/spec_v2.py (generator, vision/app/template/generate_v2.py) and by the CV v2 scanner (vision/app/cv/scan_v2.py); neither hardcodes a coordinate.",
   "version": 2,
   "page": {
     "size_mm": [
@@ -109,7 +109,11 @@
     "title": "DRAW A LEVEL",
     "name_label": "Level name: ______________________",
     "remix_title_format": "Remix of {title} by {author}",
-    "sheet_label_format": "Sheet {n} of {k}"
+    "sheet_label_format": "Sheet {n} of {k}",
+    "continue_label_format": "Keep drawing: this sheet continues sheet {prev}.",
+    "last_label_format": "Last sheet: put the goal flag on this one.",
+    "extend_label_format": "This sheet adds screen {n}. Carry on from the gray lines on the left.",
+    "extend_seam_label": "the level so far ends here"
   },
   "legend": {
     "rect_mm": [
@@ -136,7 +140,7 @@
         "label": "coins / keys"
       }
     ],
-    "hint": "Write rules below. Draw arrows a finger-width away from things."
+    "hint": "Small blue dots are coins. Write rules in the box below."
   },
   "qr": {
     "rect_mm": [
@@ -156,7 +160,10 @@
       "regex": "^dal2\\|(p|rules|lib)\\|[A-Za-z0-9_-]{4,32}(\\|[1-6]/[1-6])?$",
       "legacy_regex": "^dal1\\|(blank|game\\|[A-Za-z0-9_-]+|lvl\\|[A-Za-z0-9_-]+)$",
       "$comment": "Pack records on the server (packs table) know kind (new|game|remix|extend), game_id, parent_id and k; v1 dal1|... payloads read as a 1-sheet pack."
-    }
+    },
+    "blank_pack_id": "blank",
+    "$comment_blank": "A sheet printed without a server pack carries dal2|p|blank|1/1 (a 1-sheet 'new' pack).",
+    "decode_margin_mm": 4
   },
   "drawing_area": {
     "rect_mm": [
@@ -199,7 +206,9 @@
     ],
     "sheets": [
       1
-    ]
+    ],
+    "inset_mm": 1.5,
+    "frame": "character strokes are in cells (5 mm) from the box interior's top-left corner"
   },
   "rules_box": {
     "rect_mm": [
@@ -213,7 +222,9 @@
     "line_color": "#C8C8C8",
     "sheets": [
       1
-    ]
+    ],
+    "inset_mm": 1.5,
+    "frame": "rules-box strokes are in drawing-area cells (x + 48*(n-1), y from the drawing area top; y > 27), listed in InkDoc.rules_ink"
   },
   "swatches": {
     "rect_mm": [
@@ -342,7 +353,15 @@
       47
     ],
     "join_max_c": 0.75,
-    "join_max_dy_c": 1
+    "join_max_dy_c": 1,
+    "tick_mm": 2,
+    "number_height_mm": 2.4,
+    "arrow_height_mm": 3.2,
+    "neighbour_dash_mm": [
+      3,
+      1.2
+    ],
+    "extend_overlap_c": 2
   },
   "pack": {
     "max_sheets": 6,
@@ -354,19 +373,37 @@
       "game",
       "remix",
       "extend"
-    ]
+    ],
+    "world_x_of_extend_sheet": "48 * k_parent - seam_marks.extend_overlap_c",
+    "$comment": "Placement and assembly: vision/app/cv/stitch.py. new/game: sheet n at world x 48*(n-1), missing sheets are empty screens with warning.sheet_missing. remix: world = max(k, parent screens); unscanned sheets keep the parent's screen (SheetInfo.x_inherited); the parent's strokes join the InkDoc with origin 'parent'. extend: one sheet adds screen k_parent + 1."
   },
   "vectorize": {
+    "$comment": "CV v2 constants (PLAN_V2 §3.2); lengths in cells (5 mm) unless the key says px. Mirrored in web/src/core/params.ts PAPER.",
+    "paper_px_per_cell": 50,
+    "raster_px_per_cell": 32,
     "dot_max_side_c": 0.9,
     "dot_min_fill": 0.5,
+    "dot_max_aspect": 2.0,
+    "tap_dot_max_side_c": 1.3,
+    "tap_dot_min_fill": 0.6,
+    "tap_dot_min_circ": 0.7,
     "blob_dt_c": 0.45,
     "blob_skeleton_frac": 0.3,
+    "blob_core_min_c2": 1.0,
+    "blob_hole_max_c2": 0.5,
+    "blob_approx_eps_c": 0.08,
     "junction_merge_px": 3,
     "spur_min_c": 0.4,
     "spur_min_w": 1.5,
+    "spur_keep_protrusion_c": 0.25,
     "turn_deg": 35,
     "rdp_eps_c": 0.06,
     "min_mark_area_c2": 0.03,
+    "close_kernel_c": 0.08,
+    "closed_gap_c": 0.4,
+    "closed_gap_w": 2,
+    "end_extend_max_dt": 1.5,
+    "width_median_window": 7,
     "dilation": "none"
   },
   "annotate": {
@@ -374,96 +411,1662 @@
     "id_color": "#FF00FF",
     "rulers": true,
     "taps_included": true,
-    "context_strip_c": 2
+    "context_strip_c": 2,
+    "margin_px": [
+      44,
+      30,
+      44,
+      30
+    ],
+    "x_number_every_c": 4,
+    "y_number_every_c": 3,
+    "min_dot_px": 8,
+    "context_fade": 0.62,
+    "jpeg_quality": 85,
+    "canvas_tile_screens": 2
   },
   "rules_sheet": {
-    "status": "draft (lane C fixes box positions in P5)",
+    "$comment": "Rules Sheet (PLAN_V2 §8.2), lane C. Read by OMR only (app/cv/checkbox.py read_rules_sheet): every option box below is printed by app/template/generate_v2.py render_rules_sheet at exactly these mm, a box is ticked when ink covers > omr_fill of its interior (the box inset by interior_inset_mm, after a ±search_mm registration on the printed outline), and two ticks in one row become an ask. Each ability is its own Yes/No row so an empty row means 'keep it as it is', never 'off'. `field` is the GameRules path the row's value patches.",
     "qr": "dal2|rules|<game_id>",
+    "title": "GAME RULES",
+    "subtitle": "Tick ONE box in each row. Leave a row empty to keep it as it is.",
+    "example_label": "Tick like this:",
     "omr_fill": 0.15,
-    "groups": {
-      "physics_profile": {
+    "omr_unsure_fill": 0.06,
+    "ink_dl": 15.0,
+    "ink_dc": 20.0,
+    "box_outline_mm": 0.5,
+    "box_outline_color": "#8A8A8A",
+    "interior_inset_mm": 1.2,
+    "search_mm": 2.0,
+    "found_min_corr": 0.45,
+    "label_x_mm": 28.0,
+    "label_w_mm": 66.0,
+    "row_h_mm": 12.0,
+    "now_label": "now",
+    "now_color": "#A0A0A0",
+    "theme_swatches": {
+      "sketchbook": {
+        "base": "#FBF6EA",
+        "pattern": "dots",
+        "ink": "#C9C2B4"
+      },
+      "notebook": {
+        "base": "#FCFBF6",
+        "pattern": "rules",
+        "ink": "#8FB8DE",
+        "margin": "#E0453A"
+      },
+      "graph": {
+        "base": "#FBFBF7",
+        "pattern": "grid",
+        "ink": "#BFD6F5"
+      },
+      "kraft": {
+        "base": "#D9C2A0",
+        "pattern": "none",
+        "ink": "#BFA27C"
+      }
+    },
+    "rows": [
+      {
+        "group": "physics_profile",
+        "field": "physics_profile",
+        "label": "How you move",
+        "hint": "tick one",
+        "y_mm": 28.0,
         "single": true,
         "options": [
-          "v2-gentle",
-          "v2-standard",
-          "v2-snappy"
+          {
+            "id": "gentle",
+            "label": "Gentle",
+            "value": "v2-gentle",
+            "box_mm": [
+              98.0,
+              30.5,
+              7.0,
+              7.0
+            ]
+          },
+          {
+            "id": "standard",
+            "label": "Standard",
+            "value": "v2-standard",
+            "box_mm": [
+              140.0,
+              30.5,
+              7.0,
+              7.0
+            ]
+          },
+          {
+            "id": "snappy",
+            "label": "Snappy",
+            "value": "v2-snappy",
+            "box_mm": [
+              182.0,
+              30.5,
+              7.0,
+              7.0
+            ]
+          }
         ]
       },
-      "abilities": {
+      {
+        "group": "run",
+        "field": "abilities.run",
+        "label": "Run button",
+        "hint": "hold to go fast",
+        "y_mm": 40.0,
+        "single": true,
+        "options": [
+          {
+            "id": "yes",
+            "label": "Yes",
+            "value": true,
+            "box_mm": [
+              98.0,
+              42.5,
+              7.0,
+              7.0
+            ]
+          },
+          {
+            "id": "no",
+            "label": "No",
+            "value": false,
+            "box_mm": [
+              140.0,
+              42.5,
+              7.0,
+              7.0
+            ]
+          }
+        ]
+      },
+      {
+        "group": "stomp",
+        "field": "abilities.stomp",
+        "label": "Stomp on enemies",
+        "hint": "jump on their heads",
+        "y_mm": 52.0,
+        "single": true,
+        "options": [
+          {
+            "id": "yes",
+            "label": "Yes",
+            "value": true,
+            "box_mm": [
+              98.0,
+              54.5,
+              7.0,
+              7.0
+            ]
+          },
+          {
+            "id": "no",
+            "label": "No",
+            "value": false,
+            "box_mm": [
+              140.0,
+              54.5,
+              7.0,
+              7.0
+            ]
+          }
+        ]
+      },
+      {
+        "group": "double_jump",
+        "field": "abilities.double_jump",
+        "label": "Double jump",
+        "hint": "jump again in the air",
+        "y_mm": 64.0,
+        "single": true,
+        "options": [
+          {
+            "id": "yes",
+            "label": "Yes",
+            "value": true,
+            "box_mm": [
+              98.0,
+              66.5,
+              7.0,
+              7.0
+            ]
+          },
+          {
+            "id": "no",
+            "label": "No",
+            "value": false,
+            "box_mm": [
+              140.0,
+              66.5,
+              7.0,
+              7.0
+            ]
+          }
+        ]
+      },
+      {
+        "group": "fast_fall",
+        "field": "abilities.fast_fall",
+        "label": "Fast fall",
+        "hint": "press down to drop",
+        "y_mm": 76.0,
+        "single": true,
+        "options": [
+          {
+            "id": "yes",
+            "label": "Yes",
+            "value": true,
+            "box_mm": [
+              98.0,
+              78.5,
+              7.0,
+              7.0
+            ]
+          },
+          {
+            "id": "no",
+            "label": "No",
+            "value": false,
+            "box_mm": [
+              140.0,
+              78.5,
+              7.0,
+              7.0
+            ]
+          }
+        ]
+      },
+      {
+        "group": "lives",
+        "field": "lives",
+        "label": "Lives",
+        "hint": "tick one",
+        "y_mm": 88.0,
+        "single": true,
+        "options": [
+          {
+            "id": "off",
+            "label": "Try forever",
+            "value": "off",
+            "box_mm": [
+              98.0,
+              90.5,
+              7.0,
+              7.0
+            ]
+          },
+          {
+            "id": "3",
+            "label": "3 lives",
+            "value": 3,
+            "box_mm": [
+              140.0,
+              90.5,
+              7.0,
+              7.0
+            ]
+          },
+          {
+            "id": "5",
+            "label": "5 lives",
+            "value": 5,
+            "box_mm": [
+              182.0,
+              90.5,
+              7.0,
+              7.0
+            ]
+          }
+        ]
+      },
+      {
+        "group": "hearts",
+        "field": "hearts",
+        "label": "Hearts",
+        "hint": "hits before you pop",
+        "y_mm": 100.0,
+        "single": true,
+        "options": [
+          {
+            "id": "1",
+            "label": "1 heart",
+            "value": 1,
+            "box_mm": [
+              98.0,
+              102.5,
+              7.0,
+              7.0
+            ]
+          },
+          {
+            "id": "2",
+            "label": "2 hearts",
+            "value": 2,
+            "box_mm": [
+              140.0,
+              102.5,
+              7.0,
+              7.0
+            ]
+          },
+          {
+            "id": "3",
+            "label": "3 hearts",
+            "value": 3,
+            "box_mm": [
+              182.0,
+              102.5,
+              7.0,
+              7.0
+            ]
+          }
+        ]
+      },
+      {
+        "group": "theme",
+        "field": "theme",
+        "label": "Paper",
+        "hint": "how your world looks",
+        "y_mm": 112.0,
+        "single": true,
+        "options": [
+          {
+            "id": "sketchbook",
+            "label": "Sketchbook",
+            "value": "sketchbook",
+            "box_mm": [
+              98.0,
+              114.5,
+              7.0,
+              7.0
+            ],
+            "swatch_mm": [
+              108.0,
+              114.5,
+              11.0,
+              7.0
+            ]
+          },
+          {
+            "id": "notebook",
+            "label": "Notebook",
+            "value": "notebook",
+            "box_mm": [
+              140.0,
+              114.5,
+              7.0,
+              7.0
+            ],
+            "swatch_mm": [
+              150.0,
+              114.5,
+              11.0,
+              7.0
+            ]
+          },
+          {
+            "id": "graph",
+            "label": "Graph",
+            "value": "graph",
+            "box_mm": [
+              182.0,
+              114.5,
+              7.0,
+              7.0
+            ],
+            "swatch_mm": [
+              192.0,
+              114.5,
+              11.0,
+              7.0
+            ]
+          },
+          {
+            "id": "kraft",
+            "label": "Kraft",
+            "value": "kraft",
+            "box_mm": [
+              224.0,
+              114.5,
+              7.0,
+              7.0
+            ],
+            "swatch_mm": [
+              234.0,
+              114.5,
+              11.0,
+              7.0
+            ]
+          }
+        ]
+      },
+      {
+        "group": "music",
+        "field": "music",
+        "label": "Music",
+        "hint": "tick one",
+        "y_mm": 124.0,
+        "single": true,
+        "options": [
+          {
+            "id": "on",
+            "label": "On",
+            "value": true,
+            "box_mm": [
+              98.0,
+              126.5,
+              7.0,
+              7.0
+            ]
+          },
+          {
+            "id": "off",
+            "label": "Off",
+            "value": false,
+            "box_mm": [
+              140.0,
+              126.5,
+              7.0,
+              7.0
+            ]
+          }
+        ]
+      },
+      {
+        "group": "default_dial",
+        "field": "default_dial",
+        "label": "Level maker starts at",
+        "hint": "you can change it later",
+        "y_mm": 136.0,
+        "single": true,
+        "options": [
+          {
+            "id": "faithful",
+            "label": "As I drew it",
+            "value": "faithful",
+            "box_mm": [
+              98.0,
+              138.5,
+              7.0,
+              7.0
+            ]
+          },
+          {
+            "id": "polished",
+            "label": "Polished",
+            "value": "polished",
+            "box_mm": [
+              140.0,
+              138.5,
+              7.0,
+              7.0
+            ]
+          },
+          {
+            "id": "challenging",
+            "label": "Challenging",
+            "value": "challenging",
+            "box_mm": [
+              182.0,
+              138.5,
+              7.0,
+              7.0
+            ]
+          }
+        ]
+      },
+      {
+        "group": "timer_pressure",
+        "field": "timer_pressure",
+        "label": "Timers in hard levels",
+        "hint": "race the clock",
+        "y_mm": 148.0,
+        "single": true,
+        "options": [
+          {
+            "id": "yes",
+            "label": "Yes",
+            "value": true,
+            "box_mm": [
+              98.0,
+              150.5,
+              7.0,
+              7.0
+            ]
+          },
+          {
+            "id": "no",
+            "label": "No",
+            "value": false,
+            "box_mm": [
+              140.0,
+              150.5,
+              7.0,
+              7.0
+            ]
+          }
+        ]
+      },
+      {
+        "group": "camera",
+        "field": "camera",
+        "label": "Camera",
+        "hint": "tick one",
+        "y_mm": 160.0,
+        "single": true,
+        "options": [
+          {
+            "id": "follow",
+            "label": "Follows me",
+            "value": "follow",
+            "box_mm": [
+              98.0,
+              162.5,
+              7.0,
+              7.0
+            ]
+          },
+          {
+            "id": "no_backscroll",
+            "label": "No going back",
+            "value": "no_backscroll",
+            "box_mm": [
+              140.0,
+              162.5,
+              7.0,
+              7.0
+            ]
+          }
+        ]
+      }
+    ],
+    "story_line": {
+      "label": "My world is…",
+      "read_by": "PERCEIVE",
+      "rect_mm": [
+        28.0,
+        173.0,
+        240.0,
+        27.0
+      ],
+      "lines_y_mm": [
+        185.0,
+        196.0
+      ],
+      "line_x_mm": [
+        58.0,
+        266.0
+      ],
+      "line_color": "#C8C8C8",
+      "label_color": "#9A9A9A",
+      "min_ink_px": 60,
+      "label_height_mm": 3.0
+    },
+    "label_gap_mm": 3.0
+  },
+  "library_sheet": {
+    "$comment": "Library Sheet (PLAN_V2 §8.1), lane C. 6 creature boxes: a 10x8-cell drawing area (5 mm cells, the drawing sheet's scale), 3 symbol cells, a name line (read by PERCEIVE; offline the creature is 'Creature N') and 9 behavior checkboxes read by OMR (app/cv/checkbox.py read_library_sheet). 'moves' is single-choice (one archetype; none = it stays still), 'speed' is single-choice (none = normal), 'spiky' is independent. Every printed mark inside a box is gray so the colour classifier treats it as paper. The swatch strip in the header calibrates the inks like the drawing sheet's swatches.",
+    "qr": "dal2|lib|<game_id>",
+    "title": "MY CREATURES",
+    "subtitle": "Draw one creature per box, write its name, tick ONE way it moves (or none to stay still).",
+    "box_title_format": "Creature {i}",
+    "symbol_label": [
+      "its symbol",
+      "x3"
+    ],
+    "name_label": "Name:",
+    "default_name_format": "Creature {i}",
+    "boxes_count": 6,
+    "omr_fill": 0.15,
+    "omr_unsure_fill": 0.06,
+    "ink_dl": 15.0,
+    "ink_dc": 20.0,
+    "box_outline_mm": 0.45,
+    "box_outline_color": "#8A8A8A",
+    "interior_inset_mm": 1.0,
+    "search_mm": 2.0,
+    "found_min_corr": 0.45,
+    "frame_color": "#B8B8B8",
+    "area_color": "#C8C8C8",
+    "text_color": "#8A8A8A",
+    "area_inset_mm": 1.0,
+    "art_max_side_c": 1.75,
+    "art_min_side_c": 0.75,
+    "art_cap_c": 2.0,
+    "symbol_min_ink_c2": 0.05,
+    "groups": {
+      "moves": {
+        "single": true,
+        "options": [
+          "walks",
+          "hops",
+          "flies",
+          "shoots",
+          "chases",
+          "crushes"
+        ]
+      },
+      "speed": {
+        "single": true,
+        "options": [
+          "slow",
+          "fast"
+        ]
+      },
+      "spiky": {
         "single": false,
         "options": [
-          "run",
-          "stomp",
-          "double_jump",
-          "fast_fall"
-        ]
-      },
-      "lives": {
-        "single": true,
-        "options": [
-          "off",
-          "3",
-          "5"
-        ]
-      },
-      "hearts": {
-        "single": true,
-        "options": [
-          "1",
-          "2",
-          "3"
-        ]
-      },
-      "theme": {
-        "single": true,
-        "options": [
-          "sketchbook",
-          "notebook",
-          "graph",
-          "kraft"
-        ]
-      },
-      "music": {
-        "single": true,
-        "options": [
-          "on",
-          "off"
-        ]
-      },
-      "default_dial": {
-        "single": true,
-        "options": [
-          "faithful",
-          "polished",
-          "challenging"
+          "spiky"
         ]
       }
     },
-    "story_line": {
-      "label": "My world is…",
-      "read_by": "PERCEIVE"
+    "moves_archetype": {
+      "walks": "walker",
+      "hops": "hopper",
+      "flies": "flyer",
+      "shoots": "shooter",
+      "chases": "chaser",
+      "crushes": "crusher"
+    },
+    "swatches": [
+      {
+        "name": "black",
+        "hex": "#000000",
+        "rect_mm": [
+          172.0,
+          9.0,
+          8.0,
+          8.0
+        ]
+      },
+      {
+        "name": "red",
+        "hex": "#E53935",
+        "rect_mm": [
+          182.0,
+          9.0,
+          8.0,
+          8.0
+        ]
+      },
+      {
+        "name": "green",
+        "hex": "#43A047",
+        "rect_mm": [
+          192.0,
+          9.0,
+          8.0,
+          8.0
+        ]
+      },
+      {
+        "name": "blue",
+        "hex": "#1E88E5",
+        "rect_mm": [
+          202.0,
+          9.0,
+          8.0,
+          8.0
+        ]
+      },
+      {
+        "name": "gray",
+        "hex": "#B0B0B0",
+        "rect_mm": [
+          212.0,
+          9.0,
+          8.0,
+          8.0
+        ]
+      },
+      {
+        "name": "paper",
+        "hex": "#FFFFFF",
+        "rect_mm": [
+          222.0,
+          9.0,
+          8.0,
+          8.0
+        ],
+        "outlined": true
+      }
+    ],
+    "swatch_label": "colour squares (do not draw here)",
+    "swatch_label_mm": [
+      172.0,
+      19.0
+    ],
+    "reference_title": "Already in this game",
+    "reference_hint": "Draw a creature's symbol, or its letter in a circle, on a level sheet to use it there.",
+    "boxes": [
+      {
+        "index": 1,
+        "frame_mm": [
+          28.0,
+          27.0,
+          77.0,
+          84.0
+        ],
+        "title_mm": [
+          30.5,
+          28.0
+        ],
+        "drawing_mm": [
+          30.5,
+          33.0,
+          50.0,
+          40.0
+        ],
+        "symbol_label_mm": [
+          83.0,
+          33.2
+        ],
+        "symbols_mm": [
+          [
+            87.5,
+            39.0,
+            11.0,
+            11.0
+          ],
+          [
+            87.5,
+            51.5,
+            11.0,
+            11.0
+          ],
+          [
+            87.5,
+            64.0,
+            11.0,
+            11.0
+          ]
+        ],
+        "name_label_mm": [
+          30.5,
+          78.0
+        ],
+        "name_line_mm": [
+          43.0,
+          83.5,
+          102.5,
+          83.5
+        ],
+        "name_mm": [
+          30.5,
+          75.5,
+          72.0,
+          9.5
+        ],
+        "checks": [
+          {
+            "id": "walks",
+            "label": "walks",
+            "box_mm": [
+              31.0,
+              86.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "hops",
+            "label": "hops",
+            "box_mm": [
+              56.0,
+              86.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "flies",
+            "label": "flies",
+            "box_mm": [
+              81.0,
+              86.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "shoots",
+            "label": "shoots",
+            "box_mm": [
+              31.0,
+              94.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "chases",
+            "label": "chases",
+            "box_mm": [
+              56.0,
+              94.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "crushes",
+            "label": "crushes",
+            "box_mm": [
+              81.0,
+              94.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "spiky",
+            "label": "spiky",
+            "box_mm": [
+              31.0,
+              102.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "slow",
+            "label": "slow",
+            "box_mm": [
+              56.0,
+              102.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "fast",
+            "label": "fast",
+            "box_mm": [
+              81.0,
+              102.5,
+              6.0,
+              6.0
+            ]
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "frame_mm": [
+          109.5,
+          27.0,
+          77.0,
+          84.0
+        ],
+        "title_mm": [
+          112.0,
+          28.0
+        ],
+        "drawing_mm": [
+          112.0,
+          33.0,
+          50.0,
+          40.0
+        ],
+        "symbol_label_mm": [
+          164.5,
+          33.2
+        ],
+        "symbols_mm": [
+          [
+            169.0,
+            39.0,
+            11.0,
+            11.0
+          ],
+          [
+            169.0,
+            51.5,
+            11.0,
+            11.0
+          ],
+          [
+            169.0,
+            64.0,
+            11.0,
+            11.0
+          ]
+        ],
+        "name_label_mm": [
+          112.0,
+          78.0
+        ],
+        "name_line_mm": [
+          124.5,
+          83.5,
+          184.0,
+          83.5
+        ],
+        "name_mm": [
+          112.0,
+          75.5,
+          72.0,
+          9.5
+        ],
+        "checks": [
+          {
+            "id": "walks",
+            "label": "walks",
+            "box_mm": [
+              112.5,
+              86.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "hops",
+            "label": "hops",
+            "box_mm": [
+              137.5,
+              86.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "flies",
+            "label": "flies",
+            "box_mm": [
+              162.5,
+              86.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "shoots",
+            "label": "shoots",
+            "box_mm": [
+              112.5,
+              94.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "chases",
+            "label": "chases",
+            "box_mm": [
+              137.5,
+              94.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "crushes",
+            "label": "crushes",
+            "box_mm": [
+              162.5,
+              94.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "spiky",
+            "label": "spiky",
+            "box_mm": [
+              112.5,
+              102.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "slow",
+            "label": "slow",
+            "box_mm": [
+              137.5,
+              102.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "fast",
+            "label": "fast",
+            "box_mm": [
+              162.5,
+              102.5,
+              6.0,
+              6.0
+            ]
+          }
+        ]
+      },
+      {
+        "index": 3,
+        "frame_mm": [
+          191.0,
+          27.0,
+          77.0,
+          84.0
+        ],
+        "title_mm": [
+          193.5,
+          28.0
+        ],
+        "drawing_mm": [
+          193.5,
+          33.0,
+          50.0,
+          40.0
+        ],
+        "symbol_label_mm": [
+          246.0,
+          33.2
+        ],
+        "symbols_mm": [
+          [
+            250.5,
+            39.0,
+            11.0,
+            11.0
+          ],
+          [
+            250.5,
+            51.5,
+            11.0,
+            11.0
+          ],
+          [
+            250.5,
+            64.0,
+            11.0,
+            11.0
+          ]
+        ],
+        "name_label_mm": [
+          193.5,
+          78.0
+        ],
+        "name_line_mm": [
+          206.0,
+          83.5,
+          265.5,
+          83.5
+        ],
+        "name_mm": [
+          193.5,
+          75.5,
+          72.0,
+          9.5
+        ],
+        "checks": [
+          {
+            "id": "walks",
+            "label": "walks",
+            "box_mm": [
+              194.0,
+              86.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "hops",
+            "label": "hops",
+            "box_mm": [
+              219.0,
+              86.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "flies",
+            "label": "flies",
+            "box_mm": [
+              244.0,
+              86.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "shoots",
+            "label": "shoots",
+            "box_mm": [
+              194.0,
+              94.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "chases",
+            "label": "chases",
+            "box_mm": [
+              219.0,
+              94.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "crushes",
+            "label": "crushes",
+            "box_mm": [
+              244.0,
+              94.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "spiky",
+            "label": "spiky",
+            "box_mm": [
+              194.0,
+              102.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "slow",
+            "label": "slow",
+            "box_mm": [
+              219.0,
+              102.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "fast",
+            "label": "fast",
+            "box_mm": [
+              244.0,
+              102.5,
+              6.0,
+              6.0
+            ]
+          }
+        ]
+      },
+      {
+        "index": 4,
+        "frame_mm": [
+          28.0,
+          115.0,
+          77.0,
+          84.0
+        ],
+        "title_mm": [
+          30.5,
+          116.0
+        ],
+        "drawing_mm": [
+          30.5,
+          121.0,
+          50.0,
+          40.0
+        ],
+        "symbol_label_mm": [
+          83.0,
+          121.2
+        ],
+        "symbols_mm": [
+          [
+            87.5,
+            127.0,
+            11.0,
+            11.0
+          ],
+          [
+            87.5,
+            139.5,
+            11.0,
+            11.0
+          ],
+          [
+            87.5,
+            152.0,
+            11.0,
+            11.0
+          ]
+        ],
+        "name_label_mm": [
+          30.5,
+          166.0
+        ],
+        "name_line_mm": [
+          43.0,
+          171.5,
+          102.5,
+          171.5
+        ],
+        "name_mm": [
+          30.5,
+          163.5,
+          72.0,
+          9.5
+        ],
+        "checks": [
+          {
+            "id": "walks",
+            "label": "walks",
+            "box_mm": [
+              31.0,
+              174.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "hops",
+            "label": "hops",
+            "box_mm": [
+              56.0,
+              174.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "flies",
+            "label": "flies",
+            "box_mm": [
+              81.0,
+              174.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "shoots",
+            "label": "shoots",
+            "box_mm": [
+              31.0,
+              182.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "chases",
+            "label": "chases",
+            "box_mm": [
+              56.0,
+              182.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "crushes",
+            "label": "crushes",
+            "box_mm": [
+              81.0,
+              182.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "spiky",
+            "label": "spiky",
+            "box_mm": [
+              31.0,
+              190.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "slow",
+            "label": "slow",
+            "box_mm": [
+              56.0,
+              190.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "fast",
+            "label": "fast",
+            "box_mm": [
+              81.0,
+              190.5,
+              6.0,
+              6.0
+            ]
+          }
+        ]
+      },
+      {
+        "index": 5,
+        "frame_mm": [
+          109.5,
+          115.0,
+          77.0,
+          84.0
+        ],
+        "title_mm": [
+          112.0,
+          116.0
+        ],
+        "drawing_mm": [
+          112.0,
+          121.0,
+          50.0,
+          40.0
+        ],
+        "symbol_label_mm": [
+          164.5,
+          121.2
+        ],
+        "symbols_mm": [
+          [
+            169.0,
+            127.0,
+            11.0,
+            11.0
+          ],
+          [
+            169.0,
+            139.5,
+            11.0,
+            11.0
+          ],
+          [
+            169.0,
+            152.0,
+            11.0,
+            11.0
+          ]
+        ],
+        "name_label_mm": [
+          112.0,
+          166.0
+        ],
+        "name_line_mm": [
+          124.5,
+          171.5,
+          184.0,
+          171.5
+        ],
+        "name_mm": [
+          112.0,
+          163.5,
+          72.0,
+          9.5
+        ],
+        "checks": [
+          {
+            "id": "walks",
+            "label": "walks",
+            "box_mm": [
+              112.5,
+              174.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "hops",
+            "label": "hops",
+            "box_mm": [
+              137.5,
+              174.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "flies",
+            "label": "flies",
+            "box_mm": [
+              162.5,
+              174.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "shoots",
+            "label": "shoots",
+            "box_mm": [
+              112.5,
+              182.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "chases",
+            "label": "chases",
+            "box_mm": [
+              137.5,
+              182.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "crushes",
+            "label": "crushes",
+            "box_mm": [
+              162.5,
+              182.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "spiky",
+            "label": "spiky",
+            "box_mm": [
+              112.5,
+              190.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "slow",
+            "label": "slow",
+            "box_mm": [
+              137.5,
+              190.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "fast",
+            "label": "fast",
+            "box_mm": [
+              162.5,
+              190.5,
+              6.0,
+              6.0
+            ]
+          }
+        ]
+      },
+      {
+        "index": 6,
+        "frame_mm": [
+          191.0,
+          115.0,
+          77.0,
+          84.0
+        ],
+        "title_mm": [
+          193.5,
+          116.0
+        ],
+        "drawing_mm": [
+          193.5,
+          121.0,
+          50.0,
+          40.0
+        ],
+        "symbol_label_mm": [
+          246.0,
+          121.2
+        ],
+        "symbols_mm": [
+          [
+            250.5,
+            127.0,
+            11.0,
+            11.0
+          ],
+          [
+            250.5,
+            139.5,
+            11.0,
+            11.0
+          ],
+          [
+            250.5,
+            152.0,
+            11.0,
+            11.0
+          ]
+        ],
+        "name_label_mm": [
+          193.5,
+          166.0
+        ],
+        "name_line_mm": [
+          206.0,
+          171.5,
+          265.5,
+          171.5
+        ],
+        "name_mm": [
+          193.5,
+          163.5,
+          72.0,
+          9.5
+        ],
+        "checks": [
+          {
+            "id": "walks",
+            "label": "walks",
+            "box_mm": [
+              194.0,
+              174.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "hops",
+            "label": "hops",
+            "box_mm": [
+              219.0,
+              174.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "flies",
+            "label": "flies",
+            "box_mm": [
+              244.0,
+              174.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "shoots",
+            "label": "shoots",
+            "box_mm": [
+              194.0,
+              182.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "chases",
+            "label": "chases",
+            "box_mm": [
+              219.0,
+              182.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "crushes",
+            "label": "crushes",
+            "box_mm": [
+              244.0,
+              182.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "spiky",
+            "label": "spiky",
+            "box_mm": [
+              194.0,
+              190.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "slow",
+            "label": "slow",
+            "box_mm": [
+              219.0,
+              190.5,
+              6.0,
+              6.0
+            ]
+          },
+          {
+            "id": "fast",
+            "label": "fast",
+            "box_mm": [
+              244.0,
+              190.5,
+              6.0,
+              6.0
+            ]
+          }
+        ]
+      }
+    ],
+    "label_gap_mm": 2.6
+  },
+  "pack_map": {
+    "$comment": "Sheets 2..k have no character or rules box (§6.4); this region shows where the sheet sits in the pack instead.",
+    "rect_mm": [
+      28,
+      165,
+      202,
+      34
+    ],
+    "label_format": "This is sheet {n} of {k}. Sheets join left to right.",
+    "fill_color": "#E6E6E6",
+    "outline_color": "#B0B0B0",
+    "read": {
+      "$comment": "QR fallback (app/cv/stitch.py read_pack_map): sheets 2..k print k boxes with sheet n filled; the box layout is spec_v2.pack_map_boxes_px(k).",
+      "edge_band_mm": 0.7,
+      "dark_below_paper": 35,
+      "edge_present": 0.7,
+      "edge_absent": 0.3,
+      "fill_margin": 8
     }
   },
-  "library_sheet": {
-    "status": "draft (lane C fixes box positions in P5)",
-    "qr": "dal2|lib|<game_id>",
-    "boxes": 6,
-    "per_box": {
-      "drawing_area": true,
-      "name_line": true,
-      "behavior_checkboxes": [
-        "walks",
-        "hops",
-        "flies",
-        "shoots",
-        "chases",
-        "crushes",
-        "spiky",
-        "slow",
-        "fast"
-      ],
-      "symbol_cells": 3
-    },
-    "omr_fill": 0.15
+  "features": {
+    "$comment": "InkComponent.f definitions (docs/v2/requests/C-1.md); lengths in cells.",
+    "hole_min_c2": 0.05,
+    "corner_rdp_c": 0.2,
+    "corner_turn_deg": 50,
+    "zig_prominence_c": 0.2,
+    "zig_bin_c": 0.1,
+    "spoke_max_len_c": 1.5,
+    "spoke_dist_c": 0.6,
+    "spoke_radial_deg": 25,
+    "bump_depth_c": 0.15
+  },
+  "classify": {
+    "$comment": "Lab nearest-swatch classification (v1 approach, kept): an ink pixel nearly as close to a background class is shadow or anti-aliasing.",
+    "confidence_margin_lab": 8.0,
+    "lut_bits": 5,
+    "pencil_min_area_c2": 0.15,
+    "pencil_max_half_width_c": 0.3,
+    "raster_center_max_shift_lab": 25.0
+  },
+  "illumination": {
+    "$comment": "Shadow-gradient flattening before calibration: a robust degree-3 polynomial fit of the paper brightness; applied when it varies by more than min_variation.",
+    "downscale": 8,
+    "dilate_px": 9,
+    "poly_degree": 3,
+    "iterations": 4,
+    "outlier_below": 8.0,
+    "min_variation": 0.06
+  },
+  "stitch": {
+    "$comment": "Placing photos whose QR could not be read (app/cv/stitch.py): ends of strokes within edge_band_c of a sheet edge are matched to the neighbour's ends (same colour, |dy| <= max_dy_c); the assignment with the lowest total cost wins.",
+    "edge_band_c": 1.5,
+    "max_dy_c": 3.0,
+    "unmatched_cost": 1.5,
+    "first_sheet_prior": 5.0,
+    "not_first_prior": 2.0
   }
 }

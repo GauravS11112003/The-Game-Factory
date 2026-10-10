@@ -5,20 +5,6 @@
  *   cd vision && uv run --no-sync python ../scripts/gen_contracts.py
  */
 
-export type Scalar = string | number | boolean | null;
-export type Archetype = "walker" | "hopper" | "flyer" | "shooter" | "chaser" | "crusher";
-export type AskKind =
-  | "which_door"
-  | "is_decoration"
-  | "what_does_it_do"
-  | "which_flag_is_goal"
-  | "is_library"
-  | "keep_or_fix"
-  | "is_door"
-  | "which_way"
-  | "which_target"
-  | "grass_or_spikes"
-  | "is_this_right";
 export type EditOp =
   | OpSetRole
   | OpGroup
@@ -87,6 +73,7 @@ export type Role =
   | "library_tag"
   | "unknown";
 export type Behavior = BStatic | BEnemy | BMove | BSpring | BCrumble | BFalling | BSaw | BFirebar;
+export type Archetype = "walker" | "hopper" | "flyer" | "shooter" | "chaser" | "crusher";
 export type Dir4 = "up" | "down" | "left" | "right";
 export type Dir = "up" | "down" | "left" | "right" | "none";
 export type Face = "top" | "bottom" | "left" | "right";
@@ -96,6 +83,29 @@ export type Face = "top" | "bottom" | "left" | "right";
  */
 export type CellXY = [number, number];
 export type Side = "left" | "right" | "top" | "bottom";
+export type EditClass = "U" | "N" | "R" | "P" | "C" | "K";
+export type EditBy = "auto" | "heuristic" | "model" | "kid" | "greedy" | "parser" | "library" | "validator";
+export type Stage = "ink" | "understood" | "designed";
+export type Tier = "faithful" | "polished" | "normal" | "hard";
+export type EditStatus = "applied" | "undone" | "rejected" | "suggested";
+export type Scalar = string | number | boolean | null;
+/**
+ * @minItems 4
+ * @maxItems 4
+ */
+export type RectCells = [number, number, number, number];
+export type AskKind =
+  | "which_door"
+  | "is_decoration"
+  | "what_does_it_do"
+  | "which_flag_is_goal"
+  | "is_library"
+  | "keep_or_fix"
+  | "is_door"
+  | "which_way"
+  | "which_target"
+  | "grass_or_spikes"
+  | "is_this_right";
 export type Band = "trivial" | "easy" | "normal" | "hard" | "expert";
 export type Beat =
   | BeatFlat
@@ -172,22 +182,12 @@ export type StampKind =
   | "door"
   | "start"
   | "library";
-/**
- * @minItems 4
- * @maxItems 4
- */
-export type RectCells = [number, number, number, number];
 export type RoleBy = "heuristic" | "model" | "kid" | "stamp" | "library" | "parser" | "draft" | "migrated" | "designer";
 export type Shape = ShapeSurface | ShapeStrip | ShapeBody | ShapePoint | ShapeWall;
 export type Collision = "solid" | "one_way" | "none" | "hazard" | "trigger";
 export type SetpieceKind = "jump" | "hazard_run" | "climb" | "enemy" | "puzzle" | "finale" | "other";
 export type DifficultyWish = "none" | "easy" | "normal" | "hard";
 export type Safety = "ok" | "held" | "flag" | "unchecked";
-export type Stage = "ink" | "understood" | "designed";
-export type EditClass = "U" | "N" | "R" | "P" | "C" | "K";
-export type EditBy = "auto" | "heuristic" | "model" | "kid" | "greedy" | "parser" | "library" | "validator";
-export type Tier = "faithful" | "polished" | "normal" | "hard";
-export type EditStatus = "applied" | "undone" | "rejected" | "suggested";
 export type ProfileId = "v2-standard" | "v2-gentle" | "v2-snappy" | "v1-classic";
 export type Theme = "sketchbook" | "notebook" | "graph" | "kraft";
 export type Dial = "faithful" | "polished" | "challenging";
@@ -254,7 +254,10 @@ export type WorkerMethod =
   | "migrate_v1"
   | "verify_run"
   | "level_hash"
-  | "art_svg";
+  | "art_svg"
+  | "generate_level"
+  | "rules_check"
+  | "library_check";
 
 export interface Abilities {
   run?: boolean;
@@ -269,38 +272,31 @@ export interface Accepted {
 export interface AffectedLevel {
   level_id: string;
   reason_key: string;
-}
-export interface AnswerBody {
-  ask_id: string;
-  choice: string;
+  repairable?: boolean | null;
+  repairs?: EditRecord[];
+  level_hash?: string | null;
 }
 /**
- * Error bodies (409, 422, 501, 503): a message key, never a raw code in the UI.
+ * One edit with its status. Ids are stable: `op:target:hash6(params)` (D6).
  */
-export interface ApiMessage {
-  message_key: string;
-  args?: MessageArgs;
-}
-export interface MessageArgs {
-  [k: string]: Scalar;
-}
-export interface AskCard {
+export interface EditRecord {
   id: string;
-  about: string;
-  kind: AskKind;
-  message_key: string;
-  args?: MessageArgs;
-  options: AskOption[];
-  default_option?: string | null;
-  answer?: string | null;
-  by: "model" | "heuristic" | "parser" | "validator" | "designer";
-}
-export interface AskOption {
-  id: string;
-  label_key: string;
-  label_args?: MessageArgs;
-  ops?: EditOp[];
-  tap_target?: boolean;
+  op: EditOp;
+  class: EditClass;
+  by: EditBy;
+  stage: Stage;
+  tier: Tier;
+  status: EditStatus;
+  reason_key: string;
+  reason_args?: MessageArgs;
+  reason_text?: string | null;
+  depends_on?: string[];
+  required?: boolean;
+  group?: string | null;
+  validation?: Validation | null;
+  ghost?: Ghost | null;
+  reject_reason?: MessageRef | null;
+  cid?: string | null;
 }
 export interface OpSetRole {
   op: "set_role";
@@ -577,6 +573,55 @@ export interface OpReprise {
 export interface OpMakeMine {
   op: "make_mine";
   target: string;
+}
+export interface MessageArgs {
+  [k: string]: Scalar;
+}
+export interface Validation {
+  solvable: boolean;
+  flags: string[];
+  drift_cells: number;
+  dC: number;
+}
+export interface Ghost {
+  before: RectCells[];
+  after: RectCells[];
+}
+/**
+ * A kid-facing sentence by key (shared/spec/messages.json); raw codes never reach the DOM.
+ */
+export interface MessageRef {
+  key: string;
+  args?: MessageArgs;
+}
+export interface AnswerBody {
+  ask_id: string;
+  choice: string;
+}
+/**
+ * Error bodies (409, 422, 501, 503): a message key, never a raw code in the UI.
+ */
+export interface ApiMessage {
+  message_key: string;
+  args?: MessageArgs;
+}
+export interface AskCard {
+  id: string;
+  about: string;
+  kind: AskKind;
+  message_key: string;
+  args?: MessageArgs;
+  options: AskOption[];
+  default_option?: string | null;
+  answer?: string | null;
+  by: "model" | "heuristic" | "parser" | "validator" | "designer";
+}
+export interface AskOption {
+  id: string;
+  label_key: string;
+  label_args?: MessageArgs;
+  ops?: EditOp[];
+  tap_target?: boolean;
 }
 export interface Attachment {
   host: string;
@@ -857,13 +902,6 @@ export interface SheetInfo {
   qr?: string | null;
   warnings?: MessageRef[];
 }
-/**
- * A kid-facing sentence by key (shared/spec/messages.json); raw codes never reach the DOM.
- */
-export interface MessageRef {
-  key: string;
-  args?: MessageArgs;
-}
 export interface NoiseInfo {
   count: number;
 }
@@ -969,38 +1007,6 @@ export interface EnvEdits {
 }
 export interface EvEdits {
   edits: EditRecord[];
-}
-/**
- * One edit with its status. Ids are stable: `op:target:hash6(params)` (D6).
- */
-export interface EditRecord {
-  id: string;
-  op: EditOp;
-  class: EditClass;
-  by: EditBy;
-  stage: Stage;
-  tier: Tier;
-  status: EditStatus;
-  reason_key: string;
-  reason_args?: MessageArgs;
-  reason_text?: string | null;
-  depends_on?: string[];
-  required?: boolean;
-  group?: string | null;
-  validation?: Validation | null;
-  ghost?: Ghost | null;
-  reject_reason?: MessageRef | null;
-  cid?: string | null;
-}
-export interface Validation {
-  solvable: boolean;
-  flags: string[];
-  drift_cells: number;
-  dC: number;
-}
-export interface Ghost {
-  before: RectCells[];
-  after: RectCells[];
 }
 export interface EnvTier {
   seq: number;
@@ -1741,6 +1747,31 @@ export interface LevelStats {
   clear_rate: number | null;
   best: number | null;
 }
+/**
+ * One box of a scanned Library Sheet (§8.1), before the creator saves it as a LibraryType (C-6).
+ */
+export interface LibraryDraft {
+  box: number;
+  name: string;
+  name_source?: "default" | "model" | "kid";
+  name_has_ink?: boolean;
+  name_crop?: string | null;
+  letter?: string | null;
+  kind?: "creature";
+  archetype?: Archetype | null;
+  speed?: "slow" | "normal" | "fast";
+  spiky?: boolean;
+  behavior: Behavior;
+  collision?: "solid" | "one_way" | "none";
+  art: LibraryArt;
+  symbol?: LibrarySymbol | null;
+  symbol_samples?: number;
+  ticks?: {
+    [k: string]: number;
+  };
+  asks?: MessageRef[];
+  warnings?: MessageRef[];
+}
 export interface PackCreate {
   kind: "new" | "game" | "remix" | "extend";
   k: number;
@@ -1833,6 +1864,8 @@ export interface RulesSheetResult {
     [k: string]: unknown;
   };
   asks?: MessageRef[];
+  story_crop?: string | null;
+  game_id?: string | null;
 }
 export interface RunClaim {
   time_ms: number;

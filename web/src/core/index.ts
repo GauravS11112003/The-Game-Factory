@@ -48,16 +48,27 @@ export interface TierSet {
   menu: Candidate[];
 }
 export { inkFromStrokes } from './ink/index.ts';
+/** Lane B helpers beyond §11.3(b) (additive): components/features for any InkDoc, offline asks, Fix-it menus. */
+export { computeComponents, ensureComponents } from './ink/index.ts';
+export { heuristicAsks } from './scene/merge.ts';
 export { matchSymbol, mergePerception, parseRules, perceiveHeuristic, remixDiff } from './scene/index.ts';
 export { build, levelHash, migrateV1, validateLevel } from './build/index.ts';
 export { applyPlan, buildTiers, candidates, digest, transferPlan } from './design/index.ts';
 export { keywordPlan, layoutPlan } from './generate/index.ts';
+/** Lane B P5 helpers beyond §11.3(b) (additive): the verified generator, "Ink it", the rules re-verify dry run. */
+export { generateLevel, inkIt, layoutDetailed } from './generate/index.ts';
+export type { GenerateOptions, GenerateResult, LayoutOverrides } from './generate/index.ts';
+export { libraryUpdateCheck, rulesCheck, repairUnder } from './design/rules_check.ts';
+export { withParentInk } from './scene/remix.ts';
 
 // ---- Lane A ----
 export { PROFILES, profileHash } from './sim/profiles.ts';
 export { cameraStep, createSim } from './sim/index.ts';
 export { analyze } from './bot/index.ts';
 export { decodeReplay, encodeReplay, verifyRun } from './replay/index.ts';
+/** Lane A helpers beyond §11.3(b) (A-2): ghosts, recording, detailed verdicts, the rules-aware envelope, local re-solve. */
+export { GhostTrack, ReplayRecorder, ghostTrack, replayOfTrace, verifyRunDetail } from './replay/index.ts';
+export { jumpArcs, localReach, reachFor } from './bot/index.ts';
 
 // ---- Lane E ----
 export { artToSvg, buildArt, extractRig } from './art/index.ts';

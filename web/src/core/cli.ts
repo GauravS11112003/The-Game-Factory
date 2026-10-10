@@ -8,10 +8,14 @@
  *   hash <level.json>   print level_hash
  *   validate <file>     run validateLevel and print the verdict
  *   fixture <method>    print the DAL_CORE_STUB canned result for a worker method (used to build sample streams)
- *   golden | starter:build | starter:verify | calibrate | envelope | bench   (land in P1-P4)
+ *   starter:build [L1 …] build Starter World (shared/starter/L*.plan.json + L*.overrides.json → dist/*.level.json)
+ *                       and Classic Starter (the migrated v1 fixtures), plus dist/index.json for seed_v2
+ *   plan "<prompt>" [screens] [--layout]   print the keyword plan for a prompt (or its laid-out draft InkDoc)
+ *   envelope [profile] [--no-run] [--double-jump]   print the bot-measured envelope, g_max(runway) and reach (JSON)
+ *   golden | starter:verify | calibrate | bench   (test / eval tooling; not part of the product build)
  */
 import { spawn } from 'node:child_process';
-import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import * as core from './index.ts';
@@ -21,12 +25,18 @@ import { isNotImplemented } from './util/errors.ts';
 import { lintSource } from './util/lint.ts';
 import { sha256Hex } from './util/sha256.ts';
 import { stubResult } from './worker/stub.ts';
-import type { LevelV2, ProfileId, WorkerMethod } from './types.gen.ts';
+import { gMaxTable, measureEnvelope, reachFor } from './bot/index.ts';
+import { CLASSIC_GAME, STARTER_GAME, buildClassicLevel, buildStarterLevel, starterTarget } from './generate/starter.ts';
+import type { StarterOverrides } from './generate/starter.ts';
+import { STARTER } from './params.ts';
+import type { LevelPlan, LevelV2, ProfileId, WorkerMethod } from './types.gen.ts';
 
 const CORE_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO = join(CORE_DIR, '..', '..', '..');
 const SPEC_DIR = join(REPO, 'shared', 'spec');
 const LEVELS_DIR = join(SPEC_DIR, 'conformance', 'levels');
+const STARTER_DIR = join(REPO, 'shared', 'starter');
+const V1_FIXTURES = join(REPO, 'shared', 'fixtures', 'levels');
 
 function walk(dir: string): string[] {
   const out: string[] = [];
@@ -141,7 +151,7 @@ async function selftest(real: boolean): Promise<number> {
     {
       name: 'every core module imports natively (catches value imports of types)',
       run: async () => {
-        const skip = new Set(['cli.ts', 'worker/main.ts', 'worker/web.worker.ts']);
+        const skip = new Set(['cli.ts', 'worker/main.ts', 'worker/thread.ts', 'worker/web.worker.ts']);
         const mods = coreFiles().filter((f) => !skip.has(f) && !f.startsWith('__tests__/'));
         for (const f of mods) await import(pathToFileURL(join(CORE_DIR, f)).href);
         return `${mods.length} modules`;
@@ -231,6 +241,34 @@ async function selftest(real: boolean): Promise<number> {
         }
       },
     },
+    {
+      name: 'build pipeline runs on the §2.2 example ink (perceive → build → tiers → validateLevel)',
+      run: () => {
+        const lv = readJson(join(LEVELS_DIR, 'valid', 'example_2screen.json')) as LevelV2;
+        const ink = core.inkFromStrokes(lv.ink!.strokes, lv.world);
+        const graph0 = core.perceiveHeuristic(ink, { library: [], parent: null });
+        const input = { ink, graph0, edits: [], rules: lv.rules, library: [], parent: null, repairUnsolvable: true, seed: 1 };
+        const r = core.build({ ...input, tier: 'faithful' });
+        const v = core.validateLevel(r.level);
+        if (!v.ok) throw new Error(`build: ${v.errors.slice(0, 3).join('; ')}`);
+        const ts = core.buildTiers(input, { deadlineMs: 3000 });
+        for (const t of ['faithful', 'polished', 'normal', 'hard'] as const) {
+          const vt = core.validateLevel(ts[t].level);
+          if (!vt.ok) throw new Error(`${t}: ${vt.errors.slice(0, 3).join('; ')}`);
+        }
+        const merged = core.mergePerception(graph0, [], ink);
+        core.digest(r, ts.menu);
+        if (process.env.DAL_SELFTEST_VERBOSE === '1') {
+          console.error(graph0.objects.map((o) => `${o.id}:${o.role}:${o.conf}:${o.collision}:${JSON.stringify(o.shape).slice(0, 80)}`).join('\n'));
+          console.error(r.level.compiled.tiles.rows.join('\n'));
+          console.error(JSON.stringify(r.level.compiled.entities));
+          console.error(JSON.stringify({ reason: r.report.reason, frontier: r.report.frontier?.blocking, flags: r.report.flags.map((f) => f.code), approx: r.report.approx }));
+          console.error(`reached: ${r.report.reachable.join(' ')}`);
+          console.error(r.edits.map((e) => `${e.id} ${e.status}`).join('\n'));
+        }
+        return `${graph0.objects.length} objects, ${r.edits.length} edits, solvable ${r.report.solvable}, menu ${ts.menu.length}, asks ${merged.asks.length}`;
+      },
+    },
     { name: 'worker round trip (real mode)', run: () => workerRoundTrip(false) },
     { name: 'worker round trip (DAL_CORE_STUB=1)', run: () => workerRoundTrip(true) },
   ];
@@ -248,6 +286,73 @@ async function selftest(real: boolean): Promise<number> {
   if (stubs.length) console.log(`stub  ${stubs.join(', ')}`);
   console.log(failed ? `selftest FAILED (${failed})` : `selftest passed (${real ? 'real' : 'stub'} mode)`);
   return failed ? 1 : 0;
+}
+
+// ---- starter:build --------------------------------------------------------------------------
+
+function fmtS(ms: number): string {
+  return `${(ms / 1000).toFixed(1)} s`;
+}
+
+/** Build Starter World + Classic Starter into shared/starter/dist (a pure build: it writes levels, it checks nothing). */
+function starterBuild(only: string[]): number {
+  const dist = join(STARTER_DIR, 'dist');
+  if (!existsSync(dist)) mkdirSync(dist, { recursive: true });
+  const manifest: { games: Record<string, unknown>[]; core_version: string; $comment: string } = {
+    $comment: 'GENERATED by `node web/src/core/cli.ts starter:build` (npm run starter:build). Seeded by vision/app/seed_v2.py.',
+    core_version: core.CORE_VERSION, games: [],
+  };
+  const sw: Record<string, unknown>[] = [];
+  STARTER.levels.forEach((t, i) => {
+    const planPath = join(STARTER_DIR, `${t.id}.plan.json`);
+    if (!existsSync(planPath)) {
+      console.error(`${t.id}: no ${t.id}.plan.json, skipped`);
+      return;
+    }
+    const file = `${t.id}.level.json`;
+    if (only.length && !only.includes(t.id)) {
+      if (existsSync(join(dist, file))) {
+        const lv = readJson(join(dist, file)) as LevelV2;
+        sw.push({ id: lv.id, file, title: lv.title, order_index: i, ...(t.id === 'L5' ? { unlock_after: 'lvl_world_l4', bonus: true } : {}) });
+      }
+      return;
+    }
+    const plan = readJson(planPath) as LevelPlan;
+    const ovPath = join(STARTER_DIR, `${t.id}.overrides.json`);
+    const ov = (existsSync(ovPath) ? readJson(ovPath) : {}) as StarterOverrides;
+    const t0 = Date.now();
+    const b = buildStarterLevel(t.id, plan, ov, i);
+    writeFileSync(join(dist, file), JSON.stringify(b.level, null, 2) + '\n');
+    const r = b.gen.result.report;
+    const tg = starterTarget(t.id);
+    const rEdits = b.gen.result.edits.filter((e) => e.class === 'R' && e.status === 'applied').length;
+    console.log(`${t.id} ${b.level.title}: ${b.level.world.screens} screens, solvable ${r.solvable ? 'yes' : 'NO'}${b.gen.solvable ? '' : ' (repaired)'}, ` +
+      `C ${r.C.toFixed(2)}${tg ? ` (authored for ${tg.C})` : ''}, band ${r.band}, fastest ${fmtS(r.fastest_ms)}, casual ${r.casual_clear_s.toFixed(0)} s, ` +
+      `flags [${r.flags.filter((f) => f.severity === 'hard' || f.severity === 'block').map((f) => f.code).join(' ')}], fixes ${b.gen.fixes.length}, R edits ${rEdits}` +
+      `${b.gen.dropped.length ? `, dropped ${b.gen.dropped.join(' ')}` : ''}, ${Date.now() - t0} ms → dist/${file}`);
+    for (const f of b.gen.fixes) console.log(`   fixer: beat ${f.beat} ${f.from.kind} (${f.why}) → ${f.to ? JSON.stringify(f.to) : 'rest inserted'}`);
+    if (!b.gen.solvable && b.gen.frontier_text) console.log(`   frontier: ${b.gen.frontier_text}`);
+    sw.push({ id: b.level.id, file, title: b.level.title, order_index: i, ...(t.id === 'L5' ? { unlock_after: 'lvl_world_l4', bonus: true } : {}) });
+  });
+  manifest.games.push({ ...STARTER_GAME, levels: sw });
+  if (!only.length || only.includes('classic')) {
+    const classic: Record<string, unknown>[] = [];
+    // in their own folder: seed_v2 reads dist/*.level.json as Starter World (D-2 §3.5)
+    const cdir = join(dist, 'classic');
+    if (!existsSync(cdir)) mkdirSync(cdir, { recursive: true });
+    const files = existsSync(V1_FIXTURES) ? readdirSync(V1_FIXTURES).filter((f) => f.endsWith('.json')).sort() : [];
+    files.forEach((f, i) => {
+      const { level, report } = buildClassicLevel(readJson(join(V1_FIXTURES, f)), i);
+      const out = `classic/${i + 1}.level.json`;
+      writeFileSync(join(dist, out), JSON.stringify(level, null, 2) + '\n');
+      console.log(`classic ${level.title}: migrated (v1-classic), solvable ${report ? (report.solvable ? 'yes' : 'NO') : 'unknown'} → dist/${out}`);
+      classic.push({ id: level.id, file: out, title: level.title, order_index: i });
+    });
+    manifest.games.push({ ...CLASSIC_GAME, levels: classic });
+  }
+  writeFileSync(join(dist, 'index.json'), JSON.stringify(manifest, null, 2) + '\n');
+  console.log('wrote shared/starter/dist/index.json');
+  return 0;
 }
 
 // ---- entry ----------------------------------------------------------------------------------
@@ -274,16 +379,29 @@ async function main(argv: string[]): Promise<number> {
     case 'fixture':
       console.log(JSON.stringify(stubResult(rest[0] as WorkerMethod, rest[1] ? (JSON.parse(rest[1]) as Record<string, unknown>) : {})));
       return 0;
-    case 'golden':
     case 'starter:build':
+      return starterBuild(rest.filter((x) => !x.startsWith('-')));
+    case 'plan': {
+      const screens = Number(rest[1]) || 2;
+      const plan = core.keywordPlan(rest[0] ?? '', screens);
+      console.log(JSON.stringify(rest.includes('--layout') ? core.layoutPlan(plan, { version: 1 }, 1) : plan, null, 2));
+      return 0;
+    }
+    case 'envelope': {
+      // per ability set (A-2): `envelope v2-standard --no-run --double-jump`
+      const profile = (rest.find((x) => !x.startsWith('-')) ?? 'v2-standard') as ProfileId;
+      const ab = { run: !rest.includes('--no-run'), double_jump: rest.includes('--double-jump') };
+      console.log(JSON.stringify({ profile, abilities: ab, envelope: measureEnvelope(profile, ab), g_max_by_runway: gMaxTable(profile, ab), reach: reachFor(profile, ab) }, null, 2));
+      return 0;
+    }
+    case 'golden':
     case 'starter:verify':
     case 'calibrate':
-    case 'envelope':
     case 'bench':
-      console.error(`cli.ts ${cmd}: not implemented yet (lands with lane ${cmd === 'envelope' || cmd === 'bench' ? 'A/B' : 'B'}, P1-P4)`);
+      console.error(`cli.ts ${cmd}: test / eval tooling, not part of the product build (the owner runs verification)`);
       return 2;
     default:
-      console.error('usage: node web/src/core/cli.ts selftest [--real] | gen-spec-data | hash <file> | validate <file> | fixture <method>');
+      console.error('usage: node web/src/core/cli.ts selftest [--real] | gen-spec-data | hash <file> | validate <file> | fixture <method> | starter:build [L1 …|classic] | plan "<prompt>" [screens] [--layout] | envelope [profile]');
       return 2;
   }
 }

@@ -1,139 +1,121 @@
 /**
- * v2 web shell (lane F). Served at http://localhost:5173/v2.html beside v1 until the P6 switch-over.
- * P0: a hash router with stubbed screens. Working pieces: health, the SSE sample build (#/preview), the conformance
- * levels validated and hashed in the browser core and drawn by the mountGame stub (#/dev, #/play/example).
+ * v2 web app (lane F): the main app since the P6 switch-over, at http://localhost:5173/ (index.html; /v2.html is an
+ * alias). v1 stays reachable at /v1.html.
+ * Routes: home feed, draw (long-canvas editor), scan (pack tray), prompt (tell me a level), preview/:draft, play/:id,
+ * game/:id, game/:id/rules, game/:id/library (or library?game=), tree/:id, dev.
+ * Chrome is paper and ink (§7.9); every sentence comes from shared/spec/messages.json.
  */
 import './style.css';
-import example from '../../../shared/spec/conformance/levels/valid/example_2screen.json';
-import { levelHash, validateLevel } from '../core/index.ts';
-import type { BuildEvent, LevelV2 } from '../core/types.gen.ts';
-import { mountGame } from '../engine/index.ts';
-import type { GameHandle } from '../engine/types.ts';
-import { api } from './api.ts';
+import { card, h, icon } from './dom.ts';
 import { t } from './messages.ts';
-import { followBuild } from './sse.ts';
+import { parseHash } from './router.ts';
+import { store } from './store.ts';
+import { devScreen } from './screens/dev.ts';
+import { drawScreen } from './screens/draw.ts';
+import { gameScreen } from './screens/game.ts';
+import { homeScreen } from './screens/home.ts';
+import { libraryScreen } from './screens/library.ts';
+import { playScreen } from './screens/play.ts';
+import { previewScreen } from './screens/preview.ts';
+import { promptScreen } from './screens/prompt.ts';
+import { rulesScreen } from './screens/rules.ts';
+import { scanScreen } from './screens/scan.ts';
+import { treeScreen } from './screens/tree.ts';
 
-const conformance = import.meta.glob('../../../shared/spec/conformance/levels/*/*.json', { eager: true, import: 'default' }) as Record<string, unknown>;
+type Cleanup = (() => void) | void;
 
-type Screen = (root: HTMLElement, params: string[]) => void | (() => void);
-
-const EXAMPLE = example as unknown as LevelV2;
-let game: GameHandle | null = null;
-
-function el<K extends keyof HTMLElementTagNameMap>(tag: K, props: Partial<HTMLElementTagNameMap[K]> = {}, ...kids: (Node | string)[]): HTMLElementTagNameMap[K] {
-  const e = Object.assign(document.createElement(tag), props);
-  e.append(...kids);
-  return e;
-}
-
-function stub(title: string, lane: string, phase: string): Screen {
+function soon(titleKey: string): (root: HTMLElement) => Cleanup {
   return (root) => {
-    root.append(el('div', { className: 'card' }, el('h2', {}, title), el('p', { className: 'muted' }, `${t('error.not_implemented')} (${lane}, ${phase})`)));
+    root.append(card(null, h('h2', null, t(titleKey)), h('p', { class: 'muted' }, t('error.not_implemented')), h('a', { class: 'pill', href: '#/' }, icon('home'), t('ui.home'))));
   };
 }
 
-function mount(root: HTMLElement, level: LevelV2): void {
-  game?.destroy();
-  const stage = el('div', { className: 'card' });
-  root.append(stage);
-  game = mountGame(stage, level, null, { mode: 'preview', rules: level.rules });
+function header(): HTMLElement {
+  const mute = h('button', { type: 'button', class: 'tool', title: t('ui.mute') });
+  const sync = (): void => {
+    const m = store.flag('muted');
+    mute.replaceChildren(h('span', { class: 'emo' }, m ? '🔇' : '🔊'));
+    mute.title = t(m ? 'ui.unmute' : 'ui.mute');
+  };
+  mute.onclick = () => {
+    store.setFlag('muted', !store.flag('muted'));
+    sync();
+  };
+  sync();
+  return h('header', { class: 'app-head' },
+    h('a', { class: 'logo', href: '#/' }, h('span', { class: 'logo-mark' }, '✎'), ' draw-a-level'),
+    h('nav', null,
+      h('a', { href: '#/', data: { nav: '' } }, icon('home'), h('span', null, t('ui.home'))),
+      h('a', { href: '#/draw', data: { nav: 'draw' } }, icon('marker'), h('span', null, t('home.draw'))),
+      h('a', { href: '#/scan', data: { nav: 'scan' } }, icon('camera'), h('span', null, t('home.scan'))),
+      h('a', { href: '#/prompt', data: { nav: 'prompt' } }, icon('pencil'), h('span', null, t('home.prompt')))),
+    mute);
 }
 
-const home: Screen = (root) => {
-  const status = el('p', { className: 'muted' }, '…');
-  root.append(
-    el('div', { className: 'card' }, el('h2', {}, 'draw-a-level v2'), status,
-      el('p', {}, 'P0 shell. v1 keeps running at ', el('a', { href: '/' }, '/'), '.')),
-  );
-  api.health().then(
-    (h) => {
-      status.textContent = `API v2 ok · model ${h.llm} · builder ${h.worker === 'ok' ? 'ready' : 'restarting'} · core ${h.core_version ?? '?'}`;
-    },
-    () => {
-      status.textContent = t('toast.builder_restarting');
-    },
-  );
-};
+const app = document.getElementById('app')!;
+const head = header();
+document.body.prepend(head);
 
-const preview: Screen = (root) => {
-  const log = el('div', { className: 'card events' });
-  const stageBox = el('div');
-  const start = el('button', { type: 'button' }, 'Run the sample build');
-  root.append(el('div', { className: 'card' }, el('h2', {}, t('stage.designed')), start), stageBox, log);
-  let stop: (() => void) | null = null;
-  start.onclick = async () => {
-    start.disabled = true;
-    const form = new FormData();
-    form.append('ink', new Blob(['{}'], { type: 'application/json' }), 'ink.json');
-    const b = await api.createBuild(form);
-    stop = followBuild(b.events_url, b.draft_id, (e: BuildEvent) => {
-      const line = el('div', {}, `#${e.seq} ${e.event}`);
-      if (e.event === 'stage') line.textContent += ` · ${t(`stage.${e.data.stage}`)} ${t(`stage.status.${e.data.status}`)} (${e.data.t_ms} ms)`;
-      if (e.event === 'tier' && e.data.tier === 'polished') mount(stageBox, { ...e.data.level, ink: null } as LevelV2);
-      if (e.event === 'note') line.textContent += ` · ${e.data.designer_note}`;
-      log.append(line);
-    });
-  };
-  return () => stop?.();
-};
-
-const dev: Screen = (root) => {
-  const card = el('div', { className: 'card' }, el('h2', {}, 'Conformance levels (browser core)'));
-  root.append(card);
-  for (const [path, doc] of Object.entries(conformance).sort()) {
-    const name = path.split('/').slice(-2).join('/');
-    const r = validateLevel(doc);
-    const wantValid = name.startsWith('valid/');
-    const okText = r.ok === wantValid ? 'ok' : 'MISMATCH';
-    const row = el('div', {}, el('span', { className: r.ok === wantValid ? 'ok' : 'bad' }, okText), ` ${name} `,
-      el('span', { className: 'muted' }, r.ok ? levelHash(r.level).slice(0, 19) + '…' : r.errors[0] ?? ''));
-    if (r.ok) {
-      const level = r.level;
-      const b = el('button', { type: 'button' }, 'show');
-      b.onclick = () => mount(root, level);
-      row.append(' ', b);
-    }
-    card.append(row);
-  }
-};
-
-const play: Screen = (root, [id]) => {
-  if (id === 'example') return mount(root, EXAMPLE);
-  stub('Play', 'lane F', 'P4')(root, []);
-};
-
-const ROUTES: [RegExp, Screen][] = [
-  [/^#?\/?$/, home],
-  [/^#\/draw$/, stub('Draw', 'lane F', 'P1')],
-  [/^#\/scan$/, stub('Scan paper', 'lane F', 'P2')],
-  [/^#\/preview(?:\/([\w-]+))?$/, preview],
-  [/^#\/play\/([\w-]+)$/, play],
-  [/^#\/game\/([\w-]+)\/rules$/, stub('Rules sheet', 'lane F', 'P5')],
-  [/^#\/game\/([\w-]+)$/, stub('Game', 'lane F', 'P4')],
-  [/^#\/tree\/([\w-]+)$/, stub('Remix tree', 'lane F', 'P4')],
-  [/^#\/library$/, stub('Library', 'lane F', 'P5')],
-  [/^#\/prompt$/, stub('Prompt to level', 'lane F', 'P5')],
-  [/^#\/golden$/, stub('Golden review', 'lane F', 'P4')],
-  [/^#\/dev$/, dev],
-];
-
-let cleanup: (() => void) | void;
+let cleanup: Cleanup;
 
 function route(): void {
-  const root = document.getElementById('app')!;
-  cleanup?.();
-  game?.destroy();
-  game = null;
-  root.replaceChildren();
-  const hash = location.hash || '#/';
-  for (const [re, screen] of ROUTES) {
-    const m = re.exec(hash);
-    if (m) {
-      cleanup = screen(root, m.slice(1).filter((x): x is string => x !== undefined));
-      return;
-    }
+  try {
+    if (typeof cleanup === 'function') cleanup();
+  } catch (e) {
+    console.warn('screen cleanup failed', e);
   }
-  root.append(el('div', { className: 'card' }, t('error.not_found')));
+  cleanup = undefined;
+  app.replaceChildren();
+  document.querySelectorAll('.modal-back').forEach((n) => n.remove());
+  const { path, query } = parseHash();
+  const [first = '', second] = path;
+  for (const a of head.querySelectorAll<HTMLAnchorElement>('nav a')) a.classList.toggle('on', a.dataset.nav === first);
+  document.body.dataset.screen = first || 'home';
+  try {
+    switch (first) {
+      case '':
+        cleanup = homeScreen(app);
+        break;
+      case 'draw':
+        cleanup = drawScreen(app, query);
+        break;
+      case 'scan':
+        cleanup = scanScreen(app, query);
+        break;
+      case 'preview':
+        if (second) cleanup = previewScreen(app, second, query);
+        else app.append(card(null, h('p', null, t('error.not_found'))));
+        break;
+      case 'play':
+        if (second) cleanup = playScreen(app, second, query);
+        break;
+      case 'game':
+        if (second && path[2] === 'rules') cleanup = rulesScreen(app, second);
+        else if (second && path[2] === 'library') cleanup = libraryScreen(app, second);
+        else if (second) cleanup = gameScreen(app, second);
+        break;
+      case 'tree':
+        if (second) cleanup = treeScreen(app, second);
+        break;
+      case 'library':
+        cleanup = libraryScreen(app, second ?? query.get('game'));
+        break;
+      case 'prompt':
+        cleanup = promptScreen(app, query);
+        break;
+      case 'golden':
+        cleanup = soon('ui.golden')(app);
+        break;
+      case 'dev':
+        cleanup = devScreen(app);
+        break;
+      default:
+        app.append(card(null, h('p', null, t('error.not_found'))));
+    }
+  } catch (e) {
+    console.error('screen failed', e);
+    app.replaceChildren(card(null, h('p', null, t('error.build_failed'))));
+  }
 }
 
 window.addEventListener('hashchange', route);

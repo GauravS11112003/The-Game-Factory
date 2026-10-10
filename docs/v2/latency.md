@@ -121,3 +121,18 @@ from `vision/app/mind/prompts/`, prompt caching on the system block). Every requ
 | Designed p90 | ≤ 25 s | now greedy-synchronous; the model plan is async suggestions |
 | dial swap | < 100 ms | P3 |
 | L4 at ≥ 55 fps (Chrome DPR 2, 4× CPU throttle proxy) | P4 | - |
+
+## Orchestrator timing (lane D, `vision/app/build/orchestrator.py`)
+
+All times run from the moment `POST /builds` is accepted (t = 0).
+
+| Step | When | Bound |
+|---|---|---|
+| PERCEIVE (all tiles, in parallel) | starts right after `stage(ink start)`, before the heuristic RPC, because it needs only the ink | each call ends by `min(20 s timeout, 25 s − 3 s reserve)` |
+| Ink build | `build(faithful)` and `build_tiers` on the 2 workers in parallel; the faithful tier is streamed first | `build_tiers` deadline 3 s, plus a 1 s RPC timeout |
+| Speculative DESIGN #1 | as soon as the Ink menu exists | async horizon: t + 70 s (or the 25 s deadline when `DESIGN_SYNCHRONOUS`) |
+| Understood | when every PERCEIVE task has returned | `merge_perception`, then `build_tiers` |
+| Designed | right after Understood | the plan is applied if it is back and transfers at ≥ 70%; otherwise the greedy tiers ship and `stage(design late)` is sent |
+| DESIGN #2 | after a transfer below 70% or a changed route role | synchronous only when `DESIGN_SYNCHRONOUS` and t < 14 s; otherwise async, and its picks become suggestions |
+| REFINE | at most 1 round, when normal or hard misses its band or more than 30% of picks were rejected | synchronous at t < 20 s; otherwise on the late path |
+| Late suggestions | validated by `apply_plan`, then the `suggestions` event and `note(source: model)` | everything is cancelled at t = 75 s, then `done` is sent |

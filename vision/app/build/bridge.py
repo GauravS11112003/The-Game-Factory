@@ -28,11 +28,29 @@ log = logging.getLogger("dal.v2.bridge")
 WORKER_ENTRY = Path("web") / "src" / "core" / "worker" / "main.ts"
 MAX_LINE = 33 * 1024 * 1024  # §11.3c: a line may carry at most 32 MB
 PING_TIMEOUT_S = 1.0
-RPC_TIMEOUTS_S: dict[str, float] = {  # §11.3c table; build_tiers uses deadline + 1 s
-    "ping": 1, "perceive_heuristic": 2, "merge_perception": 1, "parse_rules": 1, "build": 3, "apply_plan": 4,
-    "transfer_plan": 1, "digest": 1, "analyze": 3, "layout_plan": 2, "keyword_plan": 1, "remix_diff": 2,
-    "migrate_v1": 2, "verify_run": 2, "level_hash": 1, "art_svg": 3,
+# §11.3c gives p50-sized timeouts for a 1-2 screen level. The bot bounds its work in simulated frames, not wall
+# time, so a 6-screen level with many entities can need several times longer; a timeout here kills the worker and
+# fails a build that was only slow. The heavy methods therefore get generous backstops (integration decision,
+# docs/v2/CONTRACTS.md §3.11). build_tiers uses its deadline + TIERS_SLACK_S.
+RPC_TIMEOUTS_S: dict[str, float] = {
+    "ping": 1, "perceive_heuristic": 4, "merge_perception": 2, "parse_rules": 2, "build": 15, "apply_plan": 20,
+    "transfer_plan": 2, "digest": 2, "analyze": 12, "layout_plan": 4, "keyword_plan": 2, "remix_diff": 4,
+    "migrate_v1": 4, "verify_run": 8, "level_hash": 2, "art_svg": 6,
+    # P5 (B-2): up to 4 layouts + fast analyses + one full build; per-level dry runs (callers pass per_level_timeout)
+    "generate_level": 30, "rules_check": 8, "library_check": 8,
 }
+PER_LEVEL_CHECK_S = 8.0  # rules_check / library_check: 8 s + 8 s per level (B-2)
+TIERS_SLACK_S = 15.0
+# A timeout on these means "slow", not "crashed": the worker is restarted (to stop the runaway computation) but the
+# same deterministic call is not retried, which would only double the wait.
+NO_RETRY_ON_TIMEOUT = frozenset({
+    "build", "build_tiers", "apply_plan", "analyze", "verify_run", "generate_level", "rules_check", "library_check",
+})
+
+
+def per_level_timeout(n_levels: int) -> float:
+    """Timeout for rules_check / library_check over n levels (B-2: 8 s + 8 s per level)."""
+    return PER_LEVEL_CHECK_S + PER_LEVEL_CHECK_S * max(0, int(n_levels))
 
 
 class CoreError(Exception):
@@ -121,7 +139,15 @@ class CorePool:
             try:
                 return await self._send(w, method, params, timeout)
             except CoreError as e:
-                if e.code in ("invalid", "internal") or attempt == 2:
+                last = e.code in ("invalid", "internal") or attempt == 2
+                if e.code == "timeout" and method in NO_RETRY_ON_TIMEOUT:
+                    last = True
+                    async with self._locks[i]:
+                        if w.proc is proc:
+                            await self._kill(w)
+                            w.restarts += 1
+                            await self._spawn(w)
+                if last:
                     raise
                 log.warning("core worker %d %s on %s; restarting and retrying once", w.index, e.code, method)
                 async with self._locks[i]:

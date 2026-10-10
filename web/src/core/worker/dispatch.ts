@@ -28,8 +28,8 @@ export const METHOD_PARAMS: Record<WorkerMethod, readonly string[]> = {
   perceive_heuristic: ['ink'],
   merge_perception: ['graph0', 'perceptions', 'ink'],
   parse_rules: ['text', 'graph'],
-  build: ['ink', 'graph0', 'edits', 'rules', 'tier'],
-  build_tiers: ['ink', 'graph0', 'edits', 'rules', 'deadlineMs'],
+  build: ['ink', 'tier'],
+  build_tiers: ['ink', 'deadlineMs'],
   apply_plan: ['input', 'menu', 'plan'],
   transfer_plan: ['plan', 'oldMenu', 'newMenu', 'oldGraph', 'newGraph'],
   digest: ['result', 'menu'],
@@ -41,10 +41,25 @@ export const METHOD_PARAMS: Record<WorkerMethod, readonly string[]> = {
   verify_run: ['level', 'replay'],
   level_hash: ['level'],
   art_svg: ['level', 'ink', 'theme', 'view'],
+  generate_level: ['plan'],
+  rules_check: ['levels', 'rules'],
+  library_check: ['levels', 'type'],
 };
 
 // Params arrive as untyped JSON; the core validates its own inputs.
 type Any = any;
+
+/** BuildInput with the optional fields defaulted (library, parent, repairUnsolvable, seed). */
+function buildInput(p: Record<string, Any>, withTier: boolean): Any {
+  const out: Any = {
+    ink: p.ink, graph0: p.graph0, edits: Array.isArray(p.edits) ? p.edits : [], rules: p.rules ?? { version: 1 },
+    library: Array.isArray(p.library) ? p.library : [], parent: p.parent ?? null,
+    repairUnsolvable: p.repairUnsolvable === undefined ? true : !!p.repairUnsolvable, seed: typeof p.seed === 'number' ? p.seed : 1,
+  };
+  if (withTier) out.tier = p.tier ?? 'faithful';
+  if (!out.graph0 && out.ink) out.graph0 = core.perceiveHeuristic(out.ink, { library: out.library, parent: out.parent });
+  return out;
+}
 
 function call(method: WorkerMethod, p: Record<string, Any>, ctx: DispatchContext): unknown {
   switch (method) {
@@ -53,21 +68,19 @@ function call(method: WorkerMethod, p: Record<string, Any>, ctx: DispatchContext
     case 'perceive_heuristic':
       return { graph: core.perceiveHeuristic(p.ink, { library: p.library ?? [], parent: p.parent ?? null }) };
     case 'merge_perception':
-      return core.mergePerception(p.graph0, p.perceptions, p.ink);
+      return core.mergePerception(p.graph0, Array.isArray(p.perceptions) ? p.perceptions : [], p.ink, Array.isArray(p.library) ? p.library : []);
     case 'parse_rules':
-      return core.parseRules(p.text, p.graph);
+      return core.parseRules(String(p.text ?? ''), p.graph, typeof p.target === 'number' ? p.target : null);
     case 'build':
-      return core.build(p as Any);
-    case 'build_tiers': {
-      const { deadlineMs, band, ...input } = p;
-      return core.buildTiers(input as Any, { deadlineMs, band });
-    }
+      return core.build(buildInput(p, true));
+    case 'build_tiers':
+      return core.buildTiers(buildInput(p, false), { deadlineMs: Number(p.deadlineMs) || 3000, band: p.band ?? undefined });
     case 'apply_plan':
-      return core.applyPlan(p.input, p.menu, p.plan);
+      return core.applyPlan(buildInput(p.input ?? {}, false), p.menu ?? [], p.plan);
     case 'transfer_plan':
-      return core.transferPlan(p.plan, p.oldMenu, p.newMenu, p.oldGraph, p.newGraph);
+      return core.transferPlan(p.plan, p.oldMenu ?? [], p.newMenu ?? [], p.oldGraph, p.newGraph);
     case 'digest':
-      return core.digest(p.result, p.menu);
+      return core.digest(p.result, p.menu ?? []);
     case 'analyze':
       return { report: core.analyze(p.level, { mode: p.mode, profile: p.profile }) };
     case 'layout_plan':
@@ -79,11 +92,24 @@ function call(method: WorkerMethod, p: Record<string, Any>, ctx: DispatchContext
     case 'migrate_v1':
       return { level: core.migrateV1(p.level) };
     case 'verify_run':
-      return core.verifyRun(p.level, p.replay);
+      // A-2: the claim (time, deaths, coins, big coins) is checked against the re-simulation
+      return core.verifyRun(p.level, p.replay, p.claimed ?? null);
     case 'level_hash':
       return { hash: core.levelHash(p.level) };
     case 'art_svg':
       return { svg: core.artToSvg(core.buildArt(p.level, p.ink, { theme: p.theme, seed: p.seed ?? 1 }), p.view) };
+    case 'generate_level': {
+      // §8.3: lay out, build, prove, fix; `clamp: 'band'` (model / keyword plans) unless asked otherwise
+      const g = core.generateLevel(p.plan, p.rules ?? { version: 1 }, typeof p.seed === 'number' ? p.seed : 1, {
+        tier: p.tier ?? 'faithful', clamp: p.clamp === 'envelope' ? 'envelope' : 'band', ink: p.ink === 'marker' ? 'marker' : 'draft',
+        library: Array.isArray(p.library) ? p.library : [],
+      });
+      return g;
+    }
+    case 'rules_check':
+      return core.rulesCheck(Array.isArray(p.levels) ? p.levels : [], p.rules, { repair: p.repair !== false });
+    case 'library_check':
+      return core.libraryUpdateCheck(Array.isArray(p.levels) ? p.levels : [], p.type, Array.isArray(p.library) ? p.library : []);
   }
 }
 

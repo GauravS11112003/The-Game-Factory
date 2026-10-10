@@ -1,11 +1,11 @@
-/** Replays and run verification (lane A). P0: codec real, verifyRun stubbed. */
-import type { LevelV2, Replay, RunVerdict } from '../types.gen.ts';
-import { NotImplemented } from '../util/errors.ts';
-
+/** Replays, run verification, ghosts and recording (lane A, §8.4). */
 export { decodeReplay, encodeReplay } from './codec.ts';
-
-export function verifyRun(level: LevelV2, r: Replay): RunVerdict {
-  void level;
-  void r;
-  throw new NotImplemented('verifyRun');
-}
+export {
+  MAX_RUN_FRAMES, checkClaim, inputsToTrace, makeReplay, replayMatchesLevel, stampsOf, traceToInputs, verifyRun, verifyRunDetail,
+} from './verify.ts';
+export type { VerifyDetail, VerifyReason } from './verify.ts';
+export { simulateInputs } from './run.ts';
+export type { ReplayRun } from './run.ts';
+export { GhostTrack, ghostTrack } from './ghost.ts';
+export type { GhostEvent, GhostPose } from './ghost.ts';
+export { ReplayRecorder, replayOfTrace } from './record.ts';

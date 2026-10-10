@@ -335,7 +335,99 @@ class LookScore(_M):
     per_edit: list[EditJudgement]
 
 
+# ---- flat PLAN form (same reason as PerceptionFlat: the 19-variant Beat union inside sections is far past the
+# 10-variant union the API already rejected as "compiled grammar is too large"). One FlatBeat with sentinels; unused
+# fields carry "none" / 0 / false, and `unflatten_plan` keeps only the fields of each beat's kind (the clamps run
+# afterwards in app.mind.plan.sanitize_plan).
+
+BeatKind = Literal[
+    "flat", "gap", "step", "stairs", "pillars", "floaters", "ceiling", "wall", "moving_bridge", "crumble_run",
+    "saw_corridor", "tower", "enemy_gauntlet", "spring_up", "key", "door", "rest", "checkpoint", "goal",
+]
+
+
+class FlatBeat(_M):
+    kind: BeatKind
+    length: int = Field(description="flat, step, ceiling, saw_corridor, rest: length in cells; otherwise 0")
+    width: int = Field(description="gap: width in cells; otherwise 0")
+    rise: int = Field(description="step, stairs, tower: rows up per step (negative = down for step); otherwise 0")
+    n: int = Field(description="stairs, pillars, floaters, crumble_run, enemy_gauntlet: how many; otherwise 0")
+    run: int = Field(description="stairs: cells per step; otherwise 0")
+    spacing: int = Field(description="pillars, floaters: empty cells between them; otherwise 0")
+    dy: int = Field(description="floaters: rows each one is above the last (negative = lower); otherwise 0")
+    headroom: int = Field(description="ceiling: rows of room under the roof; otherwise 0")
+    height: int = Field(description="wall: height in rows; spring_up: rows the spring lifts you; otherwise 0")
+    gap: int = Field(description="moving_bridge: cells the platform carries you; otherwise 0")
+    saws: int = Field(description="saw_corridor: number of saws; otherwise 0")
+    tiers: int = Field(description="tower: number of ledges; otherwise 0")
+    coins: int = Field(description="flat: coins to place; otherwise 0")
+    enemy: Literal["none", "walker", "hopper", "chaser"] = Field(description="flat: an enemy on it; otherwise none")
+    archetype: Literal["walker", "hopper", "flyer", "shooter", "chaser", "crusher", "none"] = Field(
+        description="enemy_gauntlet: the enemy kind; otherwise none")
+    spikes: Literal["none", "middle", "far_end", "near_face", "yes"] = Field(
+        description="flat: none|middle|far_end; wall: none|near_face; ceiling: yes|none; otherwise none")
+    floor: Literal["void", "spikes", "lava", "shallow", "none"] = Field(
+        description="gap: void|spikes|lava; crumble_run: void|shallow; otherwise none")
+    hazard: Literal["void", "spikes", "lava", "none"] = Field(description="pillars: what is below; otherwise none")
+    speed: Literal["slow", "normal", "fast", "none"] = Field(description="moving_bridge: speed; otherwise none")
+    vertical: bool = Field(description="moving_bridge: moves up and down instead of across; otherwise false")
+    oneway: bool = Field(description="floaters, tower: you can jump up through them; otherwise false")
+    place: Literal["high", "guarded", "alcove", "none"] = Field(description="key: where it is; otherwise none")
+    style: Literal["flag", "staircase", "none"] = Field(description="goal: flag or a final staircase; otherwise none")
+
+
+class SectionFlat(_M):
+    role: Literal["teach", "test", "twist", "finale", "rest"]
+    beats: list[FlatBeat]
+
+
+class LevelPlanFlat(_M):
+    title: str
+    theme: Literal["sketchbook", "notebook", "graph", "kraft"]
+    screens: int
+    band: Literal["easy", "normal", "hard"]
+    sections: list[SectionFlat]
+    kid_summary: str
+    safety_ok: bool
+
+
+_BEAT_FIELDS: dict[str, tuple[str, ...]] = {
+    "flat": ("length", "enemy", "coins", "spikes"), "gap": ("width", "floor"), "step": ("rise", "length"),
+    "stairs": ("n", "rise", "run"), "pillars": ("n", "spacing", "hazard"), "floaters": ("n", "dy", "spacing", "oneway"),
+    "ceiling": ("length", "spikes", "headroom"), "wall": ("height", "spikes"), "moving_bridge": ("gap", "speed", "vertical"),
+    "crumble_run": ("n", "floor"), "saw_corridor": ("length", "saws"), "tower": ("tiers", "rise", "oneway"),
+    "enemy_gauntlet": ("archetype", "n"), "spring_up": ("height",), "key": ("place",), "door": (), "rest": ("length",),
+    "checkpoint": (), "goal": ("style",),
+}
+
+
+def unflatten_beat(b: FlatBeat | dict) -> dict:
+    """A flat beat → the LevelPlan beat of its kind (fields of other kinds dropped; enum sentinels fixed later)."""
+    d = b.model_dump() if hasattr(b, "model_dump") else dict(b)
+    kind = d.get("kind")
+    out: dict = {"kind": kind}
+    for f in _BEAT_FIELDS.get(str(kind), ()):
+        v = d.get(f)
+        if kind == "ceiling" and f == "spikes":
+            v = v == "yes"
+        out[f] = v
+    return out
+
+
+def unflatten_plan(p: LevelPlanFlat | dict) -> dict:
+    d = p.model_dump() if hasattr(p, "model_dump") else dict(p)
+    return {**{k: d.get(k) for k in ("title", "theme", "screens", "band", "kid_summary", "safety_ok")},
+            "sections": [{"role": s.get("role"), "beats": [unflatten_beat(b) for b in s.get("beats") or []]}
+                         for s in d.get("sections") or []]}
+
+
 SCHEMAS: dict[str, type[BaseModel]] = {
-    "perceive": PerceptionFlat,  # the union form is rejected by the API (P0 bakeoff); see unflatten() "design": DesignPlan, "refine": DesignPlan, "critic": Critique, "plan": LevelPlan,
-    "creature": CreatureSpec, "moderate": Moderation, "look": LookScore,
+    "perceive": PerceptionFlat,  # the union form is rejected by the API (P0 bakeoff); see unflatten()
+    "design": DesignPlan,
+    "refine": DesignPlan,
+    "critic": Critique,
+    "plan": LevelPlanFlat,  # the union form would be rejected like Perception's (see unflatten_plan)
+    "creature": CreatureSpec,
+    "moderate": Moderation,
+    "look": LookScore,
 }

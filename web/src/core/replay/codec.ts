@@ -1,11 +1,11 @@
 /**
  * Replay input codec (§8.4): base64 of RLE records (u16 little-endian run length 1..65535, u8 input bits
- * L=1 R=2 J=4 RUN=8 D=16). One input byte per sim frame. A 60 s run is ≈ 0.3-0.8 KB.
+ * L=1 R=2 J=4 RUN=8 D=16, RESTART=32). One input byte per sim frame. A 60 s run is ≈ 0.3-0.8 KB.
  */
 import { fromBase64, toBase64 } from '../util/base64.ts';
 
 const MAX_RUN = 0xffff;
-const BITS_MASK = 0x1f;
+const BITS_MASK = 0x3f; // L R J RUN D + RESTART (32, docs/v2/requests/E-1.md)
 
 export function encodeReplay(inputs: Uint8Array): string {
   const out: number[] = [];

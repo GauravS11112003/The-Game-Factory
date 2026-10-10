@@ -1,0 +1,27 @@
+{
+  "title": "Ink Gauntlet",
+  "theme": "graph",
+  "screens": 3,
+  "band": "hard",
+  "kid_summary": "Everything, and tight.",
+  "safety_ok": true,
+  "sections": [
+    { "role": "test", "beats": [
+      { "kind": "flat", "length": 6, "enemy": "none", "coins": 0, "spikes": "none" },
+      { "kind": "enemy_gauntlet", "archetype": "flyer", "n": 3 },
+      { "kind": "checkpoint" }
+    ] },
+    { "role": "twist", "beats": [
+      { "kind": "enemy_gauntlet", "archetype": "crusher", "n": 2 },
+      { "kind": "crumble_run", "n": 4, "floor": "void" },
+      { "kind": "checkpoint" }
+    ] },
+    { "role": "finale", "beats": [
+      { "kind": "flat", "length": 14, "enemy": "none", "coins": 0, "spikes": "none" },
+      { "kind": "tower", "tiers": 2, "rise": 3, "oneway": true },
+      { "kind": "pillars", "n": 3, "spacing": 4, "hazard": "spikes" },
+      { "kind": "gap", "width": 7, "floor": "lava" },
+      { "kind": "goal", "style": "flag" }
+    ] }
+  ]
+}

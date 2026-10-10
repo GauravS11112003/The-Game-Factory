@@ -23,8 +23,8 @@ export default defineConfig({
   build: {
     target: 'es2022',
     sourcemap: true,
-    // dev.html is the engine dev page (lane B); building it keeps it type-checked and bundled.
-    // v2.html is the v2 app (PLAN_V2 D25), served beside v1 until the P6 switch-over.
-    rollupOptions: { input: { main: 'index.html', dev: 'dev.html', v2: 'v2.html' } },
+    // index.html boots the v2 app (PLAN_V2 P6 switch-over); v2.html is kept as an alias for old links.
+    // v1.html is the v1 app, still reachable; dev.html is the v1 engine dev page.
+    rollupOptions: { input: { main: 'index.html', v2: 'v2.html', v1: 'v1.html', dev: 'dev.html' } },
   },
 });

@@ -146,5 +146,11 @@ export function stubResult(method: WorkerMethod, params: Record<string, unknown>
       return { hash: levelHash(params.level as LevelV2) };
     case 'art_svg':
       return { svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 768 432"><rect width="768" height="432" fill="#FBF6EA"/></svg>' };
+    case 'generate_level':
+      return { plan: EXAMPLE_PLAN, ink: exampleInk(), graph0: { objects: [] }, result: exampleBuild('faithful'), solvable: true, fixes: [], frontier_text: null, dropped: [], spans: [] };
+    case 'rules_check':
+      return { affected: [] };
+    case 'library_check':
+      return { updated: [], broken: [] };
   }
 }

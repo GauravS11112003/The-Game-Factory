@@ -42,8 +42,8 @@ cat <<EOF
 
   draw-a-level
   ------------
-  web   : http://localhost:${WEB_PORT}   (phone: http://${LAN_IP}:${WEB_PORT})
-  api   : http://localhost:${API_PORT}   (health: http://${LAN_IP}:${API_PORT}/api/health)
+  web   : http://localhost:${WEB_PORT}   (phone: http://${LAN_IP}:${WEB_PORT})   v2 app; v1 at /v1.html
+  api   : http://localhost:${API_PORT}   (health: http://localhost:${API_PORT}/api/v2/health)
   llm   : ${ANTHROPIC_API_KEY:+live (key loaded)}${ANTHROPIC_API_KEY:+}$( [[ -z "${ANTHROPIC_API_KEY:-}" ]] && echo "fake (ANTHROPIC_API_KEY unset)" )
 
   Ctrl-C stops both.

@@ -1,0 +1,36 @@
+{
+  "title": "Doodle Meadow",
+  "theme": "sketchbook",
+  "screens": 3,
+  "band": "easy",
+  "kid_summary": "I can run, jump and stomp.",
+  "safety_ok": true,
+  "sections": [
+    { "role": "teach", "beats": [
+      { "kind": "flat", "length": 8, "enemy": "none", "coins": 3, "spikes": "none" },
+      { "kind": "step", "rise": 2, "length": 6 },
+      { "kind": "step", "rise": -2, "length": 3 },
+      { "kind": "step", "rise": -2, "length": 3 },
+      { "kind": "step", "rise": 2, "length": 2 },
+      { "kind": "flat", "length": 13, "enemy": "walker", "coins": 5, "spikes": "none" },
+      { "kind": "step", "rise": -1, "length": 3 },
+      { "kind": "checkpoint" }
+    ] },
+    { "role": "test", "beats": [
+      { "kind": "gap", "width": 4, "floor": "void" },
+      { "kind": "stairs", "n": 3, "rise": 2, "run": 4 },
+      { "kind": "flat", "length": 10, "enemy": "walker", "coins": 0, "spikes": "none" },
+      { "kind": "step", "rise": -5, "length": 12 },
+      { "kind": "gap", "width": 7, "floor": "void" }
+    ] },
+    { "role": "twist", "beats": [
+      { "kind": "enemy_gauntlet", "archetype": "walker", "n": 2 },
+      { "kind": "step", "rise": -1, "length": 2 }
+    ] },
+    { "role": "finale", "beats": [
+      { "kind": "checkpoint" },
+      { "kind": "tower", "tiers": 4, "rise": 3, "oneway": true },
+      { "kind": "goal", "style": "flag" }
+    ] }
+  ]
+}

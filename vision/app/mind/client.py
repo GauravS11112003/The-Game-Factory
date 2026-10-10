@@ -11,6 +11,7 @@ in the P0 bakeoff, docs/v2/latency.md), so no worker thread is needed.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import time
@@ -23,7 +24,7 @@ import anthropic
 import pydantic
 from pydantic import BaseModel
 
-from app.mind import budget, ledger
+from app.mind import budget, fake, ledger
 
 log = logging.getLogger("dal.v2.mind")
 
@@ -31,11 +32,13 @@ MODEL = "claude-opus-5"
 PRICE_IN, PRICE_OUT = 5.0, 25.0  # $/MTok; thinking bills as output
 PRICE_CACHE_WRITE, PRICE_CACHE_READ = 6.25, 0.5
 FAST_MULTIPLIER = 2.0
+MIN_CALL_S = 3.0  # params.ts MODEL.min_call_s: a call with less time left than this is skipped
+RETRY_529_MIN_LEFT_S = 8.0  # params.ts MODEL.retry_529_min_left_s
 FALLBACK_BETA = "server-side-fallback-2026-07-01"
 FAST_BETA = "fast-mode-2026-02-01"
 PROMPTS = Path(__file__).resolve().parent / "prompts"
 
-CallKind = Literal["perceive", "design", "refine", "critic", "plan", "creature", "moderate", "look"]
+CallKind = Literal["perceive", "design", "refine", "critic", "plan", "creature", "moderate", "look", "handwriting"]
 Thinking = Literal["adaptive", "disabled"] | None
 Status = Literal["ok", "failed", "refused", "truncated", "skipped"]
 T = TypeVar("T", bound=BaseModel)
@@ -63,6 +66,7 @@ CALLS: dict[str, CallSpec] = {
     "plan": CallSpec("low", 6000, 20),
     "creature": CallSpec("low", 2000, 10),
     "moderate": CallSpec("low", 1500, 10),
+    "handwriting": CallSpec("low", 1500, 10),  # sheet name / story lines (§8.1, §8.2); not tied to a draft
     "look": CallSpec("medium", 6000, 60),  # eval only, never a runtime gate
 }
 
@@ -106,6 +110,18 @@ def has_key() -> bool:
     return bool(os.environ.get("ANTHROPIC_API_KEY"))
 
 
+def mode() -> Literal["live", "fake", "off"]:
+    """fake = DAL_FAKE_LLM=1 (recorded replies, app.mind.fake), live = a key is set, off = no key (model-off path)."""
+    if os.environ.get("DAL_FAKE_LLM", "").strip().lower() in {"1", "true", "yes", "on"}:
+        return "fake"
+    return "live" if has_key() else "off"
+
+
+def available() -> bool:
+    """Whether a model call can run at all (budget aside)."""
+    return mode() != "off"
+
+
 def cost_of(usage: Any, fast: bool = False) -> float:
     def n(attr: str) -> int:
         return int(getattr(usage, attr, 0) or 0)
@@ -135,13 +151,17 @@ async def call(
     think = spec.thinking if thinking is _UNSET else thinking
     eff = effort or spec.effort
     use_fast = bool(fast) if fast is not None else os.environ.get("DAL_FAST_MODE") == "1"
-    if not has_key():
+    m = mode()
+    if m == "off":
         return MindResult[schema](kind=kind, status="skipped", error="no_key")  # type: ignore[valid-type]
+    timeout = min(timeout_s or spec.timeout_s, deadline - time.monotonic())
+    if timeout < MIN_CALL_S:
+        return MindResult[schema](kind=kind, status="skipped", error="deadline")  # type: ignore[valid-type]
+    if m == "fake":
+        return await _fake_call(kind, schema, content, draft_id=draft_id, effort=eff,
+                                deadline=time.monotonic() + timeout)
     if not budget.allow(kind, draft_id):
         return MindResult[schema](kind=kind, status="skipped", error="budget")  # type: ignore[valid-type]
-    timeout = min(timeout_s or spec.timeout_s, deadline - time.monotonic())
-    if timeout < 3:
-        return MindResult[schema](kind=kind, status="skipped", error="deadline")  # type: ignore[valid-type]
 
     kwargs: dict[str, Any] = dict(
         model=MODEL,
@@ -158,15 +178,22 @@ async def call(
     if use_fast:
         kwargs["speed"] = "fast"
 
-    c = _get_client().with_options(timeout=timeout, max_retries=0)
+    call_deadline = time.monotonic() + timeout
     t0 = time.perf_counter()
     resp: Any = None
     for attempt in (1, 2):
+        left = call_deadline - time.monotonic()
+        if left < 1:
+            return _finish(kind, schema, draft_id, eff, t0, status="failed", error="deadline before retry")
+        c = _get_client().with_options(timeout=left, max_retries=0)
         try:
-            resp = await c.beta.messages.parse(**kwargs)
+            # the SDK timeout is the real limit; wait_for is a backstop so a stuck socket can never hold a build
+            resp = await asyncio.wait_for(c.beta.messages.parse(**kwargs), left + 2)
             break
+        except asyncio.TimeoutError:
+            return _finish(kind, schema, draft_id, eff, t0, status="failed", error=f"timeout after {left:.1f} s")
         except anthropic.APIStatusError as e:
-            if e.status_code == 529 and attempt == 1 and deadline - time.monotonic() > 8:
+            if e.status_code == 529 and attempt == 1 and call_deadline - time.monotonic() > RETRY_529_MIN_LEFT_S:
                 continue
             return _finish(kind, schema, draft_id, eff, t0, status="failed", error=f"http {e.status_code}: {e.message}"[:300])
         except (anthropic.APIConnectionError, pydantic.ValidationError, ValueError) as e:  # timeout ⊂ connection error
@@ -180,6 +207,37 @@ async def call(
     if resp.parsed_output is None:
         return _finish(kind, schema, draft_id, eff, t0, status="failed", resp=resp, fast=use_fast, error="no_parse")
     return _finish(kind, schema, draft_id, eff, t0, status="ok", resp=resp, fast=use_fast, value=resp.parsed_output)
+
+
+async def _fake_call(
+    kind: str, schema: type[T], content: list[dict[str, Any]], *, draft_id: str | None, effort: str, deadline: float,
+) -> MindResult[T]:
+    t0 = time.perf_counter()
+    try:
+        r = await fake.reply(kind, schema, content, deadline=deadline)
+    except Exception as e:  # noqa: BLE001 - MindResult never raises
+        r = {"status": "failed", "error": f"{type(e).__name__}: {e}"[:300]}
+    if r["status"] == "skipped":
+        return MindResult[schema](kind=kind, status="skipped", error=r.get("error"))  # type: ignore[valid-type]
+    latency = float(r.get("latency_s", time.perf_counter() - t0))
+    res: MindResult[T] = MindResult[schema](  # type: ignore[valid-type]
+        kind=kind, status=r["status"], value=r.get("value"), latency_s=round(latency, 3), stop_reason=r.get("stop_reason"),
+        error=r.get("error"), served_by="fake",
+    )
+    ledger.record(ledger.CallRecord(
+        kind=kind, draft_id=draft_id, effort=effort, latency_ms=int(latency * 1000), stop_reason=res.stop_reason,
+        served_by="fake", ok=res.status == "ok",
+    ))
+    return res
+
+
+def call_meta(r: MindResult[Any], effort: str | None = None) -> dict[str, Any]:
+    """The `meta.build.model_calls[]` entry (ModelCallMeta) for one finished call."""
+    return {
+        "kind": r.kind, "effort": effort or CALLS[r.kind].effort, "latency_ms": int(r.latency_s * 1000),
+        "in_tok": r.in_tok, "out_tok": r.out_tok, "cost_usd": r.cost_usd, "stop_reason": r.stop_reason,
+        "fallback_used": r.fallback_used, "served_by": r.served_by, "cache_read_tok": r.cache_read_tok,
+    }
 
 
 def _finish(

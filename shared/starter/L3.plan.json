@@ -1,0 +1,140 @@
+{
+  "title": "Crumble Cliffs",
+  "theme": "kraft",
+  "screens": 4,
+  "band": "normal",
+  "kid_summary": "Keep moving, feel the rhythm.",
+  "safety_ok": true,
+  "sections": [
+    {
+      "role": "teach",
+      "beats": [
+        {
+          "kind": "flat",
+          "length": 10,
+          "enemy": "none",
+          "coins": 3,
+          "spikes": "none"
+        },
+        {
+          "kind": "crumble_run",
+          "n": 4,
+          "floor": "shallow"
+        },
+        {
+          "kind": "flat",
+          "length": 6,
+          "enemy": "none",
+          "coins": 0,
+          "spikes": "none"
+        },
+        {
+          "kind": "crumble_run",
+          "n": 3,
+          "floor": "void"
+        },
+        {
+          "kind": "flat",
+          "length": 6,
+          "enemy": "none",
+          "coins": 0,
+          "spikes": "none"
+        }
+      ]
+    },
+    {
+      "role": "test",
+      "beats": [
+        {
+          "kind": "crumble_run",
+          "n": 5,
+          "floor": "void"
+        },
+        {
+          "kind": "flat",
+          "length": 4,
+          "enemy": "none",
+          "coins": 0,
+          "spikes": "none"
+        },
+        {
+          "kind": "moving_bridge",
+          "gap": 11,
+          "speed": "normal",
+          "vertical": false
+        },
+        {
+          "kind": "checkpoint"
+        }
+      ]
+    },
+    {
+      "role": "twist",
+      "beats": [
+        {
+          "kind": "gap",
+          "width": 6,
+          "floor": "void"
+        },
+        {
+          "kind": "flat",
+          "length": 4,
+          "enemy": "none",
+          "coins": 0,
+          "spikes": "none"
+        },
+        {
+          "kind": "step",
+          "rise": 3,
+          "length": 6
+        },
+        {
+          "kind": "moving_bridge",
+          "gap": 7,
+          "speed": "normal",
+          "vertical": true
+        },
+        {
+          "kind": "checkpoint"
+        }
+      ]
+    },
+    {
+      "role": "finale",
+      "beats": [
+        {
+          "kind": "saw_corridor",
+          "length": 8,
+          "saws": 1
+        },
+        {
+          "kind": "crumble_run",
+          "n": 4,
+          "floor": "void"
+        },
+        {
+          "kind": "flat",
+          "length": 4,
+          "enemy": "none",
+          "coins": 0,
+          "spikes": "none"
+        },
+        {
+          "kind": "moving_bridge",
+          "gap": 12,
+          "speed": "normal",
+          "vertical": false
+        },
+        {
+          "kind": "step",
+          "rise": 3,
+          "length": 4
+        },
+        {
+          "kind": "goal",
+          "style": "flag"
+        }
+      ]
+    }
+  ]
+}

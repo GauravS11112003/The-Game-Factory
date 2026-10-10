@@ -1,0 +1,20 @@
+{
+  "id": "L1",
+  "seed": 1001,
+  "designer_note": "Run, hop and stomp your way up to the hill.",
+  "patches": [
+    { "beat": "*", "stretch": false, "auto_checkpoints": false },
+    { "beat": "1.0", "coins": 3 },
+    { "beat": "1.2", "enemy_speed": 2 },
+    { "beat": "1.4", "coins": 5, "landing": 3 },
+    { "beat": "2.0", "spacing": 3 },
+    { "beat": "3.1", "floor": "safe" }
+  ],
+  "draw": [
+    { "kind": "sign", "text": "run! →", "beat": "1.3", "dx": 2.5, "dy": -3.2 },
+    { "kind": "big_coin", "beat": "1.4", "dx": 3.5, "dy": -6.6 },
+    { "kind": "big_coin", "beat": "2.0", "dx": 7, "dy": -6.5 },
+    { "kind": "platform", "beat": "3.1", "dx": -6, "dy": -10, "w": 2 },
+    { "kind": "big_coin", "beat": "3.1", "dx": -5, "dy": -10.9 }
+  ]
+}

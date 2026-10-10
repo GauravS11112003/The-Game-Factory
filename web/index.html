@@ -2,14 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-    <meta name="theme-color" content="#111318" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#FBF6EA" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <title>Draw a Level</title>
-    <link rel="stylesheet" href="/src/style.css" />
+    <title>draw-a-level</title>
   </head>
   <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
+    <!-- v2 is the main app (PLAN_V2 §11.4 P6 switch-over). v1 stays reachable at /v1.html; /v2.html is an alias. -->
+    <main id="app" class="v2"></main>
+    <script type="module" src="/src/app/main.ts"></script>
   </body>
 </html>
