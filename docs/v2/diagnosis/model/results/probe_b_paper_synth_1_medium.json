@@ -1,0 +1,148 @@
+{
+ "scene": "paper_synth_1",
+ "effort": "medium",
+ "call": {
+  "n": 11,
+  "name": "B:paper_synth_1",
+  "probe": "B",
+  "effort": "medium",
+  "model": "claude-opus-5",
+  "latency_s": 18.58,
+  "stop_reason": "end_turn",
+  "served_by": "claude-opus-5",
+  "fallback_used": false,
+  "input_tokens": 5423,
+  "output_tokens": 1479,
+  "visible_text_chars": 1375,
+  "cost_usd": 0.0641,
+  "request_id": "req_011Cft1XzsFGToY4FNe6hRnj",
+  "parsed": {
+   "edits": [
+    {
+     "op": "nudge",
+     "component_id": 6,
+     "target_id": null,
+     "dx": 0,
+     "dy": 2,
+     "row": null,
+     "x0": null,
+     "x1": null,
+     "direction": null,
+     "new_role": null,
+     "reason": "The low ledge was 5 rows above the floor, too high to jump, so it drops 2 rows to be reachable.",
+     "confidence": 0.86
+    },
+    {
+     "op": "nudge",
+     "component_id": 5,
+     "target_id": null,
+     "dx": 0,
+     "dy": 2,
+     "row": null,
+     "x0": null,
+     "x1": null,
+     "direction": null,
+     "new_role": null,
+     "reason": "The coin moves down with its ledge so you can still grab it.",
+     "confidence": 0.8
+    },
+    {
+     "op": "nudge",
+     "component_id": 3,
+     "target_id": null,
+     "dx": 0,
+     "dy": 3,
+     "row": null,
+     "x0": null,
+     "x1": null,
+     "direction": null,
+     "new_role": null,
+     "reason": "The upper platform drops so you can hop onto it from the lower ledge.",
+     "confidence": 0.82
+    },
+    {
+     "op": "nudge",
+     "component_id": 2,
+     "target_id": null,
+     "dx": 0,
+     "dy": 3,
+     "row": null,
+     "x0": null,
+     "x1": null,
+     "direction": null,
+     "new_role": null,
+     "reason": "The coin moves down with its platform so it stays within reach.",
+     "confidence": 0.78
+    }
+   ],
+   "left_alone": [
+    "The spikes on the right floor stay exactly where you drew them.",
+    "The 5-cell pit between the two floors is already jumpable, so it stays.",
+    "The green goal stays on the right floor.",
+    "The word 'moves' and the arrow stay as labels you can't bump into."
+   ],
+   "summary_for_kid": "I slid your two floating platforms (and their coins) down a little so you can actually jump up to them \u2014 everything else, spikes and all, is just how you drew it!"
+  }
+ },
+ "before": {
+  "start": [
+   1,
+   24
+  ],
+  "goal": [
+   44,
+   23
+  ],
+  "goal_reachable": true,
+  "reachable_cells": 37,
+  "solvable": true
+ },
+ "applied": [
+  "nudge #6 by (0,2)",
+  "nudge #5 by (0,2)",
+  "nudge #3 by (0,3)",
+  "nudge #2 by (0,3)"
+ ],
+ "after": {
+  "start": [
+   1,
+   24
+  ],
+  "goal": [
+   44,
+   23
+  ],
+  "goal_reachable": true,
+  "reachable_cells": 50,
+  "solvable": true
+ },
+ "grid_after": [
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000011111110000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000001111110000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000222200000000000000",
+  "011111111111111111111000001111111111111111111110",
+  "000000000000000000000000000000000000000000000000"
+ ]
+}

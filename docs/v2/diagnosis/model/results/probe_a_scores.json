@@ -1,0 +1,276 @@
+[
+ {
+  "call": 1,
+  "scene": "canvas_floating_spikes",
+  "effort": "medium",
+  "latency_s": 15.45,
+  "input_tokens": 3937,
+  "output_tokens": 1245,
+  "cost_usd": 0.0508,
+  "components": 16,
+  "role_acc": 0.938,
+  "role_acc_lenient": 0.938,
+  "relations": "10/10",
+  "relation_acc": 1.0,
+  "non_geometry_recall": "4/4",
+  "geometry_dropped_as_annotation": [],
+  "errors": [
+   "#3 CEIL: role platform (gt ceiling)"
+  ],
+  "creator_intent": "A left-to-right run across two ground sections separated by a gap, hopping onto mid-air ledges past spikes and an enemy, collecting coins, toward a green goal on the right.",
+  "problems_noticed": [
+   "The word 'jump!' would become solid ink if built literally",
+   "Green goal at (43,14) floats with no platform under or near it",
+   "Coin 12 and coin 6 float far from reachable ledges",
+   "Goal and platform 3 are high up with no path to reach them",
+   "Spikes 9 sit above platform 11 making it unusable",
+   "Gap between ground 15 and 16 (x 21-25) has no platform to cross"
+  ]
+ },
+ {
+  "call": 2,
+  "scene": "paper_synth_1",
+  "effort": "medium",
+  "latency_s": 10.67,
+  "input_tokens": 4097,
+  "output_tokens": 934,
+  "cost_usd": 0.0438,
+  "components": 11,
+  "role_acc": 1.0,
+  "role_acc_lenient": 1.0,
+  "relations": "5/5",
+  "relation_acc": 1.0,
+  "non_geometry_recall": "2/2",
+  "geometry_dropped_as_annotation": [],
+  "errors": [],
+  "creator_intent": "A left-to-right run across a gap: hop up onto ledges collecting coins, ride a moving platform across the pit, avoid spikes, and reach the green goal on the right floor.",
+  "problems_noticed": [
+   "The word 'moves' is black ink and could become a solid wall if built literally",
+   "Gap between ground 10 and 11 (cells 21-25) requires the moving platform to be traversable",
+   "Platform 3 and 6 float with no support; 3 is meant to move",
+   "Coins 2, 5, 8 float (intended, but verify reachability)",
+   "Goal 7 floats slightly above ground 11"
+  ]
+ },
+ {
+  "call": 2,
+  "scene": "canvas_wobbly_cave",
+  "effort": "medium",
+  "latency_s": 16.09,
+  "input_tokens": 3805,
+  "output_tokens": 1301,
+  "cost_usd": 0.0515,
+  "components": 12,
+  "role_acc": 0.833,
+  "role_acc_lenient": 1.0,
+  "relations": "5/6",
+  "relation_acc": 0.833,
+  "non_geometry_recall": "2/2",
+  "geometry_dropped_as_annotation": [],
+  "errors": [
+   "#10 F1b: role platform (gt ground, lenient ok)",
+   "#11 F2: role platform (gt ground, lenient ok)",
+   "#12 PIT: rests_on want None got rests_on=10 attached_to=None"
+  ],
+  "creator_intent": "A side-scrolling run from the left ground, past a floating wall obstacle and coins, across a lava/spike pit in the gap, up to a right-hand platform with a green flag goal, while spikes hang from the wavy ceiling overhead.",
+  "problems_noticed": [
+   "Coins 7 and 8 float with no platform support (fine as pickups, but unreachable from ground?)",
+   "Zigzag mountain 3 floats in mid-air; if solid it becomes a random platform",
+   "The 'Lava!' word 5 would become a solid wall/obstacle if built literally",
+   "Large gap between ground 9/platform 10 and the right platform 11 with spikes 12 below may be an impossible jump",
+   "Vertical wall 4 splits the lower ground and may block progress entirely"
+  ]
+ },
+ {
+  "call": 2,
+  "scene": "canvas_tower_key",
+  "effort": "medium",
+  "latency_s": 25.92,
+  "input_tokens": 4136,
+  "output_tokens": 2260,
+  "cost_usd": 0.0772,
+  "components": 22,
+  "role_acc": 0.955,
+  "role_acc_lenient": 0.955,
+  "relations": "8/8",
+  "relation_acc": 1.0,
+  "non_geometry_recall": "6/6",
+  "geometry_dropped_as_annotation": [],
+  "errors": [
+   "#4 DOOR: role wall (gt door)"
+  ],
+  "creator_intent": "A left-to-right climb from a start marked 'S' over spike-topped ledges, collecting coins and a key, past a skull enemy and a spiked right wall, up to a green star goal on the high ledge, with a written hint 'key opens door'.",
+  "problems_noticed": [
+   "The phrase 'key opens door' (1,2,3) and the letter 'S' (18) are writing, not geometry - they must not become solid walls.",
+   "Coins 10 and 17 float in midair with no platform under them (fine for pickups, but 10 is far from any ledge).",
+   "There is no actual door component even though the text promises one, so the key (13) has nothing to unlock.",
+   "The tree/balloon (16 + 21) is scenery and should not collide; its trunk overlaps the ground line.",
+   "Gap from platform 12 up to the high ledge 6 is very large - likely an impossible jump without extra steps.",
+   "Wall 4 standing on top of ledge 6 blocks the route to the goal.",
+   "Spikes 14 on the right wall sit right where the player must land after the ledge, making the goal approach very punishing."
+  ]
+ },
+ {
+  "call": 5,
+  "scene": "canvas_wobbly_cave",
+  "effort": "low",
+  "latency_s": 10.77,
+  "input_tokens": 3805,
+  "output_tokens": 962,
+  "cost_usd": 0.0431,
+  "components": 12,
+  "role_acc": 0.833,
+  "role_acc_lenient": 1.0,
+  "relations": "6/6",
+  "relation_acc": 1.0,
+  "non_geometry_recall": "2/2",
+  "geometry_dropped_as_annotation": [],
+  "errors": [
+   "#10 F1b: role platform (gt ground, lenient ok)",
+   "#11 F2: role platform (gt ground, lenient ok)"
+  ],
+  "creator_intent": "Run left-to-right along a wavy floor collecting coins, dodge ceiling spikes and a wall, cross a lava spike pit, and reach the green flag on the raised platform.",
+  "problems_noticed": [
+   "Component 3 floats in mid-air with no support",
+   "The word 'Lava' would become a solid obstacle if built",
+   "Lava strip (12) sits in a gap between platforms 10 and 11 with a big jump",
+   "Coins 7 and 8 float high above the ground"
+  ]
+ },
+ {
+  "call": 5,
+  "scene": "paper_synth_1",
+  "effort": "low",
+  "latency_s": 9.62,
+  "input_tokens": 4097,
+  "output_tokens": 842,
+  "cost_usd": 0.0415,
+  "components": 11,
+  "role_acc": 1.0,
+  "role_acc_lenient": 1.0,
+  "relations": "5/5",
+  "relation_acc": 1.0,
+  "non_geometry_recall": "2/2",
+  "geometry_dropped_as_annotation": [],
+  "errors": [],
+  "creator_intent": "A simple run across two ground segments with a gap, collecting coins on floating ledges (one moving platform), avoiding spikes, reaching a green goal at the right.",
+  "problems_noticed": [
+   "'moves' text could become a wall if built as ink",
+   "Goal floats slightly above ground",
+   "Gap between grounds 10 and 11 is ~6 cells with no platform near it",
+   "Moving platform behavior only expressed in words/arrow"
+  ]
+ },
+ {
+  "call": 5,
+  "scene": "canvas_floating_spikes",
+  "effort": "low",
+  "latency_s": 12.88,
+  "input_tokens": 3937,
+  "output_tokens": 1250,
+  "cost_usd": 0.0509,
+  "components": 16,
+  "role_acc": 0.938,
+  "role_acc_lenient": 0.938,
+  "relations": "10/10",
+  "relation_acc": 1.0,
+  "non_geometry_recall": "4/4",
+  "geometry_dropped_as_annotation": [],
+  "errors": [
+   "#3 CEIL: role platform (gt ceiling)"
+  ],
+  "creator_intent": "A left-to-right run across ground platforms, jumping over spikes and an enemy, collecting coins, and reaching the green goal at the right.",
+  "problems_noticed": [
+   "Goal 5 floats high in the air with no platform beneath it",
+   "Coins 6 and 12 float; 12 has no nearby platform",
+   "Word 'jump!' would become a solid wall if built",
+   "Gap between ground 15 and 16 (x20-26) may be an impossible fall",
+   "Spikes 9 sit directly on the only reachable ledge 11, making it unusable"
+  ]
+ },
+ {
+  "call": 5,
+  "scene": "canvas_tower_key",
+  "effort": "low",
+  "latency_s": 16.24,
+  "input_tokens": 4136,
+  "output_tokens": 1576,
+  "cost_usd": 0.0601,
+  "components": 22,
+  "role_acc": 0.909,
+  "role_acc_lenient": 0.909,
+  "relations": "8/8",
+  "relation_acc": 1.0,
+  "non_geometry_recall": "5/6",
+  "geometry_dropped_as_annotation": [],
+  "errors": [
+   "#4 DOOR: role wall (gt door)",
+   "#16 TREE: role door (gt decoration)"
+  ],
+  "creator_intent": "A left-to-right level starting at 'S', collecting a key and coins while avoiding spikes and a skull enemy, climbing platforms to reach the green star goal at upper right; a text note explains 'key opens door'.",
+  "problems_noticed": [
+   "Floating coins 10 and 17 and oval 16/21 have no support",
+   "Text 'key opens door' and 'S' would become solid walls if built",
+   "Spike strip 14 blocks the right wall climb to the goal",
+   "Platform 6 is far above ground with no reachable step from 12",
+   "Door shape (16) is ambiguous and not connected to the key"
+  ]
+ },
+ {
+  "call": 9,
+  "scene": "canvas_floating_spikes",
+  "effort": "high",
+  "latency_s": 22.65,
+  "input_tokens": 3937,
+  "output_tokens": 1922,
+  "cost_usd": 0.0677,
+  "components": 16,
+  "role_acc": 0.938,
+  "role_acc_lenient": 0.938,
+  "relations": "10/10",
+  "relation_acc": 1.0,
+  "non_geometry_recall": "4/4",
+  "geometry_dropped_as_annotation": [],
+  "errors": [
+   "#3 CEIL: role platform (gt ceiling)"
+  ],
+  "creator_intent": "A left-to-right run: start on the bottom-left floor, dodge a red monster and spikes while hopping the low ledge and mid-air platform, jump the gap in the floor (labeled 'jump!'), get past the spiked ground section, and reach the green goal on the right.",
+  "problems_noticed": [
+   "Green goal (5) floats high in mid-air with no platform under or near it - unreachable",
+   "High platform 3 with its under-spikes is far above everything else and has no way up to it",
+   "Spike row 9 is drawn 2 cells above platform 11 instead of on it",
+   "Coin 12 and the goal sit over a spike/ground area with no ledge to stand on",
+   "The word 'jump!' (10) and the arrow (7) would become solid obstacles if built as ink",
+   "Gap between floors 15 and 16 (x20-26) is about 6 cells wide - likely too far to jump without a mid platform"
+  ]
+ },
+ {
+  "call": 9,
+  "scene": "canvas_tower_key",
+  "effort": "high",
+  "latency_s": 29.13,
+  "input_tokens": 4136,
+  "output_tokens": 2506,
+  "cost_usd": 0.0833,
+  "components": 22,
+  "role_acc": 0.955,
+  "role_acc_lenient": 0.955,
+  "relations": "8/8",
+  "relation_acc": 1.0,
+  "non_geometry_recall": "6/6",
+  "geometry_dropped_as_annotation": [],
+  "errors": [
+   "#4 DOOR: role wall (gt door)"
+  ],
+  "creator_intent": "A left-to-right platformer starting at the 'S' on the ground floor: hop over spikes, climb ledges to grab the blue key and coins, dodge the red skull enemy, then reach the green star goal on the high right platform while avoiding the spiked right wall, as explained by the written hint 'key opens door'.",
+  "problems_noticed": [
+   "The sentence 'key opens door' (1,2,3) and the 'S' (18) are words, not geometry - they must not become solid blocks.",
+   "No door component exists even though the text promises one, so the key has no use.",
+   "Coins 10 and 17 float in mid-air with no platform directly beneath them.",
+   "Big gap and height difference between platform 12 (y=16) and the high platform 6 (y=12, starting at x=29) - likely an impossible jump; the only vertical link is the spiked wall 9.",
+   "Wall 4 standing on platform 6 blocks the path to the goal unless it can be jumped.",
+   "The oval+stem drawing (16,21) is scenery but would become a collidable ring if built literally.",
+   "Spike strip 14 is mounted on the wall face with nothing to stand on nearby, so it is unavoidable damage if the player must climb there."
+  ]
+ }
+]

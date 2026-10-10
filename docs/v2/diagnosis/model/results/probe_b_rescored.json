@@ -1,0 +1,213 @@
+[
+ {
+  "scene": "canvas_floating_spikes",
+  "effort": "medium",
+  "before": {
+   "start": [
+    1,
+    24
+   ],
+   "goal": [
+    44,
+    15
+   ],
+   "goal_reachable": false,
+   "reachable_cells": 47,
+   "solvable": false
+  },
+  "after": {
+   "start": [
+    1,
+    24
+   ],
+   "goal": [
+    44,
+    24
+   ],
+   "goal_reachable": true,
+   "reachable_cells": 47,
+   "solvable": true
+  },
+  "applied": [
+   "goal (44, 15) -> (44, 24)",
+   "snap #9 to top of #11: dy=1"
+  ],
+  "n_edits": 2,
+  "latency_s": 19.68,
+  "output_tokens": 1291,
+  "cost_usd": 0.0596
+ },
+ {
+  "scene": "canvas_tower_key",
+  "effort": "high",
+  "before": {
+   "start": [
+    1,
+    24
+   ],
+   "goal": [
+    44,
+    12
+   ],
+   "goal_reachable": false,
+   "reachable_cells": 60,
+   "key_reachable": true,
+   "door_gates_goal": true,
+   "solvable": false
+  },
+  "after": {
+   "start": [
+    1,
+    24
+   ],
+   "goal": [
+    42,
+    12
+   ],
+   "goal_reachable": true,
+   "reachable_cells": 78,
+   "key_reachable": true,
+   "door_gates_goal": true,
+   "solvable": true
+  },
+  "applied": [
+   "reclassify #4 wall->door",
+   "nudge #6 by (0,1)",
+   "nudge #4 by (0,1)",
+   "goal (44, 12) -> (42, 12)",
+   "snap #19 to top of #20: dy=-1",
+   "snap #14 to left face of #9: dx=-1"
+  ],
+  "n_edits": 6,
+  "latency_s": 58.41,
+  "output_tokens": 4383,
+  "cost_usd": 0.1391
+ },
+ {
+  "scene": "canvas_tower_key",
+  "effort": "medium",
+  "before": {
+   "start": [
+    1,
+    24
+   ],
+   "goal": [
+    44,
+    12
+   ],
+   "goal_reachable": false,
+   "reachable_cells": 60,
+   "key_reachable": true,
+   "door_gates_goal": true,
+   "solvable": false
+  },
+  "after": {
+   "start": [
+    1,
+    24
+   ],
+   "goal": [
+    42,
+    12
+   ],
+   "goal_reachable": true,
+   "reachable_cells": 78,
+   "key_reachable": true,
+   "door_gates_goal": true,
+   "solvable": true
+  },
+  "applied": [
+   "reclassify #4 wall->door",
+   "nudge #6 by (0,1)",
+   "nudge #7 by (0,1)",
+   "nudge #8 by (0,1)",
+   "nudge #4 by (0,1)",
+   "goal (44, 12) -> (42, 12)"
+  ],
+  "n_edits": 6,
+  "latency_s": 41.28,
+  "output_tokens": 3080,
+  "cost_usd": 0.1065
+ },
+ {
+  "scene": "canvas_wobbly_cave",
+  "effort": "medium",
+  "before": {
+   "start": [
+    1,
+    1
+   ],
+   "goal": [
+    44,
+    23
+   ],
+   "goal_reachable": false,
+   "reachable_cells": 6,
+   "solvable": false
+  },
+  "after": {
+   "start": [
+    2,
+    23
+   ],
+   "goal": [
+    41,
+    23
+   ],
+   "goal_reachable": true,
+   "reachable_cells": 38,
+   "solvable": true
+  },
+  "applied": [
+   "clear_spawn around (2, 23): removed 0 hazard cells",
+   "nudge #4 by (0,-2)",
+   "close_gap row 24 x23..23 (1 cells)",
+   "nudge #11 by (-2,0)",
+   "goal (44, 23) -> (41, 23)"
+  ],
+  "n_edits": 5,
+  "latency_s": 29.61,
+  "output_tokens": 2180,
+  "cost_usd": 0.0807
+ },
+ {
+  "scene": "paper_synth_1",
+  "effort": "medium",
+  "before": {
+   "start": [
+    1,
+    24
+   ],
+   "goal": [
+    44,
+    23
+   ],
+   "goal_reachable": true,
+   "reachable_cells": 37,
+   "solvable": true
+  },
+  "after": {
+   "start": [
+    1,
+    24
+   ],
+   "goal": [
+    44,
+    23
+   ],
+   "goal_reachable": true,
+   "reachable_cells": 50,
+   "solvable": true
+  },
+  "applied": [
+   "nudge #6 by (0,2)",
+   "nudge #5 by (0,2)",
+   "nudge #3 by (0,3)",
+   "nudge #2 by (0,3)"
+  ],
+  "n_edits": 4,
+  "latency_s": 18.58,
+  "output_tokens": 1479,
+  "cost_usd": 0.0641
+ }
+]

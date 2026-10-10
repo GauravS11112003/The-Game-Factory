@@ -1,0 +1,245 @@
+{
+ "key": "lava_key",
+ "prompt": "a lava cave where you need a key to open the exit, medium difficulty",
+ "effort": "medium",
+ "call": {
+  "n": 15,
+  "name": "D:lava_key",
+  "probe": "D",
+  "effort": "medium",
+  "model": "claude-opus-5",
+  "latency_s": 29.1,
+  "stop_reason": "end_turn",
+  "served_by": "claude-opus-5",
+  "fallback_used": false,
+  "input_tokens": 2432,
+  "output_tokens": 1978,
+  "visible_text_chars": 1694,
+  "cost_usd": 0.0616,
+  "request_id": "req_011Cft1h73pQq16hXRxsnm4v",
+  "parsed": {
+   "title": "Emberdeep: The Locked Exit",
+   "design_notes": "A lava cave on one screen. Three lava pits break the cave floor; each gap is 5 cells (within the 6-cell max). A ledge staircase on the left climbs 3 cells at a time to the key. The exit at the far right is sealed by a stone door pillar that runs from the ceiling block down to the floor, so the goal is unreachable until the key is taken. Two patrolling cave creatures and a ping-pong platform over the second lava pit provide medium pressure.",
+   "sections": [
+    {
+     "name": "Cave Mouth",
+     "x0": 0,
+     "x1": 10,
+     "purpose": "Safe start, teaches the first lava gap"
+    },
+    {
+     "name": "Key Climb",
+     "x0": 6,
+     "x1": 22,
+     "purpose": "Stacked ledges rising to the key"
+    },
+    {
+     "name": "Lava Crossing",
+     "x0": 23,
+     "x1": 34,
+     "purpose": "Second lava pit with a moving platform and an enemy"
+    },
+    {
+     "name": "Locked Exit",
+     "x0": 35,
+     "x1": 47,
+     "purpose": "Stone door pillar and the goal beyond"
+    }
+   ],
+   "solids": [
+    {
+     "x0": 0,
+     "y0": 0,
+     "x1": 47,
+     "y1": 1
+    },
+    {
+     "x0": 0,
+     "y0": 25,
+     "x1": 10,
+     "y1": 26
+    },
+    {
+     "x0": 16,
+     "y0": 25,
+     "x1": 24,
+     "y1": 26
+    },
+    {
+     "x0": 30,
+     "y0": 25,
+     "x1": 47,
+     "y1": 26
+    },
+    {
+     "x0": 6,
+     "y0": 22,
+     "x1": 9,
+     "y1": 22
+    },
+    {
+     "x0": 12,
+     "y0": 19,
+     "x1": 15,
+     "y1": 19
+    },
+    {
+     "x0": 18,
+     "y0": 16,
+     "x1": 21,
+     "y1": 16
+    },
+    {
+     "x0": 35,
+     "y0": 0,
+     "x1": 36,
+     "y1": 18
+    },
+    {
+     "x0": 40,
+     "y0": 20,
+     "x1": 43,
+     "y1": 20
+    }
+   ],
+   "hazards": [
+    {
+     "x0": 11,
+     "y0": 25,
+     "x1": 15,
+     "y1": 26
+    },
+    {
+     "x0": 25,
+     "y0": 25,
+     "x1": 29,
+     "y1": 26
+    }
+   ],
+   "moving_platforms": [
+    {
+     "x0": 25,
+     "y": 23,
+     "width": 3,
+     "dx": 0,
+     "dy": -3
+    }
+   ],
+   "enemies": [
+    {
+     "x": 18,
+     "y": 24,
+     "patrol_dx": 5
+    },
+    {
+     "x": 32,
+     "y": 24,
+     "patrol_dx": 6
+    }
+   ],
+   "coins": [
+    {
+     "x": 7,
+     "y": 21
+    },
+    {
+     "x": 13,
+     "y": 18
+    },
+    {
+     "x": 19,
+     "y": 15
+    },
+    {
+     "x": 21,
+     "y": 24
+    },
+    {
+     "x": 27,
+     "y": 22
+    },
+    {
+     "x": 33,
+     "y": 24
+    },
+    {
+     "x": 42,
+     "y": 19
+    },
+    {
+     "x": 45,
+     "y": 24
+    }
+   ],
+   "checkpoints": [
+    {
+     "x": 16,
+     "y": 24
+    },
+    {
+     "x": 32,
+     "y": 24
+    }
+   ],
+   "key": {
+    "x": 20,
+    "y": 15
+   },
+   "door": {
+    "x0": 35,
+    "y0": 19,
+    "x1": 36,
+    "y1": 26
+   },
+   "start": {
+    "x": 2,
+    "y": 24
+   },
+   "goal": {
+    "x": 46,
+    "y": 24
+   }
+  }
+ },
+ "validation": {
+  "goal_reachable": true,
+  "start_standable": true,
+  "goal_in_solid": false,
+  "out_of_bounds_cells": 0,
+  "coins_reachable": "7/8",
+  "enemies_on_surface": "2/2",
+  "reachable_cells": 62,
+  "key_reachable_door_closed": true,
+  "door_gates_goal": true,
+  "solvable": true,
+  "grid_closed": [
+   "111111111111111111111111111111111111111111111111",
+   "111111111111111111111111111111111111111111111111",
+   "000000000000000000000000000000000001100000000000",
+   "000000000000000000000000000000000001100000000000",
+   "000000000000000000000000000000000001100000000000",
+   "000000000000000000000000000000000001100000000000",
+   "000000000000000000000000000000000001100000000000",
+   "000000000000000000000000000000000001100000000000",
+   "000000000000000000000000000000000001100000000000",
+   "000000000000000000000000000000000001100000000000",
+   "000000000000000000000000000000000001100000000000",
+   "000000000000000000000000000000000001100000000000",
+   "000000000000000000000000000000000001100000000000",
+   "000000000000000000000000000000000001100000000000",
+   "000000000000000000000000000000000001100000000000",
+   "000000000000000000000000000000000001100000000000",
+   "000000000000000000111100000000000001100000000000",
+   "000000000000000000000000000000000001100000000000",
+   "000000000000000000000000000000000001100000000000",
+   "000000000000111100000000000000000001100000000000",
+   "000000000000000000000000000000000001100011110000",
+   "000000000000000000000000000000000001100000000000",
+   "000000111100000000000000000000000001100000000000",
+   "000000000000000000000000000000000001100000000000",
+   "000000000000000000000000000000000001100000000000",
+   "111111111112222211111111122222111111111111111111",
+   "111111111112222211111111122222111111111111111111"
+  ]
+ }
+}

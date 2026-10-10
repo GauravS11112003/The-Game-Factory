@@ -1,0 +1,246 @@
+{
+ "key": "tutorial",
+ "prompt": "an easy first level that teaches jumping over small gaps",
+ "effort": "medium",
+ "call": {
+  "n": 19,
+  "name": "D:tutorial",
+  "probe": "D",
+  "effort": "medium",
+  "model": "claude-opus-5",
+  "latency_s": 15.44,
+  "stop_reason": "end_turn",
+  "served_by": "claude-opus-5",
+  "fallback_used": false,
+  "input_tokens": 2427,
+  "output_tokens": 1188,
+  "visible_text_chars": 1819,
+  "cost_usd": 0.0418,
+  "request_id": "req_011Cft1mHTW4ZC1z5rZ3A16g",
+  "parsed": {
+   "title": "Hop Along Hill",
+   "design_notes": "A gentle left-to-right run on one screen. Four ground slabs separated by three 3-cell gaps (max safe gap is 6, so these are forgiving). Coin arcs float above each gap to teach the player to jump at the right moment. One slow patrolling enemy on the third slab and a single short spike strip in the last gap add mild challenge. Low 1-row platforms give optional height and bonus coins; everything is within the 3-cell jump height. No key or door in this intro level.",
+   "sections": [
+    {
+     "name": "Start Meadow",
+     "x0": 0,
+     "x1": 9,
+     "purpose": "Safe flat ground to learn running and a free practice jump onto a low platform."
+    },
+    {
+     "name": "First Hop",
+     "x0": 10,
+     "x1": 21,
+     "purpose": "First 3-cell gap with a coin arc overhead teaching jump timing; checkpoint after it."
+    },
+    {
+     "name": "Second Hop",
+     "x0": 22,
+     "x1": 34,
+     "purpose": "Second gap followed by a single slow enemy to jump over or avoid."
+    },
+    {
+     "name": "Spike Hop Finish",
+     "x0": 35,
+     "x1": 47,
+     "purpose": "Final gap with shallow spikes at the bottom, then the goal on flat ground."
+    }
+   ],
+   "solids": [
+    {
+     "x0": 0,
+     "y0": 22,
+     "x1": 9,
+     "y1": 26
+    },
+    {
+     "x0": 13,
+     "y0": 22,
+     "x1": 21,
+     "y1": 26
+    },
+    {
+     "x0": 25,
+     "y0": 22,
+     "x1": 34,
+     "y1": 26
+    },
+    {
+     "x0": 38,
+     "y0": 22,
+     "x1": 47,
+     "y1": 26
+    },
+    {
+     "x0": 5,
+     "y0": 19,
+     "x1": 8,
+     "y1": 19
+    },
+    {
+     "x0": 16,
+     "y0": 19,
+     "x1": 19,
+     "y1": 19
+    },
+    {
+     "x0": 29,
+     "y0": 19,
+     "x1": 32,
+     "y1": 19
+    },
+    {
+     "x0": 41,
+     "y0": 19,
+     "x1": 44,
+     "y1": 19
+    }
+   ],
+   "hazards": [
+    {
+     "x0": 35,
+     "y0": 25,
+     "x1": 37,
+     "y1": 26
+    }
+   ],
+   "moving_platforms": [],
+   "enemies": [
+    {
+     "x": 28,
+     "y": 21,
+     "patrol_dx": 5
+    }
+   ],
+   "coins": [
+    {
+     "x": 6,
+     "y": 18
+    },
+    {
+     "x": 8,
+     "y": 18
+    },
+    {
+     "x": 10,
+     "y": 20
+    },
+    {
+     "x": 11,
+     "y": 19
+    },
+    {
+     "x": 12,
+     "y": 20
+    },
+    {
+     "x": 17,
+     "y": 18
+    },
+    {
+     "x": 19,
+     "y": 18
+    },
+    {
+     "x": 22,
+     "y": 20
+    },
+    {
+     "x": 23,
+     "y": 19
+    },
+    {
+     "x": 24,
+     "y": 20
+    },
+    {
+     "x": 30,
+     "y": 18
+    },
+    {
+     "x": 32,
+     "y": 18
+    },
+    {
+     "x": 35,
+     "y": 20
+    },
+    {
+     "x": 36,
+     "y": 19
+    },
+    {
+     "x": 37,
+     "y": 20
+    },
+    {
+     "x": 42,
+     "y": 18
+    },
+    {
+     "x": 44,
+     "y": 18
+    }
+   ],
+   "checkpoints": [
+    {
+     "x": 15,
+     "y": 21
+    },
+    {
+     "x": 27,
+     "y": 21
+    }
+   ],
+   "key": null,
+   "door": null,
+   "start": {
+    "x": 2,
+    "y": 21
+   },
+   "goal": {
+    "x": 46,
+    "y": 21
+   }
+  }
+ },
+ "validation": {
+  "goal_reachable": true,
+  "start_standable": true,
+  "goal_in_solid": false,
+  "out_of_bounds_cells": 0,
+  "coins_reachable": "17/17",
+  "enemies_on_surface": "1/1",
+  "reachable_cells": 55,
+  "solvable": true,
+  "grid_closed": [
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000001111000000011110000000001111000000001111000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "111111111100011111111100011111111110001111111111",
+   "111111111100011111111100011111111110001111111111",
+   "111111111100011111111100011111111110001111111111",
+   "111111111100011111111100011111111112221111111111",
+   "111111111100011111111100011111111112221111111111"
+  ]
+ }
+}

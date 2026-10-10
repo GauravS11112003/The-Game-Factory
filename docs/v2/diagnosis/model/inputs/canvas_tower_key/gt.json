@@ -1,0 +1,314 @@
+{
+ "objects": [
+  {
+   "name": "GROUND",
+   "color": "black",
+   "bbox": [
+    0,
+    24,
+    45,
+    26
+   ],
+   "role": "ground"
+  },
+  {
+   "name": "P1",
+   "color": "black",
+   "bbox": [
+    5,
+    21,
+    12,
+    23
+   ],
+   "role": "platform"
+  },
+  {
+   "name": "P2",
+   "color": "black",
+   "bbox": [
+    12,
+    18,
+    19,
+    20
+   ],
+   "role": "platform"
+  },
+  {
+   "name": "P3",
+   "color": "black",
+   "bbox": [
+    20,
+    15,
+    27,
+    17
+   ],
+   "role": "platform"
+  },
+  {
+   "name": "P4",
+   "color": "black",
+   "bbox": [
+    28,
+    11,
+    47,
+    13
+   ],
+   "role": "platform"
+  },
+  {
+   "name": "RWALL",
+   "color": "black",
+   "bbox": [
+    45,
+    13,
+    47,
+    25
+   ],
+   "role": "wall"
+  },
+  {
+   "name": "WSPK",
+   "color": "red",
+   "bbox": [
+    43,
+    16,
+    46,
+    21
+   ],
+   "role": "spike_strip",
+   "attached_to": "RWALL",
+   "points": "left"
+  },
+  {
+   "name": "S1",
+   "color": "red",
+   "bbox": [
+    7,
+    20,
+    11,
+    22
+   ],
+   "role": "spike_strip",
+   "rests_on": "P1",
+   "points": "up"
+  },
+  {
+   "name": "DOOR",
+   "color": "black",
+   "bbox": [
+    39,
+    7,
+    41,
+    11
+   ],
+   "role": "door",
+   "rests_on": "P4"
+  },
+  {
+   "name": "GOAL",
+   "color": "green",
+   "bbox": [
+    41,
+    8,
+    47,
+    13
+   ],
+   "role": "goal",
+   "rests_on": "P4"
+  },
+  {
+   "name": "KEY",
+   "color": "blue",
+   "bbox": [
+    13,
+    16,
+    18,
+    19
+   ],
+   "role": "key",
+   "rests_on": "P2"
+  },
+  {
+   "name": "MON",
+   "color": "red",
+   "bbox": [
+    22,
+    13,
+    26,
+    16
+   ],
+   "role": "enemy",
+   "rests_on": "P3"
+  },
+  {
+   "name": "TREE",
+   "color": "black",
+   "bbox": [
+    29,
+    18,
+    36,
+    24
+   ],
+   "role": "decoration"
+  },
+  {
+   "name": "S_TXT",
+   "color": "black",
+   "bbox": [
+    1,
+    20,
+    4,
+    24
+   ],
+   "role": "text"
+  },
+  {
+   "name": "TXT",
+   "color": "black",
+   "bbox": [
+    21,
+    0,
+    40,
+    4
+   ],
+   "role": "text"
+  },
+  {
+   "name": "COIN",
+   "color": "blue",
+   "bbox": [
+    0,
+    0,
+    47,
+    26
+   ],
+   "role": "coin"
+  }
+ ],
+ "components": [
+  {
+   "id": 1,
+   "object": "TXT",
+   "role": "text"
+  },
+  {
+   "id": 2,
+   "object": "TXT",
+   "role": "text"
+  },
+  {
+   "id": 3,
+   "object": "TXT",
+   "role": "text"
+  },
+  {
+   "id": 4,
+   "object": "DOOR",
+   "role": "door",
+   "rests_on": 6
+  },
+  {
+   "id": 5,
+   "object": "GOAL",
+   "role": "goal",
+   "rests_on": 6
+  },
+  {
+   "id": 6,
+   "object": "P4",
+   "role": "platform"
+  },
+  {
+   "id": 7,
+   "object": "P4",
+   "role": "platform"
+  },
+  {
+   "id": 8,
+   "object": "P4",
+   "role": "platform"
+  },
+  {
+   "id": 9,
+   "object": "RWALL",
+   "role": "wall"
+  },
+  {
+   "id": 10,
+   "object": "COIN",
+   "role": "coin"
+  },
+  {
+   "id": 11,
+   "object": "MON",
+   "role": "enemy",
+   "rests_on": 12
+  },
+  {
+   "id": 12,
+   "object": "P3",
+   "role": "platform"
+  },
+  {
+   "id": 13,
+   "object": "KEY",
+   "role": "key",
+   "rests_on": 15
+  },
+  {
+   "id": 14,
+   "object": "WSPK",
+   "role": "spike_strip",
+   "attached_to": 9,
+   "points": "left"
+  },
+  {
+   "id": 15,
+   "object": "P2",
+   "role": "platform"
+  },
+  {
+   "id": 16,
+   "object": "TREE",
+   "role": "decoration"
+  },
+  {
+   "id": 17,
+   "object": "COIN",
+   "role": "coin"
+  },
+  {
+   "id": 18,
+   "object": "S_TXT",
+   "role": "text"
+  },
+  {
+   "id": 19,
+   "object": "S1",
+   "role": "spike_strip",
+   "rests_on": 20,
+   "points": "up"
+  },
+  {
+   "id": 20,
+   "object": "P1",
+   "role": "platform"
+  },
+  {
+   "id": 21,
+   "object": "TREE",
+   "role": "decoration"
+  },
+  {
+   "id": 22,
+   "object": "GROUND",
+   "role": "ground"
+  }
+ ],
+ "expected_repairs": [
+  "P3 (row 16) -> P4 (row 12) is a 4-cell climb, max is 3: nudge P4 down 1 (or P3 up 1)",
+  "reclassify TREE, S_TXT, TXT as non-solid",
+  "keep DOOR (it gates the goal), KEY, MON, S1, WSPK (orient left)",
+  "do not move the goal; it already rests on P4"
+ ]
+}

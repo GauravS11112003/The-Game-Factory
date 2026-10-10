@@ -1,0 +1,214 @@
+{
+ "scene": "canvas_tower_key",
+ "effort": "medium",
+ "call": {
+  "n": 15,
+  "name": "C:canvas_tower_key",
+  "probe": "C",
+  "effort": "medium",
+  "model": "claude-opus-5",
+  "latency_s": 35.01,
+  "stop_reason": "end_turn",
+  "served_by": "claude-opus-5",
+  "fallback_used": false,
+  "input_tokens": 4213,
+  "output_tokens": 2448,
+  "visible_text_chars": 2306,
+  "cost_usd": 0.0823,
+  "request_id": "req_011Cft1guTobwTw1dEm3fwVz",
+  "parsed": {
+   "additions": [
+    {
+     "op": "add_spike_strip",
+     "cells": [],
+     "component_id": 22,
+     "row": 24,
+     "x0": 3,
+     "x1": 5,
+     "patrol_dx": null,
+     "reason": "A short, clearly visible spike gap right after the start on the long flat ground, so the very first move is a real (but easy) 3-cell hop instead of a stroll.",
+     "makes_harder_or_guides": "harder"
+    },
+    {
+     "op": "add_coin_trail",
+     "cells": [
+      {
+       "x": 11,
+       "y": 20
+      },
+      {
+       "x": 12,
+       "y": 19
+      },
+      {
+       "x": 12,
+       "y": 18
+      },
+      {
+       "x": 13,
+       "y": 17
+      }
+     ],
+     "component_id": null,
+     "row": null,
+     "x0": null,
+     "x1": null,
+     "patrol_dx": null,
+     "reason": "Coins arc from the spiky platform up to the key ledge, pointing the eye at the climb and rewarding the risky jump over the child's spikes.",
+     "makes_harder_or_guides": "guides"
+    },
+    {
+     "op": "add_checkpoint",
+     "cells": [
+      {
+       "x": 21,
+       "y": 15
+      }
+     ],
+     "component_id": 12,
+     "row": null,
+     "x0": null,
+     "x1": null,
+     "patrol_dx": null,
+     "reason": "Respawn flag right after the spike platform and key grab, so the climb never has to be redone from the start.",
+     "makes_harder_or_guides": "guides"
+    },
+    {
+     "op": "add_coin_trail",
+     "cells": [
+      {
+       "x": 27,
+       "y": 14
+      },
+      {
+       "x": 28,
+       "y": 13
+      },
+      {
+       "x": 29,
+       "y": 12
+      },
+      {
+       "x": 30,
+       "y": 11
+      }
+     ],
+     "component_id": null,
+     "row": null,
+     "x0": null,
+     "x1": null,
+     "patrol_dx": null,
+     "reason": "Marks the big leap from the skull platform up to the long high road toward the door, so the route to the goal is obvious.",
+     "makes_harder_or_guides": "guides"
+    },
+    {
+     "op": "add_enemy",
+     "cells": [
+      {
+       "x": 33,
+       "y": 12
+      }
+     ],
+     "component_id": 6,
+     "row": null,
+     "x0": null,
+     "x1": null,
+     "patrol_dx": 6,
+     "reason": "The top walkway is a very long safe stretch; a walker patrolling x33-39 adds timing tension with plenty of space to see it coming and jump it.",
+     "makes_harder_or_guides": "harder"
+    },
+    {
+     "op": "add_bounce_pad",
+     "cells": [
+      {
+       "x": 28,
+       "y": 25
+      }
+     ],
+     "component_id": 22,
+     "row": null,
+     "x0": null,
+     "x1": null,
+     "patrol_dx": null,
+     "reason": "A spring on the ground below gives a bold shortcut straight up to the high walkway, and a safe way back up if you fall - never required, just rewarding.",
+     "makes_harder_or_guides": "both"
+    }
+   ],
+   "difficulty_before": "easy",
+   "difficulty_after": "medium",
+   "pitch_to_kid": "Your key-and-door level now has a bit of bite! Hop the little spike gap at the start, follow the shiny coins up to your key, then leap the sparkle trail to the high road - where a walker is pacing in front of the door. Land on the checkpoint flag so you never lose your progress, and if you fall, bounce off the new spring and rocket right back up to the star!"
+  }
+ },
+ "before": {
+  "start": [
+   1,
+   24
+  ],
+  "goal": [
+   42,
+   12
+  ],
+  "goal_reachable": true,
+  "reachable_cells": 78,
+  "key_reachable": true,
+  "door_gates_goal": true,
+  "solvable": true
+ },
+ "checks": [
+  [
+   "add_spike_strip",
+   "row 24 x3..5: on top of solid & empty=True"
+  ],
+  [
+   "add_coin_trail",
+   "4 coins, all in empty cells=True, within jump reach=4/4"
+  ],
+  [
+   "add_checkpoint",
+   "(21, 15) standable=True reachable=True"
+  ],
+  [
+   "add_coin_trail",
+   "4 coins, all in empty cells=True, within jump reach=4/4"
+  ],
+  [
+   "add_enemy",
+   "feet (33, 12) patrol 6: on surface=True, whole patrol on surface=True, reachable surface=True"
+  ],
+  [
+   "add_bounce_pad",
+   "(28, 25) on solid=True"
+  ]
+ ],
+ "after_solvable": true,
+ "after_reachable": 75,
+ "grid_after": [
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000010000000",
+  "000000000000000000000000000000000000000010000000",
+  "000000000000000000000000000000000000000010000000",
+  "000000000000000000000000000000000000000010000000",
+  "000000000000000000000000000001111111111111111110",
+  "000000000000000000000000000000000000000000000010",
+  "000000000000000000000000000000000000000000000010",
+  "000000000000000000000111111000000000000000000010",
+  "000000000000000000000000000000000000000000000220",
+  "000000000000000000000000000000000000000000000220",
+  "000000000000011111100000000000000000000000000220",
+  "000000000000000000000000000000000000000000000220",
+  "000000002220000000000000000000000000000000000010",
+  "000000112221000000000000000000000000000000000010",
+  "000000000000000000000000000000000000000000000010",
+  "000222000000000000000000000000000000000000000010",
+  "011111111111111111111111111111111111111111111100",
+  "000000000000000000000000000000000000000000000000"
+ ]
+}

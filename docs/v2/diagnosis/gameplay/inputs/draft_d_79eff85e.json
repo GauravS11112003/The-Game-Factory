@@ -1,0 +1,238 @@
+{
+  "schema_version": 1,
+  "id": "d_79eff85e",
+  "game_id": "game_starter",
+  "parent_id": "lvl_starter3",
+  "order_index": 0,
+  "title": "Remix of Key Cave",
+  "author": "draft",
+  "created_at": "2026-10-10T04:51:58Z",
+  "source": {
+    "kind": "canvas",
+    "photo_url": "/uploads/drafts/d_79eff85e/photo.jpg",
+    "backdrop_url": "/uploads/drafts/d_79eff85e/backdrop.png",
+    "template_version": 1
+  },
+  "grid": {
+    "w": 48,
+    "h": 27,
+    "cell": 16,
+    "rows": [
+      "111111111111111111111111111111111111111111111111",
+      "000000000000000000000000000000000000000010000000",
+      "000000000000000000000000000000000000000010000000",
+      "000000000000000000000000000000000000000010000000",
+      "000000000000000000000000000000000000000010000000",
+      "000000000000000000000000000000000000000010000000",
+      "000000000000000000000000000000000000000010000000",
+      "000000000000000000000000000000000000000010000000",
+      "000000000000000000000000000000000000000010000000",
+      "000000000000000000000000000000000000000010000000",
+      "000000000000000000000000000000000000000010000000",
+      "000000000000000000000000000000000000000010000000",
+      "000000000000000000000000000000000000000010000000",
+      "000000000000000000000000000000000000000010000000",
+      "000000000000000000000000000000000000000010000000",
+      "000000000000000000000000000000000000000010000000",
+      "000000000000000000000000000000000000000010000000",
+      "000000000000000000000000000000000000000010000000",
+      "000000000000000000000000000000000000000010000000",
+      "000000000000020202202202200111000000000010000000",
+      "000000000022222222222222200000000000000010000000",
+      "000000000222222220220220200000000000000000000000",
+      "000000000011111111111111200000000000000000000000",
+      "000000000000000000000000000000000000000000000000",
+      "000000000000000000000000000000000000000000000000",
+      "111111111111111111111111111111110000111111111111",
+      "111111111111111111111111111111112222111111111111"
+    ]
+  },
+  "sprites": {
+    "player": null
+  },
+  "components": [
+    {
+      "id": 1,
+      "color": "red",
+      "bbox": [
+        9,
+        19,
+        24,
+        22
+      ],
+      "area_cells": 37
+    }
+  ],
+  "entities": [
+    {
+      "id": "start",
+      "type": "player_start",
+      "x": 2,
+      "y": 24,
+      "component_id": null,
+      "bbox": null,
+      "image_url": null,
+      "path": null,
+      "speed": null,
+      "patrol": null,
+      "strength": null,
+      "opens": null
+    },
+    {
+      "id": "goal",
+      "type": "goal",
+      "x": 45,
+      "y": 24,
+      "component_id": null,
+      "bbox": null,
+      "image_url": null,
+      "path": null,
+      "speed": null,
+      "patrol": null,
+      "strength": null,
+      "opens": null
+    },
+    {
+      "id": "c1",
+      "type": "coin",
+      "x": 12,
+      "y": 20,
+      "component_id": null,
+      "bbox": null,
+      "image_url": null,
+      "path": null,
+      "speed": null,
+      "patrol": null,
+      "strength": null,
+      "opens": null
+    },
+    {
+      "id": "c2",
+      "type": "coin",
+      "x": 20,
+      "y": 20,
+      "component_id": null,
+      "bbox": null,
+      "image_url": null,
+      "path": null,
+      "speed": null,
+      "patrol": null,
+      "strength": null,
+      "opens": null
+    },
+    {
+      "id": "c3",
+      "type": "coin",
+      "x": 33,
+      "y": 22,
+      "component_id": null,
+      "bbox": null,
+      "image_url": null,
+      "path": null,
+      "speed": null,
+      "patrol": null,
+      "strength": null,
+      "opens": null
+    },
+    {
+      "id": "c4",
+      "type": "coin",
+      "x": 44,
+      "y": 23,
+      "component_id": null,
+      "bbox": null,
+      "image_url": null,
+      "path": null,
+      "speed": null,
+      "patrol": null,
+      "strength": null,
+      "opens": null
+    },
+    {
+      "id": "en1",
+      "type": "enemy",
+      "x": null,
+      "y": null,
+      "component_id": null,
+      "bbox": [
+        14,
+        20,
+        15,
+        21
+      ],
+      "image_url": null,
+      "path": null,
+      "speed": null,
+      "patrol": {
+        "dx": 6,
+        "speed": 3
+      },
+      "strength": null,
+      "opens": null
+    },
+    {
+      "id": "key1",
+      "type": "key",
+      "x": 28,
+      "y": 17,
+      "component_id": null,
+      "bbox": null,
+      "image_url": null,
+      "path": null,
+      "speed": null,
+      "patrol": null,
+      "strength": null,
+      "opens": "door1"
+    },
+    {
+      "id": "cp1",
+      "type": "checkpoint",
+      "x": 30,
+      "y": 24,
+      "component_id": null,
+      "bbox": null,
+      "image_url": null,
+      "path": null,
+      "speed": null,
+      "patrol": null,
+      "strength": null,
+      "opens": null
+    },
+    {
+      "id": "door1",
+      "type": "door",
+      "x": null,
+      "y": null,
+      "component_id": null,
+      "bbox": [
+        40,
+        21,
+        40,
+        24
+      ],
+      "image_url": null,
+      "path": null,
+      "speed": null,
+      "patrol": null,
+      "strength": null,
+      "opens": null
+    }
+  ],
+  "rules": [
+    {
+      "when": "collect:key1",
+      "then": "open:door1"
+    },
+    {
+      "when": "collect:key1",
+      "then": "open:door1"
+    }
+  ],
+  "meta": {
+    "solvable": null,
+    "warnings": [
+      "no_goal_drawn"
+    ],
+    "notes_transcript": ""
+  }
+}

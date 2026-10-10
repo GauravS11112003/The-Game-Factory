@@ -1,0 +1,298 @@
+{
+ "key": "tower",
+ "prompt": "a tower you climb to the top while dodging walking enemies, medium difficulty",
+ "effort": "medium",
+ "call": {
+  "n": 19,
+  "name": "D:tower",
+  "probe": "D",
+  "effort": "medium",
+  "model": "claude-opus-5",
+  "latency_s": 34.03,
+  "stop_reason": "end_turn",
+  "served_by": "claude-opus-5",
+  "fallback_used": false,
+  "input_tokens": 2435,
+  "output_tokens": 2508,
+  "visible_text_chars": 2087,
+  "cost_usd": 0.0749,
+  "request_id": "req_011Cft1mS4Ay3pW1dt2r7NCT",
+  "parsed": {
+   "title": "The Watchtower Climb",
+   "design_notes": "A vertical zig-zag tower: seven ledges alternate left and right, each exactly 3 rows above the previous one with 1-2 cell gaps, so every hop is within the 3-cell jump limit. Walking enemies patrol almost every ledge, forcing timed landings. Spikes punish a sloppy fall to the ground floor, and a side elevator on the right wall offers an optional coin detour. No key needed - pure climb.",
+   "sections": [
+    {
+     "name": "Tower Base",
+     "x0": 0,
+     "x1": 47,
+     "purpose": "Safe start, ground patrol and spike pit teach the enemy timing."
+    },
+    {
+     "name": "Lower Ledges",
+     "x0": 2,
+     "x1": 32,
+     "purpose": "First two zig-zag hops with slow patrols; checkpoint on the second ledge."
+    },
+    {
+     "name": "Mid Tower",
+     "x0": 4,
+     "x1": 36,
+     "purpose": "Tighter ledges with longer patrols, second checkpoint."
+    },
+    {
+     "name": "Upper Tower",
+     "x0": 6,
+     "x1": 38,
+     "purpose": "Fast narrow hops over enemies with a long fall below."
+    },
+    {
+     "name": "Elevator Shaft",
+     "x0": 39,
+     "x1": 47,
+     "purpose": "Optional moving platform coin route on the right wall."
+    },
+    {
+     "name": "Summit",
+     "x0": 8,
+     "x1": 20,
+     "purpose": "Top ledge holding the goal."
+    }
+   ],
+   "solids": [
+    {
+     "x0": 0,
+     "y0": 25,
+     "x1": 47,
+     "y1": 26
+    },
+    {
+     "x0": 2,
+     "y0": 22,
+     "x1": 14,
+     "y1": 22
+    },
+    {
+     "x0": 17,
+     "y0": 19,
+     "x1": 32,
+     "y1": 19
+    },
+    {
+     "x0": 4,
+     "y0": 16,
+     "x1": 15,
+     "y1": 16
+    },
+    {
+     "x0": 18,
+     "y0": 13,
+     "x1": 36,
+     "y1": 13
+    },
+    {
+     "x0": 6,
+     "y0": 10,
+     "x1": 17,
+     "y1": 10
+    },
+    {
+     "x0": 20,
+     "y0": 7,
+     "x1": 38,
+     "y1": 7
+    },
+    {
+     "x0": 8,
+     "y0": 4,
+     "x1": 20,
+     "y1": 4
+    }
+   ],
+   "hazards": [
+    {
+     "x0": 34,
+     "y0": 25,
+     "x1": 40,
+     "y1": 25
+    },
+    {
+     "x0": 20,
+     "y0": 25,
+     "x1": 24,
+     "y1": 25
+    }
+   ],
+   "moving_platforms": [
+    {
+     "x0": 42,
+     "y": 21,
+     "width": 3,
+     "dx": 0,
+     "dy": -7
+    }
+   ],
+   "enemies": [
+    {
+     "x": 29,
+     "y": 24,
+     "patrol_dx": -8
+    },
+    {
+     "x": 6,
+     "y": 21,
+     "patrol_dx": 7
+    },
+    {
+     "x": 22,
+     "y": 18,
+     "patrol_dx": 8
+    },
+    {
+     "x": 8,
+     "y": 15,
+     "patrol_dx": 6
+    },
+    {
+     "x": 24,
+     "y": 12,
+     "patrol_dx": 9
+    },
+    {
+     "x": 10,
+     "y": 9,
+     "patrol_dx": 6
+    },
+    {
+     "x": 26,
+     "y": 6,
+     "patrol_dx": 8
+    }
+   ],
+   "coins": [
+    {
+     "x": 4,
+     "y": 21
+    },
+    {
+     "x": 12,
+     "y": 21
+    },
+    {
+     "x": 19,
+     "y": 18
+    },
+    {
+     "x": 30,
+     "y": 18
+    },
+    {
+     "x": 6,
+     "y": 15
+    },
+    {
+     "x": 14,
+     "y": 15
+    },
+    {
+     "x": 20,
+     "y": 12
+    },
+    {
+     "x": 34,
+     "y": 12
+    },
+    {
+     "x": 8,
+     "y": 9
+    },
+    {
+     "x": 16,
+     "y": 9
+    },
+    {
+     "x": 22,
+     "y": 6
+    },
+    {
+     "x": 36,
+     "y": 6
+    },
+    {
+     "x": 12,
+     "y": 3
+    },
+    {
+     "x": 43,
+     "y": 20
+    },
+    {
+     "x": 43,
+     "y": 15
+    },
+    {
+     "x": 43,
+     "y": 13
+    }
+   ],
+   "checkpoints": [
+    {
+     "x": 18,
+     "y": 18
+    },
+    {
+     "x": 19,
+     "y": 12
+    }
+   ],
+   "key": null,
+   "door": null,
+   "start": {
+    "x": 2,
+    "y": 24
+   },
+   "goal": {
+    "x": 10,
+    "y": 3
+   }
+  }
+ },
+ "validation": {
+  "goal_reachable": true,
+  "start_standable": true,
+  "goal_in_solid": false,
+  "out_of_bounds_cells": 0,
+  "coins_reachable": "16/16",
+  "enemies_on_surface": "7/7",
+  "reachable_cells": 161,
+  "solvable": true,
+  "grid_closed": [
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000001111111111111000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000001111111111111111111000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000111111111111000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000111111111111111111100000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000011111111111100000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000001111111111111111000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "001111111111111000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "000000000000000000000000000000000000000000000000",
+   "111111111111111111112222211111111122222221111111",
+   "111111111111111111111111111111111111111111111111"
+  ]
+ }
+}

@@ -1,0 +1,208 @@
+{
+ "scene": "canvas_wobbly_cave",
+ "effort": "medium",
+ "call": {
+  "n": 15,
+  "name": "C:canvas_wobbly_cave",
+  "probe": "C",
+  "effort": "medium",
+  "model": "claude-opus-5",
+  "latency_s": 28.75,
+  "stop_reason": "end_turn",
+  "served_by": "claude-opus-5",
+  "fallback_used": false,
+  "input_tokens": 4116,
+  "output_tokens": 1994,
+  "visible_text_chars": 2339,
+  "cost_usd": 0.0704,
+  "request_id": "req_011Cft1gkurVHaKcqFYwdwxP",
+  "parsed": {
+   "additions": [
+    {
+     "op": "add_coin_trail",
+     "cells": [
+      {
+       "x": 31,
+       "y": 22
+      },
+      {
+       "x": 32,
+       "y": 21
+      },
+      {
+       "x": 33,
+       "y": 21
+      },
+      {
+       "x": 34,
+       "y": 21
+      },
+      {
+       "x": 35,
+       "y": 22
+      },
+      {
+       "x": 36,
+       "y": 23
+      }
+     ],
+     "component_id": null,
+     "row": null,
+     "x0": null,
+     "x1": null,
+     "patrol_dx": null,
+     "reason": "Draws the eye across the 6-cell lava gap the child drew, showing the exact arc from the ground edge at x30 to the goal platform at x37 so the big risky jump is readable before you commit.",
+     "makes_harder_or_guides": "guides"
+    },
+    {
+     "op": "add_checkpoint",
+     "cells": [
+      {
+       "x": 38,
+       "y": 23
+      }
+     ],
+     "component_id": null,
+     "row": null,
+     "x0": null,
+     "x1": null,
+     "patrol_dx": null,
+     "reason": "Right after the lava leap, so failing the hardest jump costs one try, not the whole run.",
+     "makes_harder_or_guides": "guides"
+    },
+    {
+     "op": "add_enemy",
+     "cells": [
+      {
+       "x": 25,
+       "y": 23
+      }
+     ],
+     "component_id": 10,
+     "row": null,
+     "x0": null,
+     "x1": null,
+     "patrol_dx": 4,
+     "reason": "The last flat stretch before the lava is a free walk; a walker patrolling x25-29 adds timing tension right where you are winding up for the big jump, and it is visible from far away.",
+     "makes_harder_or_guides": "harder"
+    },
+    {
+     "op": "add_enemy",
+     "cells": [
+      {
+       "x": 8,
+       "y": 22
+      }
+     ],
+     "component_id": 9,
+     "row": null,
+     "x0": null,
+     "x1": null,
+     "patrol_dx": 3,
+     "reason": "Breaks up the long safe opening run over the child's bumpy ground; you can see it coming from the start and hop its patrol between the little humps.",
+     "makes_harder_or_guides": "harder"
+    },
+    {
+     "op": "add_spike_strip",
+     "cells": [],
+     "component_id": 9,
+     "row": 23,
+     "x0": 15,
+     "x1": 17,
+     "patrol_dx": null,
+     "reason": "A short 3-cell spike patch on the flat middle ground under the tall pillar, easily cleared with one jump from the bump at x12-14 and fully visible ahead of time.",
+     "makes_harder_or_guides": "harder"
+    },
+    {
+     "op": "add_bounce_pad",
+     "cells": [
+      {
+       "x": 20,
+       "y": 23
+      }
+     ],
+     "component_id": 9,
+     "row": null,
+     "x0": null,
+     "x1": null,
+     "patrol_dx": null,
+     "reason": "An optional spring on the child's little step block gives a fun big launch and a safer way over the spike patch area, without changing the main path.",
+     "makes_harder_or_guides": "both"
+    }
+   ],
+   "difficulty_before": "easy",
+   "difficulty_after": "medium",
+   "pitch_to_kid": "Your lava pit is the star now! Coins show the giant jump across it, and a flag right after so you don't lose everything if you splash. Two goombas march on the flat bits so the walk isn't boring, a tiny spike patch makes you hop, and there's a springy bounce pad for extra air. Same level you drew, just way more exciting!"
+  }
+ },
+ "before": {
+  "start": [
+   2,
+   23
+  ],
+  "goal": [
+   41,
+   23
+  ],
+  "goal_reachable": true,
+  "reachable_cells": 38,
+  "solvable": true
+ },
+ "checks": [
+  [
+   "add_coin_trail",
+   "6 coins, all in empty cells=True, within jump reach=6/6"
+  ],
+  [
+   "add_checkpoint",
+   "(38, 23) standable=True reachable=True"
+  ],
+  [
+   "add_enemy",
+   "feet (25, 23) patrol 4: on surface=True, whole patrol on surface=False, reachable surface=True"
+  ],
+  [
+   "add_enemy",
+   "feet (8, 22) patrol 3: on surface=False, whole patrol on surface=False, reachable surface=False"
+  ],
+  [
+   "add_spike_strip",
+   "row 23 x15..17: on top of solid & empty=True"
+  ],
+  [
+   "add_bounce_pad",
+   "(20, 23) on solid=True"
+  ]
+ ],
+ "after_solvable": false,
+ "after_reachable": 14,
+ "grid_after": [
+  "000000000000000000000000000000000000000000000000",
+  "000000011000000011000000011000000011000000011000",
+  "011111111111111111111111111111111111111111111110",
+  "001110000001110000002222000001110000001110000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000000000000000010000000000000000000000000000000",
+  "000000000000000010000000000000000000000000000000",
+  "000000000000000010000000000000000000000000000000",
+  "000000000000000010000000000000000000000000000000",
+  "000000000000000010000000000000000000000000000000",
+  "000000000000000000000000000000000000000000000000",
+  "000001110000111222011100000100000000000000000000",
+  "011111111111111111111111111111100000011111111000",
+  "001110000111000011100000110001122222222000000000",
+  "000000000000000000000000000000022222222000000000"
+ ]
+}

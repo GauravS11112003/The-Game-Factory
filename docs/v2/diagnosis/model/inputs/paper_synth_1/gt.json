@@ -1,0 +1,174 @@
+{
+ "objects": [
+  {
+   "name": "G1",
+   "color": "black",
+   "bbox": [
+    0,
+    24,
+    22,
+    26
+   ],
+   "role": "ground"
+  },
+  {
+   "name": "G2",
+   "color": "black",
+   "bbox": [
+    25,
+    24,
+    47,
+    26
+   ],
+   "role": "ground"
+  },
+  {
+   "name": "P1",
+   "color": "black",
+   "bbox": [
+    7,
+    19,
+    14,
+    21
+   ],
+   "role": "platform"
+  },
+  {
+   "name": "P2",
+   "color": "black",
+   "bbox": [
+    15,
+    15,
+    23,
+    17
+   ],
+   "role": "platform"
+  },
+  {
+   "name": "ARROW",
+   "color": "black",
+   "bbox": [
+    23,
+    15,
+    28,
+    17
+   ],
+   "role": "arrow",
+   "points": "right",
+   "attached_to": "P2"
+  },
+  {
+   "name": "TXT",
+   "color": "black",
+   "bbox": [
+    23,
+    11,
+    29,
+    14
+   ],
+   "role": "text"
+  },
+  {
+   "name": "S",
+   "color": "red",
+   "bbox": [
+    29,
+    23,
+    34,
+    25
+   ],
+   "role": "spike_strip",
+   "rests_on": "G2",
+   "points": "up"
+  },
+  {
+   "name": "GOAL",
+   "color": "green",
+   "bbox": [
+    42,
+    20,
+    46,
+    24
+   ],
+   "role": "goal",
+   "rests_on": "G2"
+  },
+  {
+   "name": "COIN",
+   "color": "blue",
+   "bbox": [
+    0,
+    0,
+    47,
+    26
+   ],
+   "role": "coin"
+  }
+ ],
+ "components": [
+  {
+   "id": 1,
+   "object": "TXT",
+   "role": "text"
+  },
+  {
+   "id": 2,
+   "object": "COIN",
+   "role": "coin"
+  },
+  {
+   "id": 3,
+   "object": "P2",
+   "role": "platform"
+  },
+  {
+   "id": 4,
+   "object": "ARROW",
+   "role": "arrow",
+   "attached_to": 3,
+   "points": "right"
+  },
+  {
+   "id": 5,
+   "object": "COIN",
+   "role": "coin"
+  },
+  {
+   "id": 6,
+   "object": "P1",
+   "role": "platform"
+  },
+  {
+   "id": 7,
+   "object": "GOAL",
+   "role": "goal",
+   "rests_on": 11
+  },
+  {
+   "id": 8,
+   "object": "COIN",
+   "role": "coin"
+  },
+  {
+   "id": 9,
+   "object": "S",
+   "role": "spike_strip",
+   "rests_on": 11,
+   "points": "up"
+  },
+  {
+   "id": 10,
+   "object": "G1",
+   "role": "ground"
+  },
+  {
+   "id": 11,
+   "object": "G2",
+   "role": "ground"
+  }
+ ],
+ "expected_repairs": [
+  "reclassify the 'moves' handwriting and the arrow so they are not solid",
+  "nothing else is broken: no snapping or moving needed (spikes rest on G2, goal on G2)"
+ ]
+}

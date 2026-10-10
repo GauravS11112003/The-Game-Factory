@@ -1,0 +1,82 @@
+[
+  {
+    "n": 1,
+    "file": "1_spike_hop.png",
+    "name": "spike_hop",
+    "prompt": null,
+    "intent": [
+      "floor slopes up ~1.5 cells over the left half (wobbly hand line)",
+      "accidental ~12 px (under 1 cell) gap in the floor at x~300-313 px (cell ~19)",
+      "red zigzag spikes resting on the floor just right of spawn (cells 2-5)",
+      "red zigzag spikes drawn hovering ~1 cell above platform 1 (cells 12-23, y~16)",
+      "3 coins as small blue circles above platform 2, 1 coin as a single tap at (622,340)",
+      "goal: black pole + green flag at x~712 px (cell 44)"
+    ]
+  },
+  {
+    "n": 2,
+    "file": "2_spike_cave.png",
+    "name": "spike_cave",
+    "prompt": null,
+    "intent": [
+      "ceiling line with a row of red spikes pointing DOWN under it",
+      "a wall (x~600 px, cell 37) 6+ cells tall with red spikes pointing LEFT on its left face",
+      "a small step platform to climb onto the wall",
+      "3 coins as circles on the ledge, 1 coin as a tap",
+      "goal: black pole + green flag on the right"
+    ]
+  },
+  {
+    "n": 3,
+    "file": "3_monster_meadow.png",
+    "name": "monster_meadow",
+    "prompt": "the monster walks back and forth",
+    "intent": [
+      "red monster with black eyes standing on the floor at x~330 px (cell 20)",
+      "decoration: tree (black trunk, big green canopy) at x~158 px",
+      "decoration: black sun with rays in the sky at (680,70)",
+      "a small goal flag (black pole + small green flag) at x~724 px",
+      "3 coin circles above the platform, 1 tap coin near the tree"
+    ]
+  },
+  {
+    "n": 4,
+    "file": "4_words_and_arrows.png",
+    "name": "words_and_arrows",
+    "prompt": null,
+    "intent": [
+      "a platform with a black arrow drawn to its right, meaning 'this platform moves right'",
+      "the word 'jump!' handwritten in black above the pit (x~420-540 px)",
+      "a 5-cell pit in the floor",
+      "3 coin circles above the platform, 1 tap coin",
+      "goal: black pole + green flag"
+    ]
+  },
+  {
+    "n": 5,
+    "file": "5_big_leap.png",
+    "name": "big_leap",
+    "prompt": null,
+    "intent": [
+      "three easy stepping platforms (2-cell gaps, 2-cell rises)",
+      "a final gap of 8 cells (x 482 -> 610 px), wider than the 6-cell max jump",
+      "a strip of red spikes along the bottom as lava",
+      "a coin above each stepping platform",
+      "goal: black pole + green flag on the last platform"
+    ]
+  },
+  {
+    "n": 6,
+    "file": "6_kid_full_level.png",
+    "name": "kid_full_level",
+    "prompt": "the monster walks",
+    "intent": [
+      "spawn on a short ledge with red spikes starting 1 cell to its right",
+      "a ramp drawn as one diagonal line from the floor up to the top platform",
+      "small red monster with black eyes on the top platform",
+      "red spikes drawn hovering above platform 2",
+      "goal: black pole + green flag on a high platform at the right",
+      "2 coin circles + 1 tap coin"
+    ]
+  }
+]

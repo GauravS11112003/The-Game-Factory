@@ -1,0 +1,744 @@
+{
+  "1_spike_hop": {
+    "live": {
+      "surface_cells": 61,
+      "one_cell_bumps": 4,
+      "surface_cells_2plus_thick_pct": 26.2,
+      "solid_cells": 82,
+      "phantom_solid_cells": 4,
+      "phantom_pct": 4.9,
+      "surface_vs_ink_top_px": {
+        "mean_abs": 5.2,
+        "min": -5,
+        "max": 14,
+        "pct_off_by_4px_or_more": 55.7
+      },
+      "floating_hazard_regions": 0,
+      "hazard_cells_over_black_ink": 7,
+      "walls_4plus": [
+        [
+          44,
+          18
+        ]
+      ],
+      "start_to_nearest_hazard_cells": 1,
+      "goal_cell": [
+        45,
+        19
+      ],
+      "goal_grounded": false,
+      "solid_cells_in_2_cols_left_of_goal_rows_gy_up": 2,
+      "coins": 3,
+      "coin_rows": [
+        11
+      ],
+      "enemies": [],
+      "solver": {
+        "solvable": false,
+        "reason": "goal_unreachable",
+        "reachable": 39
+      },
+      "drawn_blue_blobs": 4,
+      "dropped_blue_marks": [
+        {
+          "cx": 622,
+          "cy": 340,
+          "area_px": 52
+        }
+      ],
+      "warnings": [],
+      "notes_transcript": "",
+      "counterfactual": {
+        "file": "1_spike_hop_no_pole.json",
+        "solvable": true,
+        "reason": null,
+        "reachable": 43
+      },
+      "tiny_solid_regions": 1
+    },
+    "model_off": {
+      "surface_cells": 61,
+      "one_cell_bumps": 4,
+      "surface_cells_2plus_thick_pct": 26.2,
+      "solid_cells": 82,
+      "phantom_solid_cells": 4,
+      "phantom_pct": 4.9,
+      "surface_vs_ink_top_px": {
+        "mean_abs": 5.2,
+        "min": -5,
+        "max": 14,
+        "pct_off_by_4px_or_more": 55.7
+      },
+      "floating_hazard_regions": 0,
+      "hazard_cells_over_black_ink": 7,
+      "walls_4plus": [
+        [
+          44,
+          18
+        ]
+      ],
+      "start_to_nearest_hazard_cells": 1,
+      "goal_cell": [
+        45,
+        19
+      ],
+      "goal_grounded": false,
+      "solid_cells_in_2_cols_left_of_goal_rows_gy_up": 2,
+      "coins": 3,
+      "coin_rows": [
+        11
+      ],
+      "enemies": [],
+      "solver": {
+        "solvable": false,
+        "reason": "goal_unreachable",
+        "reachable": 39
+      },
+      "drawn_blue_blobs": 4,
+      "dropped_blue_marks": [
+        {
+          "cx": 622,
+          "cy": 340,
+          "area_px": 52
+        }
+      ],
+      "warnings": [],
+      "notes_transcript": "",
+      "tiny_solid_regions": 1
+    }
+  },
+  "2_spike_cave": {
+    "live": {
+      "surface_cells": 99,
+      "one_cell_bumps": 13,
+      "surface_cells_2plus_thick_pct": 48.5,
+      "solid_cells": 151,
+      "phantom_solid_cells": 22,
+      "phantom_pct": 14.6,
+      "surface_vs_ink_top_px": {
+        "mean_abs": 10.4,
+        "min": -32,
+        "max": 15,
+        "pct_off_by_4px_or_more": 78.8
+      },
+      "floating_hazard_regions": 0,
+      "hazard_cells_over_black_ink": 20,
+      "walls_4plus": [
+        [
+          44,
+          20
+        ]
+      ],
+      "start_to_nearest_hazard_cells": 13,
+      "goal_cell": [
+        45,
+        21
+      ],
+      "goal_grounded": false,
+      "solid_cells_in_2_cols_left_of_goal_rows_gy_up": 2,
+      "coins": 3,
+      "coin_rows": [
+        14
+      ],
+      "enemies": [],
+      "solver": {
+        "solvable": true,
+        "reason": null,
+        "reachable": 49
+      },
+      "drawn_blue_blobs": 4,
+      "dropped_blue_marks": [
+        {
+          "cx": 548,
+          "cy": 322,
+          "area_px": 52
+        }
+      ],
+      "warnings": [],
+      "notes_transcript": "",
+      "counterfactual": {
+        "file": "2_spike_cave_no_pole.json",
+        "solvable": true,
+        "reason": null,
+        "reachable": 49
+      },
+      "tiny_solid_regions": 2
+    },
+    "model_off": {
+      "surface_cells": 99,
+      "one_cell_bumps": 13,
+      "surface_cells_2plus_thick_pct": 48.5,
+      "solid_cells": 151,
+      "phantom_solid_cells": 22,
+      "phantom_pct": 14.6,
+      "surface_vs_ink_top_px": {
+        "mean_abs": 10.4,
+        "min": -32,
+        "max": 15,
+        "pct_off_by_4px_or_more": 78.8
+      },
+      "floating_hazard_regions": 0,
+      "hazard_cells_over_black_ink": 20,
+      "walls_4plus": [
+        [
+          44,
+          20
+        ]
+      ],
+      "start_to_nearest_hazard_cells": 13,
+      "goal_cell": [
+        45,
+        21
+      ],
+      "goal_grounded": false,
+      "solid_cells_in_2_cols_left_of_goal_rows_gy_up": 2,
+      "coins": 3,
+      "coin_rows": [
+        14
+      ],
+      "enemies": [],
+      "solver": {
+        "solvable": true,
+        "reason": null,
+        "reachable": 49
+      },
+      "drawn_blue_blobs": 4,
+      "dropped_blue_marks": [
+        {
+          "cx": 548,
+          "cy": 322,
+          "area_px": 52
+        }
+      ],
+      "warnings": [],
+      "notes_transcript": "",
+      "tiny_solid_regions": 2
+    }
+  },
+  "3_monster_meadow": {
+    "live": {
+      "surface_cells": 70,
+      "one_cell_bumps": 3,
+      "surface_cells_2plus_thick_pct": 27.1,
+      "solid_cells": 113,
+      "phantom_solid_cells": 11,
+      "phantom_pct": 9.7,
+      "surface_vs_ink_top_px": {
+        "mean_abs": 7.7,
+        "min": -32,
+        "max": 12,
+        "pct_off_by_4px_or_more": 80.0
+      },
+      "floating_hazard_regions": 0,
+      "hazard_cells_over_black_ink": 0,
+      "walls_4plus": [
+        [
+          9,
+          20
+        ],
+        [
+          10,
+          20
+        ]
+      ],
+      "goal_cell": [
+        9,
+        18
+      ],
+      "goal_grounded": false,
+      "solid_cells_in_2_cols_left_of_goal_rows_gy_up": 0,
+      "coins": 3,
+      "coin_rows": [
+        16,
+        17
+      ],
+      "enemies": [
+        {
+          "id": "e16",
+          "component_id": 16,
+          "bbox": [
+            18,
+            21,
+            22,
+            24
+          ],
+          "patrol": {
+            "dx": 6,
+            "speed": 3.0
+          },
+          "solid_cells_inside_bbox": 11,
+          "ground_below_bbox": false
+        }
+      ],
+      "solver": {
+        "solvable": false,
+        "reason": "goal_unreachable",
+        "reachable": 9
+      },
+      "drawn_blue_blobs": 4,
+      "dropped_blue_marks": [
+        {
+          "cx": 250,
+          "cy": 366,
+          "area_px": 52
+        }
+      ],
+      "warnings": [],
+      "notes_transcript": "the monster walks back and forth",
+      "counterfactual": {
+        "file": "3_monster_meadow_intended.json",
+        "solvable": true,
+        "reason": null,
+        "reachable": 58
+      },
+      "tiny_solid_regions": 0
+    },
+    "model_off": {
+      "surface_cells": 70,
+      "one_cell_bumps": 3,
+      "surface_cells_2plus_thick_pct": 27.1,
+      "solid_cells": 113,
+      "phantom_solid_cells": 11,
+      "phantom_pct": 9.7,
+      "surface_vs_ink_top_px": {
+        "mean_abs": 7.7,
+        "min": -32,
+        "max": 12,
+        "pct_off_by_4px_or_more": 80.0
+      },
+      "floating_hazard_regions": 0,
+      "hazard_cells_over_black_ink": 0,
+      "walls_4plus": [
+        [
+          9,
+          20
+        ],
+        [
+          10,
+          20
+        ]
+      ],
+      "goal_cell": [
+        9,
+        18
+      ],
+      "goal_grounded": false,
+      "solid_cells_in_2_cols_left_of_goal_rows_gy_up": 0,
+      "coins": 3,
+      "coin_rows": [
+        16,
+        17
+      ],
+      "enemies": [
+        {
+          "id": "e16",
+          "component_id": 16,
+          "bbox": [
+            18,
+            21,
+            22,
+            24
+          ],
+          "patrol": {
+            "dx": 6,
+            "speed": 3.0
+          },
+          "solid_cells_inside_bbox": 11,
+          "ground_below_bbox": false
+        }
+      ],
+      "solver": {
+        "solvable": false,
+        "reason": "goal_unreachable",
+        "reachable": 9
+      },
+      "drawn_blue_blobs": 4,
+      "dropped_blue_marks": [
+        {
+          "cx": 250,
+          "cy": 366,
+          "area_px": 52
+        }
+      ],
+      "warnings": [],
+      "notes_transcript": "the monster walks back and forth",
+      "tiny_solid_regions": 0
+    }
+  },
+  "4_words_and_arrows": {
+    "live": {
+      "surface_cells": 44,
+      "one_cell_bumps": 4,
+      "surface_cells_2plus_thick_pct": 90.9,
+      "solid_cells": 88,
+      "phantom_solid_cells": 12,
+      "phantom_pct": 13.6,
+      "surface_vs_ink_top_px": {
+        "mean_abs": 14.1,
+        "min": -32,
+        "max": 15,
+        "pct_off_by_4px_or_more": 95.5
+      },
+      "floating_hazard_regions": 0,
+      "hazard_cells_over_black_ink": 0,
+      "walls_4plus": [
+        [
+          45,
+          20
+        ]
+      ],
+      "goal_cell": [
+        46,
+        21
+      ],
+      "goal_grounded": false,
+      "solid_cells_in_2_cols_left_of_goal_rows_gy_up": 2,
+      "coins": 3,
+      "coin_rows": [
+        17
+      ],
+      "enemies": [],
+      "solver": {
+        "solvable": false,
+        "reason": "goal_unreachable",
+        "reachable": 41
+      },
+      "drawn_blue_blobs": 4,
+      "dropped_blue_marks": [
+        {
+          "cx": 600,
+          "cy": 370,
+          "area_px": 52
+        }
+      ],
+      "warnings": [],
+      "notes_transcript": "jump!",
+      "counterfactual": {
+        "file": "4_words_and_arrows_no_pole.json",
+        "solvable": true,
+        "reason": null,
+        "reachable": 44
+      },
+      "tiny_solid_regions": 0
+    },
+    "model_off": {
+      "surface_cells": 68,
+      "one_cell_bumps": 6,
+      "surface_cells_2plus_thick_pct": 85.3,
+      "solid_cells": 138,
+      "phantom_solid_cells": 22,
+      "phantom_pct": 15.9,
+      "surface_vs_ink_top_px": {
+        "mean_abs": 11.7,
+        "min": -32,
+        "max": 15,
+        "pct_off_by_4px_or_more": 92.6
+      },
+      "floating_hazard_regions": 0,
+      "hazard_cells_over_black_ink": 0,
+      "walls_4plus": [
+        [
+          26,
+          20
+        ],
+        [
+          45,
+          20
+        ]
+      ],
+      "goal_cell": [
+        46,
+        21
+      ],
+      "goal_grounded": false,
+      "solid_cells_in_2_cols_left_of_goal_rows_gy_up": 2,
+      "coins": 3,
+      "coin_rows": [
+        17
+      ],
+      "enemies": [],
+      "solver": {
+        "solvable": false,
+        "reason": "goal_unreachable",
+        "reachable": 26
+      },
+      "drawn_blue_blobs": 4,
+      "dropped_blue_marks": [
+        {
+          "cx": 600,
+          "cy": 370,
+          "area_px": 52
+        }
+      ],
+      "warnings": [],
+      "notes_transcript": "",
+      "tiny_solid_regions": 0
+    }
+  },
+  "5_big_leap": {
+    "live": {
+      "surface_cells": 38,
+      "one_cell_bumps": 4,
+      "surface_cells_2plus_thick_pct": 55.3,
+      "solid_cells": 67,
+      "phantom_solid_cells": 7,
+      "phantom_pct": 10.4,
+      "surface_vs_ink_top_px": {
+        "mean_abs": 7.2,
+        "min": -2,
+        "max": 15,
+        "pct_off_by_4px_or_more": 65.8
+      },
+      "floating_hazard_regions": 0,
+      "hazard_cells_over_black_ink": 0,
+      "walls_4plus": [
+        [
+          44,
+          14
+        ],
+        [
+          45,
+          14
+        ]
+      ],
+      "start_to_nearest_hazard_cells": 9,
+      "goal_cell": [
+        46,
+        15
+      ],
+      "goal_grounded": false,
+      "solid_cells_in_2_cols_left_of_goal_rows_gy_up": 2,
+      "coins": 3,
+      "coin_rows": [
+        17,
+        19,
+        21
+      ],
+      "enemies": [],
+      "solver": {
+        "solvable": false,
+        "reason": "goal_unreachable",
+        "reachable": 28
+      },
+      "drawn_blue_blobs": 3,
+      "dropped_blue_marks": [],
+      "warnings": [],
+      "notes_transcript": "",
+      "counterfactual": {
+        "file": "5_big_leap_no_pole.json",
+        "solvable": false,
+        "reason": "goal_unreachable",
+        "reachable": 28
+      },
+      "tiny_solid_regions": 0
+    },
+    "model_off": {
+      "surface_cells": 38,
+      "one_cell_bumps": 4,
+      "surface_cells_2plus_thick_pct": 55.3,
+      "solid_cells": 67,
+      "phantom_solid_cells": 7,
+      "phantom_pct": 10.4,
+      "surface_vs_ink_top_px": {
+        "mean_abs": 7.2,
+        "min": -2,
+        "max": 15,
+        "pct_off_by_4px_or_more": 65.8
+      },
+      "floating_hazard_regions": 0,
+      "hazard_cells_over_black_ink": 0,
+      "walls_4plus": [
+        [
+          44,
+          14
+        ],
+        [
+          45,
+          14
+        ]
+      ],
+      "start_to_nearest_hazard_cells": 9,
+      "goal_cell": [
+        46,
+        15
+      ],
+      "goal_grounded": false,
+      "solid_cells_in_2_cols_left_of_goal_rows_gy_up": 2,
+      "coins": 3,
+      "coin_rows": [
+        17,
+        19,
+        21
+      ],
+      "enemies": [],
+      "solver": {
+        "solvable": false,
+        "reason": "goal_unreachable",
+        "reachable": 28
+      },
+      "drawn_blue_blobs": 3,
+      "dropped_blue_marks": [],
+      "warnings": [],
+      "notes_transcript": "",
+      "tiny_solid_regions": 0
+    }
+  },
+  "6_kid_full_level": {
+    "live": {
+      "surface_cells": 45,
+      "one_cell_bumps": 7,
+      "surface_cells_2plus_thick_pct": 46.7,
+      "solid_cells": 70,
+      "phantom_solid_cells": 14,
+      "phantom_pct": 20.0,
+      "surface_vs_ink_top_px": {
+        "mean_abs": 6.6,
+        "min": -19,
+        "max": 12,
+        "pct_off_by_4px_or_more": 82.2
+      },
+      "floating_hazard_regions": 0,
+      "hazard_cells_over_black_ink": 0,
+      "walls_4plus": [
+        [
+          45,
+          9
+        ]
+      ],
+      "start_to_nearest_hazard_cells": 34,
+      "goal_cell": [
+        46,
+        10
+      ],
+      "goal_grounded": false,
+      "solid_cells_in_2_cols_left_of_goal_rows_gy_up": 2,
+      "coins": 2,
+      "coin_rows": [
+        15
+      ],
+      "enemies": [
+        {
+          "id": "e5",
+          "component_id": 5,
+          "bbox": [
+            24,
+            15,
+            26,
+            17
+          ],
+          "patrol": {
+            "dx": 6,
+            "speed": 3.0
+          },
+          "solid_cells_inside_bbox": 3,
+          "ground_below_bbox": false
+        },
+        {
+          "id": "e10",
+          "component_id": 10,
+          "bbox": [
+            1,
+            23,
+            6,
+            24
+          ],
+          "patrol": {
+            "dx": 6,
+            "speed": 3.0
+          },
+          "solid_cells_inside_bbox": 6,
+          "ground_below_bbox": true
+        }
+      ],
+      "solver": {
+        "solvable": false,
+        "reason": "goal_unreachable",
+        "reachable": 31
+      },
+      "drawn_blue_blobs": 3,
+      "dropped_blue_marks": [
+        {
+          "cx": 580,
+          "cy": 280,
+          "area_px": 52
+        }
+      ],
+      "warnings": [],
+      "notes_transcript": "the monster walks",
+      "counterfactual": {
+        "file": "6_kid_full_level_no_pole.json",
+        "solvable": false,
+        "reason": "goal_unreachable",
+        "reachable": 31
+      },
+      "tiny_solid_regions": 0
+    },
+    "model_off": {
+      "surface_cells": 43,
+      "one_cell_bumps": 7,
+      "surface_cells_2plus_thick_pct": 48.8,
+      "solid_cells": 68,
+      "phantom_solid_cells": 14,
+      "phantom_pct": 20.6,
+      "surface_vs_ink_top_px": {
+        "mean_abs": 6.0,
+        "min": -4,
+        "max": 12,
+        "pct_off_by_4px_or_more": 81.4
+      },
+      "floating_hazard_regions": 0,
+      "hazard_cells_over_black_ink": 3,
+      "walls_4plus": [
+        [
+          45,
+          9
+        ]
+      ],
+      "start_to_nearest_hazard_cells": 24,
+      "goal_cell": [
+        46,
+        10
+      ],
+      "goal_grounded": false,
+      "solid_cells_in_2_cols_left_of_goal_rows_gy_up": 2,
+      "coins": 2,
+      "coin_rows": [
+        15
+      ],
+      "enemies": [
+        {
+          "id": "e10",
+          "component_id": 10,
+          "bbox": [
+            1,
+            23,
+            6,
+            24
+          ],
+          "patrol": {
+            "dx": 6,
+            "speed": 3.0
+          },
+          "solid_cells_inside_bbox": 6,
+          "ground_below_bbox": true
+        }
+      ],
+      "solver": {
+        "solvable": false,
+        "reason": "goal_unreachable",
+        "reachable": 28
+      },
+      "drawn_blue_blobs": 3,
+      "dropped_blue_marks": [
+        {
+          "cx": 580,
+          "cy": 280,
+          "area_px": 52
+        }
+      ],
+      "warnings": [],
+      "notes_transcript": "the monster walks",
+      "tiny_solid_regions": 1
+    }
+  }
+}
