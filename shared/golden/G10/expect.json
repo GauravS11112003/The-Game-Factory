@@ -1,0 +1,111 @@
+{
+  "id": "G10",
+  "status": "skeleton",
+  "mode": "paper",
+  "input": "input.jpg",
+  "ink": "ink.json",
+  "strokes": null,
+  "name": "paper_synth_1",
+  "prompt": null,
+  "gt": "gt.json",
+  "objects": [
+    {
+      "near": [
+        11.5,
+        25.5
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "ground",
+      "label": "G1"
+    },
+    {
+      "near": [
+        36.5,
+        25.5
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "ground",
+      "label": "G2"
+    },
+    {
+      "near": [
+        11.0,
+        20.5
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "platform",
+      "label": "P1"
+    },
+    {
+      "near": [
+        19.5,
+        16.5
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "platform",
+      "label": "P2",
+      "moves": {
+        "dir": "right"
+      }
+    },
+    {
+      "near": [
+        26.0,
+        16.5
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "arrow",
+      "label": "ARROW",
+      "collides": false
+    },
+    {
+      "near": [
+        26.5,
+        13.0
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "text",
+      "label": "TXT",
+      "collides": false
+    },
+    {
+      "near": [
+        32.0,
+        24.5
+      ],
+      "radius": 2,
+      "color": "red",
+      "role": "spikes",
+      "label": "S"
+    },
+    {
+      "near": [
+        44.5,
+        22.5
+      ],
+      "radius": 2,
+      "color": "green",
+      "role": "goal",
+      "label": "GOAL"
+    }
+  ],
+  "invariants": {
+    "solvable_at": [
+      "ink",
+      "understood",
+      "faithful",
+      "polished",
+      "normal",
+      "hard"
+    ]
+  },
+  "latency": {
+    "paper_ink_p90_s": 4
+  }
+}

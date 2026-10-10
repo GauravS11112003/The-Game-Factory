@@ -1,0 +1,24 @@
+/* v2 shell: paper and ink chrome (lane F owns the real design, §7.9). */
+:root {
+  --paper: #fbf6ea;
+  --ink: #1f1b18;
+  --pencil: #6a5acd;
+  --red: #e0453a;
+  --green: #3e9e4f;
+  --blue: #2c7be5;
+  --line: #d9cfbd;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+}
+body { margin: 0; }
+header.v2 { display: flex; gap: 14px; align-items: baseline; padding: 10px 16px; border-bottom: 2px solid var(--ink); flex-wrap: wrap; }
+header.v2 h1 { font-size: 1.2rem; margin: 0; }
+header.v2 nav a { margin-right: 10px; color: var(--ink); }
+main.v2 { padding: 16px; max-width: 1600px; }
+.card { background: #fff; border: 2px solid var(--ink); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+.muted { color: #6b625a; }
+.events { font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; max-height: 320px; overflow: auto; }
+.ok { color: var(--green); }
+.bad { color: var(--red); }
+button { font: inherit; border: 2px solid var(--ink); border-radius: 999px; background: #fff; padding: 4px 14px; cursor: pointer; }

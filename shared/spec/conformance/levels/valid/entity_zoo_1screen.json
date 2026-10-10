@@ -1,0 +1,286 @@
+{
+  "format": "dal-level",
+  "schema_version": 2,
+  "core_min": "2.0.0",
+  "id": "lvl_conf0002",
+  "version": 1,
+  "game_id": null,
+  "parent_id": null,
+  "order_index": 0,
+  "title": "Entity zoo",
+  "author": "conformance",
+  "created_at": "2026-10-10T00:00:00Z",
+  "license": "CC0-1.0",
+  "world": {
+    "cell": 16,
+    "screens": 1,
+    "w": 48,
+    "h": 27
+  },
+  "rules": {
+    "version": 1,
+    "physics_profile": "v2-standard",
+    "abilities": {
+      "run": true,
+      "stomp": true,
+      "double_jump": false,
+      "fast_fall": true
+    },
+    "lives": "off",
+    "hearts": 1,
+    "theme": "sketchbook",
+    "music": true,
+    "timer_pressure": false,
+    "camera": "follow",
+    "default_dial": "polished",
+    "default_band": "normal",
+    "player_type": null
+  },
+  "source": {
+    "kind": "canvas",
+    "prompt": null,
+    "pack_id": null,
+    "sheets": [
+      {
+        "index": 0,
+        "photo_url": null,
+        "qr": null
+      }
+    ]
+  },
+  "objects": [],
+  "setpieces": [],
+  "edits": [],
+  "compiled": {
+    "tiles": {
+      "legend": ".#=/\\abcd~X",
+      "rows": [
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "30.6=12.",
+        "48.",
+        "48.",
+        "40.4#4.",
+        "4.ab/2#\\cd36.",
+        "30#5~13#",
+        "48#",
+        "48#",
+        "48#",
+        "48#"
+      ]
+    },
+    "entities": [
+      {
+        "id": "start",
+        "type": "player_start",
+        "x": 2.0,
+        "y": 22.0
+      },
+      {
+        "id": "e_spk",
+        "type": "spikes",
+        "host": null,
+        "face": "top",
+        "x0": 14.0,
+        "x1": 17.0,
+        "y": 22.0,
+        "facing": "up"
+      },
+      {
+        "id": "e_walk",
+        "type": "enemy",
+        "archetype": "walker",
+        "x": 20.0,
+        "y": 22.0,
+        "w": 1.5,
+        "h": 1.25,
+        "spiky": false,
+        "params": {
+          "speed": 2.0,
+          "ledge_aware": true
+        },
+        "bounds": [
+          18.0,
+          28.0
+        ]
+      },
+      {
+        "id": "e_fly",
+        "type": "enemy",
+        "archetype": "flyer",
+        "x": 24.0,
+        "y": 12.0,
+        "w": 1.0,
+        "h": 1.0,
+        "spiky": true,
+        "params": {
+          "pattern": "circle",
+          "radius": 2.0,
+          "period": 4.0
+        },
+        "bounds": null
+      },
+      {
+        "id": "e_coin",
+        "type": "coin",
+        "x": 12.5,
+        "y": 19.5
+      },
+      {
+        "id": "e_big",
+        "type": "big_coin",
+        "x": 33.0,
+        "y": 15.5
+      },
+      {
+        "id": "e_cp",
+        "type": "checkpoint",
+        "x": 26.0,
+        "y": 22.0
+      },
+      {
+        "id": "e_key",
+        "type": "key",
+        "x": 41.0,
+        "y": 19.0,
+        "door": "e_door"
+      },
+      {
+        "id": "e_door",
+        "type": "door",
+        "x": 43.0,
+        "y": 17.0,
+        "w": 1.0,
+        "h": 5.0,
+        "key": "e_key"
+      },
+      {
+        "id": "e_spring",
+        "type": "spring",
+        "x": 9.0,
+        "y": 22.0,
+        "dir": "up",
+        "strength": 1.0,
+        "w": 1.0
+      },
+      {
+        "id": "e_saw",
+        "type": "saw",
+        "x": 33.0,
+        "y": 13.0,
+        "r": 1.0,
+        "path": [
+          [
+            31.0,
+            13.0
+          ],
+          [
+            35.0,
+            13.0
+          ]
+        ],
+        "speed": 3.0,
+        "mode": "pingpong"
+      },
+      {
+        "id": "e_fire",
+        "type": "firebar",
+        "x": 6.0,
+        "y": 10.0,
+        "balls": 4,
+        "speed_deg_s": 90.0,
+        "phase": 0.0
+      },
+      {
+        "id": "e_mov",
+        "type": "moving_platform",
+        "x": 30.0,
+        "y": 21.0,
+        "w": 3.0,
+        "path": [
+          [
+            30.0,
+            21.0
+          ],
+          [
+            33.0,
+            21.0
+          ]
+        ],
+        "speed": 2.0,
+        "mode": "pingpong",
+        "wait_s": 0.3,
+        "one_way": true
+      },
+      {
+        "id": "e_crumble",
+        "type": "crumble",
+        "x": 36.0,
+        "y": 14.0,
+        "w": 2.0,
+        "delay_s": 0.5,
+        "respawn_s": 3.0,
+        "one_way": true
+      },
+      {
+        "id": "e_fall",
+        "type": "falling_platform",
+        "x": 38.0,
+        "y": 11.0,
+        "w": 2.0,
+        "delay_s": 0.4,
+        "one_way": true
+      },
+      {
+        "id": "e_hint",
+        "type": "hint_arrow",
+        "x": 28.0,
+        "y": 20.0,
+        "dir": "right"
+      },
+      {
+        "id": "goal",
+        "type": "goal",
+        "x": 45.0,
+        "y": 22.0,
+        "trigger": [
+          44.75,
+          19.0,
+          46.5,
+          22.0
+        ]
+      }
+    ],
+    "triggers": [],
+    "sprites": {
+      "player": null,
+      "objects": {}
+    }
+  },
+  "design": null,
+  "embedded_library": [],
+  "meta": {
+    "transcript": "",
+    "intent": null,
+    "safety": "unchecked",
+    "level_hash": "sha256:b98f05296ca2db9698275bf6c2abfd1277ac7f9b6e9921ab7536a9f2ce9619d9",
+    "core_version": "2.0.0",
+    "warnings": [],
+    "build": null
+  }
+}

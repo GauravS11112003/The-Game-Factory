@@ -1,0 +1,1 @@
+the high platform moves left and right 4 cells; timer 45

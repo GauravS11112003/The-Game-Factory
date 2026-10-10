@@ -1,0 +1,26 @@
+{
+  "id": "G11",
+  "status": "skeleton",
+  "mode": "canvas",
+  "input": "input.png",
+  "ink": "ink.json",
+  "strokes": null,
+  "name": "owner d_b14b143e",
+  "prompt": "the high platform moves left and right 4 cells; timer 45",
+  "objects": [],
+  "invariants": {
+    "faithful_solvable": true,
+    "max_R_edits": 3,
+    "max_R_cells": 3,
+    "expected_R_edits": 0,
+    "stepping_stone_one_way": true,
+    "left_ground_static": true,
+    "highest_platform_moves": true,
+    "coins": 2
+  },
+  "todo": "near-cell locators once ink.json exists (lane C, P1): red lines = floor spikes + pit lava; green Γ = goal",
+  "must_not": [
+    "head bonk",
+    "engine crash"
+  ]
+}

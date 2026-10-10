@@ -1,0 +1,22 @@
+{
+  "id": "G15",
+  "status": "skeleton",
+  "mode": "paper",
+  "input": "input.jpg",
+  "ink": "ink.json",
+  "strokes": null,
+  "name": "owner d_23962d19 (Synth 1, paper)",
+  "prompt": null,
+  "objects": [],
+  "invariants": {
+    "solvable_at": [
+      "ink",
+      "understood",
+      "faithful"
+    ],
+    "new_hard_flags": 0
+  },
+  "difficulty": {
+    "faithful_E_min": 0.1
+  }
+}

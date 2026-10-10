@@ -1,0 +1,646 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://draw-a-level.dev/spec/v2/plan.schema.json",
+  "$comment": "dal-level spec v1.0. GENERATED from vision/app/spec/plan.py by scripts/gen_contracts.py; do not edit.",
+  "title": "plan",
+  "description": "LevelPlan: prompt-to-level beats (PLAN_V2 §8.3). The model picks pacing and content from a fixed",
+  "$ref": "#/$defs/LevelPlan",
+  "$defs": {
+    "Beat": {
+      "discriminator": {
+        "mapping": {
+          "ceiling": "#/$defs/BeatCeiling",
+          "checkpoint": "#/$defs/BeatCheckpoint",
+          "crumble_run": "#/$defs/BeatCrumble",
+          "door": "#/$defs/BeatDoor",
+          "enemy_gauntlet": "#/$defs/BeatGauntlet",
+          "flat": "#/$defs/BeatFlat",
+          "floaters": "#/$defs/BeatFloaters",
+          "gap": "#/$defs/BeatGap",
+          "goal": "#/$defs/BeatGoal",
+          "key": "#/$defs/BeatKey",
+          "moving_bridge": "#/$defs/BeatBridge",
+          "pillars": "#/$defs/BeatPillars",
+          "rest": "#/$defs/BeatRest",
+          "saw_corridor": "#/$defs/BeatSaws",
+          "spring_up": "#/$defs/BeatSpringUp",
+          "stairs": "#/$defs/BeatStairs",
+          "step": "#/$defs/BeatStep",
+          "tower": "#/$defs/BeatTower",
+          "wall": "#/$defs/BeatWall"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/BeatFlat"
+        },
+        {
+          "$ref": "#/$defs/BeatGap"
+        },
+        {
+          "$ref": "#/$defs/BeatStep"
+        },
+        {
+          "$ref": "#/$defs/BeatStairs"
+        },
+        {
+          "$ref": "#/$defs/BeatPillars"
+        },
+        {
+          "$ref": "#/$defs/BeatFloaters"
+        },
+        {
+          "$ref": "#/$defs/BeatCeiling"
+        },
+        {
+          "$ref": "#/$defs/BeatWall"
+        },
+        {
+          "$ref": "#/$defs/BeatBridge"
+        },
+        {
+          "$ref": "#/$defs/BeatCrumble"
+        },
+        {
+          "$ref": "#/$defs/BeatSaws"
+        },
+        {
+          "$ref": "#/$defs/BeatTower"
+        },
+        {
+          "$ref": "#/$defs/BeatGauntlet"
+        },
+        {
+          "$ref": "#/$defs/BeatSpringUp"
+        },
+        {
+          "$ref": "#/$defs/BeatKey"
+        },
+        {
+          "$ref": "#/$defs/BeatDoor"
+        },
+        {
+          "$ref": "#/$defs/BeatRest"
+        },
+        {
+          "$ref": "#/$defs/BeatCheckpoint"
+        },
+        {
+          "$ref": "#/$defs/BeatGoal"
+        }
+      ]
+    },
+    "BeatBridge": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "moving_bridge",
+          "type": "string"
+        },
+        "gap": {
+          "type": "integer"
+        },
+        "speed": {
+          "enum": [
+            "slow",
+            "normal",
+            "fast"
+          ],
+          "type": "string"
+        },
+        "vertical": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "gap",
+        "speed",
+        "vertical"
+      ],
+      "title": "BeatBridge",
+      "type": "object"
+    },
+    "BeatCeiling": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "ceiling",
+          "type": "string"
+        },
+        "length": {
+          "type": "integer"
+        },
+        "spikes": {
+          "type": "boolean"
+        },
+        "headroom": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "length",
+        "spikes",
+        "headroom"
+      ],
+      "title": "BeatCeiling",
+      "type": "object"
+    },
+    "BeatCheckpoint": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "checkpoint",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BeatCheckpoint",
+      "type": "object"
+    },
+    "BeatCrumble": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "crumble_run",
+          "type": "string"
+        },
+        "n": {
+          "type": "integer"
+        },
+        "floor": {
+          "enum": [
+            "void",
+            "shallow"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "n",
+        "floor"
+      ],
+      "title": "BeatCrumble",
+      "type": "object"
+    },
+    "BeatDoor": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "door",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BeatDoor",
+      "type": "object"
+    },
+    "BeatFlat": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "flat",
+          "type": "string"
+        },
+        "length": {
+          "type": "integer"
+        },
+        "enemy": {
+          "enum": [
+            "none",
+            "walker",
+            "hopper",
+            "chaser"
+          ],
+          "type": "string"
+        },
+        "coins": {
+          "type": "integer"
+        },
+        "spikes": {
+          "enum": [
+            "none",
+            "middle",
+            "far_end"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "length",
+        "enemy",
+        "coins",
+        "spikes"
+      ],
+      "title": "BeatFlat",
+      "type": "object"
+    },
+    "BeatFloaters": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "floaters",
+          "type": "string"
+        },
+        "n": {
+          "type": "integer"
+        },
+        "dy": {
+          "type": "integer"
+        },
+        "spacing": {
+          "type": "integer"
+        },
+        "oneway": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "n",
+        "dy",
+        "spacing",
+        "oneway"
+      ],
+      "title": "BeatFloaters",
+      "type": "object"
+    },
+    "BeatGap": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "gap",
+          "type": "string"
+        },
+        "width": {
+          "type": "integer"
+        },
+        "floor": {
+          "enum": [
+            "void",
+            "spikes",
+            "lava"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "width",
+        "floor"
+      ],
+      "title": "BeatGap",
+      "type": "object"
+    },
+    "BeatGauntlet": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "enemy_gauntlet",
+          "type": "string"
+        },
+        "archetype": {
+          "enum": [
+            "walker",
+            "hopper",
+            "flyer",
+            "shooter",
+            "chaser",
+            "crusher"
+          ],
+          "type": "string"
+        },
+        "n": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "archetype",
+        "n"
+      ],
+      "title": "BeatGauntlet",
+      "type": "object"
+    },
+    "BeatGoal": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "goal",
+          "type": "string"
+        },
+        "style": {
+          "enum": [
+            "flag",
+            "staircase"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "style"
+      ],
+      "title": "BeatGoal",
+      "type": "object"
+    },
+    "BeatKey": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "key",
+          "type": "string"
+        },
+        "place": {
+          "enum": [
+            "high",
+            "guarded",
+            "alcove"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "place"
+      ],
+      "title": "BeatKey",
+      "type": "object"
+    },
+    "BeatPillars": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "pillars",
+          "type": "string"
+        },
+        "n": {
+          "type": "integer"
+        },
+        "spacing": {
+          "type": "integer"
+        },
+        "hazard": {
+          "enum": [
+            "void",
+            "spikes",
+            "lava"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "n",
+        "spacing",
+        "hazard"
+      ],
+      "title": "BeatPillars",
+      "type": "object"
+    },
+    "BeatRest": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "rest",
+          "type": "string"
+        },
+        "length": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "length"
+      ],
+      "title": "BeatRest",
+      "type": "object"
+    },
+    "BeatSaws": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "saw_corridor",
+          "type": "string"
+        },
+        "length": {
+          "type": "integer"
+        },
+        "saws": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "length",
+        "saws"
+      ],
+      "title": "BeatSaws",
+      "type": "object"
+    },
+    "BeatSpringUp": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "spring_up",
+          "type": "string"
+        },
+        "height": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "height"
+      ],
+      "title": "BeatSpringUp",
+      "type": "object"
+    },
+    "BeatStairs": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "stairs",
+          "type": "string"
+        },
+        "n": {
+          "type": "integer"
+        },
+        "rise": {
+          "type": "integer"
+        },
+        "run": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "n",
+        "rise",
+        "run"
+      ],
+      "title": "BeatStairs",
+      "type": "object"
+    },
+    "BeatStep": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "step",
+          "type": "string"
+        },
+        "rise": {
+          "type": "integer"
+        },
+        "length": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "rise",
+        "length"
+      ],
+      "title": "BeatStep",
+      "type": "object"
+    },
+    "BeatTower": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "tower",
+          "type": "string"
+        },
+        "tiers": {
+          "type": "integer"
+        },
+        "rise": {
+          "type": "integer"
+        },
+        "oneway": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "tiers",
+        "rise",
+        "oneway"
+      ],
+      "title": "BeatTower",
+      "type": "object"
+    },
+    "BeatWall": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "wall",
+          "type": "string"
+        },
+        "height": {
+          "type": "integer"
+        },
+        "spikes": {
+          "enum": [
+            "none",
+            "near_face"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "height",
+        "spikes"
+      ],
+      "title": "BeatWall",
+      "type": "object"
+    },
+    "LevelPlan": {
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "theme": {
+          "enum": [
+            "sketchbook",
+            "notebook",
+            "graph",
+            "kraft"
+          ],
+          "type": "string"
+        },
+        "screens": {
+          "type": "integer"
+        },
+        "band": {
+          "enum": [
+            "easy",
+            "normal",
+            "hard"
+          ],
+          "type": "string"
+        },
+        "sections": {
+          "items": {
+            "$ref": "#/$defs/Section"
+          },
+          "type": "array"
+        },
+        "kid_summary": {
+          "type": "string"
+        },
+        "safety_ok": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "title",
+        "theme",
+        "screens",
+        "band",
+        "sections",
+        "kid_summary",
+        "safety_ok"
+      ],
+      "title": "LevelPlan",
+      "type": "object"
+    },
+    "Section": {
+      "additionalProperties": false,
+      "properties": {
+        "role": {
+          "enum": [
+            "teach",
+            "test",
+            "twist",
+            "finale",
+            "rest"
+          ],
+          "type": "string"
+        },
+        "beats": {
+          "items": {
+            "$ref": "#/$defs/Beat"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "role",
+        "beats"
+      ],
+      "title": "Section",
+      "type": "object"
+    }
+  }
+}

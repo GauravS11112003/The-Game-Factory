@@ -1,0 +1,3671 @@
+{
+ "date": "2026-10-10 03:43",
+ "model": "claude-opus-5",
+ "summary": {
+  "calls": 12,
+  "billed_calls": 12,
+  "perceive_schema": "flat",
+  "spent_usd": 0.6422,
+  "async_parse": true,
+  "fast_mode": "not run (DAL_FAST_MODE != 1)",
+  "by": {
+   "perceive/adaptive": {
+    "n": 6,
+    "ok": 6,
+    "p50_s": 15.18,
+    "p90_s": 22.26,
+    "mean_out_tok": 1491,
+    "mean_cost_usd": 0.0563,
+    "over_prod_timeout": 2,
+    "errors": [],
+    "role_acc": 0.899,
+    "role_acc_strict": 0.889,
+    "relations": "42/47",
+    "invented_ids": 0,
+    "bindings": 9
+   },
+   "perceive/disabled": {
+    "n": 6,
+    "ok": 6,
+    "p50_s": 13.49,
+    "p90_s": 16.84,
+    "mean_out_tok": 1271,
+    "mean_cost_usd": 0.0508,
+    "over_prod_timeout": 0,
+    "errors": [],
+    "role_acc": 0.919,
+    "role_acc_strict": 0.909,
+    "relations": "42/47",
+    "invented_ids": 0,
+    "bindings": 10
+   },
+   "design/adaptive": {
+    "n": 0,
+    "ok": 0,
+    "p50_s": null,
+    "p90_s": null,
+    "mean_out_tok": null,
+    "mean_cost_usd": null,
+    "over_prod_timeout": 0,
+    "errors": []
+   },
+   "design/disabled": {
+    "n": 0,
+    "ok": 0,
+    "p50_s": null,
+    "p90_s": null,
+    "mean_out_tok": null,
+    "mean_cost_usd": null,
+    "over_prod_timeout": 0,
+    "errors": []
+   }
+  },
+  "unions_accepted": {
+   "perception_bindings_union": null,
+   "perception_flat_bindings": true,
+   "design_novel_union": null,
+   "note": "pass 2 used PerceptionFlat; the union form was rejected in pass 1 (bakeoff_p0.json)",
+   "schema_errors": []
+  }
+ },
+ "calls": [
+  {
+   "n": 1,
+   "kind": "perceive",
+   "scene": "canvas_floating_spikes",
+   "thinking": "adaptive",
+   "status": "ok",
+   "error": null,
+   "latency_s": 17.464,
+   "in_tok": 7163,
+   "out_tok": 1464,
+   "cache_read_tok": 0,
+   "cost_usd": 0.07847,
+   "stop_reason": "end_turn",
+   "served_by": "claude-opus-5",
+   "fallback_used": false,
+   "over_prod_timeout": false,
+   "parsed": {
+    "nodes": [
+     {
+      "id": 1,
+      "role": "decoration",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 2,
+      "role": "decoration",
+      "conf": "medium",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 3,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 4,
+      "role": "spikes",
+      "conf": "high",
+      "on": null,
+      "att": 3,
+      "face": "bottom",
+      "pts": "down",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 5,
+      "role": "coin",
+      "conf": "low",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 6,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 7,
+      "role": "arrow",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "right",
+      "part": null,
+      "ref": 8
+     },
+     {
+      "id": 8,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 9,
+      "role": "spikes",
+      "conf": "high",
+      "on": 11,
+      "att": 11,
+      "face": "top",
+      "pts": "up",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 10,
+      "role": "text",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": 8
+     },
+     {
+      "id": 11,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 12,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 13,
+      "role": "enemy",
+      "conf": "medium",
+      "on": 15,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 14,
+      "role": "spikes",
+      "conf": "high",
+      "on": 16,
+      "att": 16,
+      "face": "top",
+      "pts": "up",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 15,
+      "role": "ground",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 16,
+      "role": "ground",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     }
+    ],
+    "bindings": [
+     {
+      "binding": {
+       "kind": "enemy",
+       "target": 13,
+       "door": -1,
+       "dir": "none",
+       "cells": 0,
+       "speed": "normal",
+       "mode": "none",
+       "archetype": "walker",
+       "spiky": false,
+       "strength": "none",
+       "falls": false,
+       "seconds": 0,
+       "type_name": ""
+      },
+      "pinned": [],
+      "evidence": "red skull creature on the ground"
+     }
+    ],
+    "setpieces": [
+     {
+      "name": "ceiling spike run",
+      "ids": [
+       3,
+       4
+      ],
+      "kind": "hazard_run"
+     },
+     {
+      "name": "jump! platform",
+      "ids": [
+       8,
+       10,
+       7,
+       6
+      ],
+      "kind": "jump"
+     },
+     {
+      "name": "spiky ledge and skull",
+      "ids": [
+       9,
+       11,
+       13
+      ],
+      "kind": "hazard_run"
+     }
+    ],
+    "intent": "A run across platforms past spikes and a skull monster, collecting coins.",
+    "difficulty_wish": "none",
+    "transcript": "jump!",
+    "title": "Jump!",
+    "asks": [
+     {
+      "about": 5,
+      "kind": "what_does_it_do",
+      "options": [
+       "coin",
+       "decoration",
+       "goal"
+      ]
+     },
+     {
+      "about": 13,
+      "kind": "what_does_it_do",
+      "options": [
+       "enemy",
+       "decoration"
+      ]
+     }
+    ],
+    "safety_ok": true,
+    "safety_reason": null
+   },
+   "score": {
+    "components": 16,
+    "role_ok": 14,
+    "role_lenient": 14,
+    "role_acc": 0.875,
+    "relations": "9/10",
+    "rel_ok": 9,
+    "rel_total": 10,
+    "invented_ids": [],
+    "bindings": 1,
+    "errors": [
+     "#3 CEIL: platform (gt ceiling, high)",
+     "#5 GOAL: coin (gt goal, low)",
+     "#7 attached_to: want P2, got on=None att=None"
+    ]
+   }
+  },
+  {
+   "n": 2,
+   "kind": "perceive",
+   "scene": "canvas_floating_spikes",
+   "thinking": "disabled",
+   "status": "ok",
+   "error": null,
+   "latency_s": 16.817,
+   "in_tok": 7163,
+   "out_tok": 1194,
+   "cache_read_tok": 0,
+   "cost_usd": 0.07172,
+   "stop_reason": "end_turn",
+   "served_by": "claude-opus-5",
+   "fallback_used": false,
+   "over_prod_timeout": false,
+   "parsed": {
+    "nodes": [
+     {
+      "id": 1,
+      "role": "decoration",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 2,
+      "role": "decoration",
+      "conf": "medium",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 3,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 4,
+      "role": "spikes",
+      "conf": "high",
+      "on": null,
+      "att": 3,
+      "face": "bottom",
+      "pts": "down",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 5,
+      "role": "decoration",
+      "conf": "low",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 6,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 7,
+      "role": "arrow",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "right",
+      "part": null,
+      "ref": 8
+     },
+     {
+      "id": 8,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 9,
+      "role": "spikes",
+      "conf": "high",
+      "on": 11,
+      "att": 11,
+      "face": "top",
+      "pts": "up",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 10,
+      "role": "text",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": 8
+     },
+     {
+      "id": 11,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 12,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 13,
+      "role": "enemy",
+      "conf": "medium",
+      "on": 15,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 14,
+      "role": "spikes",
+      "conf": "high",
+      "on": 16,
+      "att": 16,
+      "face": "top",
+      "pts": "up",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 15,
+      "role": "ground",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 16,
+      "role": "ground",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     }
+    ],
+    "bindings": [
+     {
+      "binding": {
+       "kind": "enemy",
+       "target": 13,
+       "door": -1,
+       "dir": "none",
+       "cells": 0,
+       "speed": "normal",
+       "mode": "none",
+       "archetype": "walker",
+       "spiky": false,
+       "strength": "none",
+       "falls": false,
+       "seconds": 0,
+       "type_name": ""
+      },
+      "pinned": [],
+      "evidence": "red creature on ground"
+     }
+    ],
+    "setpieces": [
+     {
+      "name": "jump over the spiky ledge",
+      "ids": [
+       8,
+       10,
+       9,
+       11
+      ],
+      "kind": "jump"
+     },
+     {
+      "name": "ceiling spikes run",
+      "ids": [
+       3,
+       4
+      ],
+      "kind": "hazard_run"
+     },
+     {
+      "name": "spikes on the right ground",
+      "ids": [
+       14,
+       16
+      ],
+      "kind": "hazard_run"
+     }
+    ],
+    "intent": "A jumping course over spikes and a monster, heading right.",
+    "difficulty_wish": "none",
+    "transcript": "jump!",
+    "title": "Jump!",
+    "asks": [
+     {
+      "about": 5,
+      "kind": "is_decoration",
+      "options": [
+       "decoration",
+       "coin",
+       "enemy"
+      ]
+     },
+     {
+      "about": 2,
+      "kind": "what_does_it_do",
+      "options": [
+       "decoration",
+       "coin",
+       "ring"
+      ]
+     }
+    ],
+    "safety_ok": true,
+    "safety_reason": null
+   },
+   "score": {
+    "components": 16,
+    "role_ok": 14,
+    "role_lenient": 14,
+    "role_acc": 0.875,
+    "relations": "9/10",
+    "rel_ok": 9,
+    "rel_total": 10,
+    "invented_ids": [],
+    "bindings": 1,
+    "errors": [
+     "#3 CEIL: platform (gt ceiling, high)",
+     "#5 GOAL: decoration (gt goal, low)",
+     "#7 attached_to: want P2, got on=None att=None"
+    ]
+   }
+  },
+  {
+   "n": 3,
+   "kind": "perceive",
+   "scene": "canvas_wobbly_cave",
+   "thinking": "adaptive",
+   "status": "ok",
+   "error": null,
+   "latency_s": 12.305,
+   "in_tok": 2198,
+   "out_tok": 1048,
+   "cache_read_tok": 4846,
+   "cost_usd": 0.03961,
+   "stop_reason": "end_turn",
+   "served_by": "claude-opus-5",
+   "fallback_used": false,
+   "over_prod_timeout": false,
+   "parsed": {
+    "nodes": [
+     {
+      "id": 1,
+      "role": "ceiling",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 2,
+      "role": "spikes",
+      "conf": "high",
+      "on": null,
+      "att": 1,
+      "face": "bottom",
+      "pts": "down",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 3,
+      "role": "decoration",
+      "conf": "low",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 4,
+      "role": "wall",
+      "conf": "medium",
+      "on": 9,
+      "att": 9,
+      "face": "top",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 5,
+      "role": "text",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": 12
+     },
+     {
+      "id": 6,
+      "role": "goal",
+      "conf": "high",
+      "on": 11,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 7,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 8,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 9,
+      "role": "ground",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 10,
+      "role": "ground",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 11,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 12,
+      "role": "spikes",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "up",
+      "part": null,
+      "ref": null
+     }
+    ],
+    "bindings": [],
+    "setpieces": [
+     {
+      "name": "wobbly cave ceiling spikes",
+      "ids": [
+       1,
+       2
+      ],
+      "kind": "hazard_run"
+     },
+     {
+      "name": "lava spike pit",
+      "ids": [
+       12,
+       5
+      ],
+      "kind": "hazard_run"
+     },
+     {
+      "name": "flag ledge",
+      "ids": [
+       11,
+       6
+      ],
+      "kind": "finale"
+     }
+    ],
+    "intent": "Run through a wavy cave, grab coins, cross the lava spikes and reach the flag.",
+    "difficulty_wish": "none",
+    "transcript": "Lava!",
+    "title": "Wobbly Cave",
+    "asks": [
+     {
+      "about": 3,
+      "kind": "is_decoration",
+      "options": [
+       "decoration",
+       "spikes"
+      ]
+     },
+     {
+      "about": 4,
+      "kind": "what_does_it_do",
+      "options": [
+       "wall",
+       "pole",
+       "decoration"
+      ]
+     }
+    ],
+    "safety_ok": true,
+    "safety_reason": null
+   },
+   "score": {
+    "components": 12,
+    "role_ok": 11,
+    "role_lenient": 12,
+    "role_acc": 1.0,
+    "relations": "6/6",
+    "rel_ok": 6,
+    "rel_total": 6,
+    "invented_ids": [],
+    "bindings": 0,
+    "errors": []
+   }
+  },
+  {
+   "n": 4,
+   "kind": "perceive",
+   "scene": "canvas_wobbly_cave",
+   "thinking": "disabled",
+   "status": "ok",
+   "error": null,
+   "latency_s": 9.455,
+   "in_tok": 2198,
+   "out_tok": 828,
+   "cache_read_tok": 4846,
+   "cost_usd": 0.03411,
+   "stop_reason": "end_turn",
+   "served_by": "claude-opus-5",
+   "fallback_used": false,
+   "over_prod_timeout": false,
+   "parsed": {
+    "nodes": [
+     {
+      "id": 1,
+      "role": "ceiling",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 2,
+      "role": "spikes",
+      "conf": "high",
+      "on": null,
+      "att": 1,
+      "face": "bottom",
+      "pts": "down",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 3,
+      "role": "decoration",
+      "conf": "medium",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 4,
+      "role": "wall",
+      "conf": "medium",
+      "on": 9,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 5,
+      "role": "text",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": 12
+     },
+     {
+      "id": 6,
+      "role": "goal",
+      "conf": "high",
+      "on": 11,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 7,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 8,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 9,
+      "role": "ground",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 10,
+      "role": "ground",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 11,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 12,
+      "role": "spikes",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "up",
+      "part": null,
+      "ref": null
+     }
+    ],
+    "bindings": [],
+    "setpieces": [
+     {
+      "name": "wobbly cave run",
+      "ids": [
+       1,
+       2,
+       9,
+       4
+      ],
+      "kind": "hazard_run"
+     },
+     {
+      "name": "lava spike pit to the flag",
+      "ids": [
+       12,
+       5,
+       11,
+       6
+      ],
+      "kind": "finale"
+     }
+    ],
+    "intent": "Run through a wobbly cave, grab coins, cross the spike pit and reach the flag.",
+    "difficulty_wish": "none",
+    "transcript": "Lava!",
+    "title": "Wobbly Cave",
+    "asks": [
+     {
+      "about": 3,
+      "kind": "is_decoration",
+      "options": [
+       "decoration",
+       "spikes"
+      ]
+     }
+    ],
+    "safety_ok": true,
+    "safety_reason": null
+   },
+   "score": {
+    "components": 12,
+    "role_ok": 11,
+    "role_lenient": 12,
+    "role_acc": 1.0,
+    "relations": "6/6",
+    "rel_ok": 6,
+    "rel_total": 6,
+    "invented_ids": [],
+    "bindings": 0,
+    "errors": []
+   }
+  },
+  {
+   "n": 5,
+   "kind": "perceive",
+   "scene": "canvas_tower_key",
+   "thinking": "adaptive",
+   "status": "ok",
+   "error": null,
+   "latency_s": 21.278,
+   "in_tok": 2496,
+   "out_tok": 2056,
+   "cache_read_tok": 4846,
+   "cost_usd": 0.0663,
+   "stop_reason": "end_turn",
+   "served_by": "claude-opus-5",
+   "fallback_used": false,
+   "over_prod_timeout": true,
+   "parsed": {
+    "nodes": [
+     {
+      "id": 1,
+      "role": "text",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": 13
+     },
+     {
+      "id": 2,
+      "role": "text",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": 1,
+      "ref": 4
+     },
+     {
+      "id": 3,
+      "role": "text",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": 1,
+      "ref": null
+     },
+     {
+      "id": 4,
+      "role": "door",
+      "conf": "medium",
+      "on": 6,
+      "att": 6,
+      "face": "top",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 5,
+      "role": "goal",
+      "conf": "medium",
+      "on": 6,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 6,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 7,
+      "role": "decoration",
+      "conf": "low",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": 6,
+      "ref": null
+     },
+     {
+      "id": 8,
+      "role": "decoration",
+      "conf": "low",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": 6,
+      "ref": null
+     },
+     {
+      "id": 9,
+      "role": "wall",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 10,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 11,
+      "role": "enemy",
+      "conf": "high",
+      "on": 12,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 12,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 13,
+      "role": "key",
+      "conf": "high",
+      "on": 15,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 14,
+      "role": "spikes",
+      "conf": "high",
+      "on": null,
+      "att": 9,
+      "face": "left",
+      "pts": "left",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 15,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 16,
+      "role": "decoration",
+      "conf": "medium",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 17,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 18,
+      "role": "start_marker",
+      "conf": "high",
+      "on": 22,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 19,
+      "role": "spikes",
+      "conf": "high",
+      "on": 20,
+      "att": 20,
+      "face": "top",
+      "pts": "up",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 20,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 21,
+      "role": "decoration",
+      "conf": "medium",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": 16,
+      "ref": null
+     },
+     {
+      "id": 22,
+      "role": "ground",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     }
+    ],
+    "bindings": [
+     {
+      "binding": {
+       "kind": "key_door",
+       "target": 13,
+       "door": 4,
+       "dir": "none",
+       "cells": 0,
+       "speed": "none",
+       "mode": "none",
+       "archetype": "none",
+       "spiky": false,
+       "strength": "none",
+       "falls": false,
+       "seconds": 0,
+       "type_name": ""
+      },
+      "pinned": [],
+      "evidence": "\"key opens door\""
+     },
+     {
+      "binding": {
+       "kind": "start",
+       "target": 18,
+       "door": -1,
+       "dir": "none",
+       "cells": 0,
+       "speed": "none",
+       "mode": "none",
+       "archetype": "none",
+       "spiky": false,
+       "strength": "none",
+       "falls": false,
+       "seconds": 0,
+       "type_name": ""
+      },
+      "pinned": [],
+      "evidence": "S marker"
+     },
+     {
+      "binding": {
+       "kind": "enemy",
+       "target": 11,
+       "door": -1,
+       "dir": "none",
+       "cells": 0,
+       "speed": "normal",
+       "mode": "none",
+       "archetype": "walker",
+       "spiky": false,
+       "strength": "none",
+       "falls": false,
+       "seconds": 0,
+       "type_name": ""
+      },
+      "pinned": [],
+      "evidence": "red creature on ledge"
+     }
+    ],
+    "setpieces": [
+     {
+      "name": "spike step",
+      "ids": [
+       19,
+       20
+      ],
+      "kind": "hazard_run"
+     },
+     {
+      "name": "monster ledge",
+      "ids": [
+       11,
+       12
+      ],
+      "kind": "enemy"
+     },
+     {
+      "name": "spiked climb to the flag",
+      "ids": [
+       9,
+       14,
+       6,
+       5,
+       4
+      ],
+      "kind": "finale"
+     }
+    ],
+    "intent": "Climb stair-like ledges, grab the key, dodge spikes and the monster, open the door and reach the star flag.",
+    "difficulty_wish": "none",
+    "transcript": "key opens door S",
+    "title": "Key Tower",
+    "asks": [
+     {
+      "about": 5,
+      "kind": "which_flag_is_goal",
+      "options": [
+       "goal flag",
+       "big star coin"
+      ]
+     },
+     {
+      "about": 4,
+      "kind": "what_does_it_do",
+      "options": [
+       "door",
+       "pole",
+       "wall"
+      ]
+     }
+    ],
+    "safety_ok": true,
+    "safety_reason": null
+   },
+   "score": {
+    "components": 22,
+    "role_ok": 19,
+    "role_lenient": 19,
+    "role_acc": 0.864,
+    "relations": "8/8",
+    "rel_ok": 8,
+    "rel_total": 8,
+    "invented_ids": [],
+    "bindings": 3,
+    "errors": [
+     "#7 P4: decoration (gt platform, low)",
+     "#8 P4: decoration (gt platform, low)",
+     "#18 S_TXT: start_marker (gt text, high)"
+    ]
+   }
+  },
+  {
+   "n": 6,
+   "kind": "perceive",
+   "scene": "canvas_tower_key",
+   "thinking": "disabled",
+   "status": "ok",
+   "error": null,
+   "latency_s": 16.854,
+   "in_tok": 2496,
+   "out_tok": 1676,
+   "cache_read_tok": 4846,
+   "cost_usd": 0.0568,
+   "stop_reason": "end_turn",
+   "served_by": "claude-opus-5",
+   "fallback_used": false,
+   "over_prod_timeout": false,
+   "parsed": {
+    "nodes": [
+     {
+      "id": 1,
+      "role": "text",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": 13
+     },
+     {
+      "id": 2,
+      "role": "text",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": 1,
+      "ref": null
+     },
+     {
+      "id": 3,
+      "role": "text",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": 1,
+      "ref": null
+     },
+     {
+      "id": 4,
+      "role": "door",
+      "conf": "medium",
+      "on": 6,
+      "att": 6,
+      "face": "top",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 5,
+      "role": "big_coin",
+      "conf": "high",
+      "on": 6,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 6,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 7,
+      "role": "platform",
+      "conf": "low",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": 6,
+      "ref": null
+     },
+     {
+      "id": 8,
+      "role": "platform",
+      "conf": "low",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": 6,
+      "ref": null
+     },
+     {
+      "id": 9,
+      "role": "wall",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 10,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 11,
+      "role": "enemy",
+      "conf": "high",
+      "on": 12,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 12,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 13,
+      "role": "key",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 14,
+      "role": "spikes",
+      "conf": "high",
+      "on": null,
+      "att": 9,
+      "face": "left",
+      "pts": "left",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 15,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 16,
+      "role": "decoration",
+      "conf": "medium",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 17,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 18,
+      "role": "start_marker",
+      "conf": "high",
+      "on": 22,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 19,
+      "role": "spikes",
+      "conf": "high",
+      "on": 20,
+      "att": 20,
+      "face": "top",
+      "pts": "up",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 20,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 21,
+      "role": "decoration",
+      "conf": "medium",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": 16,
+      "ref": null
+     },
+     {
+      "id": 22,
+      "role": "ground",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     }
+    ],
+    "bindings": [
+     {
+      "binding": {
+       "kind": "key_door",
+       "target": 13,
+       "door": 4,
+       "dir": "none",
+       "cells": 0,
+       "speed": "none",
+       "mode": "none",
+       "archetype": "none",
+       "spiky": false,
+       "strength": "none",
+       "falls": false,
+       "seconds": 0,
+       "type_name": ""
+      },
+      "pinned": [],
+      "evidence": "'key opens door'"
+     },
+     {
+      "binding": {
+       "kind": "start",
+       "target": 18,
+       "door": -1,
+       "dir": "none",
+       "cells": 0,
+       "speed": "none",
+       "mode": "none",
+       "archetype": "none",
+       "spiky": false,
+       "strength": "none",
+       "falls": false,
+       "seconds": 0,
+       "type_name": ""
+      },
+      "pinned": [],
+      "evidence": "S marker"
+     },
+     {
+      "binding": {
+       "kind": "enemy",
+       "target": 11,
+       "door": -1,
+       "dir": "none",
+       "cells": 0,
+       "speed": "normal",
+       "mode": "none",
+       "archetype": "walker",
+       "spiky": false,
+       "strength": "none",
+       "falls": false,
+       "seconds": 0,
+       "type_name": ""
+      },
+      "pinned": [],
+      "evidence": "red creature on ledge"
+     }
+    ],
+    "setpieces": [
+     {
+      "name": "climb to the star",
+      "ids": [
+       20,
+       15,
+       12,
+       6,
+       5
+      ],
+      "kind": "climb"
+     },
+     {
+      "name": "spiky wall",
+      "ids": [
+       9,
+       14
+      ],
+      "kind": "hazard_run"
+     }
+    ],
+    "intent": "Climb ledges, grab the key and coins, avoid spikes and the monster, reach the star.",
+    "difficulty_wish": "none",
+    "transcript": "key opens door S",
+    "title": "Key Tower",
+    "asks": [
+     {
+      "about": 4,
+      "kind": "what_does_it_do",
+      "options": [
+       "door",
+       "wall",
+       "decoration"
+      ]
+     },
+     {
+      "about": 16,
+      "kind": "is_decoration",
+      "options": [
+       "decoration",
+       "platform"
+      ]
+     }
+    ],
+    "safety_ok": true,
+    "safety_reason": null
+   },
+   "score": {
+    "components": 22,
+    "role_ok": 20,
+    "role_lenient": 20,
+    "role_acc": 0.909,
+    "relations": "7/8",
+    "rel_ok": 7,
+    "rel_total": 8,
+    "invented_ids": [],
+    "bindings": 3,
+    "errors": [
+     "#5 GOAL: big_coin (gt goal, high)",
+     "#18 S_TXT: start_marker (gt text, high)",
+     "#13 rests_on: want P2, got on=None att=None"
+    ]
+   }
+  },
+  {
+   "n": 7,
+   "kind": "perceive",
+   "scene": "paper_synth_1",
+   "thinking": "adaptive",
+   "status": "ok",
+   "error": null,
+   "latency_s": 12.587,
+   "in_tok": 2489,
+   "out_tok": 1108,
+   "cache_read_tok": 4846,
+   "cost_usd": 0.04257,
+   "stop_reason": "end_turn",
+   "served_by": "claude-opus-5",
+   "fallback_used": false,
+   "over_prod_timeout": false,
+   "parsed": {
+    "nodes": [
+     {
+      "id": 1,
+      "role": "text",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": 3
+     },
+     {
+      "id": 2,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 3,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 4,
+      "role": "arrow",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "right",
+      "part": null,
+      "ref": 3
+     },
+     {
+      "id": 5,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 6,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 7,
+      "role": "goal",
+      "conf": "medium",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 8,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 9,
+      "role": "spikes",
+      "conf": "high",
+      "on": 11,
+      "att": 11,
+      "face": "top",
+      "pts": "up",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 10,
+      "role": "ground",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 11,
+      "role": "ground",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     }
+    ],
+    "bindings": [
+     {
+      "binding": {
+       "kind": "move",
+       "target": 3,
+       "door": -1,
+       "dir": "right",
+       "cells": 0,
+       "speed": "none",
+       "mode": "pingpong",
+       "archetype": "none",
+       "spiky": false,
+       "strength": "none",
+       "falls": false,
+       "seconds": 0,
+       "type_name": ""
+      },
+      "pinned": [
+       "dir"
+      ],
+      "evidence": "'moves' with right arrow next to platform 3"
+     },
+     {
+      "binding": {
+       "kind": "timer",
+       "target": -1,
+       "door": -1,
+       "dir": "none",
+       "cells": 0,
+       "speed": "none",
+       "mode": "none",
+       "archetype": "none",
+       "spiky": false,
+       "strength": "none",
+       "falls": false,
+       "seconds": 60,
+       "type_name": ""
+      },
+      "pinned": [
+       "seconds"
+      ],
+      "evidence": "rule: 60 seconds"
+     }
+    ],
+    "setpieces": [
+     {
+      "name": "moving platform climb",
+      "ids": [
+       3,
+       2,
+       6,
+       5
+      ],
+      "kind": "jump"
+     },
+     {
+      "name": "spike run to the green goal",
+      "ids": [
+       9,
+       11,
+       8,
+       7
+      ],
+      "kind": "hazard_run"
+     }
+    ],
+    "intent": "Hop up coin platforms, cross a moving platform, dodge spikes and reach the green goal within 60 seconds.",
+    "difficulty_wish": "none",
+    "transcript": "Synth 1; moves; the platform moves. 60 seconds",
+    "title": "Synth 1",
+    "asks": [
+     {
+      "about": 7,
+      "kind": "which_flag_is_goal",
+      "options": [
+       "goal",
+       "decoration"
+      ]
+     }
+    ],
+    "safety_ok": true,
+    "safety_reason": null
+   },
+   "score": {
+    "components": 11,
+    "role_ok": 11,
+    "role_lenient": 11,
+    "role_acc": 1.0,
+    "relations": "3/5",
+    "rel_ok": 3,
+    "rel_total": 5,
+    "invented_ids": [],
+    "bindings": 2,
+    "errors": [
+     "#4 attached_to: want P2, got on=None att=None",
+     "#7 rests_on: want G2, got on=None att=None"
+    ]
+   }
+  },
+  {
+   "n": 8,
+   "kind": "perceive",
+   "scene": "paper_synth_1",
+   "thinking": "disabled",
+   "status": "ok",
+   "error": null,
+   "latency_s": 10.337,
+   "in_tok": 2489,
+   "out_tok": 1036,
+   "cache_read_tok": 4846,
+   "cost_usd": 0.04077,
+   "stop_reason": "end_turn",
+   "served_by": "claude-opus-5",
+   "fallback_used": false,
+   "over_prod_timeout": false,
+   "parsed": {
+    "nodes": [
+     {
+      "id": 1,
+      "role": "text",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": 3
+     },
+     {
+      "id": 2,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 3,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 4,
+      "role": "arrow",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "right",
+      "part": null,
+      "ref": 3
+     },
+     {
+      "id": 5,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 6,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 7,
+      "role": "goal",
+      "conf": "medium",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 8,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 9,
+      "role": "spikes",
+      "conf": "high",
+      "on": 11,
+      "att": 11,
+      "face": "top",
+      "pts": "up",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 10,
+      "role": "ground",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 11,
+      "role": "ground",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     }
+    ],
+    "bindings": [
+     {
+      "binding": {
+       "kind": "move",
+       "target": 3,
+       "door": -1,
+       "dir": "right",
+       "cells": 4,
+       "speed": "normal",
+       "mode": "pingpong",
+       "archetype": "none",
+       "spiky": false,
+       "strength": "none",
+       "falls": false,
+       "seconds": 0,
+       "type_name": ""
+      },
+      "pinned": [
+       "dir"
+      ],
+      "evidence": "'moves' with right arrow next to platform 3; rule 'the platform moves'"
+     },
+     {
+      "binding": {
+       "kind": "timer",
+       "target": -1,
+       "door": -1,
+       "dir": "none",
+       "cells": 0,
+       "speed": "none",
+       "mode": "none",
+       "archetype": "none",
+       "spiky": false,
+       "strength": "none",
+       "falls": false,
+       "seconds": 60,
+       "type_name": ""
+      },
+      "pinned": [
+       "seconds"
+      ],
+      "evidence": "'60 seconds'"
+     }
+    ],
+    "setpieces": [
+     {
+      "name": "moving platform climb",
+      "ids": [
+       3,
+       2,
+       6,
+       5
+      ],
+      "kind": "jump"
+     },
+     {
+      "name": "spike run to the flag",
+      "ids": [
+       9,
+       11,
+       8,
+       7
+      ],
+      "kind": "hazard_run"
+     }
+    ],
+    "intent": "Hop up platforms for coins, then dash past spikes to the green goal within 60 seconds.",
+    "difficulty_wish": "none",
+    "transcript": "Synth 1; moves; the platform moves. 60 seconds",
+    "title": "Synth 1",
+    "asks": [
+     {
+      "about": 7,
+      "kind": "which_flag_is_goal",
+      "options": [
+       "goal",
+       "decoration"
+      ]
+     }
+    ],
+    "safety_ok": true,
+    "safety_reason": null
+   },
+   "score": {
+    "components": 11,
+    "role_ok": 11,
+    "role_lenient": 11,
+    "role_acc": 1.0,
+    "relations": "3/5",
+    "rel_ok": 3,
+    "rel_total": 5,
+    "invented_ids": [],
+    "bindings": 2,
+    "errors": [
+     "#4 attached_to: want P2, got on=None att=None",
+     "#7 rests_on: want G2, got on=None att=None"
+    ]
+   }
+  },
+  {
+   "n": 9,
+   "kind": "perceive",
+   "scene": "canvas_floating_spikes",
+   "thinking": "adaptive",
+   "status": "ok",
+   "error": null,
+   "latency_s": 12.895,
+   "in_tok": 2317,
+   "out_tok": 1187,
+   "cache_read_tok": 4846,
+   "cost_usd": 0.04368,
+   "stop_reason": "end_turn",
+   "served_by": "claude-opus-5",
+   "fallback_used": false,
+   "over_prod_timeout": false,
+   "parsed": {
+    "nodes": [
+     {
+      "id": 1,
+      "role": "decoration",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 2,
+      "role": "decoration",
+      "conf": "medium",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 3,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 4,
+      "role": "spikes",
+      "conf": "high",
+      "on": null,
+      "att": 3,
+      "face": "bottom",
+      "pts": "down",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 5,
+      "role": "decoration",
+      "conf": "low",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 6,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 7,
+      "role": "arrow",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "right",
+      "part": null,
+      "ref": 8
+     },
+     {
+      "id": 8,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 9,
+      "role": "spikes",
+      "conf": "high",
+      "on": 11,
+      "att": 11,
+      "face": "top",
+      "pts": "up",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 10,
+      "role": "text",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": 8
+     },
+     {
+      "id": 11,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 12,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 13,
+      "role": "enemy",
+      "conf": "medium",
+      "on": 15,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 14,
+      "role": "spikes",
+      "conf": "high",
+      "on": 16,
+      "att": 16,
+      "face": "top",
+      "pts": "up",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 15,
+      "role": "ground",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 16,
+      "role": "ground",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     }
+    ],
+    "bindings": [
+     {
+      "binding": {
+       "kind": "enemy",
+       "target": 13,
+       "door": -1,
+       "dir": "none",
+       "cells": 0,
+       "speed": "normal",
+       "mode": "none",
+       "archetype": "walker",
+       "spiky": false,
+       "strength": "none",
+       "falls": false,
+       "seconds": 0,
+       "type_name": ""
+      },
+      "pinned": [],
+      "evidence": "red creature on ground"
+     }
+    ],
+    "setpieces": [
+     {
+      "name": "ceiling spike platform",
+      "ids": [
+       3,
+       4
+      ],
+      "kind": "hazard_run"
+     },
+     {
+      "name": "jump! gap",
+      "ids": [
+       8,
+       10,
+       7,
+       6
+      ],
+      "kind": "jump"
+     },
+     {
+      "name": "spiked ledge",
+      "ids": [
+       9,
+       11
+      ],
+      "kind": "hazard_run"
+     }
+    ],
+    "intent": "Run right across ledges, jump over spikes and a monster to the far side.",
+    "difficulty_wish": "none",
+    "transcript": "jump!",
+    "title": "Jump!",
+    "asks": [
+     {
+      "about": 5,
+      "kind": "is_decoration",
+      "options": [
+       "decoration",
+       "coin",
+       "goal"
+      ]
+     },
+     {
+      "about": 2,
+      "kind": "is_decoration",
+      "options": [
+       "decoration",
+       "coin"
+      ]
+     }
+    ],
+    "safety_ok": true,
+    "safety_reason": null
+   },
+   "score": {
+    "components": 16,
+    "role_ok": 14,
+    "role_lenient": 14,
+    "role_acc": 0.875,
+    "relations": "9/10",
+    "rel_ok": 9,
+    "rel_total": 10,
+    "invented_ids": [],
+    "bindings": 1,
+    "errors": [
+     "#3 CEIL: platform (gt ceiling, high)",
+     "#5 GOAL: decoration (gt goal, low)",
+     "#7 attached_to: want P2, got on=None att=None"
+    ]
+   }
+  },
+  {
+   "n": 10,
+   "kind": "perceive",
+   "scene": "canvas_floating_spikes",
+   "thinking": "disabled",
+   "status": "ok",
+   "error": null,
+   "latency_s": 11.562,
+   "in_tok": 2317,
+   "out_tok": 1188,
+   "cache_read_tok": 4846,
+   "cost_usd": 0.04371,
+   "stop_reason": "end_turn",
+   "served_by": "claude-opus-5",
+   "fallback_used": false,
+   "over_prod_timeout": false,
+   "parsed": {
+    "nodes": [
+     {
+      "id": 1,
+      "role": "decoration",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 2,
+      "role": "decoration",
+      "conf": "medium",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 3,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 4,
+      "role": "spikes",
+      "conf": "high",
+      "on": 3,
+      "att": 3,
+      "face": "bottom",
+      "pts": "down",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 5,
+      "role": "decoration",
+      "conf": "low",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 6,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 7,
+      "role": "arrow",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "right",
+      "part": null,
+      "ref": 8
+     },
+     {
+      "id": 8,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 9,
+      "role": "spikes",
+      "conf": "high",
+      "on": 11,
+      "att": 11,
+      "face": "top",
+      "pts": "up",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 10,
+      "role": "text",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": 8
+     },
+     {
+      "id": 11,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 12,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 13,
+      "role": "enemy",
+      "conf": "medium",
+      "on": 15,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 14,
+      "role": "spikes",
+      "conf": "high",
+      "on": 16,
+      "att": 16,
+      "face": "top",
+      "pts": "up",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 15,
+      "role": "ground",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 16,
+      "role": "ground",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     }
+    ],
+    "bindings": [
+     {
+      "binding": {
+       "kind": "enemy",
+       "target": 13,
+       "door": -1,
+       "dir": "none",
+       "cells": 0,
+       "speed": "normal",
+       "mode": "none",
+       "archetype": "walker",
+       "spiky": false,
+       "strength": "none",
+       "falls": false,
+       "seconds": 0,
+       "type_name": ""
+      },
+      "pinned": [],
+      "evidence": "red creature on ground"
+     }
+    ],
+    "setpieces": [
+     {
+      "name": "jump over the spike floor",
+      "ids": [
+       14,
+       16
+      ],
+      "kind": "hazard_run"
+     },
+     {
+      "name": "ceiling spikes ledge",
+      "ids": [
+       3,
+       4
+      ],
+      "kind": "hazard_run"
+     },
+     {
+      "name": "jump! platform",
+      "ids": [
+       8,
+       6,
+       10,
+       7
+      ],
+      "kind": "jump"
+     }
+    ],
+    "intent": "Run right, jump over spikes and an enemy, grab coins.",
+    "difficulty_wish": "none",
+    "transcript": "jump!",
+    "title": "Jump!",
+    "asks": [
+     {
+      "about": 13,
+      "kind": "what_does_it_do",
+      "options": [
+       "enemy",
+       "decoration"
+      ]
+     },
+     {
+      "about": 5,
+      "kind": "is_decoration",
+      "options": [
+       "decoration",
+       "coin"
+      ]
+     }
+    ],
+    "safety_ok": true,
+    "safety_reason": null
+   },
+   "score": {
+    "components": 16,
+    "role_ok": 14,
+    "role_lenient": 14,
+    "role_acc": 0.875,
+    "relations": "9/10",
+    "rel_ok": 9,
+    "rel_total": 10,
+    "invented_ids": [],
+    "bindings": 1,
+    "errors": [
+     "#3 CEIL: platform (gt ceiling, high)",
+     "#5 GOAL: decoration (gt goal, low)",
+     "#7 attached_to: want P2, got on=None att=None"
+    ]
+   }
+  },
+  {
+   "n": 11,
+   "kind": "perceive",
+   "scene": "canvas_tower_key",
+   "thinking": "adaptive",
+   "status": "ok",
+   "error": null,
+   "latency_s": 23.239,
+   "in_tok": 2496,
+   "out_tok": 2084,
+   "cache_read_tok": 4846,
+   "cost_usd": 0.067,
+   "stop_reason": "end_turn",
+   "served_by": "claude-opus-5",
+   "fallback_used": false,
+   "over_prod_timeout": true,
+   "parsed": {
+    "nodes": [
+     {
+      "id": 1,
+      "role": "text",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": 3,
+      "ref": 13
+     },
+     {
+      "id": 2,
+      "role": "text",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": 3,
+      "ref": 4
+     },
+     {
+      "id": 3,
+      "role": "text",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": 13
+     },
+     {
+      "id": 4,
+      "role": "door",
+      "conf": "medium",
+      "on": 6,
+      "att": 6,
+      "face": "top",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 5,
+      "role": "goal",
+      "conf": "low",
+      "on": 6,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 6,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 7,
+      "role": "decoration",
+      "conf": "low",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": 5,
+      "ref": null
+     },
+     {
+      "id": 8,
+      "role": "decoration",
+      "conf": "low",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": 5,
+      "ref": null
+     },
+     {
+      "id": 9,
+      "role": "wall",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 10,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 11,
+      "role": "enemy",
+      "conf": "high",
+      "on": 12,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 12,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 13,
+      "role": "key",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 14,
+      "role": "spikes",
+      "conf": "high",
+      "on": null,
+      "att": 9,
+      "face": "left",
+      "pts": "left",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 15,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 16,
+      "role": "decoration",
+      "conf": "medium",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 17,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 18,
+      "role": "start_marker",
+      "conf": "high",
+      "on": 22,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 19,
+      "role": "spikes",
+      "conf": "high",
+      "on": 20,
+      "att": 20,
+      "face": "top",
+      "pts": "up",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 20,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 21,
+      "role": "decoration",
+      "conf": "medium",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": 16,
+      "ref": null
+     },
+     {
+      "id": 22,
+      "role": "ground",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     }
+    ],
+    "bindings": [
+     {
+      "binding": {
+       "kind": "key_door",
+       "target": 13,
+       "door": 4,
+       "dir": "none",
+       "cells": 0,
+       "speed": "none",
+       "mode": "none",
+       "archetype": "none",
+       "spiky": false,
+       "strength": "none",
+       "falls": false,
+       "seconds": 0,
+       "type_name": ""
+      },
+      "pinned": [],
+      "evidence": "\"key opens door\""
+     },
+     {
+      "binding": {
+       "kind": "start",
+       "target": 18,
+       "door": -1,
+       "dir": "none",
+       "cells": 0,
+       "speed": "none",
+       "mode": "none",
+       "archetype": "none",
+       "spiky": false,
+       "strength": "none",
+       "falls": false,
+       "seconds": 0,
+       "type_name": ""
+      },
+      "pinned": [],
+      "evidence": "S marker"
+     }
+    ],
+    "setpieces": [
+     {
+      "name": "spike platform climb",
+      "ids": [
+       19,
+       20,
+       15,
+       13
+      ],
+      "kind": "climb"
+     },
+     {
+      "name": "skull enemy ledge",
+      "ids": [
+       11,
+       12,
+       10
+      ],
+      "kind": "enemy"
+     },
+     {
+      "name": "locked door at the top",
+      "ids": [
+       4,
+       6,
+       5
+      ],
+      "kind": "finale"
+     },
+     {
+      "name": "spiked wall drop",
+      "ids": [
+       9,
+       14
+      ],
+      "kind": "hazard_run"
+     }
+    ],
+    "intent": "Climb ledges, grab the key and open the door up top by the green star goal.",
+    "difficulty_wish": "none",
+    "transcript": "key opens door S",
+    "title": "Key Opens Door",
+    "asks": [
+     {
+      "about": 5,
+      "kind": "which_flag_is_goal",
+      "options": [
+       "green star is the goal",
+       "it is a big coin"
+      ]
+     },
+     {
+      "about": 4,
+      "kind": "which_door",
+      "options": [
+       "it is the door",
+       "it is a wall"
+      ]
+     }
+    ],
+    "safety_ok": true,
+    "safety_reason": null
+   },
+   "score": {
+    "components": 22,
+    "role_ok": 19,
+    "role_lenient": 19,
+    "role_acc": 0.864,
+    "relations": "7/8",
+    "rel_ok": 7,
+    "rel_total": 8,
+    "invented_ids": [],
+    "bindings": 2,
+    "errors": [
+     "#7 P4: decoration (gt platform, low)",
+     "#8 P4: decoration (gt platform, low)",
+     "#18 S_TXT: start_marker (gt text, high)",
+     "#13 rests_on: want P2, got on=None att=None"
+    ]
+   }
+  },
+  {
+   "n": 12,
+   "kind": "perceive",
+   "scene": "canvas_tower_key",
+   "thinking": "disabled",
+   "status": "ok",
+   "error": null,
+   "latency_s": 15.41,
+   "in_tok": 2496,
+   "out_tok": 1703,
+   "cache_read_tok": 4846,
+   "cost_usd": 0.05748,
+   "stop_reason": "end_turn",
+   "served_by": "claude-opus-5",
+   "fallback_used": false,
+   "over_prod_timeout": false,
+   "parsed": {
+    "nodes": [
+     {
+      "id": 1,
+      "role": "text",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": 13
+     },
+     {
+      "id": 2,
+      "role": "text",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": 1,
+      "ref": null
+     },
+     {
+      "id": 3,
+      "role": "text",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": 1,
+      "ref": null
+     },
+     {
+      "id": 4,
+      "role": "door",
+      "conf": "medium",
+      "on": 6,
+      "att": 6,
+      "face": "top",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 5,
+      "role": "big_coin",
+      "conf": "high",
+      "on": 6,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 6,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 7,
+      "role": "platform",
+      "conf": "low",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": 6,
+      "ref": null
+     },
+     {
+      "id": 8,
+      "role": "platform",
+      "conf": "low",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": 6,
+      "ref": null
+     },
+     {
+      "id": 9,
+      "role": "wall",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 10,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 11,
+      "role": "enemy",
+      "conf": "high",
+      "on": 12,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 12,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 13,
+      "role": "key",
+      "conf": "high",
+      "on": 15,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 14,
+      "role": "spikes",
+      "conf": "high",
+      "on": null,
+      "att": 9,
+      "face": "left",
+      "pts": "left",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 15,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 16,
+      "role": "decoration",
+      "conf": "medium",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 17,
+      "role": "coin",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 18,
+      "role": "start_marker",
+      "conf": "high",
+      "on": 22,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 19,
+      "role": "spikes",
+      "conf": "high",
+      "on": 20,
+      "att": 20,
+      "face": "top",
+      "pts": "up",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 20,
+      "role": "platform",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     },
+     {
+      "id": 21,
+      "role": "decoration",
+      "conf": "medium",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": 16,
+      "ref": null
+     },
+     {
+      "id": 22,
+      "role": "ground",
+      "conf": "high",
+      "on": null,
+      "att": null,
+      "face": "none",
+      "pts": "none",
+      "part": null,
+      "ref": null
+     }
+    ],
+    "bindings": [
+     {
+      "binding": {
+       "kind": "key_door",
+       "target": 13,
+       "door": 4,
+       "dir": "none",
+       "cells": 0,
+       "speed": "none",
+       "mode": "none",
+       "archetype": "none",
+       "spiky": false,
+       "strength": "none",
+       "falls": false,
+       "seconds": 0,
+       "type_name": ""
+      },
+      "pinned": [],
+      "evidence": "\"key opens door\""
+     },
+     {
+      "binding": {
+       "kind": "start",
+       "target": 18,
+       "door": -1,
+       "dir": "none",
+       "cells": 0,
+       "speed": "none",
+       "mode": "none",
+       "archetype": "none",
+       "spiky": false,
+       "strength": "none",
+       "falls": false,
+       "seconds": 0,
+       "type_name": ""
+      },
+      "pinned": [],
+      "evidence": "S marker"
+     },
+     {
+      "binding": {
+       "kind": "enemy",
+       "target": 11,
+       "door": -1,
+       "dir": "none",
+       "cells": 0,
+       "speed": "normal",
+       "mode": "none",
+       "archetype": "walker",
+       "spiky": false,
+       "strength": "none",
+       "falls": false,
+       "seconds": 0,
+       "type_name": ""
+      },
+      "pinned": [],
+      "evidence": "red creature on ledge"
+     }
+    ],
+    "setpieces": [
+     {
+      "name": "spike start",
+      "ids": [
+       18,
+       19,
+       20
+      ],
+      "kind": "hazard_run"
+     },
+     {
+      "name": "key climb",
+      "ids": [
+       13,
+       15,
+       11,
+       12
+      ],
+      "kind": "climb"
+     },
+     {
+      "name": "door at the top",
+      "ids": [
+       4,
+       6,
+       5
+      ],
+      "kind": "finale"
+     }
+    ],
+    "intent": "Climb ledges to get the key, avoid spikes and the monster, and open the door at the top near the star.",
+    "difficulty_wish": "none",
+    "transcript": "key opens door  S",
+    "title": "Key Tower",
+    "asks": [
+     {
+      "about": 4,
+      "kind": "which_door",
+      "options": [
+       "door",
+       "wall",
+       "decoration"
+      ]
+     },
+     {
+      "about": 16,
+      "kind": "is_decoration",
+      "options": [
+       "decoration",
+       "platform loop"
+      ]
+     }
+    ],
+    "safety_ok": true,
+    "safety_reason": null
+   },
+   "score": {
+    "components": 22,
+    "role_ok": 20,
+    "role_lenient": 20,
+    "role_acc": 0.909,
+    "relations": "8/8",
+    "rel_ok": 8,
+    "rel_total": 8,
+    "invented_ids": [],
+    "bindings": 3,
+    "errors": [
+     "#5 GOAL: big_coin (gt goal, high)",
+     "#18 S_TXT: start_marker (gt text, high)"
+    ]
+   }
+  }
+ ]
+}

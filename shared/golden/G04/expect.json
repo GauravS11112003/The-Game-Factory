@@ -1,0 +1,76 @@
+{
+  "id": "G04",
+  "status": "skeleton",
+  "mode": "canvas",
+  "input": "input.png",
+  "ink": "ink.json",
+  "strokes": "strokes.json",
+  "name": "words_and_arrows",
+  "prompt": null,
+  "objects": [
+    {
+      "near": [
+        29.5,
+        21.0
+      ],
+      "radius": 3,
+      "color": "black",
+      "role": "text",
+      "collides": false,
+      "text": "jump!"
+    },
+    {
+      "near": [
+        23.2,
+        18.8
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "arrow",
+      "collides": false
+    },
+    {
+      "near": [
+        15.4,
+        18.9
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "platform",
+      "rows": 1,
+      "moves": {
+        "dir": "right",
+        "cells_approx": 8,
+        "tolerance": 2
+      }
+    }
+  ],
+  "counts": {
+    "coin": 4,
+    "goal": 1
+  },
+  "invariants": {
+    "solvable_at": [
+      "ink",
+      "understood",
+      "faithful",
+      "polished",
+      "normal",
+      "hard"
+    ],
+    "pole_walls": 0,
+    "bumps": 0,
+    "art_offset_px_max": 1
+  },
+  "model_off": {
+    "solvable": true,
+    "text_collision_cells": 0,
+    "moving_platform_from": "arrow_hint"
+  },
+  "model_only": [
+    "objects[2].moves (binding)"
+  ],
+  "must_not": [
+    "text tiles"
+  ]
+}

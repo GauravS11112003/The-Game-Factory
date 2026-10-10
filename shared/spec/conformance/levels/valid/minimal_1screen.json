@@ -1,0 +1,124 @@
+{
+  "format": "dal-level",
+  "schema_version": 2,
+  "core_min": "2.0.0",
+  "id": "lvl_conf0001",
+  "version": 1,
+  "game_id": null,
+  "parent_id": null,
+  "order_index": 0,
+  "title": "Minimal",
+  "author": "conformance",
+  "created_at": "2026-10-10T00:00:00Z",
+  "license": "CC0-1.0",
+  "world": {
+    "cell": 16,
+    "screens": 1,
+    "w": 48,
+    "h": 27
+  },
+  "rules": {
+    "version": 1,
+    "physics_profile": "v2-standard",
+    "abilities": {
+      "run": true,
+      "stomp": true,
+      "double_jump": false,
+      "fast_fall": true
+    },
+    "lives": "off",
+    "hearts": 1,
+    "theme": "sketchbook",
+    "music": true,
+    "timer_pressure": false,
+    "camera": "follow",
+    "default_dial": "polished",
+    "default_band": "normal",
+    "player_type": null
+  },
+  "source": {
+    "kind": "canvas",
+    "prompt": null,
+    "pack_id": null,
+    "sheets": [
+      {
+        "index": 0,
+        "photo_url": null,
+        "qr": null
+      }
+    ]
+  },
+  "objects": [],
+  "setpieces": [],
+  "edits": [],
+  "compiled": {
+    "tiles": {
+      "legend": ".#=/\\abcd~X",
+      "rows": [
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48#",
+        "48#",
+        "48#",
+        "48#",
+        "48#"
+      ]
+    },
+    "entities": [
+      {
+        "id": "start",
+        "type": "player_start",
+        "x": 2.0,
+        "y": 22.0
+      },
+      {
+        "id": "goal",
+        "type": "goal",
+        "x": 45.0,
+        "y": 22.0,
+        "trigger": [
+          44.75,
+          19.0,
+          46.5,
+          22.0
+        ]
+      }
+    ],
+    "triggers": [],
+    "sprites": {
+      "player": null,
+      "objects": {}
+    }
+  },
+  "design": null,
+  "embedded_library": [],
+  "meta": {
+    "transcript": "",
+    "intent": null,
+    "safety": "unchecked",
+    "level_hash": "sha256:b843f649574253002019dbb6c5f50cda7669df2f310769d7d1c276abe195b458",
+    "core_version": "2.0.0",
+    "warnings": [],
+    "build": null
+  }
+}

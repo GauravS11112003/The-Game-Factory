@@ -1,0 +1,24 @@
+{
+  "id": "G19",
+  "status": "skeleton",
+  "mode": "canvas",
+  "input": null,
+  "input_pending": "lane C: studio creature Grumpo (hopper) + canvas level with a circled G + paper symbol sheet",
+  "name": "library_grumpo",
+  "objects": [],
+  "invariants": {
+    "instances_by": [
+      "stamp",
+      "symbol"
+    ],
+    "behavior": "hopper"
+  },
+  "model_only": [
+    "instance by circled letter"
+  ],
+  "model_off": {
+    "asks": [
+      "is_library"
+    ]
+  }
+}

@@ -1,0 +1,1554 @@
+{
+  "format": "dal-level",
+  "schema_version": 2,
+  "core_min": "2.0.0",
+  "id": "lvl_7c1e9a20",
+  "version": 1,
+  "game_id": "game_0a1b2c3d",
+  "parent_id": null,
+  "order_index": 0,
+  "title": "Spike Hop",
+  "author": "maya",
+  "created_at": "2026-10-10T18:00:00Z",
+  "license": "CC-BY-4.0",
+  "world": {
+    "cell": 16,
+    "screens": 2,
+    "w": 96,
+    "h": 27
+  },
+  "rules": {
+    "version": 3,
+    "physics_profile": "v2-standard",
+    "profile_hash": "sha256:5b1e…",
+    "abilities": {
+      "run": true,
+      "stomp": true,
+      "double_jump": false,
+      "fast_fall": true
+    },
+    "lives": "off",
+    "hearts": 1,
+    "theme": "sketchbook",
+    "music": true,
+    "timer_pressure": false,
+    "camera": "follow",
+    "default_dial": "polished",
+    "default_band": "normal",
+    "player_type": null
+  },
+  "source": {
+    "kind": "canvas",
+    "prompt": null,
+    "pack_id": null,
+    "sheets": [
+      {
+        "index": 0,
+        "photo_url": null,
+        "qr": null
+      },
+      {
+        "index": 1,
+        "photo_url": null,
+        "qr": null
+      }
+    ]
+  },
+  "ink": {
+    "strokes": [
+      {
+        "id": "s1",
+        "color": "black",
+        "kind": "line",
+        "pts": [
+          [
+            0.2,
+            22.45
+          ],
+          [
+            14.1,
+            22.2
+          ],
+          [
+            29.8,
+            22.6
+          ]
+        ],
+        "w": [
+          0.74,
+          0.8,
+          0.71
+        ],
+        "closed": false,
+        "sheet": 0,
+        "origin": "kid"
+      },
+      {
+        "id": "s2",
+        "color": "black",
+        "kind": "line",
+        "pts": [
+          [
+            36.1,
+            22.3
+          ],
+          [
+            70.0,
+            22.5
+          ],
+          [
+            95.8,
+            22.4
+          ]
+        ],
+        "w": [
+          0.75,
+          0.76,
+          0.75
+        ],
+        "closed": false,
+        "sheet": 0,
+        "origin": "kid"
+      },
+      {
+        "id": "s3",
+        "color": "black",
+        "kind": "line",
+        "pts": [
+          [
+            40.0,
+            17.4
+          ],
+          [
+            46.9,
+            17.2
+          ]
+        ],
+        "w": [
+          0.72,
+          0.72
+        ],
+        "closed": false,
+        "sheet": 0,
+        "origin": "kid"
+      },
+      {
+        "id": "s4",
+        "color": "red",
+        "kind": "line",
+        "pts": [
+          [
+            52,
+            21.6
+          ],
+          [
+            52.5,
+            21.0
+          ],
+          [
+            53,
+            21.6
+          ],
+          [
+            53.5,
+            21.0
+          ],
+          [
+            54,
+            21.6
+          ],
+          [
+            54.5,
+            21.0
+          ],
+          [
+            55,
+            21.6
+          ],
+          [
+            55.5,
+            21.0
+          ],
+          [
+            56,
+            21.6
+          ]
+        ],
+        "w": [
+          0.6,
+          0.6,
+          0.6,
+          0.6,
+          0.6,
+          0.6,
+          0.6,
+          0.6,
+          0.6
+        ],
+        "closed": false,
+        "sheet": 1,
+        "origin": "kid"
+      },
+      {
+        "id": "s5",
+        "color": "red",
+        "kind": "blob",
+        "pts": [
+          [
+            63.2,
+            20.9
+          ],
+          [
+            64.6,
+            20.6
+          ],
+          [
+            65.1,
+            21.6
+          ],
+          [
+            64.0,
+            22.1
+          ],
+          [
+            63.0,
+            21.8
+          ]
+        ],
+        "w": [
+          0.5
+        ],
+        "closed": true,
+        "sheet": 1,
+        "origin": "kid"
+      },
+      {
+        "id": "s6",
+        "color": "black",
+        "kind": "dot",
+        "pts": [
+          [
+            63.9,
+            21.2
+          ]
+        ],
+        "w": [
+          0.3
+        ],
+        "closed": true,
+        "sheet": 1,
+        "origin": "kid"
+      },
+      {
+        "id": "s7",
+        "color": "blue",
+        "kind": "dot",
+        "pts": [
+          [
+            33.0,
+            19.5
+          ]
+        ],
+        "w": [
+          0.9
+        ],
+        "closed": true,
+        "sheet": 0,
+        "origin": "kid"
+      },
+      {
+        "id": "s8",
+        "color": "black",
+        "kind": "line",
+        "pts": [
+          [
+            91.0,
+            22.2
+          ],
+          [
+            91.1,
+            17.0
+          ]
+        ],
+        "w": [
+          0.6,
+          0.6
+        ],
+        "closed": false,
+        "sheet": 1,
+        "origin": "kid"
+      },
+      {
+        "id": "s9",
+        "color": "green",
+        "kind": "blob",
+        "pts": [
+          [
+            91.1,
+            17.0
+          ],
+          [
+            93.4,
+            17.6
+          ],
+          [
+            91.1,
+            18.4
+          ]
+        ],
+        "w": [
+          0.6
+        ],
+        "closed": true,
+        "sheet": 1,
+        "origin": "kid"
+      },
+      {
+        "id": "s10",
+        "color": "black",
+        "kind": "line",
+        "pts": [
+          [
+            22.0,
+            18.0
+          ],
+          [
+            22.6,
+            16.8
+          ],
+          [
+            23.4,
+            18.1
+          ],
+          [
+            24.1,
+            17.0
+          ],
+          [
+            24.8,
+            18.0
+          ]
+        ],
+        "w": [
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "closed": false,
+        "sheet": 0,
+        "origin": "kid"
+      }
+    ],
+    "components": [
+      {
+        "id": 1,
+        "color": "black",
+        "stroke_ids": [
+          "s1"
+        ],
+        "bbox": [
+          0.2,
+          21.8,
+          29.8,
+          23.0
+        ],
+        "area": 22.1,
+        "f": {
+          "fill": 0.04,
+          "circ": 0.01,
+          "straight": 0.99,
+          "zigN": 0,
+          "zigAmp": 0,
+          "aspect": 24.7,
+          "holes": 0,
+          "w": 0.75,
+          "corners": 0,
+          "spokes": 0,
+          "bumps": 0,
+          "is_dot": false
+        }
+      },
+      {
+        "id": 2,
+        "color": "black",
+        "stroke_ids": [
+          "s2"
+        ],
+        "bbox": [
+          36.1,
+          21.9,
+          95.8,
+          22.9
+        ],
+        "area": 44.8,
+        "f": {
+          "fill": 0.03,
+          "circ": 0.0,
+          "straight": 0.99,
+          "zigN": 0,
+          "zigAmp": 0,
+          "aspect": 59.7,
+          "holes": 0,
+          "w": 0.75,
+          "corners": 0,
+          "spokes": 0,
+          "bumps": 0,
+          "is_dot": false
+        }
+      },
+      {
+        "id": 3,
+        "color": "black",
+        "stroke_ids": [
+          "s3"
+        ],
+        "bbox": [
+          40.0,
+          16.8,
+          46.9,
+          17.8
+        ],
+        "area": 5.0,
+        "f": {
+          "fill": 0.1,
+          "circ": 0.02,
+          "straight": 0.99,
+          "zigN": 0,
+          "zigAmp": 0,
+          "aspect": 6.9,
+          "holes": 0,
+          "w": 0.72,
+          "corners": 0,
+          "spokes": 0,
+          "bumps": 0,
+          "is_dot": false
+        }
+      },
+      {
+        "id": 4,
+        "color": "red",
+        "stroke_ids": [
+          "s4"
+        ],
+        "bbox": [
+          52.0,
+          20.7,
+          56.0,
+          21.9
+        ],
+        "area": 2.6,
+        "f": {
+          "fill": 0.2,
+          "circ": 0.05,
+          "straight": 0.3,
+          "zigN": 1.75,
+          "zigAmp": 0.6,
+          "aspect": 3.3,
+          "holes": 0,
+          "w": 0.6,
+          "corners": 7,
+          "spokes": 0,
+          "bumps": 0,
+          "is_dot": false
+        }
+      },
+      {
+        "id": 5,
+        "color": "red",
+        "stroke_ids": [
+          "s5"
+        ],
+        "bbox": [
+          63.0,
+          20.6,
+          65.1,
+          22.1
+        ],
+        "area": 2.1,
+        "f": {
+          "fill": 0.66,
+          "circ": 0.71,
+          "straight": 0.2,
+          "zigN": 0,
+          "zigAmp": 0,
+          "aspect": 1.4,
+          "holes": 0,
+          "w": 0.5,
+          "corners": 1,
+          "spokes": 0,
+          "bumps": 1,
+          "is_dot": false
+        }
+      },
+      {
+        "id": 6,
+        "color": "black",
+        "stroke_ids": [
+          "s6"
+        ],
+        "bbox": [
+          63.75,
+          21.05,
+          64.05,
+          21.35
+        ],
+        "area": 0.07,
+        "f": {
+          "fill": 0.78,
+          "circ": 0.9,
+          "straight": 0.0,
+          "zigN": 0,
+          "zigAmp": 0,
+          "aspect": 1.0,
+          "holes": 0,
+          "w": 0.3,
+          "corners": 0,
+          "spokes": 0,
+          "bumps": 0,
+          "is_dot": true
+        }
+      },
+      {
+        "id": 7,
+        "color": "blue",
+        "stroke_ids": [
+          "s7"
+        ],
+        "bbox": [
+          32.55,
+          19.05,
+          33.45,
+          19.95
+        ],
+        "area": 0.64,
+        "f": {
+          "fill": 0.79,
+          "circ": 0.92,
+          "straight": 0.0,
+          "zigN": 0,
+          "zigAmp": 0,
+          "aspect": 1.0,
+          "holes": 0,
+          "w": 0.9,
+          "corners": 0,
+          "spokes": 0,
+          "bumps": 0,
+          "is_dot": true
+        }
+      },
+      {
+        "id": 8,
+        "color": "black",
+        "stroke_ids": [
+          "s8"
+        ],
+        "bbox": [
+          90.7,
+          17.0,
+          91.4,
+          22.2
+        ],
+        "area": 3.1,
+        "f": {
+          "fill": 0.85,
+          "circ": 0.05,
+          "straight": 0.99,
+          "zigN": 0,
+          "zigAmp": 0,
+          "aspect": 7.4,
+          "holes": 0,
+          "w": 0.6,
+          "corners": 0,
+          "spokes": 0,
+          "bumps": 0,
+          "is_dot": false
+        }
+      },
+      {
+        "id": 9,
+        "color": "green",
+        "stroke_ids": [
+          "s9"
+        ],
+        "bbox": [
+          91.1,
+          17.0,
+          93.4,
+          18.4
+        ],
+        "area": 1.6,
+        "f": {
+          "fill": 0.5,
+          "circ": 0.55,
+          "straight": 0.1,
+          "zigN": 0,
+          "zigAmp": 0,
+          "aspect": 1.6,
+          "holes": 0,
+          "w": 0.6,
+          "corners": 3,
+          "spokes": 0,
+          "bumps": 0,
+          "is_dot": false
+        }
+      },
+      {
+        "id": 10,
+        "color": "black",
+        "stroke_ids": [
+          "s10"
+        ],
+        "bbox": [
+          22.0,
+          16.8,
+          24.8,
+          18.1
+        ],
+        "area": 1.4,
+        "f": {
+          "fill": 0.3,
+          "circ": 0.1,
+          "straight": 0.3,
+          "zigN": 1.43,
+          "zigAmp": 0.55,
+          "aspect": 2.2,
+          "holes": 0,
+          "w": 0.5,
+          "corners": 3,
+          "spokes": 0,
+          "bumps": 0,
+          "is_dot": false
+        }
+      }
+    ],
+    "character": {
+      "strokes": [
+        {
+          "id": "c1",
+          "color": "black",
+          "kind": "line",
+          "pts": [
+            [
+              0.5,
+              0.2
+            ],
+            [
+              0.5,
+              1.6
+            ]
+          ],
+          "w": [
+            0.2,
+            0.2
+          ],
+          "closed": false,
+          "sheet": 0,
+          "origin": "kid"
+        }
+      ]
+    },
+    "typed_rules": [],
+    "rules_ink": [],
+    "noise": {
+      "count": 2
+    }
+  },
+  "objects": [
+    {
+      "id": "o1",
+      "components": [
+        1
+      ],
+      "strokes": [
+        "s1"
+      ],
+      "role": "ground",
+      "conf": 0.93,
+      "role_by": "model",
+      "origin": "kid",
+      "shape": {
+        "k": "surface",
+        "segs": [
+          {
+            "a": [
+              0,
+              22
+            ],
+            "b": [
+              30,
+              22
+            ],
+            "slope": 0
+          }
+        ],
+        "fill": "to_bottom"
+      },
+      "collision": "solid",
+      "rel": {},
+      "pinned": []
+    },
+    {
+      "id": "o2",
+      "components": [
+        2
+      ],
+      "strokes": [
+        "s2"
+      ],
+      "role": "ground",
+      "conf": 0.93,
+      "role_by": "model",
+      "origin": "kid",
+      "shape": {
+        "k": "surface",
+        "segs": [
+          {
+            "a": [
+              36,
+              22
+            ],
+            "b": [
+              96,
+              22
+            ],
+            "slope": 0
+          }
+        ],
+        "fill": "to_bottom"
+      },
+      "collision": "solid",
+      "rel": {},
+      "pinned": []
+    },
+    {
+      "id": "o3",
+      "components": [
+        3
+      ],
+      "strokes": [
+        "s3"
+      ],
+      "role": "platform",
+      "conf": 0.9,
+      "role_by": "heuristic",
+      "origin": "kid",
+      "shape": {
+        "k": "surface",
+        "segs": [
+          {
+            "a": [
+              40,
+              17
+            ],
+            "b": [
+              47,
+              17
+            ],
+            "slope": 0
+          }
+        ],
+        "fill": "one_row"
+      },
+      "collision": "one_way",
+      "rel": {},
+      "pinned": []
+    },
+    {
+      "id": "o4",
+      "components": [
+        4
+      ],
+      "strokes": [
+        "s4"
+      ],
+      "role": "spikes",
+      "conf": 0.95,
+      "role_by": "model",
+      "origin": "kid",
+      "shape": {
+        "k": "strip",
+        "a": [
+          52,
+          22
+        ],
+        "b": [
+          56,
+          22
+        ]
+      },
+      "collision": "hazard",
+      "rel": {
+        "attached": {
+          "host": "o2",
+          "face": "top"
+        },
+        "points": "up"
+      },
+      "pinned": []
+    },
+    {
+      "id": "o5",
+      "components": [
+        5
+      ],
+      "strokes": [
+        "s5"
+      ],
+      "role": "enemy",
+      "conf": 0.9,
+      "role_by": "model",
+      "origin": "kid",
+      "shape": {
+        "k": "body",
+        "bbox": [
+          63.0,
+          20.6,
+          65.1,
+          22.1
+        ]
+      },
+      "collision": "hazard",
+      "rel": {
+        "rests_on": "o2",
+        "parts": [
+          "o6"
+        ]
+      },
+      "behavior": {
+        "kind": "static"
+      },
+      "pinned": []
+    },
+    {
+      "id": "o6",
+      "components": [
+        6
+      ],
+      "strokes": [
+        "s6"
+      ],
+      "role": "enemy",
+      "conf": 0.9,
+      "role_by": "heuristic",
+      "origin": "kid",
+      "shape": {
+        "k": "point",
+        "p": [
+          63.9,
+          21.2
+        ]
+      },
+      "collision": "none",
+      "rel": {
+        "part_of": "o5"
+      },
+      "pinned": []
+    },
+    {
+      "id": "o7",
+      "components": [
+        7
+      ],
+      "strokes": [
+        "s7"
+      ],
+      "role": "coin",
+      "conf": 0.95,
+      "role_by": "heuristic",
+      "origin": "kid",
+      "shape": {
+        "k": "point",
+        "p": [
+          33.0,
+          19.5
+        ]
+      },
+      "collision": "none",
+      "rel": {},
+      "pinned": []
+    },
+    {
+      "id": "o8",
+      "components": [
+        8
+      ],
+      "strokes": [
+        "s8"
+      ],
+      "role": "pole",
+      "conf": 0.95,
+      "role_by": "heuristic",
+      "origin": "kid",
+      "shape": {
+        "k": "wall",
+        "x": 91.0,
+        "y0": 17.0,
+        "y1": 22.0
+      },
+      "collision": "none",
+      "rel": {
+        "part_of": "o9",
+        "rests_on": "o2"
+      },
+      "pinned": []
+    },
+    {
+      "id": "o9",
+      "components": [
+        9
+      ],
+      "strokes": [
+        "s9"
+      ],
+      "role": "goal",
+      "conf": 0.95,
+      "role_by": "heuristic",
+      "origin": "kid",
+      "shape": {
+        "k": "body",
+        "bbox": [
+          91.1,
+          17.0,
+          93.4,
+          18.4
+        ]
+      },
+      "collision": "trigger",
+      "rel": {
+        "parts": [
+          "o8"
+        ]
+      },
+      "pinned": []
+    },
+    {
+      "id": "o10",
+      "components": [
+        10
+      ],
+      "strokes": [
+        "s10"
+      ],
+      "role": "decoration",
+      "conf": 0.8,
+      "role_by": "model",
+      "origin": "kid",
+      "shape": {
+        "k": "body",
+        "bbox": [
+          22.0,
+          16.8,
+          24.8,
+          18.1
+        ]
+      },
+      "collision": "none",
+      "rel": {},
+      "pinned": []
+    }
+  ],
+  "setpieces": [
+    {
+      "name": "the spike hop",
+      "ids": [
+        "o4",
+        "o5"
+      ],
+      "kind": "hazard_run",
+      "by": "model"
+    }
+  ],
+  "edits": [
+    {
+      "id": "straighten:o1:3f9a01",
+      "op": {
+        "op": "straighten",
+        "target": "o1",
+        "max_shift": 0.85
+      },
+      "class": "N",
+      "by": "auto",
+      "stage": "ink",
+      "tier": "faithful",
+      "status": "applied",
+      "reason_key": "norm.tidy_lines",
+      "reason_args": {
+        "n": 2
+      },
+      "reason_text": null,
+      "depends_on": [],
+      "required": false,
+      "group": "tidy_lines",
+      "validation": {
+        "solvable": true,
+        "flags": [],
+        "drift_cells": 0.4,
+        "dC": 0.0
+      },
+      "ghost": {
+        "before": [
+          [
+            0,
+            21.8,
+            30,
+            23.0
+          ]
+        ],
+        "after": [
+          [
+            0,
+            22,
+            30,
+            23
+          ]
+        ]
+      }
+    },
+    {
+      "id": "straighten:o2:9e0b12",
+      "op": {
+        "op": "straighten",
+        "target": "o2",
+        "max_shift": 0.85
+      },
+      "class": "N",
+      "by": "auto",
+      "stage": "ink",
+      "tier": "faithful",
+      "status": "applied",
+      "reason_key": "norm.tidy_lines",
+      "reason_args": {
+        "n": 2
+      },
+      "reason_text": null,
+      "depends_on": [],
+      "required": false,
+      "group": "tidy_lines",
+      "validation": {
+        "solvable": true,
+        "flags": [],
+        "drift_cells": 0.45,
+        "dC": 0.0
+      },
+      "ghost": {
+        "before": [
+          [
+            36,
+            21.9,
+            96,
+            22.9
+          ]
+        ],
+        "after": [
+          [
+            36,
+            22,
+            96,
+            23
+          ]
+        ]
+      }
+    },
+    {
+      "id": "form_goal:o9:a1c2e3",
+      "op": {
+        "op": "form_goal",
+        "flag": "o9",
+        "pole": "o8"
+      },
+      "class": "N",
+      "by": "auto",
+      "stage": "ink",
+      "tier": "faithful",
+      "status": "applied",
+      "reason_key": "norm.pole_scenery",
+      "reason_args": {},
+      "reason_text": null,
+      "depends_on": [],
+      "required": true,
+      "group": null,
+      "validation": {
+        "solvable": true,
+        "flags": [],
+        "drift_cells": 0,
+        "dC": 0.0
+      },
+      "ghost": {
+        "before": [
+          [
+            91,
+            17,
+            92,
+            22
+          ]
+        ],
+        "after": [
+          [
+            91,
+            17,
+            92,
+            22
+          ]
+        ]
+      }
+    },
+    {
+      "id": "set_collision:o3:77b210",
+      "op": {
+        "op": "set_collision",
+        "target": "o3",
+        "mode": "one_way"
+      },
+      "class": "N",
+      "by": "auto",
+      "stage": "ink",
+      "tier": "faithful",
+      "status": "applied",
+      "reason_key": "norm.oneway_platform",
+      "reason_args": {},
+      "reason_text": null,
+      "depends_on": [],
+      "required": false,
+      "group": "platforms",
+      "validation": {
+        "solvable": true,
+        "flags": [],
+        "drift_cells": 0,
+        "dC": 0.0
+      },
+      "ghost": {
+        "before": [
+          [
+            40,
+            17,
+            47,
+            18
+          ]
+        ],
+        "after": [
+          [
+            40,
+            17,
+            47,
+            18
+          ]
+        ]
+      }
+    },
+    {
+      "id": "snap:o4:c09d44",
+      "op": {
+        "op": "snap",
+        "target": "o4",
+        "host": "o2",
+        "face": "top"
+      },
+      "class": "N",
+      "by": "auto",
+      "stage": "ink",
+      "tier": "faithful",
+      "status": "applied",
+      "reason_key": "norm.spikes_snapped",
+      "reason_args": {
+        "facing": "up"
+      },
+      "reason_text": null,
+      "depends_on": [
+        "straighten:o2:9e0b12"
+      ],
+      "required": false,
+      "group": "snap_hazards",
+      "validation": {
+        "solvable": true,
+        "flags": [],
+        "drift_cells": 0.4,
+        "dC": 0.0
+      },
+      "ghost": {
+        "before": [
+          [
+            52,
+            21,
+            56,
+            21.6
+          ]
+        ],
+        "after": [
+          [
+            52,
+            21.4,
+            56,
+            22
+          ]
+        ]
+      }
+    },
+    {
+      "id": "set_role:o10:5d6e7f",
+      "op": {
+        "op": "set_role",
+        "target": "o10",
+        "role": "decoration"
+      },
+      "class": "U",
+      "by": "model",
+      "stage": "understood",
+      "tier": "faithful",
+      "status": "applied",
+      "reason_key": "understand.decoration",
+      "reason_args": {
+        "what": "scribble"
+      },
+      "reason_text": null,
+      "depends_on": [],
+      "required": false,
+      "group": null,
+      "validation": {
+        "solvable": true,
+        "flags": [],
+        "drift_cells": 0,
+        "dC": 0.0
+      },
+      "ghost": {
+        "before": [
+          [
+            22,
+            16.8,
+            24.8,
+            18.1
+          ]
+        ],
+        "after": [
+          [
+            22,
+            16.8,
+            24.8,
+            18.1
+          ]
+        ]
+      }
+    },
+    {
+      "id": "animate:o5:1a2b3c",
+      "op": {
+        "op": "animate",
+        "target": "o5",
+        "archetype": "walker"
+      },
+      "class": "P",
+      "by": "model",
+      "stage": "designed",
+      "tier": "polished",
+      "status": "applied",
+      "reason_key": "polish.monster_walks",
+      "reason_args": {},
+      "reason_text": "Your monster walks now, so time your hop!",
+      "depends_on": [],
+      "required": false,
+      "group": null,
+      "validation": {
+        "solvable": true,
+        "flags": [],
+        "drift_cells": 0,
+        "dC": 0.06
+      },
+      "ghost": {
+        "before": [
+          [
+            63,
+            20.6,
+            65.1,
+            22.1
+          ]
+        ],
+        "after": [
+          [
+            60,
+            20.6,
+            73,
+            22.1
+          ]
+        ]
+      }
+    },
+    {
+      "id": "add_checkpoint:slot.cp.3:44aa01",
+      "op": {
+        "op": "add_checkpoint",
+        "slot": "slot.cp.3"
+      },
+      "class": "P",
+      "by": "greedy",
+      "stage": "designed",
+      "tier": "polished",
+      "status": "applied",
+      "reason_key": "polish.checkpoint",
+      "reason_args": {
+        "seconds": 9
+      },
+      "reason_text": null,
+      "depends_on": [],
+      "required": false,
+      "group": null,
+      "validation": {
+        "solvable": true,
+        "flags": [],
+        "drift_cells": 0,
+        "dC": 0.0
+      },
+      "ghost": {
+        "before": [],
+        "after": [
+          [
+            47.5,
+            19.5,
+            48.5,
+            22
+          ]
+        ]
+      }
+    },
+    {
+      "id": "add_big_coin:slot.risk.2:0bd771",
+      "op": {
+        "op": "add_big_coin",
+        "slot": "slot.risk.2"
+      },
+      "class": "P",
+      "by": "model",
+      "stage": "designed",
+      "tier": "polished",
+      "status": "applied",
+      "reason_key": "polish.big_coin",
+      "reason_args": {},
+      "reason_text": "A big star above the ledge, for brave jumpers.",
+      "depends_on": [
+        "set_collision:o3:77b210"
+      ],
+      "required": false,
+      "group": null,
+      "validation": {
+        "solvable": true,
+        "flags": [],
+        "drift_cells": 0,
+        "dC": 0.0
+      },
+      "ghost": {
+        "before": [],
+        "after": [
+          [
+            43,
+            14,
+            44,
+            15
+          ]
+        ]
+      }
+    }
+  ],
+  "compiled": {
+    "tiles": {
+      "legend": ".#=/\\abcd~X",
+      "rows": [
+        "96.",
+        "96.",
+        "96.",
+        "96.",
+        "96.",
+        "96.",
+        "96.",
+        "96.",
+        "96.",
+        "96.",
+        "96.",
+        "96.",
+        "96.",
+        "96.",
+        "96.",
+        "96.",
+        "96.",
+        "40.7=49.",
+        "96.",
+        "96.",
+        "96.",
+        "96.",
+        "30#6.60#",
+        "30#6.60#",
+        "30#6.60#",
+        "30#6.60#",
+        "30#6Z60#"
+      ]
+    },
+    "entities": [
+      {
+        "id": "start",
+        "type": "player_start",
+        "x": 2.0,
+        "y": 22.0
+      },
+      {
+        "id": "o4",
+        "type": "spikes",
+        "host": "o2",
+        "face": "top",
+        "x0": 52.0,
+        "x1": 56.0,
+        "y": 22.0,
+        "facing": "up"
+      },
+      {
+        "id": "o5",
+        "type": "enemy",
+        "archetype": "walker",
+        "x": 64.0,
+        "y": 22.0,
+        "w": 1.5,
+        "h": 1.25,
+        "spiky": false,
+        "params": {
+          "speed": 2.0,
+          "ledge_aware": true
+        },
+        "bounds": [
+          60.0,
+          73.0
+        ],
+        "sprite": "o5"
+      },
+      {
+        "id": "o7",
+        "type": "coin",
+        "x": 33.0,
+        "y": 19.5
+      },
+      {
+        "id": "e_cp1",
+        "type": "checkpoint",
+        "x": 48.0,
+        "y": 22.0,
+        "origin": "designer"
+      },
+      {
+        "id": "e_bc1",
+        "type": "big_coin",
+        "x": 43.5,
+        "y": 14.5,
+        "origin": "designer"
+      },
+      {
+        "id": "o9",
+        "type": "goal",
+        "x": 91.0,
+        "y": 22.0,
+        "trigger": [
+          90.75,
+          17.0,
+          93.4,
+          22.0
+        ],
+        "sprite": "o9"
+      }
+    ],
+    "triggers": [],
+    "sprites": {
+      "player": {
+        "url": "/uploads/lvl_7c1e9a20/player.png",
+        "rig": {
+          "legs": [],
+          "synth_legs": true,
+          "eyes": [],
+          "hip_y": 0.7
+        }
+      },
+      "objects": {
+        "o5": "/uploads/lvl_7c1e9a20/o5.png",
+        "o9": "/uploads/lvl_7c1e9a20/o9.png"
+      }
+    }
+  },
+  "design": {
+    "tier": "polished",
+    "band": "easy",
+    "C": 0.14,
+    "score": 13,
+    "fastest_ms": 15120,
+    "par_ms": 20000,
+    "casual_clear_s": 31.5,
+    "segments": [
+      {
+        "from": "start",
+        "to": "e_cp1",
+        "E": 0.02,
+        "T_ms": 7300,
+        "F_s": 0.1,
+        "actions": 6
+      },
+      {
+        "from": "e_cp1",
+        "to": "o8",
+        "E": 0.12,
+        "T_ms": 7820,
+        "F_s": 0.5,
+        "actions": 9
+      }
+    ],
+    "flags": [],
+    "solvable": true,
+    "reach": {
+      "normal": true,
+      "hard": true
+    },
+    "designer_note": "Your level is a spiky hop past a monster. I set your spikes on the ground and added a checkpoint before the hard part.",
+    "source": "model"
+  },
+  "embedded_library": [],
+  "meta": {
+    "transcript": "",
+    "intent": "a spiky run with a monster",
+    "safety": "ok",
+    "level_hash": "sha256:9c4f…",
+    "core_version": "2.0.0",
+    "warnings": [],
+    "build": {
+      "stages": [
+        {
+          "stage": "ink",
+          "t_ms": 540
+        },
+        {
+          "stage": "understood",
+          "t_ms": 11020
+        },
+        {
+          "stage": "designed",
+          "t_ms": 13480
+        }
+      ],
+      "model_calls": [
+        {
+          "kind": "perceive",
+          "effort": "low",
+          "latency_ms": 10412,
+          "in_tok": 4410,
+          "out_tok": 870,
+          "cost_usd": 0.044,
+          "stop_reason": "end_turn",
+          "fallback_used": false
+        },
+        {
+          "kind": "design",
+          "effort": "low",
+          "latency_ms": 8950,
+          "in_tok": 6120,
+          "out_tok": 730,
+          "cost_usd": 0.049,
+          "stop_reason": "end_turn",
+          "fallback_used": false
+        }
+      ],
+      "cost_usd": 0.093
+    }
+  }
+}

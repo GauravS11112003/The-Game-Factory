@@ -1,0 +1,27 @@
+{
+  "id": "G12",
+  "status": "skeleton",
+  "mode": "canvas",
+  "input": "input.jpg",
+  "ink": "ink.json",
+  "strokes": null,
+  "name": "owner d_dfbfe619",
+  "prompt": null,
+  "objects": [],
+  "invariants": {
+    "solvable_at": [
+      "ink",
+      "understood",
+      "faithful"
+    ]
+  },
+  "model_off": {
+    "asks": [
+      "grass_or_spikes"
+    ]
+  },
+  "todo": "locator for the black zigzag (decoration + ask 'grass or spikes?')",
+  "must_not": [
+    "1-cell walls"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "id": "G22",
+  "status": "skeleton",
+  "mode": "paper",
+  "input": null,
+  "input_pending": "lane C: G10 re-photographed (shadow gradient, 25° tilt, JPEG 60)",
+  "name": "harsh_photo",
+  "objects": [],
+  "invariants": {
+    "same_objects_as": "G10",
+    "position_tolerance_c": 1,
+    "role_accuracy_min": 0.9
+  }
+}

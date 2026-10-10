@@ -1,0 +1,469 @@
+{
+  "$comment": "Printed template layout v2 (PLAN_V2 §6.4, §8.1, §8.2), lane C. Millimetres on an A4 landscape page, [x, y, w, h] from the top-left. The v1 layout (shared/template_spec.json) is kept for the drawing sheet; v2 adds multi-sheet packs, seam marks, the QR v2 grammar and the rules/library sheets. P0 initial version: lane C finalizes the rules_sheet and library_sheet box positions.",
+  "version": 2,
+  "page": {
+    "size_mm": [
+      297,
+      210
+    ],
+    "px_per_mm": 10,
+    "canvas_px": [
+      2970,
+      2100
+    ],
+    "orientation": "landscape"
+  },
+  "markers": {
+    "dictionary": "DICT_4X4_50",
+    "size_mm": 15,
+    "$comment": "outer_corner_index is the index into the 4 corners cv2.aruco returns for a marker (0 TL, 1 TR, 2 BR, 3 BL). For every marker it equals the marker id. Homography maps the four outer corners to the canonical canvas; print scale does not matter.",
+    "ids": [
+      {
+        "id": 0,
+        "position": "TL",
+        "rect_mm": [
+          8,
+          8,
+          15,
+          15
+        ],
+        "outer_corner_index": 0,
+        "outer_corner_mm": [
+          8,
+          8
+        ]
+      },
+      {
+        "id": 1,
+        "position": "TR",
+        "rect_mm": [
+          274,
+          8,
+          15,
+          15
+        ],
+        "outer_corner_index": 1,
+        "outer_corner_mm": [
+          289,
+          8
+        ]
+      },
+      {
+        "id": 2,
+        "position": "BR",
+        "rect_mm": [
+          274,
+          187,
+          15,
+          15
+        ],
+        "outer_corner_index": 2,
+        "outer_corner_mm": [
+          289,
+          202
+        ]
+      },
+      {
+        "id": 3,
+        "position": "BL",
+        "rect_mm": [
+          8,
+          187,
+          15,
+          15
+        ],
+        "outer_corner_index": 3,
+        "outer_corner_mm": [
+          8,
+          202
+        ]
+      }
+    ],
+    "outer_corners_mm": [
+      [
+        8,
+        8
+      ],
+      [
+        289,
+        8
+      ],
+      [
+        289,
+        202
+      ],
+      [
+        8,
+        202
+      ]
+    ],
+    "min_markers_for_rectify": 3
+  },
+  "header": {
+    "rect_mm": [
+      28,
+      8,
+      140,
+      15
+    ],
+    "title": "DRAW A LEVEL",
+    "name_label": "Level name: ______________________",
+    "remix_title_format": "Remix of {title} by {author}",
+    "sheet_label_format": "Sheet {n} of {k}"
+  },
+  "legend": {
+    "rect_mm": [
+      170,
+      8,
+      78,
+      15
+    ],
+    "items": [
+      {
+        "color": "black",
+        "label": "ground"
+      },
+      {
+        "color": "red",
+        "label": "spikes / enemies"
+      },
+      {
+        "color": "green",
+        "label": "goal"
+      },
+      {
+        "color": "blue",
+        "label": "coins / keys"
+      }
+    ],
+    "hint": "Write rules below. Draw arrows a finger-width away from things."
+  },
+  "qr": {
+    "rect_mm": [
+      250,
+      8,
+      15,
+      15
+    ],
+    "payload_grammar": {
+      "prefix": "dal2",
+      "separator": "|",
+      "forms": [
+        "dal2|p|<pack_id>|<n>/<k>",
+        "dal2|rules|<game_id>",
+        "dal2|lib|<game_id>"
+      ],
+      "regex": "^dal2\\|(p|rules|lib)\\|[A-Za-z0-9_-]{4,32}(\\|[1-6]/[1-6])?$",
+      "legacy_regex": "^dal1\\|(blank|game\\|[A-Za-z0-9_-]+|lvl\\|[A-Za-z0-9_-]+)$",
+      "$comment": "Pack records on the server (packs table) know kind (new|game|remix|extend), game_id, parent_id and k; v1 dal1|... payloads read as a 1-sheet pack."
+    }
+  },
+  "drawing_area": {
+    "rect_mm": [
+      28,
+      26,
+      240,
+      135
+    ],
+    "border_color": "#C8C8C8",
+    "border_width_mm": 0.3,
+    "dot_grid_spacing_mm": 5,
+    "dot_grid_color": "#DCDCDC",
+    "dot_radius_mm": 0.2,
+    "grid_cells": [
+      48,
+      27
+    ],
+    "cell_mm": 5,
+    "working_px": [
+      2400,
+      1350
+    ],
+    "cell_working_px": 50,
+    "backdrop_px": [
+      768,
+      432
+    ]
+  },
+  "character_box": {
+    "rect_mm": [
+      28,
+      165,
+      34,
+      34
+    ],
+    "label": "Draw your character",
+    "sprite_px": [
+      128,
+      192
+    ],
+    "sheets": [
+      1
+    ]
+  },
+  "rules_box": {
+    "rect_mm": [
+      66,
+      165,
+      164,
+      34
+    ],
+    "label": "Rules (plain words)",
+    "ruled_lines": 3,
+    "line_color": "#C8C8C8",
+    "sheets": [
+      1
+    ]
+  },
+  "swatches": {
+    "rect_mm": [
+      234,
+      165,
+      34,
+      34
+    ],
+    "patch_mm": 11,
+    "gap_mm": 0.5,
+    "columns": 3,
+    "rows": 2,
+    "$comment": "Row-major: black, red, green on the top row; blue, gray, paper on the bottom row. 'paper' is an outlined empty square and samples the paper white.",
+    "patches": [
+      {
+        "name": "black",
+        "hex": "#000000",
+        "rect_mm": [
+          234,
+          165,
+          11,
+          11
+        ]
+      },
+      {
+        "name": "red",
+        "hex": "#E53935",
+        "rect_mm": [
+          245.5,
+          165,
+          11,
+          11
+        ]
+      },
+      {
+        "name": "green",
+        "hex": "#43A047",
+        "rect_mm": [
+          257,
+          165,
+          11,
+          11
+        ]
+      },
+      {
+        "name": "blue",
+        "hex": "#1E88E5",
+        "rect_mm": [
+          234,
+          176.5,
+          11,
+          11
+        ]
+      },
+      {
+        "name": "gray",
+        "hex": "#B0B0B0",
+        "rect_mm": [
+          245.5,
+          176.5,
+          11,
+          11
+        ]
+      },
+      {
+        "name": "paper",
+        "hex": "#FFFFFF",
+        "rect_mm": [
+          257,
+          176.5,
+          11,
+          11
+        ],
+        "outlined": true
+      }
+    ],
+    "label": "swatches (do not draw here)",
+    "label_y_mm": 189
+  },
+  "remix": {
+    "ink_color": "#B0B0B0",
+    "component_number_color": "#B0B0B0",
+    "component_number_height_mm": 3,
+    "$comment": "Parent ink prints in gray #B0B0B0; parent coins, keys and goals print as gray OUTLINE glyphs, never filled, so they classify as gray and cannot become duplicates (§6.5).",
+    "pickups_as_gray_outlines": true
+  },
+  "colors": {
+    "black": "#000000",
+    "red": "#E53935",
+    "green": "#43A047",
+    "blue": "#1E88E5",
+    "gray": "#B0B0B0",
+    "paper": "#FFFFFF",
+    "annotation_magenta": "#FF00FF"
+  },
+  "canvas_mode": {
+    "$comment": "Canvas v2 sends vector strokes (InkDoc), not pixels; raster ingest (drafts, goldens, migration) uses input_px.",
+    "input_px": [
+      768,
+      432
+    ],
+    "marker_px": 12,
+    "tap_dot_px": 14,
+    "character_canvas_px": [
+      256,
+      256
+    ]
+  },
+  "seam_marks": {
+    "$comment": "Left and right edges of the drawing area (§6.4): gray row numbers and sheet arrows; remix and continuation prints also show the neighbour's terrain end heights as gray dashes in the first and last cell columns.",
+    "color": "#B0B0B0",
+    "row_numbers": [
+      3,
+      6,
+      9,
+      12,
+      15,
+      18,
+      21,
+      24
+    ],
+    "left_label_format": "← sheet {prev}",
+    "right_label_format": "sheet {next} →",
+    "neighbour_dash_columns": [
+      0,
+      47
+    ],
+    "join_max_c": 0.75,
+    "join_max_dy_c": 1
+  },
+  "pack": {
+    "max_sheets": 6,
+    "world_x_of_sheet": "48 * (n - 1)",
+    "missing_sheet_warning": "warning.sheet_missing",
+    "publish_requires_all_sheets": true,
+    "kinds": [
+      "new",
+      "game",
+      "remix",
+      "extend"
+    ]
+  },
+  "vectorize": {
+    "dot_max_side_c": 0.9,
+    "dot_min_fill": 0.5,
+    "blob_dt_c": 0.45,
+    "blob_skeleton_frac": 0.3,
+    "junction_merge_px": 3,
+    "spur_min_c": 0.4,
+    "spur_min_w": 1.5,
+    "turn_deg": 35,
+    "rdp_eps_c": 0.06,
+    "min_mark_area_c2": 0.03,
+    "dilation": "none"
+  },
+  "annotate": {
+    "px_per_cell": 24,
+    "id_color": "#FF00FF",
+    "rulers": true,
+    "taps_included": true,
+    "context_strip_c": 2
+  },
+  "rules_sheet": {
+    "status": "draft (lane C fixes box positions in P5)",
+    "qr": "dal2|rules|<game_id>",
+    "omr_fill": 0.15,
+    "groups": {
+      "physics_profile": {
+        "single": true,
+        "options": [
+          "v2-gentle",
+          "v2-standard",
+          "v2-snappy"
+        ]
+      },
+      "abilities": {
+        "single": false,
+        "options": [
+          "run",
+          "stomp",
+          "double_jump",
+          "fast_fall"
+        ]
+      },
+      "lives": {
+        "single": true,
+        "options": [
+          "off",
+          "3",
+          "5"
+        ]
+      },
+      "hearts": {
+        "single": true,
+        "options": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "theme": {
+        "single": true,
+        "options": [
+          "sketchbook",
+          "notebook",
+          "graph",
+          "kraft"
+        ]
+      },
+      "music": {
+        "single": true,
+        "options": [
+          "on",
+          "off"
+        ]
+      },
+      "default_dial": {
+        "single": true,
+        "options": [
+          "faithful",
+          "polished",
+          "challenging"
+        ]
+      }
+    },
+    "story_line": {
+      "label": "My world is…",
+      "read_by": "PERCEIVE"
+    }
+  },
+  "library_sheet": {
+    "status": "draft (lane C fixes box positions in P5)",
+    "qr": "dal2|lib|<game_id>",
+    "boxes": 6,
+    "per_box": {
+      "drawing_area": true,
+      "name_line": true,
+      "behavior_checkboxes": [
+        "walks",
+        "hops",
+        "flies",
+        "shoots",
+        "chases",
+        "crushes",
+        "spiky",
+        "slow",
+        "fast"
+      ],
+      "symbol_cells": 3
+    },
+    "omr_fill": 0.15
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "id": "G13",
+  "status": "skeleton",
+  "mode": "canvas",
+  "input": "input.jpg",
+  "ink": "ink.json",
+  "strokes": null,
+  "name": "owner d_79eff85e",
+  "prompt": null,
+  "objects": [],
+  "invariants": {
+    "solvable_at": [
+      "ink",
+      "understood",
+      "faithful"
+    ],
+    "spike_band_px": 6
+  },
+  "difficulty": {
+    "normal_C_min": 0.3,
+    "route_within_c_of_strip": 2
+  },
+  "todo": "locator for the red zigzag → spike strip on the platform's top face",
+  "must_not": [
+    "the 41-cell floating slab"
+  ]
+}

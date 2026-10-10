@@ -7,13 +7,22 @@
     "dev": "vite --host",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "typecheck": "tsc --noEmit && tsc -p src/core/tsconfig.json --noEmit",
+    "test": "vitest run",
+    "core:selftest": "node src/core/cli.ts selftest",
+    "golden": "node src/core/cli.ts golden",
+    "golden:shots": "node scripts/golden_shots.ts",
+    "starter:build": "node src/core/cli.ts starter:build",
+    "starter:verify": "node src/core/cli.ts starter:verify",
+    "gen:spec-data": "node src/core/cli.ts gen-spec-data",
+    "bench:core": "node src/core/cli.ts bench"
   },
   "dependencies": {
     "phaser": "^3.90.0"
   },
   "devDependencies": {
+    "@types/node": "24.19.2",
+    "json-schema-to-typescript": "15.0.4",
     "typescript": "^5.9.0",
     "vite": "^7.0.0",
     "vitest": "^3.2.0"

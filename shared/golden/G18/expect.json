@@ -1,0 +1,15 @@
+{
+  "id": "G18",
+  "status": "skeleton",
+  "mode": "paper",
+  "input": null,
+  "input_pending": "lane C: make_synthetic_v2.py --sheets 3, shuffled photo order",
+  "name": "three_sheets",
+  "objects": [],
+  "invariants": {
+    "world_w": 144,
+    "ground_continuous_across_seams": true,
+    "missing_sheet_warning": "warning.sheet_missing",
+    "playable_from_contiguous": true
+  }
+}

@@ -1,0 +1,278 @@
+{
+ "objects": [
+  {
+   "name": "G1",
+   "color": "black",
+   "bbox": [
+    0,
+    24,
+    21,
+    26
+   ],
+   "role": "ground"
+  },
+  {
+   "name": "G2",
+   "color": "black",
+   "bbox": [
+    25,
+    24,
+    47,
+    26
+   ],
+   "role": "ground"
+  },
+  {
+   "name": "P1",
+   "color": "black",
+   "bbox": [
+    7,
+    21,
+    15,
+    23
+   ],
+   "role": "platform"
+  },
+  {
+   "name": "P2",
+   "color": "black",
+   "bbox": [
+    15,
+    18,
+    24,
+    20
+   ],
+   "role": "platform"
+  },
+  {
+   "name": "S1",
+   "color": "red",
+   "bbox": [
+    8,
+    19,
+    14,
+    21
+   ],
+   "role": "spike_strip",
+   "rests_on": "P1",
+   "points": "up"
+  },
+  {
+   "name": "S2",
+   "color": "red",
+   "bbox": [
+    29,
+    23,
+    34,
+    25
+   ],
+   "role": "spike_strip",
+   "rests_on": "G2",
+   "points": "up"
+  },
+  {
+   "name": "CEIL",
+   "color": "black",
+   "bbox": [
+    33,
+    5,
+    47,
+    6
+   ],
+   "role": "ceiling"
+  },
+  {
+   "name": "S3",
+   "color": "red",
+   "bbox": [
+    36,
+    6,
+    42,
+    8
+   ],
+   "role": "spike_strip",
+   "attached_to": "CEIL",
+   "points": "down"
+  },
+  {
+   "name": "MON",
+   "color": "red",
+   "bbox": [
+    14,
+    22,
+    18,
+    25
+   ],
+   "role": "enemy",
+   "rests_on": "G1"
+  },
+  {
+   "name": "GOAL",
+   "color": "green",
+   "bbox": [
+    42,
+    13,
+    46,
+    17
+   ],
+   "role": "goal",
+   "rests_on": null
+  },
+  {
+   "name": "COIN",
+   "color": "blue",
+   "bbox": [
+    0,
+    0,
+    47,
+    26
+   ],
+   "role": "coin"
+  },
+  {
+   "name": "ARROW",
+   "color": "black",
+   "bbox": [
+    24,
+    18,
+    30,
+    20
+   ],
+   "role": "arrow",
+   "points": "right",
+   "attached_to": "P2"
+  },
+  {
+   "name": "TXT",
+   "color": "black",
+   "bbox": [
+    19,
+    21,
+    27,
+    24
+   ],
+   "role": "text"
+  },
+  {
+   "name": "CLOUD",
+   "color": "black",
+   "bbox": [
+    2,
+    1,
+    10,
+    5
+   ],
+   "role": "decoration"
+  },
+  {
+   "name": "SUN",
+   "color": "black",
+   "bbox": [
+    22,
+    0,
+    30,
+    7
+   ],
+   "role": "decoration"
+  }
+ ],
+ "components": [
+  {
+   "id": 1,
+   "object": "CLOUD",
+   "role": "decoration"
+  },
+  {
+   "id": 2,
+   "object": "SUN",
+   "role": "decoration"
+  },
+  {
+   "id": 3,
+   "object": "CEIL",
+   "role": "ceiling"
+  },
+  {
+   "id": 4,
+   "object": "S3",
+   "role": "spike_strip",
+   "attached_to": 3,
+   "points": "down"
+  },
+  {
+   "id": 5,
+   "object": "GOAL",
+   "role": "goal",
+   "rests_on": null
+  },
+  {
+   "id": 6,
+   "object": "COIN",
+   "role": "coin"
+  },
+  {
+   "id": 7,
+   "object": "ARROW",
+   "role": "arrow",
+   "attached_to": 8,
+   "points": "right"
+  },
+  {
+   "id": 8,
+   "object": "P2",
+   "role": "platform"
+  },
+  {
+   "id": 9,
+   "object": "S1",
+   "role": "spike_strip",
+   "rests_on": 11,
+   "points": "up"
+  },
+  {
+   "id": 10,
+   "object": "TXT",
+   "role": "text"
+  },
+  {
+   "id": 11,
+   "object": "P1",
+   "role": "platform"
+  },
+  {
+   "id": 12,
+   "object": "COIN",
+   "role": "coin"
+  },
+  {
+   "id": 13,
+   "object": "MON",
+   "role": "enemy",
+   "rests_on": 15
+  },
+  {
+   "id": 14,
+   "object": "S2",
+   "role": "spike_strip",
+   "rests_on": 16,
+   "points": "up"
+  },
+  {
+   "id": 15,
+   "object": "G1",
+   "role": "ground"
+  },
+  {
+   "id": 16,
+   "object": "G2",
+   "role": "ground"
+  }
+ ],
+ "expected_repairs": [
+  "snap S1 down onto P1 (spikes float 1 cell above it), keep pointing up",
+  "reclassify TXT ('jump!'), ARROW, CLOUD, SUN so they are not solid tiles",
+  "goal floats in mid-air out of reach: move it onto G2 (or nudge it down)",
+  "keep MON (enemy on G1), keep S3 hanging from the ceiling pointing down",
+  "do NOT delete spikes or the monster; do not widen/close the 5-cell G1-G2 gap (it is jumpable)"
+ ]
+}

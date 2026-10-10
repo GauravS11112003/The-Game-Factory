@@ -1,0 +1,859 @@
+{
+ "date": "2026-10-10 03:38",
+ "model": "claude-opus-5",
+ "summary": {
+  "calls": 16,
+  "spent_usd": 0.1889,
+  "async_parse": true,
+  "fast_mode": "not run (DAL_FAST_MODE != 1)",
+  "by": {
+   "perceive/adaptive": {
+    "n": 6,
+    "ok": 0,
+    "p50_s": null,
+    "p90_s": null,
+    "mean_out_tok": null,
+    "mean_cost_usd": null,
+    "over_prod_timeout": 0,
+    "errors": [
+     "http 400: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.'}, 'request_id': 'req_011CftB3cUVEWXLCpmznZ3ca'}",
+     "http 400: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.'}, 'request_id': 'req_011CftB3frdRH7T8f2XDwEXA'}",
+     "http 400: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.'}, 'request_id': 'req_011CftB3i3bZprgxUYe3X9wR'}",
+     "http 400: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.'}, 'request_id': 'req_011CftB3kNVSDnvxwrsg1Ffw'}",
+     "http 400: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.'}, 'request_id': 'req_011CftB7eHk4r9o7ZekNGvuL'}",
+     "http 400: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.'}, 'request_id': 'req_011CftB7gdd6dtHcxnyESAFi'}"
+    ]
+   },
+   "perceive/disabled": {
+    "n": 6,
+    "ok": 0,
+    "p50_s": null,
+    "p90_s": null,
+    "mean_out_tok": null,
+    "mean_cost_usd": null,
+    "over_prod_timeout": 0,
+    "errors": [
+     "http 400: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.'}, 'request_id': 'req_011CftB3ePKqKxZMWma4BPRs'}",
+     "http 400: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.'}, 'request_id': 'req_011CftB3gxrcmH9R2aeqsvC9'}",
+     "http 400: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.'}, 'request_id': 'req_011CftB3jAZgq3PbekiqFD9D'}",
+     "http 400: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.'}, 'request_id': 'req_011CftB3mWDCx7djN45cka9e'}",
+     "http 400: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.'}, 'request_id': 'req_011CftB7fYPUhVMj16MwPXsL'}",
+     "http 400: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.'}, 'request_id': 'req_011CftB7hftjXdYt2PzPFjqL'}"
+    ]
+   },
+   "design/adaptive": {
+    "n": 2,
+    "ok": 2,
+    "p50_s": 14.86,
+    "p90_s": 17.86,
+    "mean_out_tok": 954,
+    "mean_cost_usd": 0.0503,
+    "over_prod_timeout": 1,
+    "errors": [],
+    "picks_valid_frac": 0.952,
+    "repair_choices": [
+     [],
+     [
+      "trim:o4:a0b1c2"
+     ]
+    ]
+   },
+   "design/disabled": {
+    "n": 2,
+    "ok": 2,
+    "p50_s": 11.31,
+    "p90_s": 12.3,
+    "mean_out_tok": 706,
+    "mean_cost_usd": 0.0441,
+    "over_prod_timeout": 0,
+    "errors": [],
+    "picks_valid_frac": 1.0,
+    "repair_choices": [
+     [],
+     [
+      "trim:o4:a0b1c2"
+     ]
+    ]
+   }
+  },
+  "unions_accepted": {
+   "perception_bindings_union": false,
+   "design_novel_union": true,
+   "note": "Perception (10-variant Binding union) → HTTP 400 'The compiled grammar is too large'; DesignPlan (7-variant NovelOp union) accepted",
+   "schema_errors": [
+    "http 400: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.'}, 'request_id': 'req_011CftB3cUVEWXLCpmznZ3ca'}"
+   ]
+  },
+  "billed_calls": 4,
+  "perceive_schema": "union"
+ },
+ "calls": [
+  {
+   "n": 1,
+   "kind": "perceive",
+   "scene": "canvas_floating_spikes",
+   "thinking": "adaptive",
+   "status": "failed",
+   "error": "http 400: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.'}, 'request_id': 'req_011CftB3cUVEWXLCpmznZ3ca'}",
+   "latency_s": 0.536,
+   "in_tok": 0,
+   "out_tok": 0,
+   "cache_read_tok": 0,
+   "cost_usd": 0.0,
+   "stop_reason": null,
+   "served_by": null,
+   "fallback_used": false,
+   "over_prod_timeout": false
+  },
+  {
+   "n": 2,
+   "kind": "perceive",
+   "scene": "canvas_floating_spikes",
+   "thinking": "disabled",
+   "status": "failed",
+   "error": "http 400: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.'}, 'request_id': 'req_011CftB3ePKqKxZMWma4BPRs'}",
+   "latency_s": 0.253,
+   "in_tok": 0,
+   "out_tok": 0,
+   "cache_read_tok": 0,
+   "cost_usd": 0.0,
+   "stop_reason": null,
+   "served_by": null,
+   "fallback_used": false,
+   "over_prod_timeout": false
+  },
+  {
+   "n": 3,
+   "kind": "perceive",
+   "scene": "canvas_wobbly_cave",
+   "thinking": "adaptive",
+   "status": "failed",
+   "error": "http 400: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.'}, 'request_id': 'req_011CftB3frdRH7T8f2XDwEXA'}",
+   "latency_s": 0.334,
+   "in_tok": 0,
+   "out_tok": 0,
+   "cache_read_tok": 0,
+   "cost_usd": 0.0,
+   "stop_reason": null,
+   "served_by": null,
+   "fallback_used": false,
+   "over_prod_timeout": false
+  },
+  {
+   "n": 4,
+   "kind": "perceive",
+   "scene": "canvas_wobbly_cave",
+   "thinking": "disabled",
+   "status": "failed",
+   "error": "http 400: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.'}, 'request_id': 'req_011CftB3gxrcmH9R2aeqsvC9'}",
+   "latency_s": 0.239,
+   "in_tok": 0,
+   "out_tok": 0,
+   "cache_read_tok": 0,
+   "cost_usd": 0.0,
+   "stop_reason": null,
+   "served_by": null,
+   "fallback_used": false,
+   "over_prod_timeout": false
+  },
+  {
+   "n": 5,
+   "kind": "perceive",
+   "scene": "canvas_tower_key",
+   "thinking": "adaptive",
+   "status": "failed",
+   "error": "http 400: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.'}, 'request_id': 'req_011CftB3i3bZprgxUYe3X9wR'}",
+   "latency_s": 0.264,
+   "in_tok": 0,
+   "out_tok": 0,
+   "cache_read_tok": 0,
+   "cost_usd": 0.0,
+   "stop_reason": null,
+   "served_by": null,
+   "fallback_used": false,
+   "over_prod_timeout": false
+  },
+  {
+   "n": 6,
+   "kind": "perceive",
+   "scene": "canvas_tower_key",
+   "thinking": "disabled",
+   "status": "failed",
+   "error": "http 400: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.'}, 'request_id': 'req_011CftB3jAZgq3PbekiqFD9D'}",
+   "latency_s": 0.277,
+   "in_tok": 0,
+   "out_tok": 0,
+   "cache_read_tok": 0,
+   "cost_usd": 0.0,
+   "stop_reason": null,
+   "served_by": null,
+   "fallback_used": false,
+   "over_prod_timeout": false
+  },
+  {
+   "n": 7,
+   "kind": "perceive",
+   "scene": "paper_synth_1",
+   "thinking": "adaptive",
+   "status": "failed",
+   "error": "http 400: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.'}, 'request_id': 'req_011CftB3kNVSDnvxwrsg1Ffw'}",
+   "latency_s": 0.258,
+   "in_tok": 0,
+   "out_tok": 0,
+   "cache_read_tok": 0,
+   "cost_usd": 0.0,
+   "stop_reason": null,
+   "served_by": null,
+   "fallback_used": false,
+   "over_prod_timeout": false
+  },
+  {
+   "n": 8,
+   "kind": "perceive",
+   "scene": "paper_synth_1",
+   "thinking": "disabled",
+   "status": "failed",
+   "error": "http 400: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.'}, 'request_id': 'req_011CftB3mWDCx7djN45cka9e'}",
+   "latency_s": 0.227,
+   "in_tok": 0,
+   "out_tok": 0,
+   "cache_read_tok": 0,
+   "cost_usd": 0.0,
+   "stop_reason": null,
+   "served_by": null,
+   "fallback_used": false,
+   "over_prod_timeout": false
+  },
+  {
+   "n": 9,
+   "kind": "design",
+   "scene": "canvas_floating_spikes",
+   "thinking": "adaptive",
+   "status": "ok",
+   "error": null,
+   "latency_s": 18.608,
+   "in_tok": 6841,
+   "out_tok": 1105,
+   "cache_read_tok": 0,
+   "cost_usd": 0.06764,
+   "stop_reason": "end_turn",
+   "served_by": "claude-opus-5",
+   "fallback_used": false,
+   "over_prod_timeout": true,
+   "parsed": {
+    "repair_choices": [],
+    "vetoes": [],
+    "picks": [
+     {
+      "cid": "add_checkpoint:slot.cp.1:a1b2c3",
+      "tier": "polish",
+      "reason": "A flag saves your spot before the big pit"
+     },
+     {
+      "cid": "add_coin_trail:r4:b2c3d4",
+      "tier": "polish",
+      "reason": "Coins show you where to run and jump"
+     },
+     {
+      "cid": "add_big_coin:slot.risk.1:c3d4e5",
+      "tier": "polish",
+      "reason": "A big star hides under the ceiling spikes"
+     },
+     {
+      "cid": "animate:o13:d4e5f6",
+      "tier": "polish",
+      "reason": "Your monster walks around now"
+     },
+     {
+      "cid": "tune:o13:e5f6a7",
+      "tier": "normal",
+      "reason": "Your monster moves a little faster"
+     },
+     {
+      "cid": "add_enemy:slot.enemy.2:f6a7b8",
+      "tier": "normal",
+      "reason": "A walker guards the long empty floor"
+     },
+     {
+      "cid": "widen_gap:gap.1:0a1b2c",
+      "tier": "normal",
+      "reason": "The pit jump needs a real run-up"
+     },
+     {
+      "cid": "add_spikes:slot.spk.3:3d4e5f",
+      "tier": "normal",
+      "reason": "More spikes make the last run exciting"
+     },
+     {
+      "cid": "widen_gap:gap.1:1b2c3d",
+      "tier": "hard",
+      "reason": "The pit is very wide for brave kids"
+     },
+     {
+      "cid": "make_crumble:o8:4e5f6a",
+      "tier": "hard",
+      "reason": "The high ledge falls, so keep moving"
+     },
+     {
+      "cid": "add_hazard:slot.hz.1:5f6a7b",
+      "tier": "hard",
+      "reason": "A saw spins over your big pit"
+     },
+     {
+      "cid": "add_enemy:slot.enemy.4:6a7b8c",
+      "tier": "hard",
+      "reason": "A hopper bounces on the first ground"
+     }
+    ],
+    "novel": [],
+    "asks": [],
+    "designer_note": "You drew a spiky run with a monster, a jump sign and a flag at the end. I kept all your shapes and added coins, a checkpoint and a star so the scary jump feels fair.",
+    "critique": [
+     "The pit jump is the best moment; everything builds to it.",
+     "The far ground was empty, so spikes and a walker fill it.",
+     "The spike ledge teaches jumping before the pit tests it."
+    ],
+    "title": "Jump! The Spiky Run"
+   },
+   "score": {
+    "items": 12,
+    "valid": 11,
+    "valid_frac": 0.917,
+    "problems": [
+     "widen_gap:gap.1:1b2c3d: second pick in alts gap1"
+    ],
+    "bad_vetoes": [],
+    "reasons_over_12_words": 0,
+    "repair_choices": [],
+    "picks": [
+     [
+      "add_checkpoint:slot.cp.1:a1b2c3",
+      "polish"
+     ],
+     [
+      "add_coin_trail:r4:b2c3d4",
+      "polish"
+     ],
+     [
+      "add_big_coin:slot.risk.1:c3d4e5",
+      "polish"
+     ],
+     [
+      "animate:o13:d4e5f6",
+      "polish"
+     ],
+     [
+      "tune:o13:e5f6a7",
+      "normal"
+     ],
+     [
+      "add_enemy:slot.enemy.2:f6a7b8",
+      "normal"
+     ],
+     [
+      "widen_gap:gap.1:0a1b2c",
+      "normal"
+     ],
+     [
+      "add_spikes:slot.spk.3:3d4e5f",
+      "normal"
+     ],
+     [
+      "widen_gap:gap.1:1b2c3d",
+      "hard"
+     ],
+     [
+      "make_crumble:o8:4e5f6a",
+      "hard"
+     ],
+     [
+      "add_hazard:slot.hz.1:5f6a7b",
+      "hard"
+     ],
+     [
+      "add_enemy:slot.enemy.4:6a7b8c",
+      "hard"
+     ]
+    ],
+    "note_words": 36
+   }
+  },
+  {
+   "n": 10,
+   "kind": "design",
+   "scene": "canvas_floating_spikes",
+   "thinking": "disabled",
+   "status": "ok",
+   "error": null,
+   "latency_s": 12.551,
+   "in_tok": 6841,
+   "out_tok": 633,
+   "cache_read_tok": 0,
+   "cost_usd": 0.05584,
+   "stop_reason": "end_turn",
+   "served_by": "claude-opus-5",
+   "fallback_used": false,
+   "over_prod_timeout": false,
+   "parsed": {
+    "repair_choices": [],
+    "vetoes": [],
+    "picks": [
+     {
+      "cid": "add_checkpoint:slot.cp.1:a1b2c3",
+      "tier": "polish",
+      "reason": "A flag to rest at before the big pit"
+     },
+     {
+      "cid": "add_coin_trail:r4:b2c3d4",
+      "tier": "polish",
+      "reason": "Coins show you where to run and jump"
+     },
+     {
+      "cid": "animate:o13:d4e5f6",
+      "tier": "polish",
+      "reason": "Your monster walks now, just like you drew"
+     },
+     {
+      "cid": "add_big_coin:slot.risk.1:c3d4e5",
+      "tier": "normal",
+      "reason": "A big star waits under the ceiling spikes"
+     },
+     {
+      "cid": "add_enemy:slot.enemy.2:f6a7b8",
+      "tier": "normal",
+      "reason": "A walker guards the long empty path"
+     },
+     {
+      "cid": "widen_gap:gap.1:0a1b2c",
+      "tier": "normal",
+      "reason": "The pit jump gets one step braver"
+     },
+     {
+      "cid": "add_spikes:slot.spk.3:3d4e5f",
+      "tier": "hard",
+      "reason": "More spikes near the flag for experts"
+     },
+     {
+      "cid": "add_hazard:slot.hz.1:5f6a7b",
+      "tier": "hard",
+      "reason": "A spinning saw dares you over the pit"
+     },
+     {
+      "cid": "make_crumble:o8:4e5f6a",
+      "tier": "hard",
+      "reason": "The high ledge falls, so keep running"
+     }
+    ],
+    "novel": [],
+    "asks": [],
+    "designer_note": "You drew a brave spiky run with a monster and a big pit jump, and I kept every piece. I added coins to teach the jump, a checkpoint to rest, and saved the scary saw for hard mode.",
+    "critique": [
+     "The long flat before the goal needed something to do.",
+     "The pit jump is the star moment; everything builds to it.",
+     "Spikes teach first on the ledge, then test at the end."
+    ],
+    "title": "The Spiky Run"
+   },
+   "score": {
+    "items": 9,
+    "valid": 9,
+    "valid_frac": 1.0,
+    "problems": [],
+    "bad_vetoes": [],
+    "reasons_over_12_words": 0,
+    "repair_choices": [],
+    "picks": [
+     [
+      "add_checkpoint:slot.cp.1:a1b2c3",
+      "polish"
+     ],
+     [
+      "add_coin_trail:r4:b2c3d4",
+      "polish"
+     ],
+     [
+      "animate:o13:d4e5f6",
+      "polish"
+     ],
+     [
+      "add_big_coin:slot.risk.1:c3d4e5",
+      "normal"
+     ],
+     [
+      "add_enemy:slot.enemy.2:f6a7b8",
+      "normal"
+     ],
+     [
+      "widen_gap:gap.1:0a1b2c",
+      "normal"
+     ],
+     [
+      "add_spikes:slot.spk.3:3d4e5f",
+      "hard"
+     ],
+     [
+      "add_hazard:slot.hz.1:5f6a7b",
+      "hard"
+     ],
+     [
+      "make_crumble:o8:4e5f6a",
+      "hard"
+     ]
+    ],
+    "note_words": 38
+   }
+  },
+  {
+   "n": 11,
+   "kind": "design",
+   "scene": "canvas_wobbly_cave",
+   "thinking": "adaptive",
+   "status": "ok",
+   "error": null,
+   "latency_s": 11.103,
+   "in_tok": 2127,
+   "out_tok": 802,
+   "cache_read_tok": 4647,
+   "cost_usd": 0.03301,
+   "stop_reason": "end_turn",
+   "served_by": "claude-opus-5",
+   "fallback_used": false,
+   "over_prod_timeout": false,
+   "parsed": {
+    "repair_choices": [
+     {
+      "alts": "rep.wall",
+      "cid": "trim:o4:a0b1c2",
+      "reason": "Your wall stays a wall, just one shorter."
+     }
+    ],
+    "vetoes": [
+     {
+      "edit_id": "straighten:o9:f1a2b3",
+      "reason": "The wavy ground is the fun cave shape."
+     },
+     {
+      "edit_id": "straighten:o1:b3c4d5",
+      "reason": "The bumpy roof makes the cave look dark."
+     }
+    ],
+    "picks": [
+     {
+      "cid": "add_coin_trail:r4:e4f5a6",
+      "tier": "polish",
+      "reason": "Coins show you to run and jump far."
+     },
+     {
+      "cid": "add_big_coin:slot.risk.3:f5a6b7",
+      "tier": "polish",
+      "reason": "A big star waits over the scary pit."
+     },
+     {
+      "cid": "add_checkpoint:slot.cp.2:d3e4f5",
+      "tier": "normal",
+      "reason": "Rest spot after the tall wall climb."
+     },
+     {
+      "cid": "add_spikes:slot.spk.6:b7c8d9",
+      "tier": "normal",
+      "reason": "Spikes on the wall top test your landing."
+     },
+     {
+      "cid": "add_enemy:slot.enemy.5:a6b7c8",
+      "tier": "normal",
+      "reason": "A walker guards your run-up to the pit."
+     },
+     {
+      "cid": "add_hazard:slot.hz.2:d9e0f1",
+      "tier": "hard",
+      "reason": "A saw swings over your big pit jump."
+     },
+     {
+      "cid": "add_enemy:slot.enemy.6:e0f1a2",
+      "tier": "hard",
+      "reason": "Your bat flies by the roof spikes now."
+     },
+     {
+      "cid": "make_crumble:o11:c8d9e0",
+      "tier": "hard",
+      "reason": "The landing breaks, so keep running!"
+     }
+    ],
+    "novel": [],
+    "asks": [
+     {
+      "about": "o5 red text \"lava!\" near the pit",
+      "kind": "is_door",
+      "options": [
+       "just a sign you walk through",
+       "real lava that hurts"
+      ]
+     }
+    ],
+    "designer_note": "You drew a dark cave with a climbing wall and a truly scary spike pit, and I kept both exactly as you made them. I added coins and a big star to teach the big jump, then let the pit get meaner with a saw and your own bat.",
+    "critique": [
+     "The wall and pit are two clear, distinct ideas.",
+     "Pit jump is the best moment; everything builds to it.",
+     "Ceiling spikes were unused until the bat arrived."
+    ],
+    "title": "The Cave of the Big Pit"
+   },
+   "score": {
+    "items": 9,
+    "valid": 9,
+    "valid_frac": 1.0,
+    "problems": [],
+    "bad_vetoes": [],
+    "reasons_over_12_words": 0,
+    "repair_choices": [
+     "trim:o4:a0b1c2"
+    ],
+    "picks": [
+     [
+      "add_coin_trail:r4:e4f5a6",
+      "polish"
+     ],
+     [
+      "add_big_coin:slot.risk.3:f5a6b7",
+      "polish"
+     ],
+     [
+      "add_checkpoint:slot.cp.2:d3e4f5",
+      "normal"
+     ],
+     [
+      "add_spikes:slot.spk.6:b7c8d9",
+      "normal"
+     ],
+     [
+      "add_enemy:slot.enemy.5:a6b7c8",
+      "normal"
+     ],
+     [
+      "add_hazard:slot.hz.2:d9e0f1",
+      "hard"
+     ],
+     [
+      "add_enemy:slot.enemy.6:e0f1a2",
+      "hard"
+     ],
+     [
+      "make_crumble:o11:c8d9e0",
+      "hard"
+     ]
+    ],
+    "note_words": 49
+   }
+  },
+  {
+   "n": 12,
+   "kind": "design",
+   "scene": "canvas_wobbly_cave",
+   "thinking": "disabled",
+   "status": "ok",
+   "error": null,
+   "latency_s": 10.06,
+   "in_tok": 2127,
+   "out_tok": 779,
+   "cache_read_tok": 4647,
+   "cost_usd": 0.03243,
+   "stop_reason": "end_turn",
+   "served_by": "claude-opus-5",
+   "fallback_used": false,
+   "over_prod_timeout": false,
+   "parsed": {
+    "repair_choices": [
+     {
+      "alts": "rep.wall",
+      "cid": "trim:o4:a0b1c2",
+      "reason": "Keeps your tall wall, just one brick shorter."
+     }
+    ],
+    "vetoes": [
+     {
+      "edit_id": "straighten:o9:f1a2b3",
+      "reason": "The wavy cave floor is the best part."
+     },
+     {
+      "edit_id": "straighten:o1:b3c4d5",
+      "reason": "The bumpy cave roof looks spooky and cool."
+     }
+    ],
+    "picks": [
+     {
+      "cid": "add_checkpoint:slot.cp.2:d3e4f5",
+      "tier": "polish",
+      "reason": "Rest here after climbing the big wall."
+     },
+     {
+      "cid": "add_coin_trail:r4:e4f5a6",
+      "tier": "polish",
+      "reason": "Coins show you where to run and jump."
+     },
+     {
+      "cid": "add_big_coin:slot.risk.3:f5a6b7",
+      "tier": "normal",
+      "reason": "A big star floats over the scary pit."
+     },
+     {
+      "cid": "add_enemy:slot.enemy.5:a6b7c8",
+      "tier": "normal",
+      "reason": "A walker guards your run-up to the pit."
+     },
+     {
+      "cid": "add_spikes:slot.spk.6:b7c8d9",
+      "tier": "normal",
+      "reason": "Spikes make the wall top a careful landing."
+     },
+     {
+      "cid": "add_hazard:slot.hz.2:d9e0f1",
+      "tier": "hard",
+      "reason": "A saw swings over the lava pit."
+     },
+     {
+      "cid": "add_enemy:slot.enemy.6:e0f1a2",
+      "tier": "hard",
+      "reason": "Your bat flies by the ceiling spikes."
+     },
+     {
+      "cid": "make_crumble:o11:c8d9e0",
+      "tier": "hard",
+      "reason": "The far ledge crumbles, so keep moving."
+     }
+    ],
+    "novel": [],
+    "asks": [
+     {
+      "about": "o4, the tall black bar on the floor",
+      "kind": "is_door",
+      "options": [
+       "wall to climb",
+       "door to walk through"
+      ]
+     }
+    ],
+    "designer_note": "Your cave has a wall to climb and a pit that really feels scary. I kept the wobbly floor and roof, trimmed the wall just one brick, and put a star over the pit for brave jumpers.",
+    "critique": [
+     "Wall then pit is a great teach-then-test pair.",
+     "The long runway makes the pit jump readable.",
+     "Bat drawing becomes a real enemy at hard."
+    ],
+    "title": "The Lava Cave"
+   },
+   "score": {
+    "items": 9,
+    "valid": 9,
+    "valid_frac": 1.0,
+    "problems": [],
+    "bad_vetoes": [],
+    "reasons_over_12_words": 0,
+    "repair_choices": [
+     "trim:o4:a0b1c2"
+    ],
+    "picks": [
+     [
+      "add_checkpoint:slot.cp.2:d3e4f5",
+      "polish"
+     ],
+     [
+      "add_coin_trail:r4:e4f5a6",
+      "polish"
+     ],
+     [
+      "add_big_coin:slot.risk.3:f5a6b7",
+      "normal"
+     ],
+     [
+      "add_enemy:slot.enemy.5:a6b7c8",
+      "normal"
+     ],
+     [
+      "add_spikes:slot.spk.6:b7c8d9",
+      "normal"
+     ],
+     [
+      "add_hazard:slot.hz.2:d9e0f1",
+      "hard"
+     ],
+     [
+      "add_enemy:slot.enemy.6:e0f1a2",
+      "hard"
+     ],
+     [
+      "make_crumble:o11:c8d9e0",
+      "hard"
+     ]
+    ],
+    "note_words": 37
+   }
+  },
+  {
+   "n": 13,
+   "kind": "perceive",
+   "scene": "canvas_floating_spikes",
+   "thinking": "adaptive",
+   "status": "failed",
+   "error": "http 400: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.'}, 'request_id': 'req_011CftB7eHk4r9o7ZekNGvuL'}",
+   "latency_s": 0.299,
+   "in_tok": 0,
+   "out_tok": 0,
+   "cache_read_tok": 0,
+   "cost_usd": 0.0,
+   "stop_reason": null,
+   "served_by": null,
+   "fallback_used": false,
+   "over_prod_timeout": false
+  },
+  {
+   "n": 14,
+   "kind": "perceive",
+   "scene": "canvas_floating_spikes",
+   "thinking": "disabled",
+   "status": "failed",
+   "error": "http 400: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.'}, 'request_id': 'req_011CftB7fYPUhVMj16MwPXsL'}",
+   "latency_s": 0.244,
+   "in_tok": 0,
+   "out_tok": 0,
+   "cache_read_tok": 0,
+   "cost_usd": 0.0,
+   "stop_reason": null,
+   "served_by": null,
+   "fallback_used": false,
+   "over_prod_timeout": false
+  },
+  {
+   "n": 15,
+   "kind": "perceive",
+   "scene": "canvas_tower_key",
+   "thinking": "adaptive",
+   "status": "failed",
+   "error": "http 400: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.'}, 'request_id': 'req_011CftB7gdd6dtHcxnyESAFi'}",
+   "latency_s": 0.237,
+   "in_tok": 0,
+   "out_tok": 0,
+   "cache_read_tok": 0,
+   "cost_usd": 0.0,
+   "stop_reason": null,
+   "served_by": null,
+   "fallback_used": false,
+   "over_prod_timeout": false
+  },
+  {
+   "n": 16,
+   "kind": "perceive",
+   "scene": "canvas_tower_key",
+   "thinking": "disabled",
+   "status": "failed",
+   "error": "http 400: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.'}, 'request_id': 'req_011CftB7hftjXdYt2PzPFjqL'}",
+   "latency_s": 0.329,
+   "in_tok": 0,
+   "out_tok": 0,
+   "cache_read_tok": 0,
+   "cost_usd": 0.0,
+   "stop_reason": null,
+   "served_by": null,
+   "fallback_used": false,
+   "over_prod_timeout": false
+  }
+ ]
+}

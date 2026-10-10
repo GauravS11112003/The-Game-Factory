@@ -1,0 +1,1158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://draw-a-level.dev/spec/v2/ink.schema.json",
+  "$comment": "dal-level spec v1.0. GENERATED from vision/app/spec/ink.py by scripts/gen_contracts.py; do not edit.",
+  "title": "ink",
+  "description": "InkDoc: the only thing that crosses from seeing to building (PLAN_V2 §3.2).",
+  "$ref": "#/$defs/InkDoc",
+  "$defs": {
+    "Archetype": {
+      "enum": [
+        "walker",
+        "hopper",
+        "flyer",
+        "shooter",
+        "chaser",
+        "crusher"
+      ],
+      "type": "string"
+    },
+    "BCrumble": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "crumble",
+          "type": "string"
+        },
+        "delay_s": {
+          "default": 0.5,
+          "type": "number"
+        },
+        "respawn_s": {
+          "default": 3.0,
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BCrumble",
+      "type": "object"
+    },
+    "BEnemy": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "enemy",
+          "type": "string"
+        },
+        "archetype": {
+          "$ref": "#/$defs/Archetype"
+        },
+        "spiky": {
+          "default": false,
+          "type": "boolean"
+        },
+        "params": {
+          "$ref": "#/$defs/EnemyParams"
+        }
+      },
+      "required": [
+        "kind",
+        "archetype"
+      ],
+      "title": "BEnemy",
+      "type": "object"
+    },
+    "BFalling": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "falling",
+          "type": "string"
+        },
+        "delay_s": {
+          "default": 0.4,
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BFalling",
+      "type": "object"
+    },
+    "BFirebar": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "firebar",
+          "type": "string"
+        },
+        "balls": {
+          "default": 4,
+          "maximum": 6,
+          "minimum": 3,
+          "type": "integer"
+        },
+        "speed_deg_s": {
+          "default": 90,
+          "type": "number"
+        },
+        "phase": {
+          "default": 0,
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BFirebar",
+      "type": "object"
+    },
+    "BMove": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "move",
+          "type": "string"
+        },
+        "dir": {
+          "$ref": "#/$defs/Dir4"
+        },
+        "cells": {
+          "type": "number"
+        },
+        "speed": {
+          "type": "number"
+        },
+        "mode": {
+          "default": "pingpong",
+          "enum": [
+            "pingpong",
+            "loop"
+          ],
+          "type": "string"
+        },
+        "wait_s": {
+          "default": 0.3,
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "dir",
+        "cells",
+        "speed"
+      ],
+      "title": "BMove",
+      "type": "object"
+    },
+    "BSaw": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "saw",
+          "type": "string"
+        },
+        "radius": {
+          "default": 1.0,
+          "type": "number"
+        },
+        "dir": {
+          "$ref": "#/$defs/Dir",
+          "default": "none"
+        },
+        "cells": {
+          "default": 0,
+          "type": "number"
+        },
+        "speed": {
+          "default": 3.0,
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BSaw",
+      "type": "object"
+    },
+    "BSpring": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "spring",
+          "type": "string"
+        },
+        "dir": {
+          "default": "up",
+          "enum": [
+            "up",
+            "left",
+            "right"
+          ],
+          "type": "string"
+        },
+        "strength": {
+          "default": 1.0,
+          "maximum": 1.4,
+          "minimum": 0.6,
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BSpring",
+      "type": "object"
+    },
+    "BStatic": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "static",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BStatic",
+      "type": "object"
+    },
+    "Behavior": {
+      "discriminator": {
+        "mapping": {
+          "crumble": "#/$defs/BCrumble",
+          "enemy": "#/$defs/BEnemy",
+          "falling": "#/$defs/BFalling",
+          "firebar": "#/$defs/BFirebar",
+          "move": "#/$defs/BMove",
+          "saw": "#/$defs/BSaw",
+          "spring": "#/$defs/BSpring",
+          "static": "#/$defs/BStatic"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/BStatic"
+        },
+        {
+          "$ref": "#/$defs/BEnemy"
+        },
+        {
+          "$ref": "#/$defs/BMove"
+        },
+        {
+          "$ref": "#/$defs/BSpring"
+        },
+        {
+          "$ref": "#/$defs/BCrumble"
+        },
+        {
+          "$ref": "#/$defs/BFalling"
+        },
+        {
+          "$ref": "#/$defs/BSaw"
+        },
+        {
+          "$ref": "#/$defs/BFirebar"
+        }
+      ]
+    },
+    "CellXY": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "type": "array"
+    },
+    "CharacterInk": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "strokes": {
+          "items": {
+            "$ref": "#/$defs/InkStroke"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "strokes"
+      ],
+      "title": "CharacterInk",
+      "type": "object"
+    },
+    "ComponentFeatures": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "fill": {
+          "type": "number"
+        },
+        "circ": {
+          "type": "number"
+        },
+        "straight": {
+          "type": "number"
+        },
+        "zigN": {
+          "type": "number"
+        },
+        "zigAmp": {
+          "type": "number"
+        },
+        "aspect": {
+          "type": "number"
+        },
+        "holes": {
+          "type": "integer"
+        },
+        "w": {
+          "type": "number"
+        },
+        "corners": {
+          "type": "integer"
+        },
+        "spokes": {
+          "type": "integer"
+        },
+        "bumps": {
+          "type": "integer"
+        },
+        "is_dot": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "fill",
+        "circ",
+        "straight",
+        "zigN",
+        "zigAmp",
+        "aspect",
+        "holes",
+        "w",
+        "corners",
+        "spokes",
+        "bumps",
+        "is_dot"
+      ],
+      "title": "ComponentFeatures",
+      "type": "object"
+    },
+    "Dir": {
+      "enum": [
+        "up",
+        "down",
+        "left",
+        "right",
+        "none"
+      ],
+      "type": "string"
+    },
+    "Dir4": {
+      "enum": [
+        "up",
+        "down",
+        "left",
+        "right"
+      ],
+      "type": "string"
+    },
+    "EnemyParams": {
+      "additionalProperties": false,
+      "description": "Archetype parameters (§5.7); every field optional, defaults live in core/params.ts.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "speed": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "ledge_aware": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "interval": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "forward": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "pattern": {
+          "anyOf": [
+            {
+              "enum": [
+                "hover",
+                "horizontal",
+                "vertical",
+                "circle"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "range": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "radius": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "period": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "facing": {
+          "anyOf": [
+            {
+              "enum": [
+                "left",
+                "right",
+                "toward_player"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "blob_speed": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sight": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "warn": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "rise_speed": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "EnemyParams",
+      "type": "object"
+    },
+    "InkColor": {
+      "enum": [
+        "black",
+        "red",
+        "green",
+        "blue",
+        "pencil",
+        "draft"
+      ],
+      "type": "string"
+    },
+    "InkComponent": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "color": {
+          "$ref": "#/$defs/InkColor"
+        },
+        "stroke_ids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "bbox": {
+          "$ref": "#/$defs/RectCells"
+        },
+        "area": {
+          "type": "number"
+        },
+        "f": {
+          "$ref": "#/$defs/ComponentFeatures"
+        }
+      },
+      "required": [
+        "id",
+        "color",
+        "stroke_ids",
+        "bbox",
+        "area",
+        "f"
+      ],
+      "title": "InkComponent",
+      "type": "object"
+    },
+    "InkDoc": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "v": {
+          "const": 2,
+          "type": "integer"
+        },
+        "source": {
+          "enum": [
+            "canvas",
+            "paper",
+            "prompt",
+            "migrated"
+          ],
+          "type": "string"
+        },
+        "world": {
+          "$ref": "#/$defs/InkWorld"
+        },
+        "strokes": {
+          "items": {
+            "$ref": "#/$defs/InkStroke"
+          },
+          "type": "array"
+        },
+        "components": {
+          "items": {
+            "$ref": "#/$defs/InkComponent"
+          },
+          "type": "array"
+        },
+        "character": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CharacterInk"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "typed_rules": {
+          "items": {
+            "$ref": "#/$defs/TypedRule"
+          },
+          "type": "array"
+        },
+        "rules_ink": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "sheets": {
+          "items": {
+            "$ref": "#/$defs/SheetInfo"
+          },
+          "type": "array"
+        },
+        "noise": {
+          "$ref": "#/$defs/NoiseInfo"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ParentRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "v",
+        "source",
+        "world",
+        "strokes",
+        "components",
+        "character",
+        "typed_rules",
+        "rules_ink",
+        "sheets",
+        "noise",
+        "parent"
+      ],
+      "title": "InkDoc",
+      "type": "object"
+    },
+    "InkStroke": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "color": {
+          "$ref": "#/$defs/InkColor"
+        },
+        "kind": {
+          "enum": [
+            "line",
+            "dot",
+            "blob"
+          ],
+          "type": "string"
+        },
+        "pts": {
+          "items": {
+            "$ref": "#/$defs/CellXY"
+          },
+          "type": "array"
+        },
+        "w": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "closed": {
+          "type": "boolean"
+        },
+        "sheet": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "origin": {
+          "$ref": "#/$defs/Origin"
+        },
+        "stamp": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StampKind"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "label": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Role"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "rule": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Behavior"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "lib": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LibRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "t": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "color",
+        "kind",
+        "pts",
+        "w",
+        "closed",
+        "sheet",
+        "origin"
+      ],
+      "title": "InkStroke",
+      "type": "object"
+    },
+    "InkWorld": {
+      "additionalProperties": false,
+      "description": "InkDoc world (§3.2): the same as World without the cell size.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "screens": {
+          "maximum": 6,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "w": {
+          "maximum": 288,
+          "minimum": 48,
+          "type": "integer"
+        },
+        "h": {
+          "const": 27,
+          "default": 27,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "screens",
+        "w"
+      ],
+      "title": "InkWorld",
+      "type": "object"
+    },
+    "LevelInk": {
+      "additionalProperties": false,
+      "description": "The `ink` block stored inside a LevelV2 (§2.2): InkDoc minus v/source/world/sheets/parent,\nwhich the level carries in `world`, `source` and `parent_id`.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "strokes": {
+          "items": {
+            "$ref": "#/$defs/InkStroke"
+          },
+          "type": "array"
+        },
+        "components": {
+          "items": {
+            "$ref": "#/$defs/InkComponent"
+          },
+          "type": "array"
+        },
+        "character": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CharacterInk"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "typed_rules": {
+          "items": {
+            "$ref": "#/$defs/TypedRule"
+          },
+          "type": "array"
+        },
+        "rules_ink": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "noise": {
+          "$ref": "#/$defs/NoiseInfo"
+        }
+      },
+      "required": [
+        "strokes",
+        "components"
+      ],
+      "title": "LevelInk",
+      "type": "object"
+    },
+    "LibRef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "type_id": {
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "type_id",
+        "version"
+      ],
+      "title": "LibRef",
+      "type": "object"
+    },
+    "MessageArgs": {
+      "additionalProperties": {
+        "$ref": "#/$defs/Scalar"
+      },
+      "type": "object"
+    },
+    "MessageRef": {
+      "additionalProperties": false,
+      "description": "A kid-facing sentence by key (shared/spec/messages.json); raw codes never reach the DOM.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "args": {
+          "$ref": "#/$defs/MessageArgs"
+        }
+      },
+      "required": [
+        "key"
+      ],
+      "title": "MessageRef",
+      "type": "object"
+    },
+    "NoiseInfo": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "count": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "count"
+      ],
+      "title": "NoiseInfo",
+      "type": "object"
+    },
+    "Origin": {
+      "enum": [
+        "kid",
+        "parent",
+        "designer",
+        "library",
+        "draft",
+        "migrated"
+      ],
+      "type": "string"
+    },
+    "ParentRef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "level_id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "level_hash": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "level_id",
+        "version",
+        "level_hash"
+      ],
+      "title": "ParentRef",
+      "type": "object"
+    },
+    "RectCells": {
+      "maxItems": 4,
+      "minItems": 4,
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "type": "array"
+    },
+    "Role": {
+      "enum": [
+        "ground",
+        "platform",
+        "wall",
+        "ceiling",
+        "spikes",
+        "lava",
+        "saw",
+        "enemy",
+        "coin",
+        "big_coin",
+        "key",
+        "door",
+        "spring",
+        "checkpoint",
+        "goal",
+        "pole",
+        "start_marker",
+        "text",
+        "arrow",
+        "decoration",
+        "library_tag",
+        "unknown"
+      ],
+      "type": "string"
+    },
+    "Scalar": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "SheetInfo": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "index": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "photo_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "qr": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "warnings": {
+          "items": {
+            "$ref": "#/$defs/MessageRef"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "index"
+      ],
+      "title": "SheetInfo",
+      "type": "object"
+    },
+    "StampKind": {
+      "enum": [
+        "coin",
+        "big_coin",
+        "spikes",
+        "flag",
+        "checkpoint",
+        "spring",
+        "saw",
+        "walker",
+        "hopper",
+        "flyer",
+        "key",
+        "door",
+        "start",
+        "library"
+      ],
+      "type": "string"
+    },
+    "TypedRule": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "TypedRule",
+      "type": "object"
+    }
+  }
+}

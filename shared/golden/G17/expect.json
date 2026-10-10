@@ -1,0 +1,20 @@
+{
+  "id": "G17",
+  "status": "skeleton",
+  "mode": "canvas",
+  "input": null,
+  "input_pending": "lane C: 4-screen long canvas in make_kid_drawings.py style",
+  "name": "kid_marathon",
+  "objects": [],
+  "invariants": {
+    "blind_jumps": 0,
+    "full_analyze_ms_max": 600,
+    "fps_min": 55
+  },
+  "difficulty": {
+    "polished_in_band": true
+  },
+  "model_only": [
+    "per-tile PERCEIVE merge"
+  ]
+}

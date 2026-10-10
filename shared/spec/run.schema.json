@@ -1,0 +1,252 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://draw-a-level.dev/spec/v2/run.schema.json",
+  "$comment": "dal-level spec v1.0. GENERATED from vision/app/spec/runs.py by scripts/gen_contracts.py; do not edit.",
+  "title": "run",
+  "description": "Replays and run verdicts (PLAN_V2 §8.4). Published as shared/spec/run.schema.json.",
+  "$ref": "#/$defs/Replay",
+  "$defs": {
+    "Replay": {
+      "additionalProperties": false,
+      "description": "Deterministic input log. `input` = base64 of RLE records (u16 little-endian run, u8 bits L R J RUN D).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "v": {
+          "const": 1,
+          "type": "integer"
+        },
+        "core": {
+          "type": "string"
+        },
+        "profile_hash": {
+          "type": "string"
+        },
+        "level_id": {
+          "type": "string"
+        },
+        "level_version": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "level_hash": {
+          "type": "string"
+        },
+        "frames": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "input": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "v",
+        "core",
+        "profile_hash",
+        "level_id",
+        "level_version",
+        "level_hash",
+        "frames",
+        "input"
+      ],
+      "title": "Replay",
+      "type": "object"
+    },
+    "RunClaim": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "time_ms": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "deaths": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "coins": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "big_coins": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "time_ms",
+        "deaths",
+        "coins",
+        "big_coins"
+      ],
+      "title": "RunClaim",
+      "type": "object"
+    },
+    "RunResult": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "run_id": {
+          "type": "string"
+        },
+        "verified": {
+          "type": "boolean"
+        },
+        "rank": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "pb": {
+          "type": "boolean"
+        },
+        "stamps": {
+          "items": {
+            "$ref": "#/$defs/Stamp"
+          },
+          "type": "array"
+        },
+        "vs": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VsResult"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "run_id",
+        "verified",
+        "pb",
+        "stamps"
+      ],
+      "title": "RunResult",
+      "type": "object"
+    },
+    "RunSubmit": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "player": {
+          "maxLength": 16,
+          "minLength": 1,
+          "type": "string"
+        },
+        "replay": {
+          "$ref": "#/$defs/Replay"
+        },
+        "claimed": {
+          "$ref": "#/$defs/RunClaim"
+        },
+        "vs_run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "player",
+        "replay",
+        "claimed"
+      ],
+      "title": "RunSubmit",
+      "type": "object"
+    },
+    "RunVerdict": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "finished": {
+          "type": "boolean"
+        },
+        "frames": {
+          "type": "integer"
+        },
+        "time_ms": {
+          "type": "integer"
+        },
+        "deaths": {
+          "type": "integer"
+        },
+        "coins": {
+          "type": "integer"
+        },
+        "big_coins": {
+          "type": "integer"
+        },
+        "stamps": {
+          "items": {
+            "$ref": "#/$defs/Stamp"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "finished",
+        "frames",
+        "time_ms",
+        "deaths",
+        "coins",
+        "big_coins",
+        "stamps"
+      ],
+      "title": "RunVerdict",
+      "type": "object"
+    },
+    "Stamp": {
+      "enum": [
+        "clear",
+        "collector",
+        "speedy",
+        "flawless"
+      ],
+      "type": "string"
+    },
+    "VsResult": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "beat": {
+          "type": "boolean"
+        },
+        "by_ms": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "beat",
+        "by_ms"
+      ],
+      "title": "VsResult",
+      "type": "object"
+    }
+  }
+}

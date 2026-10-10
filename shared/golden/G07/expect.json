@@ -1,0 +1,181 @@
+{
+  "id": "G07",
+  "status": "skeleton",
+  "mode": "canvas",
+  "input": "input.png",
+  "ink": "ink.json",
+  "strokes": null,
+  "name": "floating_spikes",
+  "prompt": null,
+  "gt": "gt.json",
+  "objects": [
+    {
+      "near": [
+        11.0,
+        25.5
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "ground",
+      "label": "G1"
+    },
+    {
+      "near": [
+        36.5,
+        25.5
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "ground",
+      "label": "G2"
+    },
+    {
+      "near": [
+        11.5,
+        22.5
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "platform",
+      "label": "P1"
+    },
+    {
+      "near": [
+        20.0,
+        19.5
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "platform",
+      "label": "P2"
+    },
+    {
+      "near": [
+        11.5,
+        20.5
+      ],
+      "radius": 2,
+      "color": "red",
+      "role": "spikes",
+      "label": "S1",
+      "facing": "up",
+      "snap_dy_c": 1
+    },
+    {
+      "near": [
+        32.0,
+        24.5
+      ],
+      "radius": 2,
+      "color": "red",
+      "role": "spikes",
+      "label": "S2"
+    },
+    {
+      "near": [
+        40.5,
+        6.0
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "ceiling",
+      "label": "CEIL"
+    },
+    {
+      "near": [
+        39.5,
+        7.5
+      ],
+      "radius": 2,
+      "color": "red",
+      "role": "spikes",
+      "label": "S3",
+      "facing": "down"
+    },
+    {
+      "near": [
+        16.5,
+        24.0
+      ],
+      "radius": 2,
+      "color": "red",
+      "role": "enemy",
+      "label": "MON"
+    },
+    {
+      "near": [
+        44.5,
+        15.5
+      ],
+      "radius": 2,
+      "color": "green",
+      "role": "goal",
+      "label": "GOAL",
+      "grounded": true,
+      "host_label": "G2"
+    },
+    {
+      "near": [
+        27.5,
+        19.5
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "arrow",
+      "label": "ARROW",
+      "collides": false
+    },
+    {
+      "near": [
+        23.5,
+        23.0
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "text",
+      "label": "TXT",
+      "collides": false
+    },
+    {
+      "near": [
+        6.5,
+        3.5
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "decoration",
+      "label": "CLOUD",
+      "collides": false
+    },
+    {
+      "near": [
+        26.5,
+        4.0
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "decoration",
+      "label": "SUN",
+      "collides": false
+    }
+  ],
+  "invariants": {
+    "solvable_at": [
+      "ink",
+      "understood",
+      "faithful",
+      "polished",
+      "normal",
+      "hard"
+    ],
+    "untouched_gap_c": [
+      21,
+      25
+    ],
+    "pole_walls": 0,
+    "bumps": 0
+  },
+  "must_not": [
+    "edits to the 5-cell gap"
+  ]
+}

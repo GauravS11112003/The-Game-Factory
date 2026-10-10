@@ -1,0 +1,9459 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://draw-a-level.dev/spec/v2/api.schema.json",
+  "$comment": "dal-level spec v1.0. GENERATED from vision/app/spec/api.py by scripts/gen_contracts.py; do not edit.",
+  "title": "api",
+  "description": "Cross-runtime wire contracts: HTTP API v2 bodies (PLAN_V2 §11.3e), worker RPC (§11.3c) and the",
+  "$defs": {
+    "Abilities": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "run": {
+          "default": true,
+          "type": "boolean"
+        },
+        "stomp": {
+          "default": true,
+          "type": "boolean"
+        },
+        "double_jump": {
+          "default": false,
+          "type": "boolean"
+        },
+        "fast_fall": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "title": "Abilities",
+      "type": "object"
+    },
+    "Accepted": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "build_id": {
+          "type": "string"
+        },
+        "draft_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "build_id"
+      ],
+      "title": "Accepted",
+      "type": "object"
+    },
+    "AffectedLevel": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "level_id": {
+          "type": "string"
+        },
+        "reason_key": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "level_id",
+        "reason_key"
+      ],
+      "title": "AffectedLevel",
+      "type": "object"
+    },
+    "AnswerBody": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "ask_id": {
+          "type": "string"
+        },
+        "choice": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "ask_id",
+        "choice"
+      ],
+      "title": "AnswerBody",
+      "type": "object"
+    },
+    "ApiMessage": {
+      "additionalProperties": false,
+      "description": "Error bodies (409, 422, 501, 503): a message key, never a raw code in the UI.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "message_key": {
+          "type": "string"
+        },
+        "args": {
+          "$ref": "#/$defs/MessageArgs"
+        }
+      },
+      "required": [
+        "message_key"
+      ],
+      "title": "ApiMessage",
+      "type": "object"
+    },
+    "Archetype": {
+      "enum": [
+        "walker",
+        "hopper",
+        "flyer",
+        "shooter",
+        "chaser",
+        "crusher"
+      ],
+      "type": "string"
+    },
+    "AskCard": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "about": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/AskKind"
+        },
+        "message_key": {
+          "type": "string"
+        },
+        "args": {
+          "$ref": "#/$defs/MessageArgs"
+        },
+        "options": {
+          "items": {
+            "$ref": "#/$defs/AskOption"
+          },
+          "type": "array"
+        },
+        "default_option": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "answer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "by": {
+          "enum": [
+            "model",
+            "heuristic",
+            "parser",
+            "validator",
+            "designer"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "about",
+        "kind",
+        "message_key",
+        "options",
+        "by"
+      ],
+      "title": "AskCard",
+      "type": "object"
+    },
+    "AskKind": {
+      "enum": [
+        "which_door",
+        "is_decoration",
+        "what_does_it_do",
+        "which_flag_is_goal",
+        "is_library",
+        "keep_or_fix",
+        "is_door",
+        "which_way",
+        "which_target",
+        "grass_or_spikes",
+        "is_this_right"
+      ],
+      "type": "string"
+    },
+    "AskOption": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "label_key": {
+          "type": "string"
+        },
+        "label_args": {
+          "$ref": "#/$defs/MessageArgs"
+        },
+        "ops": {
+          "items": {
+            "$ref": "#/$defs/EditOp"
+          },
+          "type": "array"
+        },
+        "tap_target": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "label_key"
+      ],
+      "title": "AskOption",
+      "type": "object"
+    },
+    "Attachment": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "host": {
+          "type": "string"
+        },
+        "face": {
+          "$ref": "#/$defs/Face"
+        }
+      },
+      "required": [
+        "host",
+        "face"
+      ],
+      "title": "Attachment",
+      "type": "object"
+    },
+    "AttemptsBody": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "attempts": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "deaths": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "clears": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "attempts",
+        "deaths",
+        "clears"
+      ],
+      "title": "AttemptsBody",
+      "type": "object"
+    },
+    "BCrumble": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "crumble",
+          "type": "string"
+        },
+        "delay_s": {
+          "default": 0.5,
+          "type": "number"
+        },
+        "respawn_s": {
+          "default": 3.0,
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BCrumble",
+      "type": "object"
+    },
+    "BEnemy": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "enemy",
+          "type": "string"
+        },
+        "archetype": {
+          "$ref": "#/$defs/Archetype"
+        },
+        "spiky": {
+          "default": false,
+          "type": "boolean"
+        },
+        "params": {
+          "$ref": "#/$defs/EnemyParams"
+        }
+      },
+      "required": [
+        "kind",
+        "archetype"
+      ],
+      "title": "BEnemy",
+      "type": "object"
+    },
+    "BFalling": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "falling",
+          "type": "string"
+        },
+        "delay_s": {
+          "default": 0.4,
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BFalling",
+      "type": "object"
+    },
+    "BFirebar": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "firebar",
+          "type": "string"
+        },
+        "balls": {
+          "default": 4,
+          "maximum": 6,
+          "minimum": 3,
+          "type": "integer"
+        },
+        "speed_deg_s": {
+          "default": 90,
+          "type": "number"
+        },
+        "phase": {
+          "default": 0,
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BFirebar",
+      "type": "object"
+    },
+    "BMove": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "move",
+          "type": "string"
+        },
+        "dir": {
+          "$ref": "#/$defs/Dir4"
+        },
+        "cells": {
+          "type": "number"
+        },
+        "speed": {
+          "type": "number"
+        },
+        "mode": {
+          "default": "pingpong",
+          "enum": [
+            "pingpong",
+            "loop"
+          ],
+          "type": "string"
+        },
+        "wait_s": {
+          "default": 0.3,
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "dir",
+        "cells",
+        "speed"
+      ],
+      "title": "BMove",
+      "type": "object"
+    },
+    "BSaw": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "saw",
+          "type": "string"
+        },
+        "radius": {
+          "default": 1.0,
+          "type": "number"
+        },
+        "dir": {
+          "$ref": "#/$defs/Dir",
+          "default": "none"
+        },
+        "cells": {
+          "default": 0,
+          "type": "number"
+        },
+        "speed": {
+          "default": 3.0,
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BSaw",
+      "type": "object"
+    },
+    "BSpring": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "spring",
+          "type": "string"
+        },
+        "dir": {
+          "default": "up",
+          "enum": [
+            "up",
+            "left",
+            "right"
+          ],
+          "type": "string"
+        },
+        "strength": {
+          "default": 1.0,
+          "maximum": 1.4,
+          "minimum": 0.6,
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BSpring",
+      "type": "object"
+    },
+    "BStatic": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "static",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BStatic",
+      "type": "object"
+    },
+    "Band": {
+      "enum": [
+        "trivial",
+        "easy",
+        "normal",
+        "hard",
+        "expert"
+      ],
+      "type": "string"
+    },
+    "Behavior": {
+      "discriminator": {
+        "mapping": {
+          "crumble": "#/$defs/BCrumble",
+          "enemy": "#/$defs/BEnemy",
+          "falling": "#/$defs/BFalling",
+          "firebar": "#/$defs/BFirebar",
+          "move": "#/$defs/BMove",
+          "saw": "#/$defs/BSaw",
+          "spring": "#/$defs/BSpring",
+          "static": "#/$defs/BStatic"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/BStatic"
+        },
+        {
+          "$ref": "#/$defs/BEnemy"
+        },
+        {
+          "$ref": "#/$defs/BMove"
+        },
+        {
+          "$ref": "#/$defs/BSpring"
+        },
+        {
+          "$ref": "#/$defs/BCrumble"
+        },
+        {
+          "$ref": "#/$defs/BFalling"
+        },
+        {
+          "$ref": "#/$defs/BSaw"
+        },
+        {
+          "$ref": "#/$defs/BFirebar"
+        }
+      ]
+    },
+    "BindCheckpoint": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "checkpoint",
+          "type": "string"
+        },
+        "target": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "target"
+      ],
+      "title": "BindCheckpoint",
+      "type": "object"
+    },
+    "BindCrumble": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "crumble",
+          "type": "string"
+        },
+        "target": {
+          "type": "integer"
+        },
+        "falls": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "target",
+        "falls"
+      ],
+      "title": "BindCrumble",
+      "type": "object"
+    },
+    "BindEnemy": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "enemy",
+          "type": "string"
+        },
+        "target": {
+          "type": "integer"
+        },
+        "archetype": {
+          "enum": [
+            "walker",
+            "hopper",
+            "flyer",
+            "shooter",
+            "chaser",
+            "crusher",
+            "static"
+          ],
+          "type": "string"
+        },
+        "speed": {
+          "type": "number"
+        },
+        "spiky": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "target",
+        "archetype",
+        "speed",
+        "spiky"
+      ],
+      "title": "BindEnemy",
+      "type": "object"
+    },
+    "BindKeyDoor": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "key_door",
+          "type": "string"
+        },
+        "key": {
+          "type": "integer"
+        },
+        "door": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "key",
+        "door"
+      ],
+      "title": "BindKeyDoor",
+      "type": "object"
+    },
+    "BindLibrary": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "library",
+          "type": "string"
+        },
+        "target": {
+          "type": "integer"
+        },
+        "type_name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "target",
+        "type_name"
+      ],
+      "title": "BindLibrary",
+      "type": "object"
+    },
+    "BindMove": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "move",
+          "type": "string"
+        },
+        "target": {
+          "type": "integer"
+        },
+        "dir": {
+          "enum": [
+            "left",
+            "right",
+            "up",
+            "down"
+          ],
+          "type": "string"
+        },
+        "cells": {
+          "type": "integer"
+        },
+        "speed": {
+          "type": "number"
+        },
+        "mode": {
+          "enum": [
+            "pingpong",
+            "loop"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "target",
+        "dir",
+        "cells",
+        "speed",
+        "mode"
+      ],
+      "title": "BindMove",
+      "type": "object"
+    },
+    "BindSaw": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "saw",
+          "type": "string"
+        },
+        "target": {
+          "type": "integer"
+        },
+        "dir": {
+          "enum": [
+            "left",
+            "right",
+            "up",
+            "down",
+            "none"
+          ],
+          "type": "string"
+        },
+        "cells": {
+          "type": "integer"
+        },
+        "speed": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "target",
+        "dir",
+        "cells",
+        "speed"
+      ],
+      "title": "BindSaw",
+      "type": "object"
+    },
+    "BindSpring": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "spring",
+          "type": "string"
+        },
+        "target": {
+          "type": "integer"
+        },
+        "dir": {
+          "enum": [
+            "up",
+            "left",
+            "right"
+          ],
+          "type": "string"
+        },
+        "strength": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "target",
+        "dir",
+        "strength"
+      ],
+      "title": "BindSpring",
+      "type": "object"
+    },
+    "BindStart": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "start",
+          "type": "string"
+        },
+        "near": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "near"
+      ],
+      "title": "BindStart",
+      "type": "object"
+    },
+    "BindTimer": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "timer",
+          "type": "string"
+        },
+        "seconds": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "seconds"
+      ],
+      "title": "BindTimer",
+      "type": "object"
+    },
+    "Binding": {
+      "discriminator": {
+        "mapping": {
+          "checkpoint": "#/$defs/BindCheckpoint",
+          "crumble": "#/$defs/BindCrumble",
+          "enemy": "#/$defs/BindEnemy",
+          "key_door": "#/$defs/BindKeyDoor",
+          "library": "#/$defs/BindLibrary",
+          "move": "#/$defs/BindMove",
+          "saw": "#/$defs/BindSaw",
+          "spring": "#/$defs/BindSpring",
+          "start": "#/$defs/BindStart",
+          "timer": "#/$defs/BindTimer"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/BindMove"
+        },
+        {
+          "$ref": "#/$defs/BindEnemy"
+        },
+        {
+          "$ref": "#/$defs/BindSpring"
+        },
+        {
+          "$ref": "#/$defs/BindCrumble"
+        },
+        {
+          "$ref": "#/$defs/BindSaw"
+        },
+        {
+          "$ref": "#/$defs/BindKeyDoor"
+        },
+        {
+          "$ref": "#/$defs/BindCheckpoint"
+        },
+        {
+          "$ref": "#/$defs/BindStart"
+        },
+        {
+          "$ref": "#/$defs/BindTimer"
+        },
+        {
+          "$ref": "#/$defs/BindLibrary"
+        }
+      ]
+    },
+    "Blocking": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "from": {
+          "$ref": "#/$defs/CellXY"
+        },
+        "to_object": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/FailureKind"
+        },
+        "need": {
+          "type": "string"
+        },
+        "have": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "from",
+        "to_object",
+        "kind",
+        "need",
+        "have"
+      ],
+      "title": "Blocking",
+      "type": "object"
+    },
+    "BuildAccepted": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "build_id": {
+          "type": "string"
+        },
+        "draft_id": {
+          "type": "string"
+        },
+        "events_url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "build_id",
+        "draft_id",
+        "events_url"
+      ],
+      "title": "BuildAccepted",
+      "type": "object"
+    },
+    "BuildEvent": {
+      "discriminator": {
+        "mapping": {
+          "ask": "#/$defs/EnvAsk",
+          "cost": "#/$defs/EnvCost",
+          "done": "#/$defs/EnvDone",
+          "edits": "#/$defs/EnvEdits",
+          "error": "#/$defs/EnvError",
+          "hello": "#/$defs/EnvHello",
+          "ink": "#/$defs/EnvInk",
+          "note": "#/$defs/EnvNote",
+          "saw": "#/$defs/EnvSaw",
+          "stage": "#/$defs/EnvStage",
+          "suggestions": "#/$defs/EnvSuggestions",
+          "tier": "#/$defs/EnvTier",
+          "warning": "#/$defs/EnvWarning"
+        },
+        "propertyName": "event"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/EnvHello"
+        },
+        {
+          "$ref": "#/$defs/EnvStage"
+        },
+        {
+          "$ref": "#/$defs/EnvInk"
+        },
+        {
+          "$ref": "#/$defs/EnvSaw"
+        },
+        {
+          "$ref": "#/$defs/EnvEdits"
+        },
+        {
+          "$ref": "#/$defs/EnvTier"
+        },
+        {
+          "$ref": "#/$defs/EnvAsk"
+        },
+        {
+          "$ref": "#/$defs/EnvNote"
+        },
+        {
+          "$ref": "#/$defs/EnvSuggestions"
+        },
+        {
+          "$ref": "#/$defs/EnvCost"
+        },
+        {
+          "$ref": "#/$defs/EnvWarning"
+        },
+        {
+          "$ref": "#/$defs/EnvError"
+        },
+        {
+          "$ref": "#/$defs/EnvDone"
+        }
+      ]
+    },
+    "BuildInputJson": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "ink": {
+          "$ref": "#/$defs/InkDoc"
+        },
+        "graph0": {
+          "$ref": "#/$defs/SceneGraph"
+        },
+        "edits": {
+          "items": {
+            "$ref": "#/$defs/EditRecord"
+          },
+          "type": "array"
+        },
+        "rules": {
+          "$ref": "#/$defs/GameRules"
+        },
+        "library": {
+          "items": {
+            "$ref": "#/$defs/LibraryType"
+          },
+          "type": "array"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LevelV2"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tier": {
+          "$ref": "#/$defs/Tier"
+        },
+        "repairUnsolvable": {
+          "type": "boolean"
+        },
+        "seed": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "ink",
+        "graph0",
+        "edits",
+        "rules",
+        "library",
+        "parent",
+        "tier",
+        "repairUnsolvable",
+        "seed"
+      ],
+      "title": "BuildInputJson",
+      "type": "object"
+    },
+    "BuildMeta": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "stages": {
+          "items": {
+            "$ref": "#/$defs/StageTime"
+          },
+          "type": "array"
+        },
+        "model_calls": {
+          "items": {
+            "$ref": "#/$defs/ModelCallMeta"
+          },
+          "type": "array"
+        },
+        "cost_usd": {
+          "default": 0.0,
+          "type": "number"
+        }
+      },
+      "title": "BuildMeta",
+      "type": "object"
+    },
+    "BuildResultJson": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "graph": {
+          "$ref": "#/$defs/SceneGraph"
+        },
+        "level": {
+          "$ref": "#/$defs/LevelV2"
+        },
+        "report": {
+          "$ref": "#/$defs/PlaytestReport"
+        },
+        "edits": {
+          "items": {
+            "$ref": "#/$defs/EditRecord"
+          },
+          "type": "array"
+        },
+        "rejected": {
+          "items": {
+            "$ref": "#/$defs/EditRecord"
+          },
+          "type": "array"
+        },
+        "ms": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "graph",
+        "level",
+        "report",
+        "edits",
+        "rejected",
+        "ms"
+      ],
+      "title": "BuildResultJson",
+      "type": "object"
+    },
+    "BuildTierPick": {
+      "enum": [
+        "polished",
+        "normal",
+        "hard"
+      ],
+      "type": "string"
+    },
+    "CallKind": {
+      "enum": [
+        "perceive",
+        "design",
+        "refine",
+        "critic",
+        "plan",
+        "creature",
+        "moderate",
+        "look"
+      ],
+      "type": "string"
+    },
+    "Candidate": {
+      "additionalProperties": false,
+      "description": "A designer menu row (§3.8): pre-verified in a sandbox, never raw geometry.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "cid": {
+          "type": "string"
+        },
+        "generator": {
+          "type": "string"
+        },
+        "op": {
+          "$ref": "#/$defs/EditOp"
+        },
+        "extra_ops": {
+          "items": {
+            "$ref": "#/$defs/EditOp"
+          },
+          "type": "array"
+        },
+        "tiers": {
+          "items": {
+            "$ref": "#/$defs/Tier"
+          },
+          "type": "array"
+        },
+        "alts": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "summary_key": {
+          "type": "string"
+        },
+        "summary_args": {
+          "$ref": "#/$defs/MessageArgs"
+        },
+        "dC": {
+          "type": "number"
+        },
+        "dT_s": {
+          "type": "number"
+        },
+        "dF_s": {
+          "type": "number"
+        },
+        "drift": {
+          "type": "number"
+        },
+        "intent_cost": {
+          "type": "number"
+        },
+        "fixes": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "measured": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "cid",
+        "generator",
+        "op",
+        "tiers",
+        "summary_key",
+        "dC",
+        "dT_s",
+        "dF_s",
+        "drift",
+        "intent_cost"
+      ],
+      "title": "Candidate",
+      "type": "object"
+    },
+    "CellXY": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "type": "array"
+    },
+    "ChallengeBand": {
+      "enum": [
+        "normal",
+        "hard"
+      ],
+      "type": "string"
+    },
+    "CharacterInk": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "strokes": {
+          "items": {
+            "$ref": "#/$defs/InkStroke"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "strokes"
+      ],
+      "title": "CharacterInk",
+      "type": "object"
+    },
+    "Collision": {
+      "enum": [
+        "solid",
+        "one_way",
+        "none",
+        "hazard",
+        "trigger"
+      ],
+      "type": "string"
+    },
+    "Compiled": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "tiles": {
+          "$ref": "#/$defs/Tiles"
+        },
+        "entities": {
+          "items": {
+            "$ref": "#/$defs/Entity"
+          },
+          "type": "array"
+        },
+        "triggers": {
+          "items": {
+            "$ref": "#/$defs/Trigger"
+          },
+          "type": "array"
+        },
+        "sprites": {
+          "$ref": "#/$defs/Sprites"
+        }
+      },
+      "required": [
+        "tiles",
+        "entities"
+      ],
+      "title": "Compiled",
+      "type": "object"
+    },
+    "ComponentFeatures": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "fill": {
+          "type": "number"
+        },
+        "circ": {
+          "type": "number"
+        },
+        "straight": {
+          "type": "number"
+        },
+        "zigN": {
+          "type": "number"
+        },
+        "zigAmp": {
+          "type": "number"
+        },
+        "aspect": {
+          "type": "number"
+        },
+        "holes": {
+          "type": "integer"
+        },
+        "w": {
+          "type": "number"
+        },
+        "corners": {
+          "type": "integer"
+        },
+        "spokes": {
+          "type": "integer"
+        },
+        "bumps": {
+          "type": "integer"
+        },
+        "is_dot": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "fill",
+        "circ",
+        "straight",
+        "zigN",
+        "zigAmp",
+        "aspect",
+        "holes",
+        "w",
+        "corners",
+        "spokes",
+        "bumps",
+        "is_dot"
+      ],
+      "title": "ComponentFeatures",
+      "type": "object"
+    },
+    "CreatureSpecJson": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "archetype": {
+          "enum": [
+            "walker",
+            "hopper",
+            "flyer",
+            "shooter",
+            "chaser",
+            "crusher",
+            "static"
+          ],
+          "type": "string"
+        },
+        "speed": {
+          "enum": [
+            "slow",
+            "normal",
+            "fast"
+          ],
+          "type": "string"
+        },
+        "spiky": {
+          "type": "boolean"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "safety_ok": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "archetype",
+        "speed",
+        "spiky",
+        "summary",
+        "safety_ok"
+      ],
+      "title": "CreatureSpecJson",
+      "type": "object"
+    },
+    "CriticBody": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "telemetry": {
+          "$ref": "#/$defs/Telemetry"
+        }
+      },
+      "required": [
+        "telemetry"
+      ],
+      "title": "CriticBody",
+      "type": "object"
+    },
+    "DeathEvent": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "cause": {
+          "type": "string"
+        },
+        "frame": {
+          "type": "integer"
+        },
+        "segment": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "cause",
+        "frame",
+        "segment"
+      ],
+      "title": "DeathEvent",
+      "type": "object"
+    },
+    "DesignAskJson": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "about": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "is_door",
+            "keep_or_fix",
+            "which_way"
+          ],
+          "type": "string"
+        },
+        "options": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "about",
+        "kind",
+        "options"
+      ],
+      "title": "DesignAskJson",
+      "type": "object"
+    },
+    "DesignBlock": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "tier": {
+          "$ref": "#/$defs/Tier"
+        },
+        "band": {
+          "$ref": "#/$defs/Band"
+        },
+        "C": {
+          "type": "number"
+        },
+        "score": {
+          "maximum": 100,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "fastest_ms": {
+          "type": "integer"
+        },
+        "par_ms": {
+          "type": "integer"
+        },
+        "casual_clear_s": {
+          "type": "number"
+        },
+        "segments": {
+          "items": {
+            "$ref": "#/$defs/DesignSegment"
+          },
+          "type": "array"
+        },
+        "flags": {
+          "items": {
+            "$ref": "#/$defs/Flag"
+          },
+          "type": "array"
+        },
+        "solvable": {
+          "type": "boolean"
+        },
+        "reach": {
+          "$ref": "#/$defs/Reach"
+        },
+        "designer_note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "source": {
+          "enum": [
+            "model",
+            "greedy",
+            "none"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "tier",
+        "band",
+        "C",
+        "score",
+        "fastest_ms",
+        "par_ms",
+        "casual_clear_s",
+        "segments",
+        "flags",
+        "solvable",
+        "reach",
+        "source"
+      ],
+      "title": "DesignBlock",
+      "type": "object"
+    },
+    "DesignPick": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "cid": {
+          "type": "string"
+        },
+        "tier": {
+          "$ref": "#/$defs/BuildTierPick"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "cid",
+        "tier",
+        "reason"
+      ],
+      "title": "DesignPick",
+      "type": "object"
+    },
+    "DesignPlanJson": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "repair_choices": {
+          "items": {
+            "$ref": "#/$defs/RepairChoice"
+          },
+          "type": "array"
+        },
+        "vetoes": {
+          "items": {
+            "$ref": "#/$defs/Veto"
+          },
+          "type": "array"
+        },
+        "picks": {
+          "items": {
+            "$ref": "#/$defs/DesignPick"
+          },
+          "type": "array"
+        },
+        "novel": {
+          "items": {
+            "$ref": "#/$defs/NovelOp"
+          },
+          "type": "array"
+        },
+        "asks": {
+          "items": {
+            "$ref": "#/$defs/DesignAskJson"
+          },
+          "type": "array"
+        },
+        "designer_note": {
+          "type": "string"
+        },
+        "critique": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "repair_choices",
+        "vetoes",
+        "picks",
+        "novel",
+        "asks",
+        "designer_note",
+        "critique",
+        "title"
+      ],
+      "title": "DesignPlanJson",
+      "type": "object"
+    },
+    "DesignSegment": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "E": {
+          "type": "number"
+        },
+        "T_ms": {
+          "type": "integer"
+        },
+        "F_s": {
+          "type": "number"
+        },
+        "actions": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "from",
+        "to",
+        "E",
+        "T_ms",
+        "F_s",
+        "actions"
+      ],
+      "title": "DesignSegment",
+      "type": "object"
+    },
+    "Dial": {
+      "enum": [
+        "faithful",
+        "polished",
+        "challenging"
+      ],
+      "type": "string"
+    },
+    "DialBody": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "tier": {
+          "$ref": "#/$defs/Tier"
+        }
+      },
+      "required": [
+        "tier"
+      ],
+      "title": "DialBody",
+      "type": "object"
+    },
+    "DifficultyWish": {
+      "enum": [
+        "none",
+        "easy",
+        "normal",
+        "hard"
+      ],
+      "type": "string"
+    },
+    "Dir": {
+      "enum": [
+        "up",
+        "down",
+        "left",
+        "right",
+        "none"
+      ],
+      "type": "string"
+    },
+    "Dir4": {
+      "enum": [
+        "up",
+        "down",
+        "left",
+        "right"
+      ],
+      "type": "string"
+    },
+    "DraftState": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "state": {
+          "enum": [
+            "running",
+            "done",
+            "failed"
+          ],
+          "type": "string"
+        },
+        "events": {
+          "items": {
+            "$ref": "#/$defs/BuildEvent"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "state",
+        "events"
+      ],
+      "title": "DraftState",
+      "type": "object"
+    },
+    "EBigCoin": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Origin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sprite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "type": {
+          "const": "big_coin",
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "x",
+        "y"
+      ],
+      "title": "EBigCoin",
+      "type": "object"
+    },
+    "ECheckpoint": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Origin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sprite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "type": {
+          "const": "checkpoint",
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "x",
+        "y"
+      ],
+      "title": "ECheckpoint",
+      "type": "object"
+    },
+    "ECoin": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Origin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sprite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "type": {
+          "const": "coin",
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "x",
+        "y"
+      ],
+      "title": "ECoin",
+      "type": "object"
+    },
+    "ECrumble": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Origin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sprite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "type": {
+          "const": "crumble",
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "w": {
+          "type": "number"
+        },
+        "delay_s": {
+          "default": 0.5,
+          "type": "number"
+        },
+        "respawn_s": {
+          "default": 3.0,
+          "type": "number"
+        },
+        "one_way": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "x",
+        "y",
+        "w"
+      ],
+      "title": "ECrumble",
+      "type": "object"
+    },
+    "EDoor": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Origin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sprite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "type": {
+          "const": "door",
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "w": {
+          "type": "number"
+        },
+        "h": {
+          "type": "number"
+        },
+        "key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "title": "EDoor",
+      "type": "object"
+    },
+    "EEnemy": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Origin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sprite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "type": {
+          "const": "enemy",
+          "type": "string"
+        },
+        "archetype": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Archetype"
+            },
+            {
+              "const": "static",
+              "type": "string"
+            }
+          ]
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "w": {
+          "type": "number"
+        },
+        "h": {
+          "type": "number"
+        },
+        "spiky": {
+          "default": false,
+          "type": "boolean"
+        },
+        "params": {
+          "$ref": "#/$defs/EnemyParams"
+        },
+        "bounds": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "archetype",
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "title": "EEnemy",
+      "type": "object"
+    },
+    "EFalling": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Origin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sprite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "type": {
+          "const": "falling_platform",
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "w": {
+          "type": "number"
+        },
+        "delay_s": {
+          "default": 0.4,
+          "type": "number"
+        },
+        "one_way": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "x",
+        "y",
+        "w"
+      ],
+      "title": "EFalling",
+      "type": "object"
+    },
+    "EFirebar": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Origin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sprite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "type": {
+          "const": "firebar",
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "balls": {
+          "maximum": 6,
+          "minimum": 3,
+          "type": "integer"
+        },
+        "speed_deg_s": {
+          "type": "number"
+        },
+        "phase": {
+          "default": 0,
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "x",
+        "y",
+        "balls",
+        "speed_deg_s"
+      ],
+      "title": "EFirebar",
+      "type": "object"
+    },
+    "EGoal": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Origin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sprite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "type": {
+          "const": "goal",
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "trigger": {
+          "$ref": "#/$defs/RectCells"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "x",
+        "y",
+        "trigger"
+      ],
+      "title": "EGoal",
+      "type": "object"
+    },
+    "EHintArrow": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Origin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sprite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "type": {
+          "const": "hint_arrow",
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "dir": {
+          "$ref": "#/$defs/Dir4"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "x",
+        "y",
+        "dir"
+      ],
+      "title": "EHintArrow",
+      "type": "object"
+    },
+    "EKey": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Origin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sprite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "type": {
+          "const": "key",
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "door": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "x",
+        "y"
+      ],
+      "title": "EKey",
+      "type": "object"
+    },
+    "EMovingPlatform": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Origin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sprite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "type": {
+          "const": "moving_platform",
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "w": {
+          "type": "number"
+        },
+        "path": {
+          "items": {
+            "$ref": "#/$defs/CellXY"
+          },
+          "type": "array"
+        },
+        "speed": {
+          "type": "number"
+        },
+        "mode": {
+          "default": "pingpong",
+          "enum": [
+            "pingpong",
+            "loop"
+          ],
+          "type": "string"
+        },
+        "wait_s": {
+          "default": 0.3,
+          "type": "number"
+        },
+        "one_way": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "x",
+        "y",
+        "w",
+        "path",
+        "speed"
+      ],
+      "title": "EMovingPlatform",
+      "type": "object"
+    },
+    "EPlayerStart": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Origin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sprite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "type": {
+          "const": "player_start",
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "x",
+        "y"
+      ],
+      "title": "EPlayerStart",
+      "type": "object"
+    },
+    "ESaw": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Origin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sprite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "type": {
+          "const": "saw",
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "r": {
+          "type": "number"
+        },
+        "path": {
+          "items": {
+            "$ref": "#/$defs/CellXY"
+          },
+          "type": "array"
+        },
+        "speed": {
+          "default": 3.0,
+          "type": "number"
+        },
+        "mode": {
+          "default": "pingpong",
+          "enum": [
+            "pingpong",
+            "loop"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "x",
+        "y",
+        "r"
+      ],
+      "title": "ESaw",
+      "type": "object"
+    },
+    "ESpikes": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Origin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sprite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "type": {
+          "const": "spikes",
+          "type": "string"
+        },
+        "host": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "face": {
+          "$ref": "#/$defs/Face"
+        },
+        "x0": {
+          "type": "number"
+        },
+        "x1": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "facing": {
+          "$ref": "#/$defs/Dir4"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "host",
+        "face",
+        "x0",
+        "x1",
+        "y",
+        "facing"
+      ],
+      "title": "ESpikes",
+      "type": "object"
+    },
+    "ESpring": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Origin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sprite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "type": {
+          "const": "spring",
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "dir": {
+          "default": "up",
+          "enum": [
+            "up",
+            "left",
+            "right"
+          ],
+          "type": "string"
+        },
+        "strength": {
+          "default": 1.0,
+          "maximum": 1.4,
+          "minimum": 0.6,
+          "type": "number"
+        },
+        "w": {
+          "default": 1,
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "x",
+        "y"
+      ],
+      "title": "ESpring",
+      "type": "object"
+    },
+    "EditBy": {
+      "enum": [
+        "auto",
+        "heuristic",
+        "model",
+        "kid",
+        "greedy",
+        "parser",
+        "library",
+        "validator"
+      ],
+      "type": "string"
+    },
+    "EditClass": {
+      "enum": [
+        "U",
+        "N",
+        "R",
+        "P",
+        "C",
+        "K"
+      ],
+      "type": "string"
+    },
+    "EditOp": {
+      "discriminator": {
+        "mapping": {
+          "add_big_coin": "#/$defs/OpAddBigCoin",
+          "add_checkpoint": "#/$defs/OpAddCheckpoint",
+          "add_coin": "#/$defs/OpAddCoin",
+          "add_coin_trail": "#/$defs/OpAddCoinTrail",
+          "add_enemy": "#/$defs/OpAddEnemy",
+          "add_hazard": "#/$defs/OpAddHazard",
+          "add_hint_arrow": "#/$defs/OpAddHintArrow",
+          "add_spikes": "#/$defs/OpAddSpikes",
+          "add_spring": "#/$defs/OpAddSpring",
+          "add_step": "#/$defs/OpAddStep",
+          "animate": "#/$defs/OpAnimate",
+          "bind": "#/$defs/OpBind",
+          "clear_spawn": "#/$defs/OpClearSpawn",
+          "close_gap": "#/$defs/OpCloseGap",
+          "coin_from_dot": "#/$defs/OpCoinFromDot",
+          "dedupe": "#/$defs/OpDedupe",
+          "detach": "#/$defs/OpDetach",
+          "extend": "#/$defs/OpExtend",
+          "fit_creature": "#/$defs/OpFitCreature",
+          "fix_behavior": "#/$defs/OpFixBehavior",
+          "form_goal": "#/$defs/OpFormGoal",
+          "group": "#/$defs/OpGroup",
+          "join_seam": "#/$defs/OpJoinSeam",
+          "link": "#/$defs/OpLink",
+          "make_crumble": "#/$defs/OpMakeCrumble",
+          "make_mine": "#/$defs/OpMakeMine",
+          "nudge": "#/$defs/OpNudge",
+          "orient": "#/$defs/OpOrient",
+          "place_start": "#/$defs/OpPlaceStart",
+          "reprise": "#/$defs/OpReprise",
+          "set_collision": "#/$defs/OpSetCollision",
+          "set_par": "#/$defs/OpSetPar",
+          "set_role": "#/$defs/OpSetRole",
+          "set_start": "#/$defs/OpSetStart",
+          "set_timer": "#/$defs/OpSetTimer",
+          "shift_platform": "#/$defs/OpShiftPlatform",
+          "shrink_landing": "#/$defs/OpShrinkLanding",
+          "snap": "#/$defs/OpSnap",
+          "straighten": "#/$defs/OpStraighten",
+          "trim": "#/$defs/OpTrim",
+          "tune": "#/$defs/OpTune",
+          "use_library": "#/$defs/OpUseLibrary",
+          "widen_gap": "#/$defs/OpWidenGap"
+        },
+        "propertyName": "op"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/OpSetRole"
+        },
+        {
+          "$ref": "#/$defs/OpGroup"
+        },
+        {
+          "$ref": "#/$defs/OpDetach"
+        },
+        {
+          "$ref": "#/$defs/OpBind"
+        },
+        {
+          "$ref": "#/$defs/OpLink"
+        },
+        {
+          "$ref": "#/$defs/OpSetStart"
+        },
+        {
+          "$ref": "#/$defs/OpUseLibrary"
+        },
+        {
+          "$ref": "#/$defs/OpStraighten"
+        },
+        {
+          "$ref": "#/$defs/OpCloseGap"
+        },
+        {
+          "$ref": "#/$defs/OpSnap"
+        },
+        {
+          "$ref": "#/$defs/OpOrient"
+        },
+        {
+          "$ref": "#/$defs/OpFormGoal"
+        },
+        {
+          "$ref": "#/$defs/OpSetCollision"
+        },
+        {
+          "$ref": "#/$defs/OpPlaceStart"
+        },
+        {
+          "$ref": "#/$defs/OpClearSpawn"
+        },
+        {
+          "$ref": "#/$defs/OpCoinFromDot"
+        },
+        {
+          "$ref": "#/$defs/OpDedupe"
+        },
+        {
+          "$ref": "#/$defs/OpJoinSeam"
+        },
+        {
+          "$ref": "#/$defs/OpFixBehavior"
+        },
+        {
+          "$ref": "#/$defs/OpFitCreature"
+        },
+        {
+          "$ref": "#/$defs/OpNudge"
+        },
+        {
+          "$ref": "#/$defs/OpTrim"
+        },
+        {
+          "$ref": "#/$defs/OpExtend"
+        },
+        {
+          "$ref": "#/$defs/OpAddStep"
+        },
+        {
+          "$ref": "#/$defs/OpAddSpring"
+        },
+        {
+          "$ref": "#/$defs/OpAddCheckpoint"
+        },
+        {
+          "$ref": "#/$defs/OpAddCoinTrail"
+        },
+        {
+          "$ref": "#/$defs/OpAddCoin"
+        },
+        {
+          "$ref": "#/$defs/OpAddBigCoin"
+        },
+        {
+          "$ref": "#/$defs/OpAddHintArrow"
+        },
+        {
+          "$ref": "#/$defs/OpTune"
+        },
+        {
+          "$ref": "#/$defs/OpAnimate"
+        },
+        {
+          "$ref": "#/$defs/OpSetPar"
+        },
+        {
+          "$ref": "#/$defs/OpWidenGap"
+        },
+        {
+          "$ref": "#/$defs/OpShrinkLanding"
+        },
+        {
+          "$ref": "#/$defs/OpShiftPlatform"
+        },
+        {
+          "$ref": "#/$defs/OpAddSpikes"
+        },
+        {
+          "$ref": "#/$defs/OpAddEnemy"
+        },
+        {
+          "$ref": "#/$defs/OpAddHazard"
+        },
+        {
+          "$ref": "#/$defs/OpMakeCrumble"
+        },
+        {
+          "$ref": "#/$defs/OpSetTimer"
+        },
+        {
+          "$ref": "#/$defs/OpReprise"
+        },
+        {
+          "$ref": "#/$defs/OpMakeMine"
+        }
+      ]
+    },
+    "EditRecord": {
+      "additionalProperties": false,
+      "description": "One edit with its status. Ids are stable: `op:target:hash6(params)` (D6).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "op": {
+          "$ref": "#/$defs/EditOp"
+        },
+        "class": {
+          "$ref": "#/$defs/EditClass"
+        },
+        "by": {
+          "$ref": "#/$defs/EditBy"
+        },
+        "stage": {
+          "$ref": "#/$defs/Stage"
+        },
+        "tier": {
+          "$ref": "#/$defs/Tier"
+        },
+        "status": {
+          "$ref": "#/$defs/EditStatus"
+        },
+        "reason_key": {
+          "type": "string"
+        },
+        "reason_args": {
+          "$ref": "#/$defs/MessageArgs"
+        },
+        "reason_text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "depends_on": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "required": {
+          "default": false,
+          "type": "boolean"
+        },
+        "group": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "validation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Validation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "ghost": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ghost"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "reject_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MessageRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "cid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "op",
+        "class",
+        "by",
+        "stage",
+        "tier",
+        "status",
+        "reason_key"
+      ],
+      "title": "EditRecord",
+      "type": "object"
+    },
+    "EditStatus": {
+      "enum": [
+        "applied",
+        "undone",
+        "rejected",
+        "suggested"
+      ],
+      "type": "string"
+    },
+    "EditsBody": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "statuses": {
+          "additionalProperties": {
+            "enum": [
+              "applied",
+              "undone"
+            ],
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "kid_edits": {
+          "items": {
+            "$ref": "#/$defs/EditOp"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "statuses"
+      ],
+      "title": "EditsBody",
+      "type": "object"
+    },
+    "Effort": {
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "type": "string"
+    },
+    "EnemyParams": {
+      "additionalProperties": false,
+      "description": "Archetype parameters (§5.7); every field optional, defaults live in core/params.ts.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "speed": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "ledge_aware": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "interval": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "forward": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "pattern": {
+          "anyOf": [
+            {
+              "enum": [
+                "hover",
+                "horizontal",
+                "vertical",
+                "circle"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "range": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "radius": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "period": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "facing": {
+          "anyOf": [
+            {
+              "enum": [
+                "left",
+                "right",
+                "toward_player"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "blob_speed": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sight": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "warn": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "rise_speed": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "EnemyParams",
+      "type": "object"
+    },
+    "Entity": {
+      "discriminator": {
+        "mapping": {
+          "big_coin": "#/$defs/EBigCoin",
+          "checkpoint": "#/$defs/ECheckpoint",
+          "coin": "#/$defs/ECoin",
+          "crumble": "#/$defs/ECrumble",
+          "door": "#/$defs/EDoor",
+          "enemy": "#/$defs/EEnemy",
+          "falling_platform": "#/$defs/EFalling",
+          "firebar": "#/$defs/EFirebar",
+          "goal": "#/$defs/EGoal",
+          "hint_arrow": "#/$defs/EHintArrow",
+          "key": "#/$defs/EKey",
+          "moving_platform": "#/$defs/EMovingPlatform",
+          "player_start": "#/$defs/EPlayerStart",
+          "saw": "#/$defs/ESaw",
+          "spikes": "#/$defs/ESpikes",
+          "spring": "#/$defs/ESpring"
+        },
+        "propertyName": "type"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/EPlayerStart"
+        },
+        {
+          "$ref": "#/$defs/ESpikes"
+        },
+        {
+          "$ref": "#/$defs/EEnemy"
+        },
+        {
+          "$ref": "#/$defs/ECoin"
+        },
+        {
+          "$ref": "#/$defs/EBigCoin"
+        },
+        {
+          "$ref": "#/$defs/ECheckpoint"
+        },
+        {
+          "$ref": "#/$defs/EGoal"
+        },
+        {
+          "$ref": "#/$defs/EKey"
+        },
+        {
+          "$ref": "#/$defs/EDoor"
+        },
+        {
+          "$ref": "#/$defs/ESpring"
+        },
+        {
+          "$ref": "#/$defs/ESaw"
+        },
+        {
+          "$ref": "#/$defs/EFirebar"
+        },
+        {
+          "$ref": "#/$defs/EMovingPlatform"
+        },
+        {
+          "$ref": "#/$defs/ECrumble"
+        },
+        {
+          "$ref": "#/$defs/EFalling"
+        },
+        {
+          "$ref": "#/$defs/EHintArrow"
+        }
+      ]
+    },
+    "EnvAsk": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "seq": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "event": {
+          "const": "ask",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/EvAsk"
+        }
+      },
+      "required": [
+        "seq",
+        "event",
+        "data"
+      ],
+      "title": "EnvAsk",
+      "type": "object"
+    },
+    "EnvCost": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "seq": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "event": {
+          "const": "cost",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/EvCost"
+        }
+      },
+      "required": [
+        "seq",
+        "event",
+        "data"
+      ],
+      "title": "EnvCost",
+      "type": "object"
+    },
+    "EnvDone": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "seq": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "event": {
+          "const": "done",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/EvDone"
+        }
+      },
+      "required": [
+        "seq",
+        "event",
+        "data"
+      ],
+      "title": "EnvDone",
+      "type": "object"
+    },
+    "EnvEdits": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "seq": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "event": {
+          "const": "edits",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/EvEdits"
+        }
+      },
+      "required": [
+        "seq",
+        "event",
+        "data"
+      ],
+      "title": "EnvEdits",
+      "type": "object"
+    },
+    "EnvError": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "seq": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "event": {
+          "const": "error",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/EvError"
+        }
+      },
+      "required": [
+        "seq",
+        "event",
+        "data"
+      ],
+      "title": "EnvError",
+      "type": "object"
+    },
+    "EnvHello": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "seq": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "event": {
+          "const": "hello",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/EvHello"
+        }
+      },
+      "required": [
+        "seq",
+        "event",
+        "data"
+      ],
+      "title": "EnvHello",
+      "type": "object"
+    },
+    "EnvInk": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "seq": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "event": {
+          "const": "ink",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/EvInk"
+        }
+      },
+      "required": [
+        "seq",
+        "event",
+        "data"
+      ],
+      "title": "EnvInk",
+      "type": "object"
+    },
+    "EnvNote": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "seq": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "event": {
+          "const": "note",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/EvNote"
+        }
+      },
+      "required": [
+        "seq",
+        "event",
+        "data"
+      ],
+      "title": "EnvNote",
+      "type": "object"
+    },
+    "EnvSaw": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "seq": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "event": {
+          "const": "saw",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/EvSaw"
+        }
+      },
+      "required": [
+        "seq",
+        "event",
+        "data"
+      ],
+      "title": "EnvSaw",
+      "type": "object"
+    },
+    "EnvStage": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "seq": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "event": {
+          "const": "stage",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/EvStage"
+        }
+      },
+      "required": [
+        "seq",
+        "event",
+        "data"
+      ],
+      "title": "EnvStage",
+      "type": "object"
+    },
+    "EnvSuggestions": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "seq": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "event": {
+          "const": "suggestions",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/EvSuggestions"
+        }
+      },
+      "required": [
+        "seq",
+        "event",
+        "data"
+      ],
+      "title": "EnvSuggestions",
+      "type": "object"
+    },
+    "EnvTier": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "seq": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "event": {
+          "const": "tier",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/EvTier"
+        }
+      },
+      "required": [
+        "seq",
+        "event",
+        "data"
+      ],
+      "title": "EnvTier",
+      "type": "object"
+    },
+    "EnvWarning": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "seq": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "event": {
+          "const": "warning",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/EvWarning"
+        }
+      },
+      "required": [
+        "seq",
+        "event",
+        "data"
+      ],
+      "title": "EnvWarning",
+      "type": "object"
+    },
+    "EvAsk": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "ask": {
+          "$ref": "#/$defs/AskCard"
+        }
+      },
+      "required": [
+        "ask"
+      ],
+      "title": "EvAsk",
+      "type": "object"
+    },
+    "EvCost": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "usd": {
+          "type": "number"
+        },
+        "calls": {
+          "type": "integer"
+        },
+        "by_kind": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "type": "object"
+        }
+      },
+      "required": [
+        "usd",
+        "calls"
+      ],
+      "title": "EvCost",
+      "type": "object"
+    },
+    "EvDone": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "final_stage": {
+          "$ref": "#/$defs/StageName"
+        },
+        "total_ms": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "final_stage",
+        "total_ms"
+      ],
+      "title": "EvDone",
+      "type": "object"
+    },
+    "EvEdits": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "edits": {
+          "items": {
+            "$ref": "#/$defs/EditRecord"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "edits"
+      ],
+      "title": "EvEdits",
+      "type": "object"
+    },
+    "EvError": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "message_key": {
+          "type": "string"
+        },
+        "args": {
+          "$ref": "#/$defs/MessageArgs"
+        },
+        "fatal": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "message_key",
+        "fatal"
+      ],
+      "title": "EvError",
+      "type": "object"
+    },
+    "EvHello": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "build_id": {
+          "type": "string"
+        },
+        "draft_id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "core_version": {
+          "type": "string"
+        },
+        "model": {
+          "$ref": "#/$defs/LlmMode"
+        }
+      },
+      "required": [
+        "build_id",
+        "draft_id",
+        "version",
+        "core_version",
+        "model"
+      ],
+      "title": "EvHello",
+      "type": "object"
+    },
+    "EvInk": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "ink": {
+          "$ref": "#/$defs/InkDoc"
+        },
+        "graph0": {
+          "$ref": "#/$defs/SceneGraph"
+        }
+      },
+      "required": [
+        "ink",
+        "graph0"
+      ],
+      "title": "EvInk",
+      "type": "object"
+    },
+    "EvNote": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "designer_note": {
+          "type": "string"
+        },
+        "critique": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "title_suggestion": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "source": {
+          "enum": [
+            "model",
+            "greedy"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "designer_note",
+        "source"
+      ],
+      "title": "EvNote",
+      "type": "object"
+    },
+    "EvSaw": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/SawItem"
+          },
+          "type": "array"
+        },
+        "stage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Stage"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "items"
+      ],
+      "title": "EvSaw",
+      "type": "object"
+    },
+    "EvStage": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "stage": {
+          "$ref": "#/$defs/StageName"
+        },
+        "status": {
+          "$ref": "#/$defs/StageStatus"
+        },
+        "t_ms": {
+          "type": "integer"
+        },
+        "note_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "stage",
+        "status",
+        "t_ms"
+      ],
+      "title": "EvStage",
+      "type": "object"
+    },
+    "EvSuggestions": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "edits": {
+          "items": {
+            "$ref": "#/$defs/EditRecord"
+          },
+          "type": "array"
+        },
+        "source": {
+          "enum": [
+            "late_design",
+            "refine",
+            "critic"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "edits",
+        "source"
+      ],
+      "title": "EvSuggestions",
+      "type": "object"
+    },
+    "EvTier": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "stage": {
+          "$ref": "#/$defs/Stage"
+        },
+        "tier": {
+          "$ref": "#/$defs/Tier"
+        },
+        "level": {
+          "$ref": "#/$defs/LevelV2"
+        },
+        "report": {
+          "$ref": "#/$defs/PlaytestReport"
+        },
+        "edit_ids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "reach": {
+          "type": "boolean"
+        },
+        "morphs": {
+          "items": {
+            "$ref": "#/$defs/Morph"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "stage",
+        "tier",
+        "level",
+        "report",
+        "edit_ids",
+        "reach"
+      ],
+      "title": "EvTier",
+      "type": "object"
+    },
+    "EvWarning": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "message_key": {
+          "type": "string"
+        },
+        "args": {
+          "$ref": "#/$defs/MessageArgs"
+        }
+      },
+      "required": [
+        "message_key"
+      ],
+      "title": "EvWarning",
+      "type": "object"
+    },
+    "Face": {
+      "enum": [
+        "top",
+        "bottom",
+        "left",
+        "right"
+      ],
+      "type": "string"
+    },
+    "FailureKind": {
+      "enum": [
+        "gap_too_wide",
+        "ledge_too_high",
+        "head_bonk",
+        "wall_too_tall",
+        "goal_unreachable",
+        "spawn_trapped",
+        "key_unreachable",
+        "hard_flag"
+      ],
+      "type": "string"
+    },
+    "Flag": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "code": {
+          "$ref": "#/$defs/FlagCode"
+        },
+        "severity": {
+          "$ref": "#/$defs/Severity"
+        },
+        "frame": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CellXY"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "object_ids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "fix_cids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "message_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "args": {
+          "$ref": "#/$defs/MessageArgs"
+        }
+      },
+      "required": [
+        "id",
+        "code",
+        "severity"
+      ],
+      "title": "Flag",
+      "type": "object"
+    },
+    "FlagCode": {
+      "enum": [
+        "unsolvable",
+        "tight_window",
+        "blind_jump",
+        "leap_of_faith",
+        "spawn_unsafe",
+        "invisible_lethal",
+        "softlock",
+        "long_segment",
+        "head_bonk",
+        "unreachable_drawn",
+        "skippable_setpiece",
+        "trivial",
+        "long_flat",
+        "dead_end",
+        "entity_error"
+      ],
+      "type": "string"
+    },
+    "Frontier": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "reached": {
+          "items": {
+            "$ref": "#/$defs/CellXY"
+          },
+          "type": "array"
+        },
+        "blocking": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Blocking"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "reached"
+      ],
+      "title": "Frontier",
+      "type": "object"
+    },
+    "GameCreate": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "author"
+      ],
+      "title": "GameCreate",
+      "type": "object"
+    },
+    "GameRules": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "physics_profile": {
+          "$ref": "#/$defs/ProfileId",
+          "default": "v2-standard"
+        },
+        "profile_hash": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "abilities": {
+          "$ref": "#/$defs/Abilities"
+        },
+        "lives": {
+          "default": "off",
+          "enum": [
+            "off",
+            3,
+            5
+          ]
+        },
+        "hearts": {
+          "default": 1,
+          "maximum": 3,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "theme": {
+          "$ref": "#/$defs/Theme",
+          "default": "sketchbook"
+        },
+        "music": {
+          "default": true,
+          "type": "boolean"
+        },
+        "timer_pressure": {
+          "default": false,
+          "type": "boolean"
+        },
+        "camera": {
+          "default": "follow",
+          "enum": [
+            "follow",
+            "no_backscroll"
+          ],
+          "type": "string"
+        },
+        "default_dial": {
+          "$ref": "#/$defs/Dial",
+          "default": "polished"
+        },
+        "default_band": {
+          "$ref": "#/$defs/ChallengeBand",
+          "default": "normal"
+        },
+        "player_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "version"
+      ],
+      "title": "GameRules",
+      "type": "object"
+    },
+    "Ghost": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "before": {
+          "items": {
+            "$ref": "#/$defs/RectCells"
+          },
+          "type": "array"
+        },
+        "after": {
+          "items": {
+            "$ref": "#/$defs/RectCells"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "before",
+        "after"
+      ],
+      "title": "Ghost",
+      "type": "object"
+    },
+    "Health": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "llm": {
+          "$ref": "#/$defs/LlmMode"
+        },
+        "worker": {
+          "enum": [
+            "ok",
+            "down"
+          ],
+          "type": "string"
+        },
+        "core_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "budget_left_usd": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "ok",
+        "llm",
+        "worker",
+        "core_version",
+        "budget_left_usd"
+      ],
+      "title": "Health",
+      "type": "object"
+    },
+    "InkColor": {
+      "enum": [
+        "black",
+        "red",
+        "green",
+        "blue",
+        "pencil",
+        "draft"
+      ],
+      "type": "string"
+    },
+    "InkComponent": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "color": {
+          "$ref": "#/$defs/InkColor"
+        },
+        "stroke_ids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "bbox": {
+          "$ref": "#/$defs/RectCells"
+        },
+        "area": {
+          "type": "number"
+        },
+        "f": {
+          "$ref": "#/$defs/ComponentFeatures"
+        }
+      },
+      "required": [
+        "id",
+        "color",
+        "stroke_ids",
+        "bbox",
+        "area",
+        "f"
+      ],
+      "title": "InkComponent",
+      "type": "object"
+    },
+    "InkDoc": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "v": {
+          "const": 2,
+          "type": "integer"
+        },
+        "source": {
+          "enum": [
+            "canvas",
+            "paper",
+            "prompt",
+            "migrated"
+          ],
+          "type": "string"
+        },
+        "world": {
+          "$ref": "#/$defs/InkWorld"
+        },
+        "strokes": {
+          "items": {
+            "$ref": "#/$defs/InkStroke"
+          },
+          "type": "array"
+        },
+        "components": {
+          "items": {
+            "$ref": "#/$defs/InkComponent"
+          },
+          "type": "array"
+        },
+        "character": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CharacterInk"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "typed_rules": {
+          "items": {
+            "$ref": "#/$defs/TypedRule"
+          },
+          "type": "array"
+        },
+        "rules_ink": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "sheets": {
+          "items": {
+            "$ref": "#/$defs/SheetInfo"
+          },
+          "type": "array"
+        },
+        "noise": {
+          "$ref": "#/$defs/NoiseInfo"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ParentRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "v",
+        "source",
+        "world",
+        "strokes",
+        "components",
+        "character",
+        "typed_rules",
+        "rules_ink",
+        "sheets",
+        "noise",
+        "parent"
+      ],
+      "title": "InkDoc",
+      "type": "object"
+    },
+    "InkStroke": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "color": {
+          "$ref": "#/$defs/InkColor"
+        },
+        "kind": {
+          "enum": [
+            "line",
+            "dot",
+            "blob"
+          ],
+          "type": "string"
+        },
+        "pts": {
+          "items": {
+            "$ref": "#/$defs/CellXY"
+          },
+          "type": "array"
+        },
+        "w": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "closed": {
+          "type": "boolean"
+        },
+        "sheet": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "origin": {
+          "$ref": "#/$defs/Origin"
+        },
+        "stamp": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StampKind"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "label": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Role"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "rule": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Behavior"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "lib": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LibRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "t": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "color",
+        "kind",
+        "pts",
+        "w",
+        "closed",
+        "sheet",
+        "origin"
+      ],
+      "title": "InkStroke",
+      "type": "object"
+    },
+    "InkWorld": {
+      "additionalProperties": false,
+      "description": "InkDoc world (§3.2): the same as World without the cell size.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "screens": {
+          "maximum": 6,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "w": {
+          "maximum": 288,
+          "minimum": 48,
+          "type": "integer"
+        },
+        "h": {
+          "const": 27,
+          "default": 27,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "screens",
+        "w"
+      ],
+      "title": "InkWorld",
+      "type": "object"
+    },
+    "InterpretBody": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "ink": {
+          "items": {
+            "$ref": "#/$defs/InkStroke"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "text",
+        "ink"
+      ],
+      "title": "InterpretBody",
+      "type": "object"
+    },
+    "InterpretResult": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "spec": {
+          "$ref": "#/$defs/CreatureSpecJson"
+        },
+        "behavior": {
+          "$ref": "#/$defs/Behavior"
+        },
+        "source": {
+          "enum": [
+            "model",
+            "keywords"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "spec",
+        "behavior",
+        "source"
+      ],
+      "title": "InterpretResult",
+      "type": "object"
+    },
+    "LevelInk": {
+      "additionalProperties": false,
+      "description": "The `ink` block stored inside a LevelV2 (§2.2): InkDoc minus v/source/world/sheets/parent,\nwhich the level carries in `world`, `source` and `parent_id`.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "strokes": {
+          "items": {
+            "$ref": "#/$defs/InkStroke"
+          },
+          "type": "array"
+        },
+        "components": {
+          "items": {
+            "$ref": "#/$defs/InkComponent"
+          },
+          "type": "array"
+        },
+        "character": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CharacterInk"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "typed_rules": {
+          "items": {
+            "$ref": "#/$defs/TypedRule"
+          },
+          "type": "array"
+        },
+        "rules_ink": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "noise": {
+          "$ref": "#/$defs/NoiseInfo"
+        }
+      },
+      "required": [
+        "strokes",
+        "components"
+      ],
+      "title": "LevelInk",
+      "type": "object"
+    },
+    "LevelMeta": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "transcript": {
+          "default": "",
+          "type": "string"
+        },
+        "intent": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "safety": {
+          "$ref": "#/$defs/Safety",
+          "default": "unchecked"
+        },
+        "level_hash": {
+          "type": "string"
+        },
+        "core_version": {
+          "type": "string"
+        },
+        "warnings": {
+          "items": {
+            "$ref": "#/$defs/MessageRef"
+          },
+          "type": "array"
+        },
+        "build": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BuildMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "level_hash",
+        "core_version"
+      ],
+      "title": "LevelMeta",
+      "type": "object"
+    },
+    "LevelResponse": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "level": {
+          "$ref": "#/$defs/LevelV2"
+        },
+        "stats": {
+          "$ref": "#/$defs/LevelStats"
+        },
+        "children": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "level",
+        "stats",
+        "children"
+      ],
+      "title": "LevelResponse",
+      "type": "object"
+    },
+    "LevelSheet": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "index": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "photo_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "qr": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sketch_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "index"
+      ],
+      "title": "LevelSheet",
+      "type": "object"
+    },
+    "LevelSource": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "enum": [
+            "canvas",
+            "paper",
+            "prompt",
+            "migrated"
+          ],
+          "type": "string"
+        },
+        "prompt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "pack_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sheets": {
+          "items": {
+            "$ref": "#/$defs/LevelSheet"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "LevelSource",
+      "type": "object"
+    },
+    "LevelStats": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "plays": {
+          "type": "integer"
+        },
+        "clears": {
+          "type": "integer"
+        },
+        "clear_rate": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "best": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "plays",
+        "clears",
+        "clear_rate",
+        "best"
+      ],
+      "title": "LevelStats",
+      "type": "object"
+    },
+    "LevelV2": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "format": {
+          "const": "dal-level",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": 2,
+          "type": "integer"
+        },
+        "core_min": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "game_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "parent_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "order_index": {
+          "default": 0,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "title": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "license": {
+          "default": "CC-BY-4.0",
+          "type": "string"
+        },
+        "world": {
+          "$ref": "#/$defs/World"
+        },
+        "rules": {
+          "$ref": "#/$defs/GameRules"
+        },
+        "source": {
+          "$ref": "#/$defs/LevelSource"
+        },
+        "ink": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LevelInk"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "ink_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "objects": {
+          "items": {
+            "$ref": "#/$defs/SceneObject"
+          },
+          "type": "array"
+        },
+        "setpieces": {
+          "items": {
+            "$ref": "#/$defs/Setpiece"
+          },
+          "type": "array"
+        },
+        "edits": {
+          "items": {
+            "$ref": "#/$defs/EditRecord"
+          },
+          "type": "array"
+        },
+        "compiled": {
+          "$ref": "#/$defs/Compiled"
+        },
+        "design": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DesignBlock"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "embedded_library": {
+          "items": {
+            "$ref": "#/$defs/LibraryType"
+          },
+          "type": "array"
+        },
+        "meta": {
+          "$ref": "#/$defs/LevelMeta"
+        }
+      },
+      "required": [
+        "format",
+        "schema_version",
+        "core_min",
+        "id",
+        "version",
+        "title",
+        "author",
+        "created_at",
+        "world",
+        "rules",
+        "source",
+        "compiled",
+        "meta"
+      ],
+      "title": "LevelV2",
+      "type": "object"
+    },
+    "LibRef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "type_id": {
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "type_id",
+        "version"
+      ],
+      "title": "LibRef",
+      "type": "object"
+    },
+    "LibraryArt": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "strokes": {
+          "items": {
+            "$ref": "#/$defs/InkStroke"
+          },
+          "type": "array"
+        },
+        "size_cells": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "type": "array"
+        },
+        "rig": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Rig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "strokes",
+        "size_cells"
+      ],
+      "title": "LibraryArt",
+      "type": "object"
+    },
+    "LibrarySymbol": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "samples": {
+          "items": {
+            "items": {
+              "$ref": "#/$defs/InkStroke"
+            },
+            "type": "array"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "color": {
+          "$ref": "#/$defs/InkColor"
+        }
+      },
+      "required": [
+        "samples",
+        "color"
+      ],
+      "title": "LibrarySymbol",
+      "type": "object"
+    },
+    "LibraryType": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "game_id": {
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "name": {
+          "maxLength": 16,
+          "minLength": 1,
+          "type": "string"
+        },
+        "letter": {
+          "maxLength": 1,
+          "minLength": 1,
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "creature",
+            "platform",
+            "hazard",
+            "pickup",
+            "prop",
+            "player"
+          ],
+          "type": "string"
+        },
+        "behavior": {
+          "$ref": "#/$defs/Behavior"
+        },
+        "spiky": {
+          "default": false,
+          "type": "boolean"
+        },
+        "collision": {
+          "enum": [
+            "solid",
+            "one_way",
+            "none"
+          ],
+          "type": "string"
+        },
+        "art": {
+          "$ref": "#/$defs/LibraryArt"
+        },
+        "symbol": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LibrarySymbol"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "author": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "game_id",
+        "version",
+        "name",
+        "letter",
+        "kind",
+        "behavior",
+        "collision",
+        "art",
+        "author",
+        "created_at"
+      ],
+      "title": "LibraryType",
+      "type": "object"
+    },
+    "LlmMode": {
+      "enum": [
+        "live",
+        "fake",
+        "off"
+      ],
+      "type": "string"
+    },
+    "MessageArgs": {
+      "additionalProperties": {
+        "$ref": "#/$defs/Scalar"
+      },
+      "type": "object"
+    },
+    "MessageRef": {
+      "additionalProperties": false,
+      "description": "A kid-facing sentence by key (shared/spec/messages.json); raw codes never reach the DOM.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "args": {
+          "$ref": "#/$defs/MessageArgs"
+        }
+      },
+      "required": [
+        "key"
+      ],
+      "title": "MessageRef",
+      "type": "object"
+    },
+    "ModelCallMeta": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/CallKind"
+        },
+        "effort": {
+          "$ref": "#/$defs/Effort"
+        },
+        "latency_ms": {
+          "type": "integer"
+        },
+        "in_tok": {
+          "type": "integer"
+        },
+        "out_tok": {
+          "type": "integer"
+        },
+        "cost_usd": {
+          "type": "number"
+        },
+        "stop_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fallback_used": {
+          "type": "boolean"
+        },
+        "served_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "cache_read_tok": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind",
+        "effort",
+        "latency_ms",
+        "in_tok",
+        "out_tok",
+        "cost_usd",
+        "stop_reason",
+        "fallback_used"
+      ],
+      "title": "ModelCallMeta",
+      "type": "object"
+    },
+    "ModelDir": {
+      "enum": [
+        "up",
+        "down",
+        "left",
+        "right",
+        "none"
+      ],
+      "type": "string"
+    },
+    "ModelFace": {
+      "enum": [
+        "top",
+        "bottom",
+        "left",
+        "right",
+        "none"
+      ],
+      "type": "string"
+    },
+    "Morph": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "object_id": {
+          "type": "string"
+        },
+        "from": {
+          "$ref": "#/$defs/RectCells"
+        },
+        "to": {
+          "$ref": "#/$defs/RectCells"
+        },
+        "kind": {
+          "enum": [
+            "move",
+            "relabel",
+            "appear",
+            "vanish"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "object_id",
+        "from",
+        "to",
+        "kind"
+      ],
+      "title": "Morph",
+      "type": "object"
+    },
+    "NoiseInfo": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "count": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "count"
+      ],
+      "title": "NoiseInfo",
+      "type": "object"
+    },
+    "NovelBigCoin": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "add_big_coin",
+          "type": "string"
+        },
+        "slot": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "slot",
+        "reason"
+      ],
+      "title": "NovelBigCoin",
+      "type": "object"
+    },
+    "NovelCheckpoint": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "add_checkpoint",
+          "type": "string"
+        },
+        "slot": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "slot",
+        "reason"
+      ],
+      "title": "NovelCheckpoint",
+      "type": "object"
+    },
+    "NovelCrumble": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "make_crumble",
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "tier": {
+          "$ref": "#/$defs/BuildTierPick"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "target",
+        "tier",
+        "reason"
+      ],
+      "title": "NovelCrumble",
+      "type": "object"
+    },
+    "NovelEnemy": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "add_enemy",
+          "type": "string"
+        },
+        "slot": {
+          "type": "string"
+        },
+        "archetype": {
+          "enum": [
+            "walker",
+            "hopper",
+            "flyer",
+            "shooter",
+            "chaser",
+            "crusher"
+          ],
+          "type": "string"
+        },
+        "tier": {
+          "$ref": "#/$defs/BuildTierPick"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "slot",
+        "archetype",
+        "tier",
+        "reason"
+      ],
+      "title": "NovelEnemy",
+      "type": "object"
+    },
+    "NovelOp": {
+      "discriminator": {
+        "mapping": {
+          "add_big_coin": "#/$defs/NovelBigCoin",
+          "add_checkpoint": "#/$defs/NovelCheckpoint",
+          "add_enemy": "#/$defs/NovelEnemy",
+          "add_spikes": "#/$defs/NovelSpikes",
+          "make_crumble": "#/$defs/NovelCrumble",
+          "reprise": "#/$defs/NovelReprise",
+          "tune": "#/$defs/NovelTune"
+        },
+        "propertyName": "op"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/NovelEnemy"
+        },
+        {
+          "$ref": "#/$defs/NovelSpikes"
+        },
+        {
+          "$ref": "#/$defs/NovelBigCoin"
+        },
+        {
+          "$ref": "#/$defs/NovelCheckpoint"
+        },
+        {
+          "$ref": "#/$defs/NovelTune"
+        },
+        {
+          "$ref": "#/$defs/NovelCrumble"
+        },
+        {
+          "$ref": "#/$defs/NovelReprise"
+        }
+      ]
+    },
+    "NovelReprise": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "reprise",
+          "type": "string"
+        },
+        "setpiece": {
+          "type": "string"
+        },
+        "slot": {
+          "type": "string"
+        },
+        "escalation": {
+          "enum": [
+            "faster",
+            "plus_saw",
+            "plus_spikes",
+            "narrower"
+          ],
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "setpiece",
+        "slot",
+        "escalation",
+        "reason"
+      ],
+      "title": "NovelReprise",
+      "type": "object"
+    },
+    "NovelSpikes": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "add_spikes",
+          "type": "string"
+        },
+        "slot": {
+          "type": "string"
+        },
+        "tier": {
+          "$ref": "#/$defs/BuildTierPick"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "slot",
+        "tier",
+        "reason"
+      ],
+      "title": "NovelSpikes",
+      "type": "object"
+    },
+    "NovelTune": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "tune",
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "param": {
+          "enum": [
+            "speed",
+            "interval",
+            "range"
+          ],
+          "type": "string"
+        },
+        "step": {
+          "enum": [
+            1,
+            2
+          ],
+          "type": "integer"
+        },
+        "tier": {
+          "$ref": "#/$defs/BuildTierPick"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "target",
+        "param",
+        "step",
+        "tier",
+        "reason"
+      ],
+      "title": "NovelTune",
+      "type": "object"
+    },
+    "OpAddBigCoin": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "add_big_coin",
+          "type": "string"
+        },
+        "slot": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "slot"
+      ],
+      "title": "OpAddBigCoin",
+      "type": "object"
+    },
+    "OpAddCheckpoint": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "add_checkpoint",
+          "type": "string"
+        },
+        "slot": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "slot"
+      ],
+      "title": "OpAddCheckpoint",
+      "type": "object"
+    },
+    "OpAddCoin": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "add_coin",
+          "type": "string"
+        },
+        "slot": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "slot"
+      ],
+      "title": "OpAddCoin",
+      "type": "object"
+    },
+    "OpAddCoinTrail": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "add_coin_trail",
+          "type": "string"
+        },
+        "action": {
+          "type": "string"
+        },
+        "n": {
+          "maximum": 7,
+          "minimum": 3,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "op",
+        "action",
+        "n"
+      ],
+      "title": "OpAddCoinTrail",
+      "type": "object"
+    },
+    "OpAddEnemy": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "add_enemy",
+          "type": "string"
+        },
+        "slot": {
+          "type": "string"
+        },
+        "archetype": {
+          "enum": [
+            "walker",
+            "hopper",
+            "flyer",
+            "shooter",
+            "chaser",
+            "crusher"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "slot",
+        "archetype"
+      ],
+      "title": "OpAddEnemy",
+      "type": "object"
+    },
+    "OpAddHazard": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "add_hazard",
+          "type": "string"
+        },
+        "slot": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "saw",
+            "firebar",
+            "lava"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "slot",
+        "kind"
+      ],
+      "title": "OpAddHazard",
+      "type": "object"
+    },
+    "OpAddHintArrow": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "add_hint_arrow",
+          "type": "string"
+        },
+        "slot": {
+          "type": "string"
+        },
+        "dir": {
+          "$ref": "#/$defs/Dir4"
+        }
+      },
+      "required": [
+        "op",
+        "slot",
+        "dir"
+      ],
+      "title": "OpAddHintArrow",
+      "type": "object"
+    },
+    "OpAddSpikes": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "add_spikes",
+          "type": "string"
+        },
+        "slot": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "slot"
+      ],
+      "title": "OpAddSpikes",
+      "type": "object"
+    },
+    "OpAddSpring": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "add_spring",
+          "type": "string"
+        },
+        "slot": {
+          "type": "string"
+        },
+        "strength": {
+          "maximum": 1.4,
+          "minimum": 0.6,
+          "type": "number"
+        }
+      },
+      "required": [
+        "op",
+        "slot",
+        "strength"
+      ],
+      "title": "OpAddSpring",
+      "type": "object"
+    },
+    "OpAddStep": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "add_step",
+          "type": "string"
+        },
+        "slot": {
+          "type": "string"
+        },
+        "w": {
+          "maximum": 3,
+          "minimum": 2,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "op",
+        "slot",
+        "w"
+      ],
+      "title": "OpAddStep",
+      "type": "object"
+    },
+    "OpAnimate": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "animate",
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "archetype": {
+          "const": "walker",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "target",
+        "archetype"
+      ],
+      "title": "OpAnimate",
+      "type": "object"
+    },
+    "OpBind": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "bind",
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "behavior": {
+          "$ref": "#/$defs/Behavior"
+        }
+      },
+      "required": [
+        "op",
+        "target",
+        "behavior"
+      ],
+      "title": "OpBind",
+      "type": "object"
+    },
+    "OpClearSpawn": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "clear_spawn",
+          "type": "string"
+        },
+        "start_dx": {
+          "anyOf": [
+            {
+              "maximum": 4,
+              "minimum": -4,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "trimmed": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "OpClearSpawn",
+      "type": "object"
+    },
+    "OpCloseGap": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "close_gap",
+          "type": "string"
+        },
+        "a": {
+          "type": "string"
+        },
+        "b": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "a",
+        "b"
+      ],
+      "title": "OpCloseGap",
+      "type": "object"
+    },
+    "OpCoinFromDot": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "coin_from_dot",
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "target"
+      ],
+      "title": "OpCoinFromDot",
+      "type": "object"
+    },
+    "OpDedupe": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "dedupe",
+          "type": "string"
+        },
+        "keep": {
+          "type": "string"
+        },
+        "drop": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "keep",
+        "drop"
+      ],
+      "title": "OpDedupe",
+      "type": "object"
+    },
+    "OpDetach": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "detach",
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "branch": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "target",
+        "branch"
+      ],
+      "title": "OpDetach",
+      "type": "object"
+    },
+    "OpExtend": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "extend",
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "side": {
+          "$ref": "#/$defs/Side"
+        },
+        "cells": {
+          "maximum": 3,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "op",
+        "target",
+        "side",
+        "cells"
+      ],
+      "title": "OpExtend",
+      "type": "object"
+    },
+    "OpFitCreature": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "fit_creature",
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "target"
+      ],
+      "title": "OpFitCreature",
+      "type": "object"
+    },
+    "OpFixBehavior": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "fix_behavior",
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "param": {
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "op",
+        "target",
+        "param",
+        "value"
+      ],
+      "title": "OpFixBehavior",
+      "type": "object"
+    },
+    "OpFormGoal": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "form_goal",
+          "type": "string"
+        },
+        "flag": {
+          "type": "string"
+        },
+        "pole": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "op",
+        "flag"
+      ],
+      "title": "OpFormGoal",
+      "type": "object"
+    },
+    "OpGroup": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "group",
+          "type": "string"
+        },
+        "root": {
+          "type": "string"
+        },
+        "parts": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "op",
+        "root",
+        "parts"
+      ],
+      "title": "OpGroup",
+      "type": "object"
+    },
+    "OpJoinSeam": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "join_seam",
+          "type": "string"
+        },
+        "a": {
+          "type": "string"
+        },
+        "b": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "a",
+        "b"
+      ],
+      "title": "OpJoinSeam",
+      "type": "object"
+    },
+    "OpLink": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "link",
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        },
+        "door": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "key",
+        "door"
+      ],
+      "title": "OpLink",
+      "type": "object"
+    },
+    "OpMakeCrumble": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "make_crumble",
+          "type": "string"
+        },
+        "surface": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "surface"
+      ],
+      "title": "OpMakeCrumble",
+      "type": "object"
+    },
+    "OpMakeMine": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "make_mine",
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "target"
+      ],
+      "title": "OpMakeMine",
+      "type": "object"
+    },
+    "OpNudge": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "nudge",
+          "type": "string"
+        },
+        "group": {
+          "type": "string"
+        },
+        "dx": {
+          "maximum": 3,
+          "minimum": -3,
+          "type": "integer"
+        },
+        "dy": {
+          "maximum": 3,
+          "minimum": -3,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "op",
+        "group",
+        "dx",
+        "dy"
+      ],
+      "title": "OpNudge",
+      "type": "object"
+    },
+    "OpOrient": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "orient",
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "facing": {
+          "$ref": "#/$defs/Dir"
+        }
+      },
+      "required": [
+        "op",
+        "target",
+        "facing"
+      ],
+      "title": "OpOrient",
+      "type": "object"
+    },
+    "OpPlaceStart": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "place_start",
+          "type": "string"
+        },
+        "at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CellXY"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "OpPlaceStart",
+      "type": "object"
+    },
+    "OpReprise": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "reprise",
+          "type": "string"
+        },
+        "setpiece": {
+          "type": "string"
+        },
+        "slot": {
+          "type": "string"
+        },
+        "escalation": {
+          "enum": [
+            "faster",
+            "plus_saw",
+            "plus_spikes",
+            "narrower"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "setpiece",
+        "slot",
+        "escalation"
+      ],
+      "title": "OpReprise",
+      "type": "object"
+    },
+    "OpSetCollision": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "set_collision",
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "mode": {
+          "enum": [
+            "solid",
+            "one_way",
+            "none"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "target",
+        "mode"
+      ],
+      "title": "OpSetCollision",
+      "type": "object"
+    },
+    "OpSetPar": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "set_par",
+          "type": "string"
+        },
+        "par_ms": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "OpSetPar",
+      "type": "object"
+    },
+    "OpSetRole": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "set_role",
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/$defs/Role"
+        }
+      },
+      "required": [
+        "op",
+        "target",
+        "role"
+      ],
+      "title": "OpSetRole",
+      "type": "object"
+    },
+    "OpSetStart": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "set_start",
+          "type": "string"
+        },
+        "near": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "near"
+      ],
+      "title": "OpSetStart",
+      "type": "object"
+    },
+    "OpSetTimer": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "set_timer",
+          "type": "string"
+        },
+        "k": {
+          "maximum": 2.0,
+          "minimum": 1.5,
+          "type": "number"
+        }
+      },
+      "required": [
+        "op",
+        "k"
+      ],
+      "title": "OpSetTimer",
+      "type": "object"
+    },
+    "OpShiftPlatform": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "shift_platform",
+          "type": "string"
+        },
+        "group": {
+          "type": "string"
+        },
+        "dx": {
+          "maximum": 2,
+          "minimum": -2,
+          "type": "integer"
+        },
+        "dy": {
+          "maximum": 2,
+          "minimum": -2,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "op",
+        "group",
+        "dx",
+        "dy"
+      ],
+      "title": "OpShiftPlatform",
+      "type": "object"
+    },
+    "OpShrinkLanding": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "shrink_landing",
+          "type": "string"
+        },
+        "surface": {
+          "type": "string"
+        },
+        "side": {
+          "enum": [
+            "left",
+            "right"
+          ],
+          "type": "string"
+        },
+        "cells": {
+          "maximum": 2,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "op",
+        "surface",
+        "side",
+        "cells"
+      ],
+      "title": "OpShrinkLanding",
+      "type": "object"
+    },
+    "OpSnap": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "snap",
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "host": {
+          "type": "string"
+        },
+        "face": {
+          "$ref": "#/$defs/Face"
+        }
+      },
+      "required": [
+        "op",
+        "target",
+        "host",
+        "face"
+      ],
+      "title": "OpSnap",
+      "type": "object"
+    },
+    "OpStraighten": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "straighten",
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "mode": {
+          "anyOf": [
+            {
+              "enum": [
+                "flat",
+                "slope_1_2",
+                "slope_1_1"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "max_shift": {
+          "anyOf": [
+            {
+              "maximum": 0.85,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "op",
+        "target"
+      ],
+      "title": "OpStraighten",
+      "type": "object"
+    },
+    "OpTrim": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "trim",
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "side": {
+          "$ref": "#/$defs/Side"
+        },
+        "cells": {
+          "maximum": 2,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "op",
+        "target",
+        "side",
+        "cells"
+      ],
+      "title": "OpTrim",
+      "type": "object"
+    },
+    "OpTune": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "tune",
+          "type": "string"
+        },
+        "entity": {
+          "type": "string"
+        },
+        "param": {
+          "type": "string"
+        },
+        "step": {
+          "enum": [
+            1,
+            2
+          ],
+          "type": "integer"
+        }
+      },
+      "required": [
+        "op",
+        "entity",
+        "param",
+        "step"
+      ],
+      "title": "OpTune",
+      "type": "object"
+    },
+    "OpUseLibrary": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "use_library",
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "type_id": {
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "op",
+        "target",
+        "type_id",
+        "version"
+      ],
+      "title": "OpUseLibrary",
+      "type": "object"
+    },
+    "OpWidenGap": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "widen_gap",
+          "type": "string"
+        },
+        "gap": {
+          "type": "string"
+        },
+        "cells": {
+          "maximum": 2,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "op",
+        "gap",
+        "cells"
+      ],
+      "title": "OpWidenGap",
+      "type": "object"
+    },
+    "Origin": {
+      "enum": [
+        "kid",
+        "parent",
+        "designer",
+        "library",
+        "draft",
+        "migrated"
+      ],
+      "type": "string"
+    },
+    "PackCreate": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "enum": [
+            "new",
+            "game",
+            "remix",
+            "extend"
+          ],
+          "type": "string"
+        },
+        "k": {
+          "maximum": 6,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "game_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "parent_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind",
+        "k"
+      ],
+      "title": "PackCreate",
+      "type": "object"
+    },
+    "PackCreated": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "pack_id": {
+          "type": "string"
+        },
+        "pdf_url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "pack_id",
+        "pdf_url"
+      ],
+      "title": "PackCreated",
+      "type": "object"
+    },
+    "ParentRef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "level_id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "level_hash": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "level_id",
+        "version",
+        "level_hash"
+      ],
+      "title": "ParentRef",
+      "type": "object"
+    },
+    "PerceptionAsk": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "about": {
+          "type": "integer"
+        },
+        "kind": {
+          "enum": [
+            "which_door",
+            "is_decoration",
+            "what_does_it_do",
+            "which_flag_is_goal",
+            "is_library",
+            "keep_or_fix"
+          ],
+          "type": "string"
+        },
+        "options": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "about",
+        "kind",
+        "options"
+      ],
+      "title": "PerceptionAsk",
+      "type": "object"
+    },
+    "PerceptionBound": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "binding": {
+          "$ref": "#/$defs/Binding"
+        },
+        "pinned": {
+          "items": {
+            "$ref": "#/$defs/PinnedParam"
+          },
+          "type": "array"
+        },
+        "evidence": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "binding",
+        "pinned",
+        "evidence"
+      ],
+      "title": "PerceptionBound",
+      "type": "object"
+    },
+    "PerceptionJson": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "tile": {
+          "type": "string"
+        },
+        "nodes": {
+          "items": {
+            "$ref": "#/$defs/PerceptionNode"
+          },
+          "type": "array"
+        },
+        "bindings": {
+          "items": {
+            "$ref": "#/$defs/PerceptionBound"
+          },
+          "type": "array"
+        },
+        "setpieces": {
+          "items": {
+            "$ref": "#/$defs/PerceptionSetpiece"
+          },
+          "type": "array"
+        },
+        "intent": {
+          "type": "string"
+        },
+        "difficulty_wish": {
+          "$ref": "#/$defs/DifficultyWish"
+        },
+        "transcript": {
+          "type": "string"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "asks": {
+          "items": {
+            "$ref": "#/$defs/PerceptionAsk"
+          },
+          "type": "array"
+        },
+        "safety_ok": {
+          "type": "boolean"
+        },
+        "safety_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "tile",
+        "nodes",
+        "bindings",
+        "setpieces",
+        "intent",
+        "difficulty_wish",
+        "transcript",
+        "title",
+        "asks",
+        "safety_ok",
+        "safety_reason"
+      ],
+      "title": "PerceptionJson",
+      "type": "object"
+    },
+    "PerceptionNode": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "role": {
+          "$ref": "#/$defs/Role"
+        },
+        "conf": {
+          "type": "number"
+        },
+        "on": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "att": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "face": {
+          "$ref": "#/$defs/ModelFace"
+        },
+        "pts": {
+          "$ref": "#/$defs/ModelDir"
+        },
+        "part": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ref": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "role",
+        "conf",
+        "on",
+        "att",
+        "face",
+        "pts",
+        "part",
+        "ref"
+      ],
+      "title": "PerceptionNode",
+      "type": "object"
+    },
+    "PerceptionSetpiece": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "ids": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        "kind": {
+          "$ref": "#/$defs/SetpieceKind"
+        }
+      },
+      "required": [
+        "name",
+        "ids",
+        "kind"
+      ],
+      "title": "PerceptionSetpiece",
+      "type": "object"
+    },
+    "PingResult": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "core_version": {
+          "type": "string"
+        },
+        "node": {
+          "type": "string"
+        },
+        "stub": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "core_version",
+        "node"
+      ],
+      "title": "PingResult",
+      "type": "object"
+    },
+    "PinnedParam": {
+      "enum": [
+        "speed",
+        "cells",
+        "dir",
+        "archetype",
+        "strength",
+        "seconds"
+      ],
+      "type": "string"
+    },
+    "PlayerSprite": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "rig": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Rig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "title": "PlayerSprite",
+      "type": "object"
+    },
+    "PlaytestReport": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "solvable": {
+          "type": "boolean"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "enum": [
+                "no_start",
+                "no_goal",
+                "goal_unreachable",
+                "key_unreachable"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "frontier": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Frontier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "route": {
+          "items": {
+            "$ref": "#/$defs/RouteStep"
+          },
+          "type": "array"
+        },
+        "segments": {
+          "items": {
+            "$ref": "#/$defs/Segment"
+          },
+          "type": "array"
+        },
+        "C": {
+          "type": "number"
+        },
+        "F": {
+          "type": "number"
+        },
+        "score": {
+          "maximum": 100,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "band": {
+          "$ref": "#/$defs/Band"
+        },
+        "C_skilled": {
+          "type": "number"
+        },
+        "fastest_ms": {
+          "type": "integer"
+        },
+        "par_ms": {
+          "type": "integer"
+        },
+        "casual_clear_s": {
+          "type": "number"
+        },
+        "flags": {
+          "items": {
+            "$ref": "#/$defs/Flag"
+          },
+          "type": "array"
+        },
+        "reachable": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "setpiece_order": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "slots": {
+          "$ref": "#/$defs/Slots"
+        },
+        "engaged_enemies": {
+          "type": "integer"
+        },
+        "actions_per_screen": {
+          "type": "number"
+        },
+        "trace": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        "level_hash": {
+          "type": "string"
+        },
+        "core_version": {
+          "type": "string"
+        },
+        "approx": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "solvable",
+        "route",
+        "segments",
+        "C",
+        "F",
+        "score",
+        "band",
+        "C_skilled",
+        "fastest_ms",
+        "par_ms",
+        "casual_clear_s",
+        "flags",
+        "reachable",
+        "setpiece_order",
+        "slots",
+        "engaged_enemies",
+        "actions_per_screen",
+        "trace",
+        "level_hash",
+        "core_version"
+      ],
+      "title": "PlaytestReport",
+      "type": "object"
+    },
+    "ProfileId": {
+      "enum": [
+        "v2-standard",
+        "v2-gentle",
+        "v2-snappy",
+        "v1-classic"
+      ],
+      "type": "string"
+    },
+    "PromptLevelBody": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "prompt": {
+          "type": "string"
+        },
+        "game_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "screens": {
+          "maximum": 6,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "dial": {
+          "$ref": "#/$defs/Dial",
+          "default": "polished"
+        },
+        "band": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ChallengeBand"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "prompt",
+        "screens"
+      ],
+      "title": "PromptLevelBody",
+      "type": "object"
+    },
+    "PublishBody": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "draft_id": {
+          "type": "string"
+        },
+        "tier": {
+          "$ref": "#/$defs/Tier"
+        },
+        "author": {
+          "maxLength": 16,
+          "minLength": 1,
+          "type": "string"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "statuses": {
+          "additionalProperties": {
+            "enum": [
+              "applied",
+              "undone"
+            ],
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "level_hash": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "draft_id",
+        "tier",
+        "author",
+        "statuses",
+        "level_hash"
+      ],
+      "title": "PublishBody",
+      "type": "object"
+    },
+    "Reach": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "polished": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "normal": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "hard": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "Reach",
+      "type": "object"
+    },
+    "RectCells": {
+      "maxItems": 4,
+      "minItems": 4,
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "type": "array"
+    },
+    "Relations": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "rests_on": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "attached": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Attachment"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "points": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Dir"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "part_of": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "parts": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "refers_to": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "Relations",
+      "type": "object"
+    },
+    "RepairChoice": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "alts": {
+          "type": "string"
+        },
+        "cid": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "alts",
+        "cid",
+        "reason"
+      ],
+      "title": "RepairChoice",
+      "type": "object"
+    },
+    "Rig": {
+      "additionalProperties": false,
+      "description": "Rig extracted from a creature drawing (§7.6). Parts are stroke ids.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "legs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "arms": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "eyes": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "synth_legs": {
+          "default": false,
+          "type": "boolean"
+        },
+        "hip_y": {
+          "default": 0.7,
+          "type": "number"
+        }
+      },
+      "title": "Rig",
+      "type": "object"
+    },
+    "Role": {
+      "enum": [
+        "ground",
+        "platform",
+        "wall",
+        "ceiling",
+        "spikes",
+        "lava",
+        "saw",
+        "enemy",
+        "coin",
+        "big_coin",
+        "key",
+        "door",
+        "spring",
+        "checkpoint",
+        "goal",
+        "pole",
+        "start_marker",
+        "text",
+        "arrow",
+        "decoration",
+        "library_tag",
+        "unknown"
+      ],
+      "type": "string"
+    },
+    "RoleAlt": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "role": {
+          "$ref": "#/$defs/Role"
+        },
+        "conf": {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        }
+      },
+      "required": [
+        "role",
+        "conf"
+      ],
+      "title": "RoleAlt",
+      "type": "object"
+    },
+    "RoleBy": {
+      "enum": [
+        "heuristic",
+        "model",
+        "kid",
+        "stamp",
+        "library",
+        "parser",
+        "draft",
+        "migrated",
+        "designer"
+      ],
+      "type": "string"
+    },
+    "RouteKind": {
+      "enum": [
+        "walk",
+        "jump",
+        "runjump",
+        "drop",
+        "dropthrough",
+        "spring",
+        "stomp",
+        "ride",
+        "wait",
+        "timed_pass"
+      ],
+      "type": "string"
+    },
+    "RouteStep": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "i": {
+          "type": "integer"
+        },
+        "kind": {
+          "$ref": "#/$defs/RouteKind"
+        },
+        "from": {
+          "$ref": "#/$defs/CellXY"
+        },
+        "to": {
+          "$ref": "#/$defs/CellXY"
+        },
+        "frames": {
+          "type": "integer"
+        },
+        "w_f": {
+          "type": "number"
+        },
+        "h_f": {
+          "type": "number"
+        },
+        "phi_f": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lethal": {
+          "type": "number"
+        },
+        "p_death_casual": {
+          "type": "number"
+        },
+        "p_death_skilled": {
+          "type": "number"
+        },
+        "blind": {
+          "type": "boolean"
+        },
+        "segment": {
+          "type": "string"
+        },
+        "setpiece": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "i",
+        "kind",
+        "from",
+        "to",
+        "frames",
+        "w_f",
+        "h_f",
+        "phi_f",
+        "lethal",
+        "p_death_casual",
+        "p_death_skilled",
+        "blind",
+        "segment",
+        "setpiece"
+      ],
+      "title": "RouteStep",
+      "type": "object"
+    },
+    "RulesCheck": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "affected": {
+          "items": {
+            "$ref": "#/$defs/AffectedLevel"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "affected"
+      ],
+      "title": "RulesCheck",
+      "type": "object"
+    },
+    "RulesSheetResult": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "patch": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "asks": {
+          "items": {
+            "$ref": "#/$defs/MessageRef"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "patch"
+      ],
+      "title": "RulesSheetResult",
+      "type": "object"
+    },
+    "Safety": {
+      "enum": [
+        "ok",
+        "held",
+        "flag",
+        "unchecked"
+      ],
+      "type": "string"
+    },
+    "SawItem": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "object_id": {
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/$defs/Role"
+        },
+        "rel_key": {
+          "type": "string"
+        },
+        "rel_args": {
+          "$ref": "#/$defs/MessageArgs"
+        },
+        "conf": {
+          "type": "number"
+        },
+        "bbox": {
+          "$ref": "#/$defs/RectCells"
+        }
+      },
+      "required": [
+        "object_id",
+        "role",
+        "rel_key",
+        "conf",
+        "bbox"
+      ],
+      "title": "SawItem",
+      "type": "object"
+    },
+    "Scalar": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "SceneGraph": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "objects": {
+          "items": {
+            "$ref": "#/$defs/SceneObject"
+          },
+          "type": "array"
+        },
+        "setpieces": {
+          "items": {
+            "$ref": "#/$defs/Setpiece"
+          },
+          "type": "array"
+        },
+        "intent": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "difficulty_wish": {
+          "$ref": "#/$defs/DifficultyWish",
+          "default": "none"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "safety": {
+          "$ref": "#/$defs/Safety",
+          "default": "unchecked"
+        }
+      },
+      "required": [
+        "objects"
+      ],
+      "title": "SceneGraph",
+      "type": "object"
+    },
+    "SceneObject": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "components": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        "strokes": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "role": {
+          "$ref": "#/$defs/Role"
+        },
+        "conf": {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        "role_by": {
+          "$ref": "#/$defs/RoleBy"
+        },
+        "origin": {
+          "$ref": "#/$defs/Origin"
+        },
+        "shape": {
+          "$ref": "#/$defs/Shape"
+        },
+        "collision": {
+          "$ref": "#/$defs/Collision"
+        },
+        "rel": {
+          "$ref": "#/$defs/Relations"
+        },
+        "behavior": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Behavior"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "pinned": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "alt": {
+          "items": {
+            "$ref": "#/$defs/RoleAlt"
+          },
+          "type": "array"
+        },
+        "lib": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LibRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "components",
+        "strokes",
+        "role",
+        "conf",
+        "role_by",
+        "origin",
+        "shape",
+        "collision",
+        "rel",
+        "pinned"
+      ],
+      "title": "SceneObject",
+      "type": "object"
+    },
+    "Segment": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "E": {
+          "type": "number"
+        },
+        "A": {
+          "type": "number"
+        },
+        "T_ms": {
+          "type": "integer"
+        },
+        "F_s": {
+          "type": "number"
+        },
+        "actions": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "from",
+        "to",
+        "E",
+        "A",
+        "T_ms",
+        "F_s",
+        "actions"
+      ],
+      "title": "Segment",
+      "type": "object"
+    },
+    "Setpiece": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "ids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "kind": {
+          "$ref": "#/$defs/SetpieceKind"
+        },
+        "by": {
+          "enum": [
+            "model",
+            "geometric",
+            "kid"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "ids",
+        "kind",
+        "by"
+      ],
+      "title": "Setpiece",
+      "type": "object"
+    },
+    "SetpieceKind": {
+      "enum": [
+        "jump",
+        "hazard_run",
+        "climb",
+        "enemy",
+        "puzzle",
+        "finale",
+        "other"
+      ],
+      "type": "string"
+    },
+    "Severity": {
+      "enum": [
+        "block",
+        "hard",
+        "warn",
+        "info",
+        "target"
+      ],
+      "type": "string"
+    },
+    "Shape": {
+      "discriminator": {
+        "mapping": {
+          "body": "#/$defs/ShapeBody",
+          "point": "#/$defs/ShapePoint",
+          "strip": "#/$defs/ShapeStrip",
+          "surface": "#/$defs/ShapeSurface",
+          "wall": "#/$defs/ShapeWall"
+        },
+        "propertyName": "k"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ShapeSurface"
+        },
+        {
+          "$ref": "#/$defs/ShapeStrip"
+        },
+        {
+          "$ref": "#/$defs/ShapeBody"
+        },
+        {
+          "$ref": "#/$defs/ShapePoint"
+        },
+        {
+          "$ref": "#/$defs/ShapeWall"
+        }
+      ]
+    },
+    "ShapeBody": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "k": {
+          "const": "body",
+          "type": "string"
+        },
+        "bbox": {
+          "$ref": "#/$defs/RectCells"
+        }
+      },
+      "required": [
+        "k",
+        "bbox"
+      ],
+      "title": "ShapeBody",
+      "type": "object"
+    },
+    "ShapePoint": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "k": {
+          "const": "point",
+          "type": "string"
+        },
+        "p": {
+          "$ref": "#/$defs/CellXY"
+        }
+      },
+      "required": [
+        "k",
+        "p"
+      ],
+      "title": "ShapePoint",
+      "type": "object"
+    },
+    "ShapeStrip": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "k": {
+          "const": "strip",
+          "type": "string"
+        },
+        "a": {
+          "$ref": "#/$defs/CellXY"
+        },
+        "b": {
+          "$ref": "#/$defs/CellXY"
+        }
+      },
+      "required": [
+        "k",
+        "a",
+        "b"
+      ],
+      "title": "ShapeStrip",
+      "type": "object"
+    },
+    "ShapeSurface": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "k": {
+          "const": "surface",
+          "type": "string"
+        },
+        "segs": {
+          "items": {
+            "$ref": "#/$defs/SurfaceSeg"
+          },
+          "type": "array"
+        },
+        "fill": {
+          "enum": [
+            "to_bottom",
+            "one_row",
+            "to_top",
+            "none"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "k",
+        "segs",
+        "fill"
+      ],
+      "title": "ShapeSurface",
+      "type": "object"
+    },
+    "ShapeWall": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "k": {
+          "const": "wall",
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y0": {
+          "type": "number"
+        },
+        "y1": {
+          "type": "number"
+        },
+        "w": {
+          "default": 1,
+          "type": "number"
+        }
+      },
+      "required": [
+        "k",
+        "x",
+        "y0",
+        "y1"
+      ],
+      "title": "ShapeWall",
+      "type": "object"
+    },
+    "SheetInfo": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "index": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "photo_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "qr": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "warnings": {
+          "items": {
+            "$ref": "#/$defs/MessageRef"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "index"
+      ],
+      "title": "SheetInfo",
+      "type": "object"
+    },
+    "Side": {
+      "enum": [
+        "left",
+        "right",
+        "top",
+        "bottom"
+      ],
+      "type": "string"
+    },
+    "Slot": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "host": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "face": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Face"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "x0": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "x1": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "w": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "segment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "x",
+        "y"
+      ],
+      "title": "Slot",
+      "type": "object"
+    },
+    "Slots": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "checkpoint": {
+          "items": {
+            "$ref": "#/$defs/Slot"
+          },
+          "type": "array"
+        },
+        "coin": {
+          "items": {
+            "$ref": "#/$defs/Slot"
+          },
+          "type": "array"
+        },
+        "risk": {
+          "items": {
+            "$ref": "#/$defs/Slot"
+          },
+          "type": "array"
+        },
+        "enemy": {
+          "items": {
+            "$ref": "#/$defs/Slot"
+          },
+          "type": "array"
+        },
+        "hazard": {
+          "items": {
+            "$ref": "#/$defs/Slot"
+          },
+          "type": "array"
+        },
+        "spikes": {
+          "items": {
+            "$ref": "#/$defs/Slot"
+          },
+          "type": "array"
+        },
+        "step": {
+          "items": {
+            "$ref": "#/$defs/Slot"
+          },
+          "type": "array"
+        },
+        "spring": {
+          "items": {
+            "$ref": "#/$defs/Slot"
+          },
+          "type": "array"
+        },
+        "hint": {
+          "items": {
+            "$ref": "#/$defs/Slot"
+          },
+          "type": "array"
+        }
+      },
+      "title": "Slots",
+      "type": "object"
+    },
+    "Sprites": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "player": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PlayerSprite"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "objects": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        }
+      },
+      "title": "Sprites",
+      "type": "object"
+    },
+    "Stage": {
+      "enum": [
+        "ink",
+        "understood",
+        "designed"
+      ],
+      "type": "string"
+    },
+    "StageName": {
+      "enum": [
+        "upload",
+        "cv",
+        "ink",
+        "perceive",
+        "understood",
+        "design",
+        "designed",
+        "refine",
+        "critic"
+      ],
+      "type": "string"
+    },
+    "StageStatus": {
+      "enum": [
+        "start",
+        "done",
+        "skipped",
+        "failed",
+        "late"
+      ],
+      "type": "string"
+    },
+    "StageTime": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "stage": {
+          "$ref": "#/$defs/Stage"
+        },
+        "t_ms": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "stage",
+        "t_ms"
+      ],
+      "title": "StageTime",
+      "type": "object"
+    },
+    "StampKind": {
+      "enum": [
+        "coin",
+        "big_coin",
+        "spikes",
+        "flag",
+        "checkpoint",
+        "spring",
+        "saw",
+        "walker",
+        "hopper",
+        "flyer",
+        "key",
+        "door",
+        "start",
+        "library"
+      ],
+      "type": "string"
+    },
+    "SurfaceSeg": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "a": {
+          "$ref": "#/$defs/CellXY"
+        },
+        "b": {
+          "$ref": "#/$defs/CellXY"
+        },
+        "slope": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "a",
+        "b",
+        "slope"
+      ],
+      "title": "SurfaceSeg",
+      "type": "object"
+    },
+    "Telemetry": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "deaths": {
+          "items": {
+            "$ref": "#/$defs/DeathEvent"
+          },
+          "type": "array"
+        },
+        "attempts": {
+          "type": "integer"
+        },
+        "segment_times": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "type": "object"
+        }
+      },
+      "required": [
+        "deaths",
+        "attempts"
+      ],
+      "title": "Telemetry",
+      "type": "object"
+    },
+    "Theme": {
+      "enum": [
+        "sketchbook",
+        "notebook",
+        "graph",
+        "kraft"
+      ],
+      "type": "string"
+    },
+    "Tier": {
+      "enum": [
+        "faithful",
+        "polished",
+        "normal",
+        "hard"
+      ],
+      "type": "string"
+    },
+    "TierReach": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "polished": {
+          "type": "boolean"
+        },
+        "normal": {
+          "type": "boolean"
+        },
+        "hard": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "polished",
+        "normal",
+        "hard"
+      ],
+      "title": "TierReach",
+      "type": "object"
+    },
+    "TierSetJson": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "faithful": {
+          "$ref": "#/$defs/BuildResultJson"
+        },
+        "polished": {
+          "$ref": "#/$defs/BuildResultJson"
+        },
+        "normal": {
+          "$ref": "#/$defs/BuildResultJson"
+        },
+        "hard": {
+          "$ref": "#/$defs/BuildResultJson"
+        },
+        "reach": {
+          "$ref": "#/$defs/TierReach"
+        },
+        "why": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MessageRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "menu": {
+          "items": {
+            "$ref": "#/$defs/Candidate"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "faithful",
+        "polished",
+        "normal",
+        "hard",
+        "reach",
+        "menu"
+      ],
+      "title": "TierSetJson",
+      "type": "object"
+    },
+    "TierSetSummary": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "tiers": {
+          "additionalProperties": {
+            "$ref": "#/$defs/TierSummary"
+          },
+          "type": "object"
+        },
+        "rejected": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "tiers"
+      ],
+      "title": "TierSetSummary",
+      "type": "object"
+    },
+    "TierSummary": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "tier": {
+          "$ref": "#/$defs/Tier"
+        },
+        "level_hash": {
+          "type": "string"
+        },
+        "C": {
+          "type": "number"
+        },
+        "band": {
+          "type": "string"
+        },
+        "solvable": {
+          "type": "boolean"
+        },
+        "reach": {
+          "type": "boolean"
+        },
+        "edit_ids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "tier",
+        "level_hash",
+        "C",
+        "band",
+        "solvable",
+        "reach",
+        "edit_ids"
+      ],
+      "title": "TierSummary",
+      "type": "object"
+    },
+    "Tiles": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "legend": {
+          "const": ".#=/\\abcd~X",
+          "type": "string"
+        },
+        "rows": {
+          "items": {
+            "pattern": "^(?:[0-9]*[.#=/\\\\abcd~X])+$",
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "legend",
+        "rows"
+      ],
+      "title": "Tiles",
+      "type": "object"
+    },
+    "Trigger": {
+      "additionalProperties": false,
+      "description": "v1 rules carried over unchanged (§2.6): collect:/touch:/timer: → open:/win/lose.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "when": {
+          "pattern": "^(collect:[A-Za-z0-9_]+|touch:[A-Za-z0-9_]+|timer:[0-9]+)$",
+          "type": "string"
+        },
+        "then": {
+          "pattern": "^(open:[A-Za-z0-9_]+|win|lose)$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "when",
+        "then"
+      ],
+      "title": "Trigger",
+      "type": "object"
+    },
+    "TypedRule": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "TypedRule",
+      "type": "object"
+    },
+    "Validation": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "solvable": {
+          "type": "boolean"
+        },
+        "flags": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "drift_cells": {
+          "type": "number"
+        },
+        "dC": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "solvable",
+        "flags",
+        "drift_cells",
+        "dC"
+      ],
+      "title": "Validation",
+      "type": "object"
+    },
+    "Veto": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "edit_id": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "edit_id",
+        "reason"
+      ],
+      "title": "Veto",
+      "type": "object"
+    },
+    "WorkerError": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "code": {
+          "enum": [
+            "timeout",
+            "invalid",
+            "internal"
+          ],
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "title": "WorkerError",
+      "type": "object"
+    },
+    "WorkerMethod": {
+      "enum": [
+        "ping",
+        "perceive_heuristic",
+        "merge_perception",
+        "parse_rules",
+        "build",
+        "build_tiers",
+        "apply_plan",
+        "transfer_plan",
+        "digest",
+        "analyze",
+        "layout_plan",
+        "keyword_plan",
+        "remix_diff",
+        "migrate_v1",
+        "verify_run",
+        "level_hash",
+        "art_svg"
+      ],
+      "type": "string"
+    },
+    "WorkerRequest": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "method": {
+          "$ref": "#/$defs/WorkerMethod"
+        },
+        "params": {
+          "additionalProperties": true,
+          "type": "object"
+        }
+      },
+      "required": [
+        "id",
+        "method"
+      ],
+      "title": "WorkerRequest",
+      "type": "object"
+    },
+    "WorkerResponse": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "ok": {
+          "type": "boolean"
+        },
+        "result": {
+          "default": null
+        },
+        "error": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WorkerError"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "ok"
+      ],
+      "title": "WorkerResponse",
+      "type": "object"
+    },
+    "World": {
+      "additionalProperties": false,
+      "description": "Level world. w = 48·screens, h = 27 (§2.1, §6.1).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "cell": {
+          "const": 16,
+          "default": 16,
+          "type": "integer"
+        },
+        "screens": {
+          "maximum": 6,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "w": {
+          "maximum": 288,
+          "minimum": 48,
+          "type": "integer"
+        },
+        "h": {
+          "const": 27,
+          "default": 27,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "screens",
+        "w"
+      ],
+      "title": "World",
+      "type": "object"
+    }
+  }
+}

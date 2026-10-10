@@ -1,0 +1,20 @@
+{
+  "id": "G20",
+  "status": "skeleton",
+  "mode": "paper",
+  "input": null,
+  "input_pending": "lane C: synthetic rules sheet photo (double jump, lives 3, notebook)",
+  "name": "rules_sheet",
+  "objects": [],
+  "invariants": {
+    "omr_exact": true,
+    "patch": {
+      "abilities": {
+        "double_jump": true
+      },
+      "lives": 3,
+      "theme": "notebook"
+    },
+    "double_jump_reaches_6_rows": true
+  }
+}

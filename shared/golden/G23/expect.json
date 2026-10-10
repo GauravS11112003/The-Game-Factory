@@ -1,0 +1,14 @@
+{
+  "id": "G23",
+  "status": "skeleton",
+  "mode": "migrated",
+  "input": null,
+  "input_pending": "all v1 fixtures + seeded remixes in dal.sqlite",
+  "name": "v1_migration",
+  "objects": [],
+  "invariants": {
+    "migrates_and_validates": true,
+    "reachable_set_equals_v1_solver": true,
+    "profile": "v1-classic"
+  }
+}

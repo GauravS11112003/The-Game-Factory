@@ -74,3 +74,54 @@ def get_settings() -> Settings:
         anthropic_api_key=key,
         fake_llm=fake,
     )
+
+
+# --- v2 (PLAN_V2 §11.3j): additive env only; v1 Settings above is unchanged -------------------------
+
+
+def _env_float(name: str, default: float) -> float:
+    raw = os.environ.get(name, "").strip()
+    try:
+        return float(raw) if raw else default
+    except ValueError:
+        return default
+
+
+class SettingsV2(BaseModel):
+    enabled: bool  # DAL_V2 (default 1): mount /api/v2 behind a guarded import
+    core_workers: int  # DAL_CORE_WORKERS (default 2)
+    node: str  # DAL_NODE (default "node")
+    core_stub: bool  # DAL_CORE_STUB (default 0): workers answer with canned fixtures
+    daily_budget_usd: float  # DAL_DAILY_BUDGET_USD (default 10)
+    draft_budget_usd: float  # DAL_DRAFT_BUDGET_USD (default 0.40)
+    speculative_design: bool  # DAL_SPECULATIVE_DESIGN (default 1)
+    design_deadline_s: float  # DAL_DESIGN_DEADLINE_S (default 25)
+    fast_mode: bool  # DAL_FAST_MODE (default 0; owner decision 1)
+    require_moderation: bool  # DAL_REQUIRE_MODERATION (default 0)
+
+    @property
+    def llm_mode(self) -> Literal["live", "fake", "off"]:
+        """v2 semantics: fake = DAL_FAKE_LLM=1 (recorded replies), live = a key is set, off = no key."""
+        if _env_flag("DAL_FAKE_LLM"):
+            return "fake"
+        return "live" if os.environ.get("ANTHROPIC_API_KEY") else "off"
+
+
+@lru_cache(maxsize=1)
+def get_settings_v2() -> SettingsV2:
+    def flag(name: str, default: bool) -> bool:
+        v = _env_flag(name)
+        return default if v is None else v
+
+    return SettingsV2(
+        enabled=flag("DAL_V2", True),
+        core_workers=max(1, int(_env_float("DAL_CORE_WORKERS", 2))),
+        node=os.environ.get("DAL_NODE") or "node",
+        core_stub=flag("DAL_CORE_STUB", False),
+        daily_budget_usd=_env_float("DAL_DAILY_BUDGET_USD", 10.0),
+        draft_budget_usd=_env_float("DAL_DRAFT_BUDGET_USD", 0.40),
+        speculative_design=flag("DAL_SPECULATIVE_DESIGN", True),
+        design_deadline_s=_env_float("DAL_DESIGN_DEADLINE_S", 25.0),
+        fast_mode=flag("DAL_FAST_MODE", False),
+        require_moderation=flag("DAL_REQUIRE_MODERATION", False),
+    )

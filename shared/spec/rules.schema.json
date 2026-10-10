@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://draw-a-level.dev/spec/v2/rules.schema.json",
+  "$comment": "dal-level spec v1.0. GENERATED from vision/app/spec/rules.py by scripts/gen_contracts.py; do not edit.",
+  "title": "rules",
+  "description": "GameRules: the game-wide rules sheet; each level stores the resolved snapshot (PLAN_V2 §8.2).",
+  "$ref": "#/$defs/GameRules",
+  "$defs": {
+    "Abilities": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "run": {
+          "default": true,
+          "type": "boolean"
+        },
+        "stomp": {
+          "default": true,
+          "type": "boolean"
+        },
+        "double_jump": {
+          "default": false,
+          "type": "boolean"
+        },
+        "fast_fall": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "title": "Abilities",
+      "type": "object"
+    },
+    "ChallengeBand": {
+      "enum": [
+        "normal",
+        "hard"
+      ],
+      "type": "string"
+    },
+    "Dial": {
+      "enum": [
+        "faithful",
+        "polished",
+        "challenging"
+      ],
+      "type": "string"
+    },
+    "GameRules": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "physics_profile": {
+          "$ref": "#/$defs/ProfileId",
+          "default": "v2-standard"
+        },
+        "profile_hash": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "abilities": {
+          "$ref": "#/$defs/Abilities"
+        },
+        "lives": {
+          "default": "off",
+          "enum": [
+            "off",
+            3,
+            5
+          ]
+        },
+        "hearts": {
+          "default": 1,
+          "maximum": 3,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "theme": {
+          "$ref": "#/$defs/Theme",
+          "default": "sketchbook"
+        },
+        "music": {
+          "default": true,
+          "type": "boolean"
+        },
+        "timer_pressure": {
+          "default": false,
+          "type": "boolean"
+        },
+        "camera": {
+          "default": "follow",
+          "enum": [
+            "follow",
+            "no_backscroll"
+          ],
+          "type": "string"
+        },
+        "default_dial": {
+          "$ref": "#/$defs/Dial",
+          "default": "polished"
+        },
+        "default_band": {
+          "$ref": "#/$defs/ChallengeBand",
+          "default": "normal"
+        },
+        "player_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "version"
+      ],
+      "title": "GameRules",
+      "type": "object"
+    },
+    "ProfileId": {
+      "enum": [
+        "v2-standard",
+        "v2-gentle",
+        "v2-snappy",
+        "v1-classic"
+      ],
+      "type": "string"
+    },
+    "Theme": {
+      "enum": [
+        "sketchbook",
+        "notebook",
+        "graph",
+        "kraft"
+      ],
+      "type": "string"
+    }
+  }
+}

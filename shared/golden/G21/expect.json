@@ -1,0 +1,22 @@
+{
+  "id": "G21",
+  "status": "skeleton",
+  "mode": "prompt",
+  "input": null,
+  "input_pending": "prompt only: 'a lava cave where a key opens the exit, medium'",
+  "name": "prompt_lava_key",
+  "objects": [],
+  "invariants": {
+    "solvable": true,
+    "key_reachable_door_closed": true,
+    "door_gates_goal": true,
+    "blue_line_draft": true
+  },
+  "prompt": "a lava cave where a key opens the exit, medium",
+  "difficulty": {
+    "normal_C": [
+      0.3,
+      1.0
+    ]
+  }
+}

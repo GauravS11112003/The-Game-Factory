@@ -1,0 +1,96 @@
+{
+  "id": "G06",
+  "status": "skeleton",
+  "mode": "canvas",
+  "input": "input.png",
+  "ink": "ink.json",
+  "strokes": "strokes.json",
+  "name": "kid_full_level",
+  "prompt": "the monster walks",
+  "objects": [
+    {
+      "near": [
+        13,
+        21
+      ],
+      "radius": 3,
+      "color": "black",
+      "role": "ground",
+      "slope_segments": 1,
+      "steps": 0
+    },
+    {
+      "near": [
+        4,
+        24.4
+      ],
+      "radius": 2,
+      "color": "red",
+      "role": "spikes",
+      "facing": "up",
+      "behavior": "static"
+    },
+    {
+      "near": [
+        36.5,
+        19.75
+      ],
+      "radius": 2,
+      "color": "red",
+      "role": "spikes",
+      "facing": "up",
+      "snapped_to_near": [
+        36.3,
+        20.8
+      ]
+    },
+    {
+      "near": [
+        25.6,
+        16.4
+      ],
+      "radius": 2,
+      "color": "red",
+      "role": "enemy",
+      "behavior": "walker",
+      "grounded": true
+    },
+    {
+      "near": [
+        45.6,
+        12.5
+      ],
+      "radius": 2,
+      "color": "green",
+      "role": "goal",
+      "grounded": true
+    }
+  ],
+  "counts": {
+    "coin": 3,
+    "moving_enemy": 1
+  },
+  "invariants": {
+    "solvable_at": [
+      "ink",
+      "understood",
+      "faithful",
+      "polished",
+      "normal",
+      "hard"
+    ],
+    "max_R_edits": 3,
+    "max_R_cells": 3,
+    "or_add_step": 1,
+    "spawn_hazard_min_c": 2,
+    "pole_walls": 0,
+    "bumps": 0
+  },
+  "model_only": [
+    "objects[3].behavior"
+  ],
+  "must_not": [
+    "staircase",
+    "walking spawn spikes"
+  ]
+}

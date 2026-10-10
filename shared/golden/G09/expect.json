@@ -1,0 +1,194 @@
+{
+  "id": "G09",
+  "status": "skeleton",
+  "mode": "canvas",
+  "input": "input.png",
+  "ink": "ink.json",
+  "strokes": null,
+  "name": "tower_key",
+  "prompt": null,
+  "gt": "gt.json",
+  "objects": [
+    {
+      "near": [
+        23.0,
+        25.5
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "ground",
+      "label": "GROUND"
+    },
+    {
+      "near": [
+        9.0,
+        22.5
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "platform",
+      "label": "P1"
+    },
+    {
+      "near": [
+        16.0,
+        19.5
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "platform",
+      "label": "P2"
+    },
+    {
+      "near": [
+        24.0,
+        16.5
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "platform",
+      "label": "P3"
+    },
+    {
+      "near": [
+        38.0,
+        12.5
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "platform",
+      "label": "P4",
+      "one_surface": true
+    },
+    {
+      "near": [
+        46.5,
+        19.5
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "wall",
+      "label": "RWALL"
+    },
+    {
+      "near": [
+        45.0,
+        19.0
+      ],
+      "radius": 2,
+      "color": "red",
+      "role": "spikes",
+      "label": "WSPK",
+      "facing": "left"
+    },
+    {
+      "near": [
+        9.5,
+        21.5
+      ],
+      "radius": 2,
+      "color": "red",
+      "role": "spikes",
+      "label": "S1"
+    },
+    {
+      "near": [
+        40.5,
+        9.5
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "door",
+      "label": "DOOR"
+    },
+    {
+      "near": [
+        44.5,
+        11.0
+      ],
+      "radius": 2,
+      "color": "green",
+      "role": "goal",
+      "label": "GOAL"
+    },
+    {
+      "near": [
+        16.0,
+        18.0
+      ],
+      "radius": 2,
+      "color": "blue",
+      "role": "key",
+      "label": "KEY"
+    },
+    {
+      "near": [
+        24.5,
+        15.0
+      ],
+      "radius": 2,
+      "color": "red",
+      "role": "enemy",
+      "label": "MON"
+    },
+    {
+      "near": [
+        33.0,
+        21.5
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "decoration",
+      "label": "TREE",
+      "collides": false
+    },
+    {
+      "near": [
+        3.0,
+        22.5
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "start_marker",
+      "label": "S_TXT"
+    },
+    {
+      "near": [
+        31.0,
+        2.5
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "text",
+      "label": "TXT",
+      "collides": false
+    }
+  ],
+  "invariants": {
+    "solvable_at": [
+      "ink",
+      "understood",
+      "faithful",
+      "polished",
+      "normal",
+      "hard"
+    ],
+    "start_near": [
+      2.5,
+      22
+    ],
+    "key_reachable_door_closed": true,
+    "door_gates_goal": true
+  },
+  "model_off": {
+    "asks": [
+      "which_door"
+    ]
+  },
+  "model_only": [
+    "key_reachable_door_closed (key linked to the door bar)"
+  ],
+  "must_not": [
+    "key silently becomes a coin"
+  ]
+}

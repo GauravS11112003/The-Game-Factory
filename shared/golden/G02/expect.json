@@ -1,0 +1,76 @@
+{
+  "id": "G02",
+  "status": "skeleton",
+  "mode": "canvas",
+  "input": "input.png",
+  "ink": "ink.json",
+  "strokes": "strokes.json",
+  "name": "spike_cave",
+  "prompt": null,
+  "objects": [
+    {
+      "near": [
+        22.5,
+        9.5
+      ],
+      "radius": 2,
+      "color": "red",
+      "role": "spikes",
+      "facing": "down",
+      "host_role": "ceiling"
+    },
+    {
+      "near": [
+        37.0,
+        22.0
+      ],
+      "radius": 2,
+      "color": "red",
+      "role": "spikes",
+      "facing": "left",
+      "host_role": "wall"
+    },
+    {
+      "near": [
+        37.5,
+        22.0
+      ],
+      "radius": 1.5,
+      "color": "black",
+      "role": "wall",
+      "collides": true,
+      "hazard": false
+    },
+    {
+      "near": [
+        44.6,
+        22.5
+      ],
+      "radius": 2,
+      "color": "green",
+      "role": "goal",
+      "grounded": true
+    }
+  ],
+  "counts": {
+    "coin": 4,
+    "goal": 1
+  },
+  "invariants": {
+    "solvable_at": [
+      "ink",
+      "understood",
+      "faithful",
+      "polished",
+      "normal",
+      "hard"
+    ],
+    "pole_walls": 0,
+    "bumps": 0,
+    "art_offset_px_max": 1,
+    "floor_route_to_goal_open": true
+  },
+  "must_not": [
+    "hazard tiles over the wall ink"
+  ]
+}

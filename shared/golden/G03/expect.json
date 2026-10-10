@@ -1,0 +1,110 @@
+{
+  "id": "G03",
+  "status": "skeleton",
+  "mode": "canvas",
+  "input": "input.png",
+  "ink": "ink.json",
+  "strokes": "strokes.json",
+  "name": "monster_meadow",
+  "prompt": "the monster walks back and forth",
+  "objects": [
+    {
+      "near": [
+        9,
+        17
+      ],
+      "radius": 2,
+      "color": "green",
+      "role": "decoration",
+      "collides": false
+    },
+    {
+      "near": [
+        9,
+        22
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "decoration",
+      "collides": false
+    },
+    {
+      "near": [
+        42.5,
+        4.4
+      ],
+      "radius": 3,
+      "color": "black",
+      "role": "decoration",
+      "collides": false,
+      "note": "sun"
+    },
+    {
+      "near": [
+        44,
+        21
+      ],
+      "radius": 2,
+      "role": "goal",
+      "grounded": true
+    },
+    {
+      "near": [
+        20,
+        22
+      ],
+      "radius": 2,
+      "role": "enemy",
+      "behavior": "walker",
+      "pinned": [
+        "archetype"
+      ],
+      "grounded": true,
+      "parts_min": 2
+    }
+  ],
+  "counts": {
+    "coin": 4,
+    "enemy": 1,
+    "moving_enemy": 1
+  },
+  "invariants": {
+    "solvable_at": [
+      "ink",
+      "understood",
+      "faithful",
+      "polished",
+      "normal"
+    ],
+    "pole_walls": 0,
+    "bumps": 0,
+    "art_offset_px_max": 1,
+    "reachable_min": 58,
+    "max_R_edits": 3,
+    "max_R_cells": 3,
+    "enemy_feet_px_max": 1
+  },
+  "difficulty": {
+    "polished_C_min": 0.1,
+    "normal_C": [
+      0.3,
+      1.0
+    ]
+  },
+  "latency": {
+    "ink_s_max": 0.9
+  },
+  "model_off": {
+    "solvable": true,
+    "text_collision_cells": 0
+  },
+  "model_only": [
+    "objects[4].pinned",
+    "objects[4].behavior"
+  ],
+  "must_not": [
+    "tree as goal",
+    "trunk wall",
+    "orphan eyes"
+  ]
+}

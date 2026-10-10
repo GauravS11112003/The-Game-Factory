@@ -1,0 +1,96 @@
+{
+  "id": "G01",
+  "status": "skeleton",
+  "mode": "canvas",
+  "input": "input.png",
+  "ink": "ink.json",
+  "strokes": "strokes.json",
+  "name": "spike_hop",
+  "prompt": null,
+  "objects": [
+    {
+      "near": [
+        44.6,
+        19.5
+      ],
+      "radius": 2,
+      "color": "green",
+      "role": "goal",
+      "grounded": true,
+      "max_dist_from_drawn_c": 1
+    },
+    {
+      "near": [
+        44.6,
+        22.0
+      ],
+      "radius": 1.5,
+      "color": "black",
+      "role": "pole",
+      "collides": false
+    },
+    {
+      "near": [
+        3.8,
+        24.0
+      ],
+      "radius": 2,
+      "color": "red",
+      "role": "spikes",
+      "facing": "up"
+    },
+    {
+      "near": [
+        16.1,
+        16.2
+      ],
+      "radius": 2,
+      "color": "red",
+      "role": "spikes",
+      "facing": "up",
+      "snapped_to_near": [
+        16.1,
+        17.2
+      ],
+      "max_dy_c": 1
+    },
+    {
+      "near": [
+        38.9,
+        21.25
+      ],
+      "radius": 1,
+      "color": "blue",
+      "role": "coin",
+      "note": "the single tap"
+    }
+  ],
+  "counts": {
+    "coin": 4,
+    "goal": 1,
+    "hazard_rows_max": 1
+  },
+  "invariants": {
+    "solvable_at": [
+      "ink",
+      "understood",
+      "faithful",
+      "polished",
+      "normal",
+      "hard"
+    ],
+    "pole_walls": 0,
+    "bumps": 0,
+    "art_offset_px_max": 1,
+    "spawn_hazard_min_c": 2,
+    "floor_gap_closed_near": [
+      19.2,
+      23.4
+    ]
+  },
+  "must_not": [
+    "pole collision",
+    "2-row hazards",
+    "bumps"
+  ]
+}

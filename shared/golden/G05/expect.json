@@ -1,0 +1,57 @@
+{
+  "id": "G05",
+  "status": "skeleton",
+  "mode": "canvas",
+  "input": "input.png",
+  "ink": "ink.json",
+  "strokes": "strokes.json",
+  "name": "big_leap",
+  "prompt": null,
+  "objects": [
+    {
+      "near": [
+        24,
+        26.5
+      ],
+      "radius": 4,
+      "color": "red",
+      "role": "lava"
+    },
+    {
+      "near": [
+        45,
+        16
+      ],
+      "radius": 2,
+      "color": "green",
+      "role": "goal",
+      "grounded": true
+    }
+  ],
+  "counts": {
+    "coin": 3,
+    "goal": 1
+  },
+  "invariants": {
+    "solvable_at": [
+      "ink",
+      "understood",
+      "faithful",
+      "polished",
+      "normal",
+      "hard"
+    ],
+    "solvable_as_drawn_or_one_R3": true,
+    "route_has_runjump": true,
+    "note_key_any_of": [
+      "hint.needs_run_up",
+      "frontier.needs_run_up",
+      "polish.coin_trail"
+    ],
+    "pole_walls": 0,
+    "bumps": 0
+  },
+  "must_not": [
+    "silent impossibility"
+  ]
+}

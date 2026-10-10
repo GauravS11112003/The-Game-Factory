@@ -1,0 +1,208 @@
+{
+ "objects": [
+  {
+   "name": "ROOF",
+   "color": "black",
+   "bbox": [
+    0,
+    1,
+    47,
+    3
+   ],
+   "role": "ceiling"
+  },
+  {
+   "name": "F1",
+   "color": "black",
+   "bbox": [
+    0,
+    23,
+    23,
+    25
+   ],
+   "role": "ground"
+  },
+  {
+   "name": "F1b",
+   "color": "black",
+   "bbox": [
+    23,
+    23,
+    31,
+    25
+   ],
+   "role": "ground"
+  },
+  {
+   "name": "F2",
+   "color": "black",
+   "bbox": [
+    38,
+    23,
+    47,
+    25
+   ],
+   "role": "ground"
+  },
+  {
+   "name": "WALL",
+   "color": "black",
+   "bbox": [
+    15,
+    18,
+    17,
+    23
+   ],
+   "role": "wall",
+   "rests_on": "F1"
+  },
+  {
+   "name": "PIT",
+   "color": "red",
+   "bbox": [
+    30,
+    25,
+    39,
+    26
+   ],
+   "role": "spike_strip",
+   "points": "up",
+   "rests_on": null
+  },
+  {
+   "name": "STAL",
+   "color": "red",
+   "bbox": [
+    19,
+    3,
+    24,
+    5
+   ],
+   "role": "spike_strip",
+   "attached_to": "ROOF",
+   "points": "down"
+  },
+  {
+   "name": "TXT",
+   "color": "red",
+   "bbox": [
+    31,
+    19,
+    39,
+    23
+   ],
+   "role": "text"
+  },
+  {
+   "name": "GOAL",
+   "color": "green",
+   "bbox": [
+    43,
+    19,
+    47,
+    24
+   ],
+   "role": "goal",
+   "rests_on": "F2"
+  },
+  {
+   "name": "BAT",
+   "color": "black",
+   "bbox": [
+    8,
+    6,
+    14,
+    9
+   ],
+   "role": "decoration"
+  },
+  {
+   "name": "COIN",
+   "color": "blue",
+   "bbox": [
+    0,
+    0,
+    47,
+    26
+   ],
+   "role": "coin"
+  }
+ ],
+ "components": [
+  {
+   "id": 1,
+   "object": "ROOF",
+   "role": "ceiling"
+  },
+  {
+   "id": 2,
+   "object": "STAL",
+   "role": "spike_strip",
+   "attached_to": 1,
+   "points": "down"
+  },
+  {
+   "id": 3,
+   "object": "BAT",
+   "role": "decoration"
+  },
+  {
+   "id": 4,
+   "object": "WALL",
+   "role": "wall",
+   "rests_on": 9
+  },
+  {
+   "id": 5,
+   "object": "TXT",
+   "role": "text"
+  },
+  {
+   "id": 6,
+   "object": "GOAL",
+   "role": "goal",
+   "rests_on": 11
+  },
+  {
+   "id": 7,
+   "object": "COIN",
+   "role": "coin"
+  },
+  {
+   "id": 8,
+   "object": "COIN",
+   "role": "coin"
+  },
+  {
+   "id": 9,
+   "object": "F1",
+   "role": "ground"
+  },
+  {
+   "id": 10,
+   "object": "F1b",
+   "role": "ground"
+  },
+  {
+   "id": 11,
+   "object": "F2",
+   "role": "ground"
+  },
+  {
+   "id": 12,
+   "object": "PIT",
+   "role": "spike_strip",
+   "rests_on": null,
+   "points": "up"
+  }
+ ],
+ "expected_repairs": [
+  "straighten F1 (wobbly floor makes 1-cell bumps)",
+  "close the accidental 1-cell gap at x=23 between F1 and F1b (or merge them)",
+  "reclassify TXT ('lava!' written in RED) as text: otherwise it becomes hazard tiles in mid-air",
+  "reclassify BAT as decoration",
+  "the 8-cell pit (x=31..38) is wider than the 6-cell max: nudge F2 left or F1b right so it is <= 6",
+  "the 5-cell WALL is taller than the 3-cell max jump: nudge it down / flag it",
+  "keep PIT spikes and STAL"
+ ]
+}

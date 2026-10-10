@@ -1,0 +1,19 @@
+{
+  "id": "G16",
+  "status": "skeleton",
+  "mode": "canvas",
+  "input": null,
+  "input_pending": "lane C: canvas with 'the platform moves', 'watch out!', an 'S' and a scribbled sun",
+  "name": "handwriting_heavy",
+  "objects": [],
+  "invariants": {
+    "text_strokes_noncolliding_frac_min": 0.9
+  },
+  "model_only": [
+    "move binding on the right platform",
+    "start at the S"
+  ],
+  "must_not": [
+    "words as walls"
+  ]
+}

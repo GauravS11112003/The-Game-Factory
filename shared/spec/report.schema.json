@@ -1,0 +1,689 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://draw-a-level.dev/spec/v2/report.schema.json",
+  "$comment": "dal-level spec v1.0. GENERATED from vision/app/spec/report.py by scripts/gen_contracts.py; do not edit.",
+  "title": "report",
+  "description": "PlaytestReport: what the frame-exact bot measured (PLAN_V2 §4.2-4.5).",
+  "$ref": "#/$defs/PlaytestReport",
+  "$defs": {
+    "Band": {
+      "enum": [
+        "trivial",
+        "easy",
+        "normal",
+        "hard",
+        "expert"
+      ],
+      "type": "string"
+    },
+    "Blocking": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "from": {
+          "$ref": "#/$defs/CellXY"
+        },
+        "to_object": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/FailureKind"
+        },
+        "need": {
+          "type": "string"
+        },
+        "have": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "from",
+        "to_object",
+        "kind",
+        "need",
+        "have"
+      ],
+      "title": "Blocking",
+      "type": "object"
+    },
+    "CellXY": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "type": "array"
+    },
+    "Face": {
+      "enum": [
+        "top",
+        "bottom",
+        "left",
+        "right"
+      ],
+      "type": "string"
+    },
+    "FailureKind": {
+      "enum": [
+        "gap_too_wide",
+        "ledge_too_high",
+        "head_bonk",
+        "wall_too_tall",
+        "goal_unreachable",
+        "spawn_trapped",
+        "key_unreachable",
+        "hard_flag"
+      ],
+      "type": "string"
+    },
+    "Flag": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "code": {
+          "$ref": "#/$defs/FlagCode"
+        },
+        "severity": {
+          "$ref": "#/$defs/Severity"
+        },
+        "frame": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CellXY"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "object_ids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "fix_cids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "message_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "args": {
+          "$ref": "#/$defs/MessageArgs"
+        }
+      },
+      "required": [
+        "id",
+        "code",
+        "severity"
+      ],
+      "title": "Flag",
+      "type": "object"
+    },
+    "FlagCode": {
+      "enum": [
+        "unsolvable",
+        "tight_window",
+        "blind_jump",
+        "leap_of_faith",
+        "spawn_unsafe",
+        "invisible_lethal",
+        "softlock",
+        "long_segment",
+        "head_bonk",
+        "unreachable_drawn",
+        "skippable_setpiece",
+        "trivial",
+        "long_flat",
+        "dead_end",
+        "entity_error"
+      ],
+      "type": "string"
+    },
+    "Frontier": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "reached": {
+          "items": {
+            "$ref": "#/$defs/CellXY"
+          },
+          "type": "array"
+        },
+        "blocking": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Blocking"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "reached"
+      ],
+      "title": "Frontier",
+      "type": "object"
+    },
+    "MessageArgs": {
+      "additionalProperties": {
+        "$ref": "#/$defs/Scalar"
+      },
+      "type": "object"
+    },
+    "PlaytestReport": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "solvable": {
+          "type": "boolean"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "enum": [
+                "no_start",
+                "no_goal",
+                "goal_unreachable",
+                "key_unreachable"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "frontier": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Frontier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "route": {
+          "items": {
+            "$ref": "#/$defs/RouteStep"
+          },
+          "type": "array"
+        },
+        "segments": {
+          "items": {
+            "$ref": "#/$defs/Segment"
+          },
+          "type": "array"
+        },
+        "C": {
+          "type": "number"
+        },
+        "F": {
+          "type": "number"
+        },
+        "score": {
+          "maximum": 100,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "band": {
+          "$ref": "#/$defs/Band"
+        },
+        "C_skilled": {
+          "type": "number"
+        },
+        "fastest_ms": {
+          "type": "integer"
+        },
+        "par_ms": {
+          "type": "integer"
+        },
+        "casual_clear_s": {
+          "type": "number"
+        },
+        "flags": {
+          "items": {
+            "$ref": "#/$defs/Flag"
+          },
+          "type": "array"
+        },
+        "reachable": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "setpiece_order": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "slots": {
+          "$ref": "#/$defs/Slots"
+        },
+        "engaged_enemies": {
+          "type": "integer"
+        },
+        "actions_per_screen": {
+          "type": "number"
+        },
+        "trace": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        "level_hash": {
+          "type": "string"
+        },
+        "core_version": {
+          "type": "string"
+        },
+        "approx": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "solvable",
+        "route",
+        "segments",
+        "C",
+        "F",
+        "score",
+        "band",
+        "C_skilled",
+        "fastest_ms",
+        "par_ms",
+        "casual_clear_s",
+        "flags",
+        "reachable",
+        "setpiece_order",
+        "slots",
+        "engaged_enemies",
+        "actions_per_screen",
+        "trace",
+        "level_hash",
+        "core_version"
+      ],
+      "title": "PlaytestReport",
+      "type": "object"
+    },
+    "RouteKind": {
+      "enum": [
+        "walk",
+        "jump",
+        "runjump",
+        "drop",
+        "dropthrough",
+        "spring",
+        "stomp",
+        "ride",
+        "wait",
+        "timed_pass"
+      ],
+      "type": "string"
+    },
+    "RouteStep": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "i": {
+          "type": "integer"
+        },
+        "kind": {
+          "$ref": "#/$defs/RouteKind"
+        },
+        "from": {
+          "$ref": "#/$defs/CellXY"
+        },
+        "to": {
+          "$ref": "#/$defs/CellXY"
+        },
+        "frames": {
+          "type": "integer"
+        },
+        "w_f": {
+          "type": "number"
+        },
+        "h_f": {
+          "type": "number"
+        },
+        "phi_f": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lethal": {
+          "type": "number"
+        },
+        "p_death_casual": {
+          "type": "number"
+        },
+        "p_death_skilled": {
+          "type": "number"
+        },
+        "blind": {
+          "type": "boolean"
+        },
+        "segment": {
+          "type": "string"
+        },
+        "setpiece": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "i",
+        "kind",
+        "from",
+        "to",
+        "frames",
+        "w_f",
+        "h_f",
+        "phi_f",
+        "lethal",
+        "p_death_casual",
+        "p_death_skilled",
+        "blind",
+        "segment",
+        "setpiece"
+      ],
+      "title": "RouteStep",
+      "type": "object"
+    },
+    "Scalar": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "Segment": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "E": {
+          "type": "number"
+        },
+        "A": {
+          "type": "number"
+        },
+        "T_ms": {
+          "type": "integer"
+        },
+        "F_s": {
+          "type": "number"
+        },
+        "actions": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "from",
+        "to",
+        "E",
+        "A",
+        "T_ms",
+        "F_s",
+        "actions"
+      ],
+      "title": "Segment",
+      "type": "object"
+    },
+    "Severity": {
+      "enum": [
+        "block",
+        "hard",
+        "warn",
+        "info",
+        "target"
+      ],
+      "type": "string"
+    },
+    "Slot": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "host": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "face": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Face"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "x0": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "x1": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "w": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "segment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "x",
+        "y"
+      ],
+      "title": "Slot",
+      "type": "object"
+    },
+    "Slots": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "checkpoint": {
+          "items": {
+            "$ref": "#/$defs/Slot"
+          },
+          "type": "array"
+        },
+        "coin": {
+          "items": {
+            "$ref": "#/$defs/Slot"
+          },
+          "type": "array"
+        },
+        "risk": {
+          "items": {
+            "$ref": "#/$defs/Slot"
+          },
+          "type": "array"
+        },
+        "enemy": {
+          "items": {
+            "$ref": "#/$defs/Slot"
+          },
+          "type": "array"
+        },
+        "hazard": {
+          "items": {
+            "$ref": "#/$defs/Slot"
+          },
+          "type": "array"
+        },
+        "spikes": {
+          "items": {
+            "$ref": "#/$defs/Slot"
+          },
+          "type": "array"
+        },
+        "step": {
+          "items": {
+            "$ref": "#/$defs/Slot"
+          },
+          "type": "array"
+        },
+        "spring": {
+          "items": {
+            "$ref": "#/$defs/Slot"
+          },
+          "type": "array"
+        },
+        "hint": {
+          "items": {
+            "$ref": "#/$defs/Slot"
+          },
+          "type": "array"
+        }
+      },
+      "title": "Slots",
+      "type": "object"
+    }
+  }
+}

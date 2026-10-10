@@ -1,0 +1,164 @@
+{
+  "format": "dal-level",
+  "schema_version": 2,
+  "core_min": "2.0.0",
+  "id": "lvl_starter1",
+  "version": 1,
+  "game_id": null,
+  "parent_id": null,
+  "order_index": 0,
+  "title": "First Steps (migrated)",
+  "author": "conformance",
+  "created_at": "2026-10-10T00:00:00Z",
+  "license": "CC0-1.0",
+  "world": {
+    "cell": 16,
+    "screens": 1,
+    "w": 48,
+    "h": 27
+  },
+  "rules": {
+    "version": 1,
+    "physics_profile": "v1-classic",
+    "abilities": {
+      "run": false,
+      "stomp": true,
+      "double_jump": false,
+      "fast_fall": true
+    },
+    "lives": "off",
+    "hearts": 1,
+    "theme": "sketchbook",
+    "music": true,
+    "timer_pressure": false,
+    "camera": "follow",
+    "default_dial": "polished",
+    "default_band": "normal",
+    "player_type": null
+  },
+  "source": {
+    "kind": "migrated",
+    "prompt": null,
+    "pack_id": null,
+    "sheets": [
+      {
+        "index": 0,
+        "photo_url": null,
+        "qr": null
+      }
+    ]
+  },
+  "objects": [],
+  "setpieces": [],
+  "edits": [],
+  "compiled": {
+    "tiles": {
+      "legend": ".#=/\\abcd~X",
+      "rows": [
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "30.5#13.",
+        "48.",
+        "48.",
+        "48.",
+        "20#4X24#",
+        "48#",
+        "48#",
+        "48#",
+        "48#"
+      ]
+    },
+    "entities": [
+      {
+        "id": "start",
+        "type": "player_start",
+        "x": 2.0,
+        "y": 22.0
+      },
+      {
+        "id": "k1",
+        "type": "key",
+        "x": 32.0,
+        "y": 18.0,
+        "door": "d1"
+      },
+      {
+        "id": "d1",
+        "type": "door",
+        "x": 44.0,
+        "y": 19.0,
+        "w": 1.0,
+        "h": 3.0,
+        "key": "k1"
+      },
+      {
+        "id": "en1",
+        "type": "enemy",
+        "archetype": "flyer",
+        "x": 10.0,
+        "y": 21.0,
+        "w": 1.0,
+        "h": 1.0,
+        "spiky": false,
+        "params": {
+          "pattern": "horizontal",
+          "range": 4.0,
+          "speed": 2.0
+        },
+        "bounds": [
+          8.0,
+          12.0
+        ]
+      },
+      {
+        "id": "goal",
+        "type": "goal",
+        "x": 46.0,
+        "y": 22.0,
+        "trigger": [
+          45.75,
+          19.0,
+          47.5,
+          22.0
+        ]
+      }
+    ],
+    "triggers": [
+      {
+        "when": "collect:k1",
+        "then": "open:d1"
+      }
+    ],
+    "sprites": {
+      "player": null,
+      "objects": {}
+    }
+  },
+  "design": null,
+  "embedded_library": [],
+  "meta": {
+    "transcript": "",
+    "intent": null,
+    "safety": "unchecked",
+    "level_hash": "sha256:9b4d63f3fec15a26911e4207bc97df17f4f401f378a0134e9cf8d09c0c5c6bc2",
+    "core_version": "2.0.0",
+    "warnings": [],
+    "build": null
+  }
+}

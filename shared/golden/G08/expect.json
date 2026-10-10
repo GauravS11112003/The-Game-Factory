@@ -1,0 +1,139 @@
+{
+  "id": "G08",
+  "status": "skeleton",
+  "mode": "canvas",
+  "input": "input.png",
+  "ink": "ink.json",
+  "strokes": null,
+  "name": "wobbly_cave",
+  "prompt": null,
+  "gt": "gt.json",
+  "objects": [
+    {
+      "near": [
+        24.0,
+        2.5
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "ceiling",
+      "label": "ROOF"
+    },
+    {
+      "near": [
+        12.0,
+        24.5
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "ground",
+      "label": "F1"
+    },
+    {
+      "near": [
+        27.5,
+        24.5
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "ground",
+      "label": "F1b"
+    },
+    {
+      "near": [
+        43.0,
+        24.5
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "ground",
+      "label": "F2"
+    },
+    {
+      "near": [
+        16.5,
+        21.0
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "wall",
+      "label": "WALL",
+      "trimmed_not_lifted": true,
+      "detached": false
+    },
+    {
+      "near": [
+        35.0,
+        26.0
+      ],
+      "radius": 2,
+      "color": "red",
+      "role": "spikes",
+      "label": "PIT"
+    },
+    {
+      "near": [
+        22.0,
+        4.5
+      ],
+      "radius": 2,
+      "color": "red",
+      "role": "spikes",
+      "label": "STAL"
+    },
+    {
+      "near": [
+        35.5,
+        21.5
+      ],
+      "radius": 2,
+      "color": "red",
+      "role": "text",
+      "label": "TXT",
+      "collides": false,
+      "hazard": false,
+      "text": "lava!"
+    },
+    {
+      "near": [
+        45.5,
+        22.0
+      ],
+      "radius": 2,
+      "color": "green",
+      "role": "goal",
+      "label": "GOAL"
+    },
+    {
+      "near": [
+        11.5,
+        8.0
+      ],
+      "radius": 2,
+      "color": "black",
+      "role": "decoration",
+      "label": "BAT",
+      "collides": false
+    }
+  ],
+  "invariants": {
+    "solvable_at": [
+      "ink",
+      "understood",
+      "faithful",
+      "polished",
+      "normal",
+      "hard"
+    ],
+    "start_on_floor": true,
+    "hole_closed_near": [
+      23,
+      23.5
+    ],
+    "bumps": 0,
+    "pole_walls": 0
+  },
+  "must_not": [
+    "detached pillar"
+  ]
+}
