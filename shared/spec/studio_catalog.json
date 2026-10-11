@@ -16,7 +16,8 @@
        {"name": "speed", "type": "number", "default": 280, "min": 40, "max": 1200, "label": "Run speed"},
        {"name": "jump", "type": "number", "default": 640, "min": 0, "max": 2000, "label": "Jump power"},
        {"name": "double_jump", "type": "bool", "default": false, "label": "Double jump"},
-       {"name": "air_control", "type": "number", "default": 0.8, "min": 0, "max": 1, "label": "Air control"}]},
+       {"name": "air_control", "type": "number", "default": 0.8, "min": 0, "max": 1, "label": "Air control"},
+       {"name": "auto_run", "type": "number", "default": 0, "min": -1200, "max": 1200, "label": "Always runs at (px/s, 0 = off)"}]},
     {"type": "move_keys", "label": "Move with keys", "group": "control", "help": "Moves straight with the arrow keys (top-down games, menus, paddles).",
      "params": [
        {"name": "speed", "type": "number", "default": 260, "min": 20, "max": 1500, "label": "Speed"},
@@ -27,7 +28,8 @@
        {"name": "power", "type": "number", "default": 0.6, "min": 0.05, "max": 3, "label": "Engine power"},
        {"name": "max_speed", "type": "number", "default": 900, "min": 50, "max": 4000, "label": "Top speed"},
        {"name": "tilt", "type": "number", "default": 0.5, "min": 0, "max": 3, "label": "Air tilt"},
-       {"name": "fuel_counter", "type": "counter", "default": "", "label": "Uses fuel from counter (empty = no fuel)"}]},
+       {"name": "fuel_counter", "type": "counter", "default": "", "label": "Uses fuel from counter (empty = no fuel)"},
+       {"name": "distance_counter", "type": "counter", "default": "distance", "label": "Counts metres driven in game counter (empty = off)"}]},
     {"type": "thrust_ship", "label": "Fly a ship", "group": "control", "help": "Up to thrust, left and right to turn (asteroids style).",
      "params": [
        {"name": "thrust", "type": "number", "default": 600, "min": 20, "max": 4000, "label": "Thrust"},
@@ -37,7 +39,8 @@
      "params": [
        {"name": "power", "type": "number", "default": 1, "min": 0.1, "max": 5, "label": "Power"},
        {"name": "max_pull", "type": "number", "default": 180, "min": 20, "max": 800, "label": "Longest pull (px)"},
-       {"name": "shots_counter", "type": "counter", "default": "", "label": "Uses shots from counter"}]},
+       {"name": "shots_counter", "type": "counter", "default": "", "label": "Uses shots from counter"},
+       {"name": "out_of_shots", "type": "choice", "options": ["lose", "nothing"], "default": "lose", "label": "When the last shot has landed"}]},
     {"type": "draggable", "label": "Drag with the mouse", "group": "control", "help": "Pick it up and move it (puzzles, sorting games).", "params": []},
     {"type": "shooter", "label": "Shoot", "group": "action", "help": "Fires copies of a projectile.",
      "params": [
@@ -67,7 +70,8 @@
        {"name": "amount", "type": "number", "default": 1, "min": 0, "max": 10000, "label": "Damage"},
        {"name": "to", "type": "target", "default": "player", "label": "Hurts (tag or object)"},
        {"name": "knockback", "type": "number", "default": 350, "min": 0, "max": 4000, "label": "Knockback"},
-       {"name": "destroy_self", "type": "bool", "default": false, "label": "Breaks after hitting"}]},
+       {"name": "destroy_self", "type": "bool", "default": false, "label": "Breaks after hitting"},
+       {"name": "min_speed", "type": "number", "default": 0, "min": 0, "max": 4000, "label": "Only when hitting faster than (px/s, 0 = any touch)"}]},
     {"type": "pickup", "label": "Pick up", "group": "stats", "help": "Touching it gives an item (adds to a counter) and it disappears.",
      "params": [
        {"name": "item", "type": "counter", "default": "coins", "label": "Gives"},

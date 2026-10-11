@@ -1,3 +1,27 @@
 {
-  "messages": {}
+  "messages": {
+    "rt.you_win": "You win!",
+    "rt.p1_wins": "Player 1 wins!",
+    "rt.p2_wins": "Player 2 wins!",
+    "rt.oops": "Oops!",
+    "rt.try_again": "Try again",
+    "rt.play_again": "Play again",
+    "rt.restart": "Restart",
+    "rt.paused": "Paused",
+    "rt.pause": "Pause",
+    "rt.resume": "Keep playing",
+    "rt.mute": "Sound off",
+    "rt.unmute": "Sound on",
+    "rt.level": "Level {n}",
+    "rt.level_done": "Level complete!",
+    "rt.out_of_shots": "Out of shots!",
+    "rt.out_of_fuel": "Out of fuel!",
+    "rt.flipped": "You flipped over!",
+    "rt.caught": "Caught!",
+    "rt.score_line": "Score: {score}",
+    "rt.time_line": "Time: {time} s",
+    "rt.player1": "Player 1",
+    "rt.player2": "Player 2",
+    "rt.error_start": "This game could not start."
+  }
 }
