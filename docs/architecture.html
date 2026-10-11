@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>draw.play Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #fbf6ea; --card: #fffdf6; --ink: #1f1b18; --ink-soft: #5d554d; --graphite: #8a8178;
+  --red: #e0453a; --green: #3e9e4f; --blue: #2c7be5; --pencil: #6a5acd; --blue-line: #8fb8de;
+  --tint: #efe7d6; --hi: #ffe36e; --auth0: #eb5424;
+  --hand: 'Patrick Hand', 'Comic Sans MS', 'Chalkboard SE', system-ui, sans-serif;
+  --r: 14px 11px 16px 12px / 12px 16px 11px 14px;
+  --shadow: 2px 3px 0 rgba(31, 27, 24, 0.14);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; color: var(--ink); font-family: var(--hand);
+  background-color: var(--paper);
+  background-image: repeating-linear-gradient(transparent 0 31px, rgba(143, 184, 222, 0.28) 31px 32px);
+}
+header {
+  position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 10px 16px; background: rgba(251, 246, 234, 0.94); border-bottom: 2.5px solid var(--ink); backdrop-filter: blur(4px);
+}
+.logo { font-size: 1.5rem; display: flex; align-items: center; gap: 8px; }
+.logo-mark { display: inline-grid; place-items: center; width: 30px; height: 30px; border: 2.5px solid var(--ink); border-radius: 50% 45% 52% 48%; transform: rotate(-8deg); background: var(--hi); font-size: 1rem; }
+nav { display: flex; gap: 4px; flex-wrap: wrap; margin-left: auto; }
+nav a { padding: 3px 11px; border-radius: 999px; color: inherit; text-decoration: none; font-size: 1.1rem; }
+nav a:hover { background: var(--tint); box-shadow: inset 0 0 0 2px var(--ink); }
+main { max-width: 1120px; margin: 0 auto; padding: 22px 16px 60px; }
+.legend { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 26px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 12px; border: 2px solid currentColor; border-radius: 999px; background: var(--card); font-size: 1.05rem; }
+.chip i { width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+.card {
+  position: relative; background: var(--card); border: 2.5px solid var(--ink); border-radius: var(--r);
+  box-shadow: var(--shadow); padding: 16px 16px 10px; margin-bottom: 34px;
+}
+.card::before, .card::after {
+  content: ''; position: absolute; width: 64px; height: 20px; pointer-events: none;
+  background: rgba(240, 220, 160, 0.62); border: 1px solid rgba(160, 140, 90, 0.25);
+}
+.card::before { top: -11px; left: 18px; transform: rotate(-4deg); }
+.card::after { top: -10px; right: 22px; transform: rotate(5deg); }
+h2 { margin: 2px 0 10px; font-size: 1.7rem; font-weight: 400; }
+.mu { display: inline-block; padding: 0 6px; transform: rotate(-0.6deg);
+  background-image: linear-gradient(transparent 62%, rgba(255, 227, 110, 0.85) 62%, rgba(255, 227, 110, 0.85) 88%, transparent 88%); }
+.mu.vultr { background-image: linear-gradient(transparent 62%, rgba(44, 123, 229, 0.28) 62% 88%, transparent 88%); }
+.mu.photon { background-image: linear-gradient(transparent 62%, rgba(106, 90, 205, 0.28) 62% 88%, transparent 88%); }
+.mu.auth0 { background-image: linear-gradient(transparent 62%, rgba(235, 84, 36, 0.28) 62% 88%, transparent 88%); }
+.scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+svg.flow { display: block; width: 100%; min-width: 760px; height: auto; font-family: var(--hand); }
+.passports { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin: 18px 0 8px; }
+.pp { border: 2px solid var(--auth0); border-radius: var(--r); background: #fff8f3; padding: 10px 12px; box-shadow: var(--shadow); }
+.pp b { display: block; font-weight: 400; font-size: 1.25rem; border-bottom: 1.5px dashed rgba(235, 84, 36, 0.5); margin-bottom: 6px; padding-bottom: 2px; }
+.pp div { font-size: 1.08rem; }
+.ok { color: var(--green); } .no { color: var(--red); }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><span class="logo-mark">✏️</span>draw.play</div>
+  <nav>
+    <a href="#system">System</a><a href="#vultr">Vultr</a><a href="#build">Build</a><a href="#photon">Photon</a><a href="#auth0">Auth0</a>
+  </nav>
+</header>
+<main>
+  <div class="legend">
+    <span class="chip" style="color:var(--blue)"><i></i>Vultr</span>
+    <span class="chip" style="color:var(--pencil)"><i></i>Photon</span>
+    <span class="chip" style="color:var(--auth0)"><i></i>Auth0</span>
+    <span class="chip" style="color:#b58a00"><i></i>Claude</span>
+  </div>
+
+  <section class="card" id="system"><h2><span class="mu">System</span></h2><div class="scroll"><svg class="flow" data-flow="system"></svg></div></section>
+  <section class="card" id="vultr"><h2><span class="mu vultr">Vultr deploy</span></h2><div class="scroll"><svg class="flow" data-flow="vultr"></svg></div></section>
+  <section class="card" id="build"><h2><span class="mu">Sketch → game</span></h2><div class="scroll"><svg class="flow" data-flow="build"></svg></div></section>
+  <section class="card" id="photon"><h2><span class="mu photon">Photon · iMessage</span></h2><div class="scroll"><svg class="flow" data-flow="photon"></svg></div></section>
+  <section class="card" id="auth0">
+    <h2><span class="mu auth0">Auth0 · Agent Passports</span></h2>
+    <div class="scroll"><svg class="flow" data-flow="auth0"></svg></div>
+    <div class="passports">
+      <div class="pp"><b>🧭 Copilot</b><div class="ok">✓ edit rules</div><div class="no">✗ publish</div></div>
+      <div class="pp"><b>🎨 Art Director</b><div class="ok">✓ change looks</div><div class="no">✗ change gameplay</div></div>
+      <div class="pp"><b>🎵 Sound Designer</b><div class="ok">✓ sound · music</div><div class="no">✗ rules · art</div></div>
+      <div class="pp"><b>🤝 Friend's agent</b><div class="ok">✓ level 2 only</div><div class="no">✗ every other object</div></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const C = {
+  vultr:  { s: '#2c7be5', f: '#eaf2fd' },
+  photon: { s: '#6a5acd', f: '#efedfb' },
+  auth0:  { s: '#eb5424', f: '#fdeee8' },
+  claude: { s: '#b58a00', f: '#fff4c2' },
+  human:  { s: '#1f1b18', f: '#fffdf6' },
+  good:   { s: '#3e9e4f', f: '#e9f6ea' },
+  bad:    { s: '#e0453a', f: '#fdeceb' },
+  pass:   { s: '#eb5424', f: '#fff8f3' },
+};
+
+// Node: [id, x, y, label, kind, w, h, shape]. Edge: [from, to, label, {via, lp, dash, kind}].
+const FLOWS = {
+  system: {
+    h: 600,
+    groups: [{ x: 200, y: 26, w: 590, h: 470, kind: 'vultr', label: 'VULTR · Cloud Compute' }],
+    nodes: [
+      ['phone', 95, 250, '📱 Player\nbrowser · phone', 'human', 150],
+      ['imsg', 95, 540, '💬 iMessage', 'photon', 150],
+      ['caddy', 310, 250, 'Caddy\nHTTPS · WSS', 'vultr'],
+      ['web', 310, 110, 'web\nVite static', 'vultr'],
+      ['api', 500, 250, 'api\nFastAPI', 'vultr'],
+      ['core', 500, 410, 'Node 24 core\n× 2 workers', 'vultr'],
+      ['db', 310, 410, 'SQLite\n+ uploads', 'vultr'],
+      ['msg', 690, 410, 'messaging\nSpectrum SDK', 'photon'],
+      ['claude', 900, 110, '✨ Claude Sonnet', 'claude', 150],
+      ['auth0', 900, 250, '🛂 Auth0\nAgent Passports', 'auth0', 150],
+      ['photon', 900, 410, 'Photon Cloud\niMessage line', 'photon', 150],
+    ],
+    edges: [
+      ['phone', 'caddy', 'HTTPS · WSS'],
+      ['caddy', 'web', '/'],
+      ['caddy', 'api', '/api'],
+      ['api', 'core', 'simulate · verify'],
+      ['api', 'db', 'store'],
+      ['api', 'claude', 'Imagine', { from: [545, 222], via: [[545, 110]], lp: [690, 110] }],
+      ['api', 'auth0', 'passport check', { via: [[575, 250]], lp: [690, 238] }],
+      ['msg', 'api', 'service secret', { via: [[690, 290], [575, 290]], lp: [650, 330] }],
+      ['msg', 'photon', 'Spectrum', { kind: 'photon', lp: [795, 445] }],
+      ['photon', 'imsg', 'app card', { via: [[900, 540]], kind: 'photon' }],
+      ['imsg', 'phone', 'tap → launcher', { kind: 'photon' }],
+    ],
+  },
+
+  vultr: {
+    h: 470,
+    groups: [
+      { x: 230, y: 24, w: 740, h: 420, kind: 'vultr', label: 'VULTR · Ubuntu · Docker Compose' },
+      { x: 640, y: 320, w: 320, h: 110, kind: 'vultr', label: '', dash: true },
+    ],
+    nodes: [
+      ['net', 90, 170, '🌍 Internet', 'human', 130],
+      ['dns', 90, 320, 'DNS A record\nplay.domain', 'human', 130],
+      ['fw', 330, 170, 'Vultr firewall\n80 · 443', 'vultr'],
+      ['caddy', 520, 170, 'Caddy\nauto-TLS', 'vultr'],
+      ['web', 720, 80, 'web · /srv', 'vultr'],
+      ['api', 720, 190, 'api :8000\n+ Node core', 'vultr'],
+      ['msg', 880, 190, 'messaging\nno public port', 'photon', 140],
+      ['launch', 400, 360, 'launch.sh\ncompose up', 'vultr'],
+      ['v1', 720, 375, '💾 api-data', 'vultr', 130, 44],
+      ['v2', 880, 375, '💾 msg-data', 'vultr', 130, 44],
+      ['le', 400, 80, '🔒 Let\'s Encrypt', 'good', 150, 44],
+    ],
+    edges: [
+      ['net', 'fw', 'HTTPS'],
+      ['dns', 'net', '', { dash: true }],
+      ['fw', 'caddy'],
+      ['caddy', 'web', '/'],
+      ['caddy', 'api', '', { lp: [600, 200] }],
+      ['msg', 'api', '', { kind: 'photon' }],
+      ['caddy', 'le', 'certs', { dash: true }],
+      ['launch', 'caddy', '', { dash: true }],
+      ['api', 'v1', ''],
+      ['msg', 'v2', ''],
+    ],
+  },
+
+  build: {
+    h: 330,
+    groups: [{ x: 170, y: 20, w: 680, h: 290, kind: 'vultr', label: 'VULTR · api + core workers' }],
+    nodes: [
+      ['sketch', 80, 165, '✏️ Sketch\n+ brief', 'human', 120],
+      ['ink', 255, 95, 'Ink → objects', 'vultr', 140],
+      ['mind', 425, 95, 'Perceiver\n+ ✨ Claude', 'claude', 140],
+      ['repair', 595, 95, 'Repair\n4 tiers', 'vultr', 140],
+      ['bot', 765, 95, '🤖 Bot plays\n60 Hz', 'vultr', 140],
+      ['imagine', 255, 240, 'Imagine', 'vultr', 140],
+      ['art', 425, 240, '✨ Sonnet\nSVG art', 'claude', 140],
+      ['gen', 595, 240, '✨ Sonnet\nHTML game', 'claude', 140],
+      ['check', 765, 240, 'Verify\n+ save', 'vultr', 140],
+      ['play', 925, 165, '🎮 Playable', 'good', 120],
+    ],
+    edges: [
+      ['sketch', 'ink', 'faithful'], ['ink', 'mind'], ['mind', 'repair'], ['repair', 'bot'], ['bot', 'play'],
+      ['sketch', 'imagine', 'imagine'], ['imagine', 'art', '', { dash: true }], ['art', 'gen'], ['gen', 'check'], ['check', 'play'],
+    ],
+  },
+
+  photon: {
+    h: 440,
+    lanes: [
+      { y: 20, h: 125, label: '💬 iMessage', kind: 'human' },
+      { y: 155, h: 125, label: 'Photon', kind: 'photon' },
+      { y: 290, h: 125, label: 'Vultr', kind: 'vultr' },
+    ],
+    nodes: [
+      ['p1', 200, 82, '“play d_42”', 'human', 130],
+      ['p2', 330, 217, 'Spectrum\nwebhook', 'photon', 120],
+      ['p3', 460, 352, 'messaging\nworker', 'photon', 120],
+      ['p4', 600, 352, 'API\nroom + invite', 'vultr', 120],
+      ['p5', 600, 217, 'App card', 'photon', 120],
+      ['p6', 600, 82, '🃏 Card in chat', 'human', 130],
+      ['p7', 760, 82, 'Both tap\nI\'m ready', 'human', 120],
+      ['p8', 760, 217, 'Launcher\nfull screen', 'photon', 120],
+      ['p9', 760, 352, 'Live race\nWebSocket', 'vultr', 120],
+      ['p10', 915, 352, 'Replay inputs\n= verified', 'vultr', 125],
+      ['p11', 915, 82, '🏁 Results\nRematch', 'good', 125],
+    ],
+    edges: [
+      ['p1', 'p2', '', { kind: 'photon' }], ['p2', 'p3', '', { kind: 'photon' }], ['p3', 'p4', ''],
+      ['p4', 'p5', ''], ['p5', 'p6', '', { kind: 'photon' }], ['p6', 'p7'], ['p7', 'p8', '', { kind: 'photon' }],
+      ['p8', 'p9', ''], ['p9', 'p10'], ['p10', 'p11', ''],
+    ],
+  },
+
+  auth0: {
+    h: 730,
+    nodes: [
+      ['kavya', 95, 70, '🧑 Kavya · maker', 'human', 160],
+      ['cop', 95, 195, '🧭 Copilot', 'auth0', 160, 50],
+      ['art', 95, 270, '🎨 Art Director', 'auth0', 160, 50],
+      ['snd', 95, 345, '🎵 Sound Designer', 'auth0', 160, 50],
+      ['fr', 95, 420, '🤝 Friend\'s agent', 'auth0', 160, 50],
+      ['login', 300, 70, 'Auth0 login', 'auth0', 140],
+      ['tx', 300, 307, 'Token Exchange\nRFC 8693', 'auth0', 150, 64],
+      ['pass', 490, 307, '🛂 PASSPORT\nsub: Kavya\nact: Art Director\nscope: looks', 'pass', 165, 104],
+      ['api', 670, 307, 'draw.play API', 'vultr', 130],
+      ['fga', 860, 307, 'Auth0 FGA\nper-object check', 'auth0', 150],
+      ['deny', 860, 165, '✗ 403', 'bad', 120, 50],
+      ['big', 860, 460, 'big move?', 'auth0', 150, 84, 'diamond'],
+      ['apply', 670, 460, '✓ apply edit', 'good', 130, 50],
+      ['ciba', 860, 615, 'Auth0 CIBA\nask human async', 'auth0', 160],
+      ['kid', 660, 615, 'maker is\na kid?', 'auth0', 140, 84, 'diamond'],
+      ['parent', 455, 555, '📱 Parent\'s phone\nGuardian push', 'human', 160],
+      ['self', 455, 680, '📱 Maker\'s phone\nGuardian push', 'human', 160],
+      ['ok', 265, 615, 'approve?', 'auth0', 130, 84, 'diamond'],
+      ['pub', 95, 560, '🚀 Publish', 'good', 140, 50],
+      ['no', 95, 670, '✗ blocked', 'bad', 140, 50],
+      ['kill', 455, 455, '🛑 Kill switch', 'bad', 150, 50],
+    ],
+    edges: [
+      ['kavya', 'login'],
+      ['login', 'tx', 'subject token', { kind: 'auth0' }],
+      ['cop', 'tx', '', { kind: 'auth0' }], ['art', 'tx', '', { kind: 'auth0' }],
+      ['snd', 'tx', '', { kind: 'auth0' }], ['fr', 'tx', '', { kind: 'auth0' }],
+      ['tx', 'pass', '', { kind: 'auth0' }],
+      ['pass', 'api', ''],
+      ['api', 'fga', '', { kind: 'auth0' }],
+      ['fga', 'deny', 'out of scope', { kind: 'bad' }],
+      ['fga', 'big', 'in scope', { kind: 'good' }],
+      ['big', 'apply', 'no'],
+      ['big', 'ciba', 'publish · others\' art · spend', { lp: [860, 545] }],
+      ['ciba', 'kid', '', { kind: 'auth0' }],
+      ['kid', 'parent', 'yes'], ['kid', 'self', 'no'],
+      ['parent', 'ok'], ['self', 'ok'],
+      ['ok', 'pub', 'yes', { kind: 'good' }], ['ok', 'no', 'no', { kind: 'bad' }],
+      ['parent', 'kill', ''],
+      ['kill', 'tx', 'revoke all agents', { kind: 'bad', dash: true, lp: [380, 400] }],
+    ],
+  },
+};
+
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs, parent) => {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  parent && parent.appendChild(e);
+  return e;
+};
+
+function edgePoint(n, toward) {
+  // Where the line from the node's centre toward a point leaves its outline.
+  const dx = toward[0] - n.x, dy = toward[1] - n.y;
+  if (!dx && !dy) return [n.x, n.y];
+  if (n.shape === 'diamond') {
+    const t = 1 / (Math.abs(dx) / (n.w / 2) + Math.abs(dy) / (n.h / 2));
+    return [n.x + dx * t, n.y + dy * t];
+  }
+  const t = Math.min(dx ? (n.w / 2 + 3) / Math.abs(dx) : Infinity, dy ? (n.h / 2 + 3) / Math.abs(dy) : Infinity);
+  return [n.x + dx * t, n.y + dy * t];
+}
+
+function label(g, x, y, text, color) {
+  const t = el('text', { x, y: y + 5, 'text-anchor': 'middle', 'font-size': 15, fill: color }, g);
+  t.textContent = text;
+  const b = t.getBBox();
+  const r = el('rect', { x: b.x - 6, y: b.y - 1, width: b.width + 12, height: b.height + 2, rx: 9, fill: '#fffdf6', stroke: color, 'stroke-width': 1 });
+  g.insertBefore(r, t);
+}
+
+function render(svg, f) {
+  svg.setAttribute('viewBox', `0 0 1000 ${f.h}`);
+  const defs = el('defs', {}, svg);
+  for (const [k, c] of Object.entries({ ...C, ink: { s: '#5d554d' } })) {
+    const m = el('marker', { id: `a-${svg.dataset.flow}-${k}`, viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' }, defs);
+    el('path', { d: 'M1 1 L9 5 L1 9 z', fill: c.s }, m);
+  }
+
+  for (const l of f.lanes || []) {
+    const c = C[l.kind];
+    el('rect', { x: 10, y: l.y, width: 980, height: l.h, rx: 14, fill: c.f, opacity: 0.55, stroke: c.s, 'stroke-opacity': 0.35, 'stroke-dasharray': '6 5' }, svg);
+    const t = el('text', { x: 28, y: l.y + l.h / 2 + 6, 'font-size': 20, fill: c.s }, svg);
+    t.textContent = l.label;
+  }
+  for (const gr of f.groups || []) {
+    const c = C[gr.kind];
+    el('rect', { x: gr.x, y: gr.y, width: gr.w, height: gr.h, rx: 18, fill: gr.dash ? 'none' : c.f, 'fill-opacity': 0.45, stroke: c.s, 'stroke-width': gr.dash ? 1.5 : 2.5, 'stroke-dasharray': gr.dash ? '5 5' : '10 6' }, svg);
+    const t = el('text', { x: gr.x + 16, y: gr.y + 22, 'font-size': gr.dash ? 14 : 17, fill: c.s, 'letter-spacing': 1 }, svg);
+    t.textContent = gr.label;
+  }
+
+  const nodes = {};
+  for (const [id, x, y, text, kind, w = 130, h, shape] of f.nodes) {
+    const lines = text.split('\n');
+    nodes[id] = { x, y, w, h: h || (lines.length > 1 ? 30 + lines.length * 17 : 50), text: lines, kind, shape };
+  }
+
+  const edgeLayer = el('g', {}, svg), labelLayer = el('g', {}, svg), nodeLayer = el('g', {}, svg);
+  for (const [a, b, text, o = {}] of f.edges) {
+    const A = nodes[a], B = nodes[b];
+    const via = o.via || [];
+    const p0 = o.from || edgePoint(A, via[0] || [B.x, B.y]);
+    const p1 = edgePoint(B, via[via.length - 1] || [A.x, A.y]);
+    const pts = [p0, ...via, p1];
+    const kind = o.kind || 'ink';
+    const color = kind === 'ink' ? '#5d554d' : C[kind].s;
+    el('path', {
+      d: 'M' + pts.map(p => p.join(' ')).join(' L'), fill: 'none', stroke: color, 'stroke-width': 2.2,
+      'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-dasharray': o.dash ? '6 6' : 'none',
+      'marker-end': `url(#a-${svg.dataset.flow}-${kind})`,
+    }, edgeLayer);
+    if (text) {
+      let lp = o.lp;
+      if (!lp) {
+        let best = 0;
+        for (let i = 0; i < pts.length - 1; i++) {
+          const d = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]);
+          if (d > best) { best = d; lp = [(pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2]; }
+        }
+      }
+      label(labelLayer, lp[0], lp[1], text, color);
+    }
+  }
+
+  for (const n of Object.values(nodes)) {
+    const c = C[n.kind];
+    const g = el('g', {}, nodeLayer);
+    if (n.shape === 'diamond') {
+      const d = `M${n.x} ${n.y - n.h / 2} L${n.x + n.w / 2} ${n.y} L${n.x} ${n.y + n.h / 2} L${n.x - n.w / 2} ${n.y} Z`;
+      el('path', { d, transform: 'translate(2 3)', fill: 'rgba(31,27,24,0.14)' }, g);
+      el('path', { d, fill: c.f, stroke: c.s, 'stroke-width': 2.5, 'stroke-linejoin': 'round' }, g);
+    } else {
+      const r = { x: n.x - n.w / 2, y: n.y - n.h / 2, width: n.w, height: n.h, rx: 13 };
+      el('rect', { ...r, x: r.x + 2, y: r.y + 3, fill: 'rgba(31,27,24,0.14)' }, g);
+      el('rect', { ...r, fill: c.f, stroke: c.s, 'stroke-width': 2.5, 'stroke-dasharray': n.kind === 'pass' ? '7 4' : 'none' }, g);
+    }
+    const lh = 17, top = n.y - ((n.text.length - 1) * lh) / 2;
+    n.text.forEach((line, i) => {
+      const t = el('text', {
+        x: n.x, y: top + i * lh + 6, 'text-anchor': 'middle',
+        'font-size': i === 0 ? 18 : 15, fill: i === 0 ? '#1f1b18' : '#5d554d',
+      }, g);
+      t.textContent = line;
+    });
+  }
+}
+
+document.fonts.ready.then(() => {
+  document.querySelectorAll('svg[data-flow]').forEach(svg => render(svg, FLOWS[svg.dataset.flow]));
+});
+</script>
+</body>
+</html>

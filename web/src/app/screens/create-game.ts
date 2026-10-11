@@ -6,11 +6,10 @@ import { api, ApiError } from '../api.ts';
 import { collab } from '../collab/api.ts';
 import { card, h, icon } from '../dom.ts';
 import { creationInk, creationPrompt, GAME_CATEGORIES, type CreationDraft } from '../game-brief.ts';
-import { currentPlayer, signIn, usesAuth0 } from '../identity.ts';
+import { currentPlayer } from '../identity.ts';
 import { t } from '../messages.ts';
 import { navigate } from '../router.ts';
 import { store } from '../store.ts';
-import { imagineScreen } from './imagine.ts';
 import { graphicsOption, multiplayerOption } from '../graphics-option.ts';
 
 type CreationIntent = { kind: 'game' } | {
@@ -20,7 +19,7 @@ type CreationIntent = { kind: 'game' } | {
 
 /** Game creation and level creation have explicit, independent draft scopes. */
 export function createGameScreen(root: HTMLElement, query = new URLSearchParams()): () => void {
-  if (!query.has('from') && !query.has('game')) return creationPage(root, store.creationDraft());
+  if (!query.has('from') && !query.has('game')) return newGamePage(root, query.has('sketch'));
   let disposed = false;
   let cleanup: (() => void) | undefined;
   const from = query.get('from');
@@ -61,88 +60,31 @@ export function createGameScreen(root: HTMLElement, query = new URLSearchParams(
   return () => { disposed = true; cleanup?.(); };
 }
 
-/** This modal only restores a new-game draft; level drafts have their own routes and slots. */
-export function openCreateGameModal(onClose?: () => void, initial?: {
-  prompt: string; category: GameBrief['category']; sketch?: boolean;
-}): () => void {
-  const previousFocus = document.activeElement as HTMLElement | null;
-  const previousOverflow = document.body.style.overflow;
-  let closed = false;
-  let cleanup: (() => void) | undefined;
-  const content = h('div', { class: 'creation-modal-content' });
-  const close = (): void => {
-    if (closed) return;
-    closed = true;
-    cleanup?.();
-    document.removeEventListener('keydown', keydown, true);
-    backdrop.remove();
-    document.body.style.overflow = previousOverflow;
-    if (previousFocus?.isConnected) previousFocus.focus();
-    onClose?.();
-  };
-  const dialog = h('div', { class: 'creation-modal-panel', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'creation-modal-title', 'aria-describedby': 'creation-modal-description', tabindex: -1 },
-    h('div', { class: 'creation-modal-heading row between' },
-      h('div', { class: 'creation-modal-title-group' },
-        h('span', { class: 'creation-modal-emblem', 'aria-hidden': 'true' }, icon('pencil')),
+/** A new game starts on its own page: the saved idea, game type and sketch carry over from wherever it began. */
+function newGamePage(root: HTMLElement, sketch: boolean): () => void {
+  const content = h('div', { class: 'creation-panel-content' });
+  const back = h('a', { class: 'tool', href: '#/studio', 'aria-label': t('create.back'), title: t('create.back'), onclick: (event: Event) => {
+    if (history.length > 1) { event.preventDefault(); history.back(); }
+  } }, icon('back'));
+  root.append(h('section', { class: 'creation-page' }, h('div', { class: 'creation-panel' },
+    h('header', { class: 'creation-panel-heading row between' },
+      h('div', { class: 'creation-panel-title-group' },
+        h('span', { class: 'creation-panel-emblem', 'aria-hidden': 'true' }, icon('pencil')),
         h('div', null, h('span', { class: 'creation-eyebrow' }, 'The Game Factory / Idea desk'),
-          h('h2', { id: 'creation-modal-title' }, 'Your game idea'),
-          h('p', { id: 'creation-modal-description' }, t('create.intro')))),
-      h('button', { class: 'tool', type: 'button', 'aria-label': t('ui.close'), onclick: close }, icon('close'))), content);
-  const backdrop = h('div', { class: 'modal-back creation-modal', onclick: (event: Event) => { if (event.target === backdrop) close(); } }, dialog);
-  const keydown = (event: KeyboardEvent): void => {
-    // Editor subdialogs manage their own keyboard focus until dismissed.
-    if (document.querySelector('.modal-back:not(.creation-modal), dialog[open]')) return;
-    if (event.key === 'Escape') { event.preventDefault(); event.stopImmediatePropagation(); close(); }
-    if (event.key === 'Tab') {
-      const targets = [...dialog.querySelectorAll<HTMLElement>('a[href], button, input, textarea, select, [tabindex="0"]')]
-        .filter((el) => !el.matches(':disabled') && el.getClientRects().length > 0 && getComputedStyle(el).visibility === 'visible');
-      const first = targets[0]; const last = targets.at(-1);
-      if (!first || !last) { event.preventDefault(); dialog.focus(); return; }
-      if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
-        event.preventDefault(); last.focus();
-      } else if (!event.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
-        event.preventDefault(); first.focus();
-      }
-    }
-  };
-  document.body.append(backdrop);
-  document.body.style.overflow = 'hidden';
-  const saved = store.creationDraft();
-  const draft = initial ? {
-    ...(saved ?? { kind: 'game' as const, title: '', author: store.author(), doc: emptyDoc(), gameId: null }),
-    prompt: initial.prompt,
-    brief: { ...(saved?.brief ?? { custom_definition: '', theme: '', gameplay: '', details: '' }), category: initial.category },
-  } : saved;
-  if (usesAuth0() && !currentPlayer()) {
-    if (draft) store.setCreationDraft(draft);
-    dialog.querySelector('#creation-modal-title')!.textContent = t('auth.create_title');
-    const login = h('button', { type: 'button', class: 'pill primary big',
-      onclick: () => void signIn('/#/create').catch(() => undefined) }, t('auth.sign_in'));
-    content.append(card('narrow', h('p', null, t('auth.create_help')), login));
-    document.addEventListener('keydown', keydown, true);
-    login.focus();
-    return close;
-  }
-  cleanup = creationPage(content, draft, undefined, true, { kind: 'game' }, (draftId) => {
-    cleanup?.();
-    content.replaceChildren();
-    dialog.classList.add('creation-modal-chat');
-    dialog.querySelector('#creation-modal-title')!.textContent = t('builder.title');
-    dialog.querySelector('#creation-modal-description')!.textContent = 'Watch your world take shape. Keep adding your ideas.';
-    cleanup = imagineScreen(content, draftId, { compact: true });
-    dialog.querySelector<HTMLTextAreaElement>('.builder-composer textarea')?.focus();
-  });
-  document.addEventListener('keydown', keydown, true);
-  if (initial?.sketch) {
+          h('h1', null, 'Your game idea'), h('p', null, t('create.intro')))), back), content)));
+  const cleanup = creationPage(content, store.creationDraft(), undefined, true);
+  if (sketch) {
     content.querySelector('.creation-canvas-field')?.scrollIntoView({ block: 'center' });
     content.querySelector<HTMLButtonElement>('.creation-canvas-field button')?.focus();
-  } else if (initial) content.querySelector<HTMLTextAreaElement>('#create-prompt')?.focus();
-  else if (window.matchMedia('(max-width: 760px)').matches) dialog.querySelector<HTMLButtonElement>('button')?.focus();
-  else content.querySelector<HTMLSelectElement>('#create-category')?.focus();
-  return close;
+  } else {
+    const prompt = content.querySelector<HTMLTextAreaElement>('#create-prompt');
+    if (prompt?.value.trim()) prompt.focus();
+    else if (!window.matchMedia('(max-width: 760px)').matches) content.querySelector<HTMLSelectElement>('#create-category')?.focus();
+  }
+  return cleanup;
 }
 
-function creationPage(root: HTMLElement, saved: CreationDraft | null, resumedDraft?: string, compact = false, intent: CreationIntent = { kind: 'game' }, onGenerated?: (draftId: string) => void): () => void {
+function creationPage(root: HTMLElement, saved: CreationDraft | null, resumedDraft?: string, compact = false, intent: CreationIntent = { kind: 'game' }): () => void {
   const isLevel = intent.kind === 'level';
   const level = isLevel ? intent : undefined;
   const slot = level?.levelId ?? 'new';
@@ -246,8 +188,7 @@ function creationPage(root: HTMLElement, saved: CreationDraft | null, resumedDra
       completed = true;
       if (level) store.setLevelCreationDraft(level.gameId, slot, null);
       else store.setCreationDraft(null);
-      if (onGenerated) onGenerated(generated.draft_id);
-      else navigate(`#/imagine/${encodeURIComponent(generated.draft_id)}`);
+      navigate(`#/imagine/${encodeURIComponent(generated.draft_id)}`);
     } catch (error) {
       if (!disposed) status.textContent = t(error instanceof ApiError ? error.messageKey : 'error.build_failed');
     } finally {

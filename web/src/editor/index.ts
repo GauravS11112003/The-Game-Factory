@@ -1149,8 +1149,7 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
   // ---- keyboard -----------------------------------------------------------------------------------------------------
   const onKeyDown = (e: KeyboardEvent): void => {
     if (!shell.isConnected || !shell.getClientRects().length || readOnly || isTyping(e)) return;
-    if (document.querySelector('.modal-back:not(.creation-modal), dialog[open]')) return;
-    if (document.querySelector('.creation-modal') && !shell.closest('.creation-modal')) return;
+    if (document.querySelector('.modal-back, dialog[open]')) return;
     if (!playOverlay.classList.contains('hidden')) {
       if (e.key === 'Escape') stopTestPlay();
       return;

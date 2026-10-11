@@ -11,9 +11,10 @@ import { createEditor, type EditorHandle } from '../../editor/index.ts';
 import { DEFAULT_RULES } from '../rules.ts';
 import { addIdea, briefReply, gameSuggestions, nextIdeas, type GameSuggestion } from '../builder-ideas.ts';
 import { graphicsOption, multiplayerOption } from '../graphics-option.ts';
+import { agentFlow } from '../agent-flow.ts';
 
 /** The creation modal and saved drafts share the same persistent conversation workspace. */
-export function imagineScreen(root: HTMLElement, initialDraftId: string, options: { compact?: boolean } = {}): () => void {
+export function imagineScreen(root: HTMLElement, initialDraftId: string): () => void {
   let draftId = initialDraftId;
   let disposed = false;
   let timer = 0;
@@ -34,6 +35,7 @@ export function imagineScreen(root: HTMLElement, initialDraftId: string, options
   let canvasOpen = false;
   let graphicsDirty = false;
   let multiplayerDirty = false;
+  let flow: ReturnType<typeof agentFlow> | undefined;
   const multiplayer = multiplayerOption(false, () => { multiplayerDirty = true; sync(); });
   const graphics = graphicsOption(false, () => { graphicsDirty = true; sync(); });
   const title = h('h1', null, t('builder.title'));
@@ -69,17 +71,18 @@ export function imagineScreen(root: HTMLElement, initialDraftId: string, options
     h('div', { class: 'builder-canvas-heading' }, h('div', null, h('h2', null, t('builder.sketch_title')), canvasStatus), canvasApply),
     canvasRetry, canvasTools,
     h('div', { class: 'builder-canvas-hint' }, icon('pencil'), t('builder.sketch_hint')));
-  const preview = h('div', { class: 'builder-preview' }, h('div', { class: 'builder-empty' },
+  const empty = h('div', { class: 'builder-empty' },
     h('span', { class: 'imagine-orb', 'aria-hidden': 'true' }, '✦'), h('h2', null, t('builder.first_build')),
-    h('p', { class: 'muted' }, t('builder.first_build_help'))));
+    h('p', { class: 'muted' }, t('builder.first_build_help')));
+  const preview = h('div', { class: 'builder-preview' }, empty);
   const details = h('div', { class: 'builder-details' });
   const friend = h('button', { class: 'pill primary small', type: 'button', hidden: true, onclick: () => { if (current) void startGeneratedRoom(current.draft_id, friend); } }, 'Play with a friend');
   const gameLink = h('a', { class: 'pill small', hidden: true }, t('imagine.saved_game'));
   const previewPanel = h('div', { id: 'builder-preview-panel', role: 'tabpanel', 'aria-label': t('builder.preview') },
     preview, h('div', { class: 'builder-result-actions row wrap' }, sketch, gameLink, friend), details);
-  const workspace = h('section', { class: `builder-workspace${options.compact ? ' compact' : ''}`, 'aria-label': t('builder.title') },
+  const workspace = h('section', { class: 'builder-workspace', 'aria-label': t('builder.title') },
     h('header', { class: 'builder-heading row between' }, h('div', null,
-      options.compact ? '' : h('a', { class: 'small muted', href: '#/studio' }, t('create.back')), title),
+      h('a', { class: 'small muted', href: '#/studio' }, t('create.back')), title),
       h('div', { class: 'row' }, publication, publish)),
     h('div', { class: 'builder-body' },
       h('section', { class: 'builder-chat', 'aria-label': t('builder.conversation') }, messages,
@@ -247,6 +250,22 @@ export function imagineScreen(root: HTMLElement, initialDraftId: string, options
     details.replaceChildren(h('details', null, h('summary', null, t('imagine.controls')),
       h('ul', null, ...(game.controls ?? []).map(control => h('li', null, kidText(control))))), inputs.element);
   }
+  /** While any version builds, the preview shows the agents at work (over the last playable version, if there is one). */
+  function showProgress(game?: ImaginedGameStatus): void {
+    if (busy && !disposed) {
+      if (!flow) {
+        flow = agentFlow(game?.started_at);
+        if (previewDraft) { flow.element.classList.add('is-overlay'); preview.append(flow.element); }
+        else preview.replaceChildren(flow.element);
+      }
+      return;
+    }
+    if (!flow) return;
+    const { element } = flow;
+    flow.dispose(); flow = undefined;
+    if (!element.isConnected) return;
+    if (previewDraft) element.remove(); else preview.replaceChildren(empty);
+  }
   function move(next: ImaginedGameStatus, submittedCanvas?: EditorDocData | null): void {
     if (next.revision_of === draftId && next.context === prompt.value.trim()) {
       store.setChatInput(draftId, ''); prompt.value = '';
@@ -274,7 +293,7 @@ export function imagineScreen(root: HTMLElement, initialDraftId: string, options
     busy = next.status === 'building';
     connectionLost = false;
     recovery.hidden = true;
-    if (!options.compact && location.hash.startsWith('#/imagine/')) {
+    if (location.hash.startsWith('#/imagine/')) {
       window.history.replaceState(null, '', `#/imagine/${encodeURIComponent(draftId)}`);
     }
     sync();
@@ -282,6 +301,7 @@ export function imagineScreen(root: HTMLElement, initialDraftId: string, options
   }
   function failed(error: unknown): void {
     busy = false;
+    showProgress();
     connectionLost = true;
     activity.textContent = t(error instanceof ApiError ? error.messageKey : 'error.network');
     recovery.textContent = t('imagine.check_again');
@@ -316,6 +336,7 @@ export function imagineScreen(root: HTMLElement, initialDraftId: string, options
         if (disposed) return;
         showPreview(previous);
       }
+      showProgress(game);
       gameLink.hidden = !game.game_id;
       gameLink.href = `#/game/${encodeURIComponent(game.game_id ?? '')}?level=${encodeURIComponent(game.level_id ?? draftId)}`;
       recovery.hidden = game.status !== 'failed';
@@ -347,7 +368,7 @@ export function imagineScreen(root: HTMLElement, initialDraftId: string, options
     const message = prompt.value.trim();
     const submittedCanvas = canvasEditor?.doc.snapshot() ?? canvasDoc;
     const ink = canvasDirty && submittedCanvas ? creationInk(submittedCanvas) : undefined;
-    busy = true; sync(); activity.textContent = t('builder.updating');
+    busy = true; sync(); showProgress(); activity.textContent = t('builder.updating');
     try {
       const next = await api.refineImaginedGame(draftId, message, ink, graphics.input.checked, multiplayer.input.checked);
       if (disposed) return;
@@ -359,7 +380,7 @@ export function imagineScreen(root: HTMLElement, initialDraftId: string, options
   recovery.onclick = async () => {
     if (busy || publishing) return;
     if (connectionLost) { busy = true; recovery.hidden = true; sync(); await poll(); return; }
-    busy = true; recovery.disabled = true; sync();
+    busy = true; recovery.disabled = true; sync(); showProgress();
     try {
       const next = await api.retryImaginedGame(draftId);
       if (disposed) return;
@@ -381,6 +402,6 @@ export function imagineScreen(root: HTMLElement, initialDraftId: string, options
   return () => {
     store.setChatInput(draftId, prompt.value);
     if (canvasDirty && canvasDoc) store.setChatCanvas(draftId, canvasDoc);
-    disposed = true; ++canvasLoadVersion; window.clearTimeout(timer); inputs?.dispose(); offCanvasChange?.(); canvasEditor?.destroy();
+    disposed = true; flow?.dispose(); ++canvasLoadVersion; window.clearTimeout(timer); inputs?.dispose(); offCanvasChange?.(); canvasEditor?.destroy();
   };
 }

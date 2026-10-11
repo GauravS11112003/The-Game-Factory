@@ -21,7 +21,7 @@ body, body[data-screen='home'], body[data-screen='arcade'] {
 .studio-game, .stage, .builder-workspace, .sketch-editor { box-shadow: var(--sheet-shadow); }
 .studio-game { background: linear-gradient(160deg, #fffefb, var(--card)); }
 .studio-game:focus-within { box-shadow: 3px 7px 0 #51422c28, 0 20px 36px #51422c1a; }
-.creation-modal-panel, .generated-input-dialog {
+.creation-panel, .generated-input-dialog {
   box-shadow: 4px 7px 0 #51422c36, 0 28px 90px #211b183b, inset 0 1px 0 #fff;
 }
 .builder-composer {

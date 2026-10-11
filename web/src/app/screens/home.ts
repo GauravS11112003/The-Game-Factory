@@ -1,4 +1,4 @@
-/** Personal creator studio: one card per game, plus a creation modal. */
+/** Personal creator studio: one card per game; new games start on the create page. */
 import { api, ApiError, type GameCard, type LevelCard } from '../api.ts';
 import { card, h, icon } from '../dom.ts';
 import { fmtTime, kidText, t } from '../messages.ts';
@@ -6,7 +6,6 @@ import { drops } from '../readout.ts';
 import { store } from '../store.ts';
 import { generatedThumb, levelThumb } from '../thumbs.ts';
 import { onPlayerChange } from '../identity.ts';
-import { openCreateGameModal } from './create-game.ts';
 import { GAMES } from '../../arcade/catalog.ts';
 import { readLevels } from '../../arcade/levels.ts';
 import { createGame } from '../../arcade/games.ts';
@@ -73,19 +72,14 @@ function localGameCards(): HTMLElement[] {
   });
 }
 
-export function homeScreen(root: HTMLElement, createOnOpen = false): () => void {
+export function homeScreen(root: HTMLElement): () => void {
   let disposed = false;
   let revision = 0;
-  let closeModal: (() => void) | undefined;
-  const create = (): void => {
-    closeModal?.();
-    closeModal = openCreateGameModal(() => { if (!disposed) void load(); });
-  };
   const feed = h('div', { class: 'studio-games', 'aria-live': 'polite' });
   root.append(h('section', { class: 'studio' },
     h('div', { class: 'studio-heading row between wrap' },
       h('div', null, h('h1', null, t('creator_studio.title')), h('p', { class: 'muted' }, t('creator_studio.subtitle'))),
-      h('button', { class: 'pill primary', type: 'button', onclick: create }, icon('plus'), t('home.new_game'))), feed));
+      h('a', { class: 'pill primary', href: '#/create' }, icon('plus'), t('home.new_game'))), feed));
 
   const load = async (): Promise<void> => {
     const current = ++revision;
@@ -104,6 +98,5 @@ export function homeScreen(root: HTMLElement, createOnOpen = false): () => void 
   };
   const unsubscribe = onPlayerChange(() => void load());
   void load();
-  if (createOnOpen) create();
-  return () => { disposed = true; unsubscribe(); closeModal?.(); };
+  return () => { disposed = true; unsubscribe(); };
 }

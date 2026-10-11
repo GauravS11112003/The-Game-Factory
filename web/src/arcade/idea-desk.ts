@@ -2,7 +2,7 @@ import { h, icon } from '../app/dom.ts';
 import { GAME_CATEGORIES, creationPrompt } from '../app/game-brief.ts';
 import { t } from '../app/messages.ts';
 import { store } from '../app/store.ts';
-import { openCreateGameModal } from '../app/screens/create-game.ts';
+import { navigate } from '../app/router.ts';
 import { emptyDoc } from '../editor/doc.ts';
 import './idea-desk.css';
 
@@ -19,7 +19,6 @@ const SPARKS = [
 export function ideaDesk(): { element: HTMLElement; dispose: () => void } {
   const saved = store.creationDraft();
   let category = saved?.brief.category ?? 'platformer';
-  let closeCreation: (() => void) | undefined;
   const prompt = h('textarea', { id: 'home-game-idea', rows: 3, maxLength: 8000,
     placeholder: 'A tiny astronaut delivering pizza on the moon…', value: creationPrompt(saved),
     'aria-describedby': 'idea-desk-hint' });
@@ -47,18 +46,8 @@ export function ideaDesk(): { element: HTMLElement; dispose: () => void } {
     document.body.append(picker); genre.setAttribute('aria-expanded', 'true'); picker.showModal();
     options.find((option) => option.dataset.category === category)?.focus();
   };
-  const open = (sketch = false): void => {
-    closeCreation?.();
-    closeCreation = openCreateGameModal(() => {
-      closeCreation = undefined;
-      const draft = store.creationDraft();
-      prompt.value = creationPrompt(draft);
-      category = draft?.brief.category ?? 'platformer';
-      selected.textContent = '';
-      sparkButtons.forEach((button) => button.setAttribute('aria-pressed', 'false'));
-      sync(); persist();
-    }, { prompt: prompt.value, category, sketch });
-  };
+  // The saved draft carries the idea and game type onto the create page.
+  const open = (sketch = false): void => { persist(); navigate(sketch ? '#/create?sketch=1' : '#/create'); };
   const form = h('form', { class: 'idea-composer', onsubmit: (event: Event) => {
     event.preventDefault(); if (prompt.value.trim()) open();
   } }, h('label', { htmlFor: prompt.id, class: 'idea-input-label' }, 'Describe your game'), prompt,
@@ -105,7 +94,7 @@ export function ideaDesk(): { element: HTMLElement; dispose: () => void } {
     if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); form.requestSubmit(); }
   });
   sync();
-  return { element, dispose: () => { closeCreation?.(); picker.close(); picker.remove(); } };
+  return { element, dispose: () => { picker.close(); picker.remove(); } };
 }
 
 function sparkArt(world: string): HTMLElement {

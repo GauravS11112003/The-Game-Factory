@@ -122,10 +122,10 @@ function route(): void {
         cleanup = homeScreen(app);
         break;
       case 'draw':
-        cleanup = query.size ? drawScreen(app, query) : homeScreen(app, true);
+        cleanup = query.size ? drawScreen(app, query) : createGameScreen(app, query);
         break;
       case 'create':
-        cleanup = query.has('from') || query.has('game') ? createGameScreen(app, query) : homeScreen(app, true);
+        cleanup = createGameScreen(app, query);
         break;
       case 'imagine':
         cleanup = imagineScreen(app, second ?? '');
