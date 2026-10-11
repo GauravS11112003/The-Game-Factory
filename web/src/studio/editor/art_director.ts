@@ -21,7 +21,7 @@ import { objectPng } from './snapshot.ts';
 import type { Studio } from './studio.ts';
 
 const POLL_MS = 1500;
-const VARIANTS = 3;
+const VARIANTS = 2; // v7-fast
 
 export type SessionState = 'planning' | 'drawing' | 'done' | 'failed' | 'used' | 'kept' | 'replaced';
 

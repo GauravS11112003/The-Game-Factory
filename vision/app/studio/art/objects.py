@@ -22,7 +22,7 @@ from app.studio.art.calls import ObjectArtFlat, ReviewFlat, call, craft_block, d
 log = logging.getLogger("dal.v7.art")
 
 LONG_SIDE = 512
-REVIEW_ROUNDS = 2
+REVIEW_ROUNDS = 0  # v7-fast: draw once
 NOTE_CHARS = 200
 TAKES: tuple[tuple[str, str], ...] = (
     ("faithful", "Stay closest to the maker's drawing: the same silhouette, parts, pose and colour idea, upgraded into "

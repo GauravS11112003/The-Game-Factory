@@ -27,7 +27,7 @@ from app.studio.art.calls import (
 
 log = logging.getLogger("dal.v7.art")
 
-REVIEW_ROUNDS = 2
+REVIEW_ROUNDS = 0  # v7-fast: draw once
 SEAM_LIMIT = 2.5
 
 

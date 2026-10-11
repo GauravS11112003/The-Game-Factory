@@ -21,12 +21,13 @@ from app.mind.client import CallSpec, MindResult
 log = logging.getLogger("dal.v7.art")
 
 ART_CALLS: dict[str, CallSpec] = {
-    "studio_art_direction": CallSpec("high", 24000, 240),
-    "studio_art_object": CallSpec("high", 48000, 360),
-    "studio_art_review": CallSpec("high", 48000, 360),
-    "studio_art_terrain": CallSpec("high", 48000, 360),
-    "studio_art_backdrop": CallSpec("high", 48000, 360),
-    "studio_art_backdrop_review": CallSpec("high", 64000, 420),
+    # v7-fast: speed-first settings (low/medium effort, tighter caps); the review loop is off (REVIEW_ROUNDS = 0)
+    "studio_art_direction": CallSpec("low", 8000, 90),
+    "studio_art_object": CallSpec("low", 16000, 120),
+    "studio_art_review": CallSpec("medium", 24000, 150),
+    "studio_art_terrain": CallSpec("low", 16000, 120),
+    "studio_art_backdrop": CallSpec("low", 16000, 120),
+    "studio_art_backdrop_review": CallSpec("medium", 24000, 150),
 }
 ART_ESTIMATE_USD = {"studio_art_direction": 0.25, "studio_art_object": 0.9, "studio_art_review": 1.0,
                     "studio_art_terrain": 1.0, "studio_art_backdrop": 1.0, "studio_art_backdrop_review": 1.6}
