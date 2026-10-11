@@ -151,21 +151,31 @@ async def finish(match_id: str, body: Finish, authorization: str = Header(defaul
     return races.finish(match_id, token, body.round, received_at, verdict)
 
 
+def card_page(title: str, description: str, target: str, label: str) -> HTMLResponse:
+    """App-card landing page: link metadata for Messages, then an immediate redirect styled like the app."""
+    title, escaped = html.escape(title), html.escape(target, quote=True)
+    return HTMLResponse(f'''<!doctype html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#fbf6ea">
+<title>{title} · draw.play</title><meta property="og:title" content="{title}">
+<meta property="og:description" content="{html.escape(description)}">
+<meta name="referrer" content="no-referrer">
+<style>html,body{{margin:0;height:100%;background:#fbf6ea;color:#1f1b18;font:18px system-ui,sans-serif}}
+body{{display:grid;place-content:center;gap:14px;text-align:center;padding:24px}}
+h1{{font-size:1.4rem;margin:0}}a{{color:inherit}}
+i{{justify-self:center;width:34px;height:34px;border-radius:50%;border:4px solid #1f1b1826;border-top-color:#1f1b18;animation:s .9s linear infinite}}
+@keyframes s{{to{{transform:rotate(1turn)}}}}</style></head><body>
+<i aria-hidden="true"></i><h1>{title}</h1><a href="{escaped}">{html.escape(label)}</a>
+<script>location.replace({json.dumps(target).replace('<', chr(92) + 'u003c')})</script></body></html>''',
+        headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer",
+                 "Content-Security-Policy": "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"})
+
+
 @router.get("/matches/{match_id}/card", response_class=HTMLResponse)
 def card(match_id: str, invite: str, request: Request) -> HTMLResponse:
     match = races.snapshot(match_id, invite=invite)
-    target = urls(request, match_id, invite)["invite_url"]
-    title = html.escape(match["title"])
-    escaped = html.escape(target, quote=True)
-    return HTMLResponse(f'''<!doctype html><html><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{title} · Two-player race</title><meta property="og:title" content="{title}">
-<meta property="og:description" content="Race a friend. Tap to join, play, and rematch.">
-<meta name="referrer" content="no-referrer"></head><body>
-<h1>{title}</h1><p>Race a friend in draw.play.</p><a href="{escaped}">Join race</a>
-<script>location.replace({json.dumps(target).replace('<', chr(92) + 'u003c')})</script></body></html>''',
-        headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer",
-                 "Content-Security-Policy": "default-src 'none'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"})
+    return card_page(match["title"], "Race a friend. Tap to join, play, and rematch.",
+                     urls(request, match_id, invite)["invite_url"], "Join race")
 
 
 @router.websocket("/matches/{match_id}/socket")

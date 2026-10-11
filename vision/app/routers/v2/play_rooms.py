@@ -1,7 +1,6 @@
 """Generated-game invitations and authenticated shared-world sockets."""
 from __future__ import annotations
 import asyncio
-import html
 import json
 import os
 import secrets
@@ -14,7 +13,7 @@ from app import play_rooms as rooms
 from app import room_publishing as publishing
 from app.build import imagine
 from app.creative.imagine_assets import strip_runtime
-from app.routers.v2.matches import base_url, ticket
+from app.routers.v2.matches import base_url, card_page, ticket
 from app.routers.v2.runs import rate_limited
 
 router = APIRouter()
@@ -109,8 +108,7 @@ def game(room_id: str, authorization: str = Header(default="")):
 def card(room_id: str, invite: str, request: Request):
     room = rooms.snapshot(room_id, invite=invite)
     url = f"{base_url(request)}/#/room/{room_id}?{urlencode({'invite': invite, 'surface': 'messages'})}"
-    title = html.escape(room["title"])
-    return HTMLResponse(f'<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>{title} · draw.play</title><meta property="og:title" content="{title}"><meta property="og:description" content="Play this new game together"><meta http-equiv="refresh" content="0;url={html.escape(url, quote=True)}"></head><body><a href="{html.escape(url, quote=True)}">Join {title}</a></body></html>', headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
+    return card_page(room["title"], "Play this new game together", url, f"Join {room['title']}")
 
 @router.websocket("/play-rooms/{room_id}/socket")
 async def socket(websocket: WebSocket, room_id: str):

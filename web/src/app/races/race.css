@@ -13,7 +13,10 @@
 .race-error:empty { display: none; }
 .race-error { color: #a52c39; }
 .race-stage .dalg-btns [data-role="restart"], .race-stage .dalg-btns [data-role="pause"] { display: none; }
-@media (max-width: 540px) {
+@media (pointer: coarse), (max-width: 900px) {
   body[data-screen="race"] .app-head { display: none; }
+  body[data-screen="race"] main.v2 { padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)); }
+}
+@media (max-width: 540px) {
   .race-seats { gap: .5rem; } .race-seat { padding: .5rem; }
 }
