@@ -58,6 +58,27 @@
       "title": "Accepted",
       "type": "object"
     },
+    "ActionDef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "type": {
+          "pattern": "^[a-z_]{2,32}$",
+          "type": "string"
+        },
+        "params": {
+          "additionalProperties": true,
+          "type": "object"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "ActionDef",
+      "type": "object"
+    },
     "AffectedLevel": {
       "additionalProperties": false,
       "patternProperties": {
@@ -823,6 +844,47 @@
       "title": "BZone",
       "type": "object"
     },
+    "BackgroundDef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "style": {
+          "default": "paper",
+          "enum": [
+            "paper",
+            "solid",
+            "gradient",
+            "stars",
+            "grid",
+            "city",
+            "hills",
+            "clouds",
+            "neon_grid",
+            "halftone",
+            "waves",
+            "dunes",
+            "forest",
+            "space"
+          ],
+          "type": "string"
+        },
+        "colors": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 6,
+          "type": "array"
+        },
+        "parallax": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "title": "BackgroundDef",
+      "type": "object"
+    },
     "Band": {
       "enum": [
         "trivial",
@@ -901,6 +963,43 @@
           "$ref": "#/$defs/BScripted"
         }
       ]
+    },
+    "BehaviorDef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9_-]{1,40}$",
+          "type": "string"
+        },
+        "type": {
+          "pattern": "^[a-z_]{2,32}$",
+          "type": "string"
+        },
+        "params": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "off": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "BehaviorDef",
+      "type": "object"
     },
     "BindCheckpoint": {
       "additionalProperties": false,
@@ -1353,6 +1452,28 @@
           ],
           "default": null
         },
+        "object": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ObjectDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "theme": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StudioTheme"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "description": {
           "anyOf": [
             {
@@ -1542,6 +1663,28 @@
             }
           ],
           "default": null
+        },
+        "object": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ObjectDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "theme": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StudioTheme"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -1654,7 +1797,9 @@
         "pickup",
         "prop",
         "player",
-        "rules"
+        "rules",
+        "object",
+        "theme"
       ],
       "type": "string"
     },
@@ -2233,6 +2378,45 @@
         "is_dot"
       ],
       "title": "ComponentFeatures",
+      "type": "object"
+    },
+    "Condition": {
+      "additionalProperties": false,
+      "description": "`subject` is \"self\", \"game\", \"other\" (the object an event involved) or an object id.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "subject": {
+          "default": "self",
+          "maxLength": 40,
+          "type": "string"
+        },
+        "counter": {
+          "pattern": "^[a-z][a-z0-9 _]{0,23}$",
+          "type": "string"
+        },
+        "op": {
+          "default": ">=",
+          "enum": [
+            ">=",
+            "<=",
+            "==",
+            "!=",
+            ">",
+            "<"
+          ],
+          "type": "string"
+        },
+        "value": {
+          "default": 0,
+          "type": "number"
+        }
+      },
+      "required": [
+        "counter"
+      ],
+      "title": "Condition",
       "type": "object"
     },
     "CreatureSpecJson": {
@@ -3355,6 +3539,33 @@
         "events"
       ],
       "title": "DraftState",
+      "type": "object"
+    },
+    "Drawing": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "strokes": {
+          "items": {
+            "$ref": "#/$defs/Stroke"
+          },
+          "maxItems": 400,
+          "type": "array"
+        },
+        "w": {
+          "default": 0,
+          "minimum": 0,
+          "type": "number"
+        },
+        "h": {
+          "default": 0,
+          "minimum": 0,
+          "type": "number"
+        }
+      },
+      "title": "Drawing",
       "type": "object"
     },
     "EBigCoin": {
@@ -6540,6 +6751,27 @@
       "title": "EvWarning",
       "type": "object"
     },
+    "EventDef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "type": {
+          "pattern": "^[a-z_]{2,32}$",
+          "type": "string"
+        },
+        "params": {
+          "additionalProperties": true,
+          "type": "object"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "EventDef",
+      "type": "object"
+    },
     "Face": {
       "enum": [
         "top",
@@ -7232,6 +7464,93 @@
         "source"
       ],
       "title": "InterpretResult",
+      "type": "object"
+    },
+    "JointDef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "type": {
+          "enum": [
+            "wheel",
+            "hinge",
+            "rope",
+            "weld",
+            "spring"
+          ],
+          "type": "string"
+        },
+        "to": {
+          "pattern": "^[A-Za-z0-9_-]{1,40}$",
+          "type": "string"
+        },
+        "at": {
+          "default": [
+            0,
+            0
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "type": "array"
+        },
+        "to_at": {
+          "default": [
+            0,
+            0
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "type": "array"
+        },
+        "motor": {
+          "default": false,
+          "type": "boolean"
+        },
+        "speed": {
+          "default": 0,
+          "type": "number"
+        },
+        "length": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "stiffness": {
+          "default": 0.5,
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        }
+      },
+      "required": [
+        "type",
+        "to"
+      ],
+      "title": "JointDef",
       "type": "object"
     },
     "LevelInk": {
@@ -8770,6 +9089,114 @@
         "text"
       ],
       "title": "NpcChoice",
+      "type": "object"
+    },
+    "ObjectDef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9_-]{1,40}$",
+          "type": "string"
+        },
+        "name": {
+          "default": "",
+          "maxLength": 32,
+          "type": "string"
+        },
+        "kind": {
+          "default": "thing",
+          "maxLength": 24,
+          "type": "string"
+        },
+        "drawing": {
+          "$ref": "#/$defs/Drawing"
+        },
+        "x": {
+          "default": 0,
+          "type": "number"
+        },
+        "y": {
+          "default": 0,
+          "type": "number"
+        },
+        "rotation": {
+          "default": 0,
+          "type": "number"
+        },
+        "scale": {
+          "default": 1.0,
+          "exclusiveMinimum": 0,
+          "maximum": 20,
+          "type": "number"
+        },
+        "layer": {
+          "default": 0,
+          "maximum": 10,
+          "minimum": -10,
+          "type": "integer"
+        },
+        "physics": {
+          "$ref": "#/$defs/PhysicsDef"
+        },
+        "behaviors": {
+          "items": {
+            "$ref": "#/$defs/BehaviorDef"
+          },
+          "maxItems": 12,
+          "type": "array"
+        },
+        "rules": {
+          "items": {
+            "$ref": "#/$defs/RuleDef"
+          },
+          "maxItems": 24,
+          "type": "array"
+        },
+        "counters": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "type": "object"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 8,
+          "type": "array"
+        },
+        "joints": {
+          "items": {
+            "$ref": "#/$defs/JointDef"
+          },
+          "maxItems": 8,
+          "type": "array"
+        },
+        "template": {
+          "default": false,
+          "type": "boolean"
+        },
+        "hidden": {
+          "default": false,
+          "type": "boolean"
+        },
+        "player": {
+          "default": 0,
+          "enum": [
+            0,
+            1,
+            2
+          ],
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "ObjectDef",
       "type": "object"
     },
     "OpAddBigCoin": {
@@ -10591,6 +11018,68 @@
       "title": "PerceptionSetpiece",
       "type": "object"
     },
+    "PhysicsDef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "body": {
+          "default": "static",
+          "enum": [
+            "none",
+            "static",
+            "dynamic",
+            "kinematic"
+          ],
+          "type": "string"
+        },
+        "shape": {
+          "default": "auto",
+          "enum": [
+            "auto",
+            "box",
+            "circle",
+            "line"
+          ],
+          "type": "string"
+        },
+        "density": {
+          "default": 1.0,
+          "maximum": 50,
+          "minimum": 0.05,
+          "type": "number"
+        },
+        "friction": {
+          "default": 0.4,
+          "maximum": 2,
+          "minimum": 0,
+          "type": "number"
+        },
+        "bounce": {
+          "default": 0.0,
+          "maximum": 1.5,
+          "minimum": 0,
+          "type": "number"
+        },
+        "fixed_rotation": {
+          "default": false,
+          "type": "boolean"
+        },
+        "sensor": {
+          "default": false,
+          "type": "boolean"
+        },
+        "gravity_scale": {
+          "default": 1.0,
+          "maximum": 5,
+          "minimum": -5,
+          "type": "number"
+        }
+      },
+      "title": "PhysicsDef",
+      "type": "object"
+    },
     "PickupEffect": {
       "enum": [
         "none",
@@ -11279,6 +11768,70 @@
         "setpiece"
       ],
       "title": "RouteStep",
+      "type": "object"
+    },
+    "RuleDef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9_-]{1,40}$",
+          "type": "string"
+        },
+        "when": {
+          "$ref": "#/$defs/EventDef"
+        },
+        "conditions": {
+          "items": {
+            "$ref": "#/$defs/Condition"
+          },
+          "maxItems": 4,
+          "type": "array"
+        },
+        "then": {
+          "items": {
+            "$ref": "#/$defs/ActionDef"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "type": "array"
+        },
+        "once": {
+          "default": false,
+          "type": "boolean"
+        },
+        "off": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "text": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "when",
+        "then"
+      ],
+      "title": "RuleDef",
       "type": "object"
     },
     "RuleDo": {
@@ -12704,6 +13257,206 @@
         "library"
       ],
       "type": "string"
+    },
+    "Stroke": {
+      "additionalProperties": false,
+      "description": "One pen stroke, in object-local pixels with (0, 0) at the object's centre.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "points": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array"
+          },
+          "maxItems": 2000,
+          "minItems": 1,
+          "type": "array"
+        },
+        "color": {
+          "default": "#1f1b18",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "type": "string"
+        },
+        "width": {
+          "default": 6,
+          "exclusiveMinimum": 0,
+          "maximum": 80,
+          "type": "number"
+        },
+        "closed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "fill": {
+          "anyOf": [
+            {
+              "pattern": "^#[0-9a-fA-F]{6}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "points"
+      ],
+      "title": "Stroke",
+      "type": "object"
+    },
+    "StrokeStyleDef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "style": {
+          "default": "marker",
+          "enum": [
+            "ink",
+            "marker",
+            "neon",
+            "pixel",
+            "chalk",
+            "comic",
+            "crayon",
+            "watercolor"
+          ],
+          "type": "string"
+        },
+        "outline": {
+          "anyOf": [
+            {
+              "pattern": "^#[0-9a-fA-F]{6}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "width_scale": {
+          "default": 1.0,
+          "exclusiveMinimum": 0.2,
+          "maximum": 4,
+          "type": "number"
+        },
+        "glow": {
+          "default": false,
+          "type": "boolean"
+        },
+        "fill_closed": {
+          "default": true,
+          "type": "boolean"
+        },
+        "halftone": {
+          "default": false,
+          "type": "boolean"
+        },
+        "wobble": {
+          "default": 0.0,
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        }
+      },
+      "title": "StrokeStyleDef",
+      "type": "object"
+    },
+    "StudioTheme": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9_-]{1,40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "name": {
+          "default": "Sketchbook",
+          "maxLength": 40,
+          "type": "string"
+        },
+        "palette": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "background": {
+          "$ref": "#/$defs/BackgroundDef"
+        },
+        "stroke": {
+          "$ref": "#/$defs/StrokeStyleDef"
+        },
+        "recolor": {
+          "default": false,
+          "type": "boolean"
+        },
+        "particles": {
+          "default": "dust",
+          "enum": [
+            "none",
+            "dust",
+            "sparks",
+            "stars",
+            "bubbles",
+            "confetti",
+            "embers",
+            "snow"
+          ],
+          "type": "string"
+        },
+        "font": {
+          "default": "hand",
+          "enum": [
+            "hand",
+            "comic",
+            "pixel",
+            "clean",
+            "serif"
+          ],
+          "type": "string"
+        },
+        "music": {
+          "default": "upbeat",
+          "enum": [
+            "none",
+            "calm",
+            "upbeat",
+            "spooky",
+            "heroic",
+            "chiptune",
+            "racing"
+          ],
+          "type": "string"
+        }
+      },
+      "title": "StudioTheme",
+      "type": "object"
     },
     "SurfaceSeg": {
       "additionalProperties": false,

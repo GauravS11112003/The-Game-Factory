@@ -16,7 +16,8 @@ _PLACEHOLDER = re.compile(r"\{([a-zA-Z0-9_]+)\}")
 def _messages() -> dict[str, str]:
     out: dict[str, str] = {}
     # messages.json, then the v4 lane files merged over it (docs/v4/CONTRACTS_V4.md §8)
-    paths = [SHARED_DIR / "spec" / "messages.json", *sorted((SHARED_DIR / "spec" / "messages-v4").glob("*.json"))]
+    paths = [SHARED_DIR / "spec" / "messages.json", *sorted((SHARED_DIR / "spec" / "messages-v4").glob("*.json")),
+             *sorted((SHARED_DIR / "spec" / "messages-v6").glob("*.json"))]  # v6 Studio lanes (CONTRACTS_V6 §8)
     for path in paths:
         try:
             data = json.loads(path.read_text(encoding="utf-8"))

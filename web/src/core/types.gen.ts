@@ -156,7 +156,8 @@ export type Binding =
   | BindStart
   | BindTimer
   | BindLibrary;
-export type BlockKind = "creature" | "platform" | "hazard" | "pickup" | "prop" | "player" | "rules";
+export type BlockKind =
+  "creature" | "platform" | "hazard" | "pickup" | "prop" | "player" | "rules" | "object" | "theme";
 export type InkColor = "black" | "red" | "green" | "blue" | "pencil" | "draft";
 export type Origin = "kid" | "parent" | "designer" | "library" | "draft" | "migrated";
 export type StampKind =
@@ -332,6 +333,12 @@ export interface Abilities {
 export interface Accepted {
   build_id: string;
   draft_id?: string | null;
+}
+export interface ActionDef {
+  type: string;
+  params?: {
+    [k: string]: unknown;
+  };
 }
 export interface AffectedLevel {
   level_id: string;
@@ -771,6 +778,35 @@ export interface AttemptsBody {
   deaths: number;
   clears: number;
 }
+export interface BackgroundDef {
+  style?:
+    | "paper"
+    | "solid"
+    | "gradient"
+    | "stars"
+    | "grid"
+    | "city"
+    | "hills"
+    | "clouds"
+    | "neon_grid"
+    | "halftone"
+    | "waves"
+    | "dunes"
+    | "forest"
+    | "space";
+  /**
+   * @maxItems 6
+   */
+  colors?:
+    | []
+    | [string]
+    | [string, string]
+    | [string, string, string]
+    | [string, string, string, string]
+    | [string, string, string, string, string]
+    | [string, string, string, string, string, string];
+  parallax?: boolean;
+}
 export interface BeatFlat {
   kind: "flat";
   length: number;
@@ -867,6 +903,14 @@ export interface BeatGoal {
   kind: "goal";
   style: "flag" | "staircase";
 }
+export interface BehaviorDef {
+  id: string;
+  type: string;
+  params?: {
+    [k: string]: unknown;
+  };
+  off?: boolean | null;
+}
 export interface BindCheckpoint {
   kind: "checkpoint";
   target: number;
@@ -943,6 +987,8 @@ export interface Block {
     | [LibraryArt, LibraryArt, LibraryArt, LibraryArt, LibraryArt, LibraryArt]
     | null;
   script?: Script | null;
+  object?: ObjectDef | null;
+  theme?: StudioTheme | null;
   description?: string | null;
   /**
    * @maxItems 8
@@ -1334,6 +1380,233 @@ export interface ScriptAfter {
   seconds: number;
   goto: string;
 }
+export interface ObjectDef {
+  id: string;
+  name?: string;
+  kind?: string;
+  drawing?: Drawing;
+  x?: number;
+  y?: number;
+  rotation?: number;
+  scale?: number;
+  layer?: number;
+  physics?: PhysicsDef;
+  /**
+   * @maxItems 12
+   */
+  behaviors?:
+    | []
+    | [BehaviorDef]
+    | [BehaviorDef, BehaviorDef]
+    | [BehaviorDef, BehaviorDef, BehaviorDef]
+    | [BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef]
+    | [BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef]
+    | [BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef]
+    | [BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef]
+    | [BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef]
+    | [
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef
+      ]
+    | [
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef
+      ]
+    | [
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef
+      ]
+    | [
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef
+      ];
+  /**
+   * @maxItems 24
+   */
+  rules?: RuleDef[];
+  counters?: {
+    [k: string]: number;
+  };
+  /**
+   * @maxItems 8
+   */
+  tags?:
+    | []
+    | [string]
+    | [string, string]
+    | [string, string, string]
+    | [string, string, string, string]
+    | [string, string, string, string, string]
+    | [string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string, string];
+  /**
+   * @maxItems 8
+   */
+  joints?:
+    | []
+    | [JointDef]
+    | [JointDef, JointDef]
+    | [JointDef, JointDef, JointDef]
+    | [JointDef, JointDef, JointDef, JointDef]
+    | [JointDef, JointDef, JointDef, JointDef, JointDef]
+    | [JointDef, JointDef, JointDef, JointDef, JointDef, JointDef]
+    | [JointDef, JointDef, JointDef, JointDef, JointDef, JointDef, JointDef]
+    | [JointDef, JointDef, JointDef, JointDef, JointDef, JointDef, JointDef, JointDef];
+  template?: boolean;
+  hidden?: boolean;
+  player?: 0 | 1 | 2;
+}
+export interface Drawing {
+  /**
+   * @maxItems 400
+   */
+  strokes?: Stroke[];
+  w?: number;
+  h?: number;
+}
+/**
+ * One pen stroke, in object-local pixels with (0, 0) at the object's centre.
+ */
+export interface Stroke {
+  /**
+   * @minItems 1
+   * @maxItems 2000
+   */
+  points: [[number, number], ...[number, number][]];
+  color?: string;
+  width?: number;
+  closed?: boolean;
+  fill?: string | null;
+}
+export interface PhysicsDef {
+  body?: "none" | "static" | "dynamic" | "kinematic";
+  shape?: "auto" | "box" | "circle" | "line";
+  density?: number;
+  friction?: number;
+  bounce?: number;
+  fixed_rotation?: boolean;
+  sensor?: boolean;
+  gravity_scale?: number;
+}
+export interface RuleDef {
+  id: string;
+  when: EventDef;
+  /**
+   * @maxItems 4
+   */
+  conditions?:
+    | []
+    | [Condition]
+    | [Condition, Condition]
+    | [Condition, Condition, Condition]
+    | [Condition, Condition, Condition, Condition];
+  /**
+   * @minItems 1
+   * @maxItems 8
+   */
+  then:
+    | [ActionDef]
+    | [ActionDef, ActionDef]
+    | [ActionDef, ActionDef, ActionDef]
+    | [ActionDef, ActionDef, ActionDef, ActionDef]
+    | [ActionDef, ActionDef, ActionDef, ActionDef, ActionDef]
+    | [ActionDef, ActionDef, ActionDef, ActionDef, ActionDef, ActionDef]
+    | [ActionDef, ActionDef, ActionDef, ActionDef, ActionDef, ActionDef, ActionDef]
+    | [ActionDef, ActionDef, ActionDef, ActionDef, ActionDef, ActionDef, ActionDef, ActionDef];
+  once?: boolean;
+  off?: boolean | null;
+  text?: string | null;
+}
+export interface EventDef {
+  type: string;
+  params?: {
+    [k: string]: unknown;
+  };
+}
+/**
+ * `subject` is "self", "game", "other" (the object an event involved) or an object id.
+ */
+export interface Condition {
+  subject?: string;
+  counter: string;
+  op?: ">=" | "<=" | "==" | "!=" | ">" | "<";
+  value?: number;
+}
+export interface JointDef {
+  type: "wheel" | "hinge" | "rope" | "weld" | "spring";
+  to: string;
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  at?: [number, number];
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  to_at?: [number, number];
+  motor?: boolean;
+  speed?: number;
+  length?: number | null;
+  stiffness?: number;
+}
+export interface StudioTheme {
+  id?: string | null;
+  name?: string;
+  palette?: {
+    [k: string]: string;
+  };
+  background?: BackgroundDef;
+  stroke?: StrokeStyleDef;
+  recolor?: boolean;
+  particles?: "none" | "dust" | "sparks" | "stars" | "bubbles" | "confetti" | "embers" | "snow";
+  font?: "hand" | "comic" | "pixel" | "clean" | "serif";
+  music?: "none" | "calm" | "upbeat" | "spooky" | "heroic" | "chiptune" | "racing";
+}
+export interface StrokeStyleDef {
+  style?: "ink" | "marker" | "neon" | "pixel" | "chalk" | "comic" | "crayon" | "watercolor";
+  outline?: string | null;
+  width_scale?: number;
+  glow?: boolean;
+  fill_closed?: boolean;
+  halftone?: boolean;
+  wobble?: number;
+}
 /**
  * v4: points at one version of a public block (app/spec/blocks.py).
  */
@@ -1365,6 +1638,8 @@ export interface BlockCard {
     | [LibraryArt, LibraryArt, LibraryArt, LibraryArt, LibraryArt, LibraryArt]
     | null;
   script?: Script | null;
+  object?: ObjectDef | null;
+  theme?: StudioTheme | null;
   description?: string | null;
   /**
    * @maxItems 8
@@ -1423,6 +1698,8 @@ export interface BlockCreate {
     | [LibraryArt, LibraryArt, LibraryArt, LibraryArt, LibraryArt, LibraryArt]
     | null;
   script?: Script | null;
+  object?: ObjectDef | null;
+  theme?: StudioTheme | null;
 }
 /**
  * POST /blocks/describe: the maker's words (and drawing) become a block draft.
@@ -2386,6 +2663,13 @@ export interface BuildResultJson {
   rejected: EditRecord[];
   ms: number;
 }
+export interface CameraDef {
+  mode?: "fixed" | "follow" | "auto_scroll";
+  target?: string | null;
+  axis?: "x" | "y" | "xy";
+  speed?: number;
+  zoom?: number;
+}
 /**
  * A designer menu row (§3.8): pre-verified in a sandbox, never raw geometry.
  */
@@ -2405,6 +2689,10 @@ export interface Candidate {
   intent_cost: number;
   fixes?: string[];
   measured?: boolean;
+}
+export interface ChatTurn {
+  role: "user" | "copilot";
+  text: string;
 }
 export interface CreatureSpecJson {
   archetype: "walker" | "hopper" | "flyer" | "shooter" | "chaser" | "crusher" | "static";
@@ -2548,6 +2836,79 @@ export interface EditsBody {
 export interface GameCreate {
   title: string;
   author: string;
+}
+export interface GameDoc {
+  format?: "drawplay-studio";
+  version?: 1;
+  id: string;
+  title?: string;
+  author?: string | null;
+  theme?: StudioTheme;
+  hud?: HudDef;
+  /**
+   * @maxItems 48
+   */
+  rules?: RuleDef[];
+  counters?: {
+    [k: string]: number;
+  };
+  /**
+   * @minItems 1
+   * @maxItems 40
+   */
+  scenes: [SceneDef, ...SceneDef[]];
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+export interface HudDef {
+  /**
+   * @maxItems 8
+   */
+  items?:
+    | []
+    | [HudItem]
+    | [HudItem, HudItem]
+    | [HudItem, HudItem, HudItem]
+    | [HudItem, HudItem, HudItem, HudItem]
+    | [HudItem, HudItem, HudItem, HudItem, HudItem]
+    | [HudItem, HudItem, HudItem, HudItem, HudItem, HudItem]
+    | [HudItem, HudItem, HudItem, HudItem, HudItem, HudItem, HudItem]
+    | [HudItem, HudItem, HudItem, HudItem, HudItem, HudItem, HudItem, HudItem];
+  timer?: boolean;
+  title?: string | null;
+}
+export interface HudItem {
+  subject?: string;
+  counter: string;
+  label?: string | null;
+  style?: "number" | "bar" | "hearts" | "icons";
+  max?: number | null;
+}
+export interface SceneDef {
+  id: string;
+  name?: string;
+  world?: WorldDef;
+  /**
+   * @maxItems 600
+   */
+  objects?: ObjectDef[];
+  /**
+   * @maxItems 48
+   */
+  rules?: RuleDef[];
+}
+export interface WorldDef {
+  kind?: string;
+  width?: number;
+  height?: number;
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  gravity?: [number, number];
+  camera?: CameraDef;
+  edges?: "none" | "walls" | "wrap" | "floor";
+  players?: 1 | 2;
 }
 export interface Health {
   ok: boolean;
@@ -2732,6 +3093,52 @@ export interface PublishBody {
   };
   level_hash: string;
 }
+export interface RecognizeBody {
+  game: GameDoc;
+  scene: string;
+  object_id: string;
+  image_png: string;
+}
+/**
+ * What the copilot thinks the maker just drew; the UI asks before applying.
+ */
+export interface RecognizeResult {
+  question: string;
+  name: string;
+  kind: string;
+  edits: StudioEdit[];
+  source: "model" | "keywords";
+}
+/**
+ * One change the copilot proposes. `target` is an object id, a rule/behaviour owner, or null for game level.
+ * `data` is shaped by the action (CONTRACTS_V6 §5.2). The client applies edits as one undoable step.
+ */
+export interface StudioEdit {
+  action:
+    | "set_world"
+    | "set_theme"
+    | "set_hud"
+    | "set_title"
+    | "add_scene"
+    | "update_object"
+    | "delete_object"
+    | "duplicate_object"
+    | "add_behavior"
+    | "update_behavior"
+    | "remove_behavior"
+    | "add_rule"
+    | "update_rule"
+    | "remove_rule"
+    | "add_joint"
+    | "set_counters"
+    | "set_game_counters"
+    | "ask_draw";
+  target?: string | null;
+  scene?: string | null;
+  data?: {
+    [k: string]: unknown;
+  };
+}
 /**
  * Deterministic input log. `input` = base64 of RLE records (u16 little-endian run, u8 bits L R J RUN D).
  */
@@ -2788,6 +3195,223 @@ export interface RunVerdict {
   coins: number;
   big_coins: number;
   stamps: Stamp[];
+}
+export interface StudioChatBody {
+  game: GameDoc;
+  scene: string;
+  /**
+   * @maxItems 50
+   */
+  selection?: string[];
+  message: string;
+  /**
+   * @maxItems 20
+   */
+  history?:
+    | []
+    | [ChatTurn]
+    | [ChatTurn, ChatTurn]
+    | [ChatTurn, ChatTurn, ChatTurn]
+    | [ChatTurn, ChatTurn, ChatTurn, ChatTurn]
+    | [ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn]
+    | [ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn]
+    | [ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn]
+    | [ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn]
+    | [ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn]
+    | [ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn]
+    | [ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn, ChatTurn]
+    | [
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn
+      ]
+    | [
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn
+      ]
+    | [
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn
+      ]
+    | [
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn
+      ]
+    | [
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn
+      ]
+    | [
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn
+      ]
+    | [
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn
+      ]
+    | [
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn
+      ]
+    | [
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn,
+        ChatTurn
+      ];
+  snapshot_png?: string | null;
+}
+export interface StudioChatResult {
+  reply: string;
+  edits: StudioEdit[];
+  /**
+   * @maxItems 4
+   */
+  suggestions?: [] | [string] | [string, string] | [string, string, string] | [string, string, string, string];
+  source: "model" | "keywords";
+}
+export interface StudioGameCard {
+  id: string;
+  title: string;
+  author: string | null;
+  kind: string;
+  theme_name: string;
+  scenes: number;
+  objects: number;
+  published: boolean;
+  updated_at: string | null;
+  thumbnail_url?: string | null;
+}
+export interface ThemeBody {
+  text: string;
+  game_kind?: string | null;
+}
+export interface ThemeResult {
+  theme: StudioTheme;
+  source: "model" | "keywords";
 }
 export interface TierReach {
   polished: boolean;

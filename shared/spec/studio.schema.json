@@ -1,0 +1,1426 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://draw-a-level.dev/spec/v2/studio.schema.json",
+  "$comment": "dal-level spec v1.0. GENERATED from vision/app/spec/studio.py by scripts/gen_contracts.py; do not edit.",
+  "title": "studio",
+  "description": "Studio games (docs/v6/CONTRACTS_V6.md): any 2D game, drawn by the maker and assembled with an AI copilot.",
+  "$ref": "#/$defs/GameDoc",
+  "$defs": {
+    "ActionDef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "type": {
+          "pattern": "^[a-z_]{2,32}$",
+          "type": "string"
+        },
+        "params": {
+          "additionalProperties": true,
+          "type": "object"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "ActionDef",
+      "type": "object"
+    },
+    "BackgroundDef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "style": {
+          "default": "paper",
+          "enum": [
+            "paper",
+            "solid",
+            "gradient",
+            "stars",
+            "grid",
+            "city",
+            "hills",
+            "clouds",
+            "neon_grid",
+            "halftone",
+            "waves",
+            "dunes",
+            "forest",
+            "space"
+          ],
+          "type": "string"
+        },
+        "colors": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 6,
+          "type": "array"
+        },
+        "parallax": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "title": "BackgroundDef",
+      "type": "object"
+    },
+    "BehaviorDef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9_-]{1,40}$",
+          "type": "string"
+        },
+        "type": {
+          "pattern": "^[a-z_]{2,32}$",
+          "type": "string"
+        },
+        "params": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "off": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "BehaviorDef",
+      "type": "object"
+    },
+    "CameraDef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "mode": {
+          "default": "fixed",
+          "enum": [
+            "fixed",
+            "follow",
+            "auto_scroll"
+          ],
+          "type": "string"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9_-]{1,40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "axis": {
+          "default": "xy",
+          "enum": [
+            "x",
+            "y",
+            "xy"
+          ],
+          "type": "string"
+        },
+        "speed": {
+          "default": 120,
+          "maximum": 2000,
+          "minimum": 0,
+          "type": "number"
+        },
+        "zoom": {
+          "default": 1.0,
+          "exclusiveMinimum": 0.1,
+          "maximum": 5,
+          "type": "number"
+        }
+      },
+      "title": "CameraDef",
+      "type": "object"
+    },
+    "ChatTurn": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "role": {
+          "enum": [
+            "user",
+            "copilot"
+          ],
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 4000,
+          "type": "string"
+        }
+      },
+      "required": [
+        "role",
+        "text"
+      ],
+      "title": "ChatTurn",
+      "type": "object"
+    },
+    "Condition": {
+      "additionalProperties": false,
+      "description": "`subject` is \"self\", \"game\", \"other\" (the object an event involved) or an object id.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "subject": {
+          "default": "self",
+          "maxLength": 40,
+          "type": "string"
+        },
+        "counter": {
+          "pattern": "^[a-z][a-z0-9 _]{0,23}$",
+          "type": "string"
+        },
+        "op": {
+          "default": ">=",
+          "enum": [
+            ">=",
+            "<=",
+            "==",
+            "!=",
+            ">",
+            "<"
+          ],
+          "type": "string"
+        },
+        "value": {
+          "default": 0,
+          "type": "number"
+        }
+      },
+      "required": [
+        "counter"
+      ],
+      "title": "Condition",
+      "type": "object"
+    },
+    "Drawing": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "strokes": {
+          "items": {
+            "$ref": "#/$defs/Stroke"
+          },
+          "maxItems": 400,
+          "type": "array"
+        },
+        "w": {
+          "default": 0,
+          "minimum": 0,
+          "type": "number"
+        },
+        "h": {
+          "default": 0,
+          "minimum": 0,
+          "type": "number"
+        }
+      },
+      "title": "Drawing",
+      "type": "object"
+    },
+    "EventDef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "type": {
+          "pattern": "^[a-z_]{2,32}$",
+          "type": "string"
+        },
+        "params": {
+          "additionalProperties": true,
+          "type": "object"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "EventDef",
+      "type": "object"
+    },
+    "GameDoc": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "format": {
+          "const": "drawplay-studio",
+          "default": "drawplay-studio",
+          "type": "string"
+        },
+        "version": {
+          "const": 1,
+          "default": 1,
+          "type": "integer"
+        },
+        "id": {
+          "pattern": "^[A-Za-z0-9_-]{1,40}$",
+          "type": "string"
+        },
+        "title": {
+          "default": "Untitled game",
+          "maxLength": 60,
+          "type": "string"
+        },
+        "author": {
+          "anyOf": [
+            {
+              "maxLength": 32,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "theme": {
+          "$ref": "#/$defs/StudioTheme"
+        },
+        "hud": {
+          "$ref": "#/$defs/HudDef"
+        },
+        "rules": {
+          "items": {
+            "$ref": "#/$defs/RuleDef"
+          },
+          "maxItems": 48,
+          "type": "array"
+        },
+        "counters": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "type": "object"
+        },
+        "scenes": {
+          "items": {
+            "$ref": "#/$defs/SceneDef"
+          },
+          "maxItems": 40,
+          "minItems": 1,
+          "type": "array"
+        },
+        "created_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "scenes"
+      ],
+      "title": "GameDoc",
+      "type": "object"
+    },
+    "HudDef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/HudItem"
+          },
+          "maxItems": 8,
+          "type": "array"
+        },
+        "timer": {
+          "default": false,
+          "type": "boolean"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "maxLength": 40,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "HudDef",
+      "type": "object"
+    },
+    "HudItem": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "subject": {
+          "default": "game",
+          "maxLength": 40,
+          "type": "string"
+        },
+        "counter": {
+          "pattern": "^[a-z][a-z0-9 _]{0,23}$",
+          "type": "string"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "maxLength": 24,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "style": {
+          "default": "number",
+          "enum": [
+            "number",
+            "bar",
+            "hearts",
+            "icons"
+          ],
+          "type": "string"
+        },
+        "max": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "counter"
+      ],
+      "title": "HudItem",
+      "type": "object"
+    },
+    "JointDef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "type": {
+          "enum": [
+            "wheel",
+            "hinge",
+            "rope",
+            "weld",
+            "spring"
+          ],
+          "type": "string"
+        },
+        "to": {
+          "pattern": "^[A-Za-z0-9_-]{1,40}$",
+          "type": "string"
+        },
+        "at": {
+          "default": [
+            0,
+            0
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "type": "array"
+        },
+        "to_at": {
+          "default": [
+            0,
+            0
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "type": "array"
+        },
+        "motor": {
+          "default": false,
+          "type": "boolean"
+        },
+        "speed": {
+          "default": 0,
+          "type": "number"
+        },
+        "length": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "stiffness": {
+          "default": 0.5,
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        }
+      },
+      "required": [
+        "type",
+        "to"
+      ],
+      "title": "JointDef",
+      "type": "object"
+    },
+    "ObjectDef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9_-]{1,40}$",
+          "type": "string"
+        },
+        "name": {
+          "default": "",
+          "maxLength": 32,
+          "type": "string"
+        },
+        "kind": {
+          "default": "thing",
+          "maxLength": 24,
+          "type": "string"
+        },
+        "drawing": {
+          "$ref": "#/$defs/Drawing"
+        },
+        "x": {
+          "default": 0,
+          "type": "number"
+        },
+        "y": {
+          "default": 0,
+          "type": "number"
+        },
+        "rotation": {
+          "default": 0,
+          "type": "number"
+        },
+        "scale": {
+          "default": 1.0,
+          "exclusiveMinimum": 0,
+          "maximum": 20,
+          "type": "number"
+        },
+        "layer": {
+          "default": 0,
+          "maximum": 10,
+          "minimum": -10,
+          "type": "integer"
+        },
+        "physics": {
+          "$ref": "#/$defs/PhysicsDef"
+        },
+        "behaviors": {
+          "items": {
+            "$ref": "#/$defs/BehaviorDef"
+          },
+          "maxItems": 12,
+          "type": "array"
+        },
+        "rules": {
+          "items": {
+            "$ref": "#/$defs/RuleDef"
+          },
+          "maxItems": 24,
+          "type": "array"
+        },
+        "counters": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "type": "object"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 8,
+          "type": "array"
+        },
+        "joints": {
+          "items": {
+            "$ref": "#/$defs/JointDef"
+          },
+          "maxItems": 8,
+          "type": "array"
+        },
+        "template": {
+          "default": false,
+          "type": "boolean"
+        },
+        "hidden": {
+          "default": false,
+          "type": "boolean"
+        },
+        "player": {
+          "default": 0,
+          "enum": [
+            0,
+            1,
+            2
+          ],
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "ObjectDef",
+      "type": "object"
+    },
+    "PhysicsDef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "body": {
+          "default": "static",
+          "enum": [
+            "none",
+            "static",
+            "dynamic",
+            "kinematic"
+          ],
+          "type": "string"
+        },
+        "shape": {
+          "default": "auto",
+          "enum": [
+            "auto",
+            "box",
+            "circle",
+            "line"
+          ],
+          "type": "string"
+        },
+        "density": {
+          "default": 1.0,
+          "maximum": 50,
+          "minimum": 0.05,
+          "type": "number"
+        },
+        "friction": {
+          "default": 0.4,
+          "maximum": 2,
+          "minimum": 0,
+          "type": "number"
+        },
+        "bounce": {
+          "default": 0.0,
+          "maximum": 1.5,
+          "minimum": 0,
+          "type": "number"
+        },
+        "fixed_rotation": {
+          "default": false,
+          "type": "boolean"
+        },
+        "sensor": {
+          "default": false,
+          "type": "boolean"
+        },
+        "gravity_scale": {
+          "default": 1.0,
+          "maximum": 5,
+          "minimum": -5,
+          "type": "number"
+        }
+      },
+      "title": "PhysicsDef",
+      "type": "object"
+    },
+    "RecognizeBody": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "game": {
+          "$ref": "#/$defs/GameDoc"
+        },
+        "scene": {
+          "type": "string"
+        },
+        "object_id": {
+          "type": "string"
+        },
+        "image_png": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "game",
+        "scene",
+        "object_id",
+        "image_png"
+      ],
+      "title": "RecognizeBody",
+      "type": "object"
+    },
+    "RecognizeResult": {
+      "additionalProperties": false,
+      "description": "What the copilot thinks the maker just drew; the UI asks before applying.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "question": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "edits": {
+          "items": {
+            "$ref": "#/$defs/StudioEdit"
+          },
+          "type": "array"
+        },
+        "source": {
+          "enum": [
+            "model",
+            "keywords"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "question",
+        "name",
+        "kind",
+        "edits",
+        "source"
+      ],
+      "title": "RecognizeResult",
+      "type": "object"
+    },
+    "RuleDef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9_-]{1,40}$",
+          "type": "string"
+        },
+        "when": {
+          "$ref": "#/$defs/EventDef"
+        },
+        "conditions": {
+          "items": {
+            "$ref": "#/$defs/Condition"
+          },
+          "maxItems": 4,
+          "type": "array"
+        },
+        "then": {
+          "items": {
+            "$ref": "#/$defs/ActionDef"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "type": "array"
+        },
+        "once": {
+          "default": false,
+          "type": "boolean"
+        },
+        "off": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "text": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "when",
+        "then"
+      ],
+      "title": "RuleDef",
+      "type": "object"
+    },
+    "SceneDef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9_-]{1,40}$",
+          "type": "string"
+        },
+        "name": {
+          "default": "Level 1",
+          "maxLength": 40,
+          "type": "string"
+        },
+        "world": {
+          "$ref": "#/$defs/WorldDef"
+        },
+        "objects": {
+          "items": {
+            "$ref": "#/$defs/ObjectDef"
+          },
+          "maxItems": 600,
+          "type": "array"
+        },
+        "rules": {
+          "items": {
+            "$ref": "#/$defs/RuleDef"
+          },
+          "maxItems": 48,
+          "type": "array"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "SceneDef",
+      "type": "object"
+    },
+    "Stroke": {
+      "additionalProperties": false,
+      "description": "One pen stroke, in object-local pixels with (0, 0) at the object's centre.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "points": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array"
+          },
+          "maxItems": 2000,
+          "minItems": 1,
+          "type": "array"
+        },
+        "color": {
+          "default": "#1f1b18",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "type": "string"
+        },
+        "width": {
+          "default": 6,
+          "exclusiveMinimum": 0,
+          "maximum": 80,
+          "type": "number"
+        },
+        "closed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "fill": {
+          "anyOf": [
+            {
+              "pattern": "^#[0-9a-fA-F]{6}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "points"
+      ],
+      "title": "Stroke",
+      "type": "object"
+    },
+    "StrokeStyleDef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "style": {
+          "default": "marker",
+          "enum": [
+            "ink",
+            "marker",
+            "neon",
+            "pixel",
+            "chalk",
+            "comic",
+            "crayon",
+            "watercolor"
+          ],
+          "type": "string"
+        },
+        "outline": {
+          "anyOf": [
+            {
+              "pattern": "^#[0-9a-fA-F]{6}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "width_scale": {
+          "default": 1.0,
+          "exclusiveMinimum": 0.2,
+          "maximum": 4,
+          "type": "number"
+        },
+        "glow": {
+          "default": false,
+          "type": "boolean"
+        },
+        "fill_closed": {
+          "default": true,
+          "type": "boolean"
+        },
+        "halftone": {
+          "default": false,
+          "type": "boolean"
+        },
+        "wobble": {
+          "default": 0.0,
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        }
+      },
+      "title": "StrokeStyleDef",
+      "type": "object"
+    },
+    "StudioChatBody": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "game": {
+          "$ref": "#/$defs/GameDoc"
+        },
+        "scene": {
+          "type": "string"
+        },
+        "selection": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 50,
+          "type": "array"
+        },
+        "message": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "type": "string"
+        },
+        "history": {
+          "items": {
+            "$ref": "#/$defs/ChatTurn"
+          },
+          "maxItems": 20,
+          "type": "array"
+        },
+        "snapshot_png": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "game",
+        "scene",
+        "message"
+      ],
+      "title": "StudioChatBody",
+      "type": "object"
+    },
+    "StudioChatResult": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "reply": {
+          "type": "string"
+        },
+        "edits": {
+          "items": {
+            "$ref": "#/$defs/StudioEdit"
+          },
+          "type": "array"
+        },
+        "suggestions": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 4,
+          "type": "array"
+        },
+        "source": {
+          "enum": [
+            "model",
+            "keywords"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "reply",
+        "edits",
+        "source"
+      ],
+      "title": "StudioChatResult",
+      "type": "object"
+    },
+    "StudioEdit": {
+      "additionalProperties": false,
+      "description": "One change the copilot proposes. `target` is an object id, a rule/behaviour owner, or null for game level.\n`data` is shaped by the action (CONTRACTS_V6 §5.2). The client applies edits as one undoable step.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "action": {
+          "enum": [
+            "set_world",
+            "set_theme",
+            "set_hud",
+            "set_title",
+            "add_scene",
+            "update_object",
+            "delete_object",
+            "duplicate_object",
+            "add_behavior",
+            "update_behavior",
+            "remove_behavior",
+            "add_rule",
+            "update_rule",
+            "remove_rule",
+            "add_joint",
+            "set_counters",
+            "set_game_counters",
+            "ask_draw"
+          ],
+          "type": "string"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "scene": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "data": {
+          "additionalProperties": true,
+          "type": "object"
+        }
+      },
+      "required": [
+        "action"
+      ],
+      "title": "StudioEdit",
+      "type": "object"
+    },
+    "StudioGameCard": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "author": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "kind": {
+          "type": "string"
+        },
+        "theme_name": {
+          "type": "string"
+        },
+        "scenes": {
+          "type": "integer"
+        },
+        "objects": {
+          "type": "integer"
+        },
+        "published": {
+          "type": "boolean"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "thumbnail_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "author",
+        "kind",
+        "theme_name",
+        "scenes",
+        "objects",
+        "published",
+        "updated_at"
+      ],
+      "title": "StudioGameCard",
+      "type": "object"
+    },
+    "StudioTheme": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9_-]{1,40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "name": {
+          "default": "Sketchbook",
+          "maxLength": 40,
+          "type": "string"
+        },
+        "palette": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "background": {
+          "$ref": "#/$defs/BackgroundDef"
+        },
+        "stroke": {
+          "$ref": "#/$defs/StrokeStyleDef"
+        },
+        "recolor": {
+          "default": false,
+          "type": "boolean"
+        },
+        "particles": {
+          "default": "dust",
+          "enum": [
+            "none",
+            "dust",
+            "sparks",
+            "stars",
+            "bubbles",
+            "confetti",
+            "embers",
+            "snow"
+          ],
+          "type": "string"
+        },
+        "font": {
+          "default": "hand",
+          "enum": [
+            "hand",
+            "comic",
+            "pixel",
+            "clean",
+            "serif"
+          ],
+          "type": "string"
+        },
+        "music": {
+          "default": "upbeat",
+          "enum": [
+            "none",
+            "calm",
+            "upbeat",
+            "spooky",
+            "heroic",
+            "chiptune",
+            "racing"
+          ],
+          "type": "string"
+        }
+      },
+      "title": "StudioTheme",
+      "type": "object"
+    },
+    "ThemeBody": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "text": {
+          "maxLength": 300,
+          "minLength": 1,
+          "type": "string"
+        },
+        "game_kind": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "ThemeBody",
+      "type": "object"
+    },
+    "ThemeResult": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "theme": {
+          "$ref": "#/$defs/StudioTheme"
+        },
+        "source": {
+          "enum": [
+            "model",
+            "keywords"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "theme",
+        "source"
+      ],
+      "title": "ThemeResult",
+      "type": "object"
+    },
+    "WorldDef": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "default": "",
+          "maxLength": 60,
+          "type": "string"
+        },
+        "width": {
+          "default": 1600,
+          "maximum": 40000,
+          "minimum": 320,
+          "type": "number"
+        },
+        "height": {
+          "default": 900,
+          "maximum": 20000,
+          "minimum": 240,
+          "type": "number"
+        },
+        "gravity": {
+          "default": [
+            0,
+            1
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "type": "array"
+        },
+        "camera": {
+          "$ref": "#/$defs/CameraDef"
+        },
+        "edges": {
+          "default": "walls",
+          "enum": [
+            "none",
+            "walls",
+            "wrap",
+            "floor"
+          ],
+          "type": "string"
+        },
+        "players": {
+          "default": 1,
+          "enum": [
+            1,
+            2
+          ],
+          "type": "integer"
+        }
+      },
+      "title": "WorldDef",
+      "type": "object"
+    }
+  }
+}

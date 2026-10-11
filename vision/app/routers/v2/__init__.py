@@ -29,13 +29,15 @@ BOOT_DELAY_S = 1.5  # let uvicorn finish starting (and the first requests throug
 V3_MODULES = ("creative", "collab", "live", "export_phaser")
 # v4 routers (docs/v4/CONTRACTS_V4.md §6), optional in the same way: blocks, written rules, the dashboard, connectors.
 V4_MODULES = ("blocks", "logic", "dashboard", "export_connectors")
+# v6 Studio (docs/v6/CONTRACTS_V6.md §5): games, templates and the AI copilot.
+V6_MODULES = ("studio",)
 
 
 def mount(app: FastAPI) -> None:
     import importlib
 
     modules = [health, builds, drafts, levels, runs, games, library, rules, prompts, packs, transfer]
-    for name in V3_MODULES + V4_MODULES:
+    for name in V3_MODULES + V4_MODULES + V6_MODULES:
         try:
             modules.append(importlib.import_module(f"app.routers.v2.{name}"))
         except Exception as e:  # noqa: BLE001

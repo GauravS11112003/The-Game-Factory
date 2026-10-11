@@ -1,0 +1,30 @@
+{
+  "format": "drawplay-studio",
+  "version": 1,
+  "id": "tpl_blank",
+  "title": "Blank canvas",
+  "author": "draw.play",
+  "theme": {
+    "id": "sketchbook",
+    "name": "Sketchbook",
+    "palette": {"bg": "#f6f1e7", "ink": "#1f1b18", "accent": "#e4572e", "accent2": "#2e86ab", "text": "#1f1b18", "danger": "#d7263d", "good": "#3bb273"},
+    "background": {"style": "paper", "colors": ["#f6f1e7"], "parallax": true},
+    "stroke": {"style": "marker", "outline": null, "width_scale": 1, "glow": false, "fill_closed": true, "halftone": false, "wobble": 0},
+    "recolor": false,
+    "particles": "dust",
+    "font": "hand",
+    "music": "upbeat"
+  },
+  "hud": {"items": [], "timer": false, "title": null},
+  "rules": [],
+  "counters": {},
+  "scenes": [
+    {
+      "id": "s1",
+      "name": "Level 1",
+      "world": {"kind": "", "width": 1600, "height": 900, "gravity": [0, 1], "camera": {"mode": "fixed", "target": null, "axis": "xy", "speed": 120, "zoom": 1}, "edges": "walls", "players": 1},
+      "objects": [],
+      "rules": []
+    }
+  ]
+}

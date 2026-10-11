@@ -24,6 +24,7 @@ from app.spec.level import LevelV2
 from app.spec.library import BlockRef, LibraryArt, LibrarySymbol, LibraryType
 from app.spec.logic import RuleV4
 from app.spec.script import Script
+from app.spec.studio import ObjectDef, StudioTheme
 from app.spec.report import PlaytestReport
 from app.spec.rules import GameRules
 from app.spec.scene import SceneGraph
@@ -550,6 +551,8 @@ class BlockCreate(Spec):
     parent: BlockRef | None = None
     frames: list[LibraryArt] | None = Field(default=None, max_length=6)  # v5
     script: Script | None = None  # v5
+    object: ObjectDef | None = None  # v6
+    theme: StudioTheme | None = None  # v6
 
 
 class BlockList(Spec):

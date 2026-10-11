@@ -6,11 +6,15 @@ import v4Core from '../../../shared/spec/messages-v4/core.json';
 import v4Engine from '../../../shared/spec/messages-v4/engine.json';
 import v4Api from '../../../shared/spec/messages-v4/api.json';
 import v4Ui from '../../../shared/spec/messages-v4/ui.json';
+// v6 Studio lanes (docs/v6/CONTRACTS_V6.md §8)
+import v6Runtime from '../../../shared/spec/messages-v6/runtime.json';
+import v6Editor from '../../../shared/spec/messages-v6/editor.json';
+import v6Ai from '../../../shared/spec/messages-v6/ai.json';
 import type { MessageRef, Role } from '../core/types.gen.ts';
 
 type Table = { messages?: Record<string, string> };
 const MESSAGES: Record<string, string> = Object.assign({},
-  ...[table, v4Shell, v4Core, v4Engine, v4Api, v4Ui].map((x) => (x as Table).messages ?? {}));
+  ...[table, v4Shell, v4Core, v4Engine, v4Api, v4Ui, v6Runtime, v6Editor, v6Ai].map((x) => (x as Table).messages ?? {}));
 
 export function hasMessage(key: string): boolean {
   return key in MESSAGES;

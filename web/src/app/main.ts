@@ -45,6 +45,9 @@ import { blocksScreen } from './ws/blocks.ts';
 import { gameWorkspaceScreen } from './ws/game_workspace.ts';
 import { stylesScreen } from './ws/styles.ts';
 import { templatesScreen } from './ws/templates.ts';
+// v6 Studio (docs/v6/CONTRACTS_V6.md)
+import { studioPlayScreen } from './studio/play_screen.ts';
+import { studioScreen } from './studio/studio_screen.ts';
 
 type Cleanup = (() => void) | void;
 
@@ -97,6 +100,12 @@ function route(): void {
         break;
       case 'templates':
         cleanup = templatesScreen(app);
+        break;
+      case 'studio':
+        if (second) cleanup = studioScreen(app, second, query);
+        break;
+      case 'g':
+        if (second) cleanup = studioPlayScreen(app, second, query);
         break;
       case 'draw':
         cleanup = drawScreen(app, query);

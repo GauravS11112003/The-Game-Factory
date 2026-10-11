@@ -7,6 +7,7 @@ from types import ModuleType
 
 from app.spec import (
     api, behavior, blocks, common, edits, events, ink, level, library, logic, plan, report, rules, runs, scene, script,
+    studio,
 )
 
 SPEC_VERSION = "1.0"
@@ -17,6 +18,7 @@ SCHEMA_MODULES: dict[str, ModuleType] = {
     "behavior": behavior,
     "logic": logic,
     "script": script,
+    "studio": studio,
     "ink": ink,
     "edits": edits,
     "scene": scene,

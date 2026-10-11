@@ -8,7 +8,8 @@ import { stubResult } from '../worker/stub.ts';
 
 // messages.json plus the v4 lane files merged over it (docs/v4/CONTRACTS_V4.md §8)
 const messages: Record<string, string> = Object.assign({},
-  ...['messages.json', ...['shell', 'core', 'engine', 'api', 'ui'].map((l) => join('messages-v4', `${l}.json`))]
+  ...['messages.json', ...['shell', 'core', 'engine', 'api', 'ui'].map((l) => join('messages-v4', `${l}.json`)),
+    ...['runtime', 'editor', 'ai'].map((l) => join('messages-v6', `${l}.json`))]
     .map((f) => readJson<{ messages: Record<string, string> }>(join(SPEC_DIR, f)).messages));
 
 function enumOf(schemaFile: string, def: string): string[] {
