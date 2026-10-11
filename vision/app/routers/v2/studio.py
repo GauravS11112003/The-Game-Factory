@@ -2,7 +2,7 @@
 
 POST /studio/games                    {template?, title?, doc?} → 201 GameDoc (id sg_<12>, author from X-DP-Player)
 GET  /studio/games/{id}               → GameDoc (anyone with the link)
-PUT  /studio/games/{id}               GameDoc → GameDoc (author only; validated; ≤ 4 MB; bumps updated_at)
+PUT  /studio/games/{id}               GameDoc → GameDoc (author only; validated; ≤ 24 MB; bumps updated_at)
 GET  /studio/games?mine=1|published=1 → {games: StudioGameCard[]} newest first
 POST /studio/games/{id}/publish       {published} → StudioGameCard (author only)
 PUT  /studio/games/{id}/thumbnail     PNG bytes (≤ 600 KB) → 204 (author only)
@@ -41,9 +41,10 @@ router = APIRouter()
 
 GAME_ID = re.compile(r"^sg_[a-z0-9]{12}$")
 TEMPLATE_ID = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
-MAX_DOC_BYTES = 4 * 1024 * 1024
+MAX_DOC_BYTES = 24 * 1024 * 1024  # v7: docs carry AI art SVGs (variants, terrain skins, backdrop)
 MAX_THUMB_BYTES = 600 * 1024
-MAX_CHAT_BYTES = 9 * 1024 * 1024  # a 4 MB game plus a canvas snapshot
+MAX_CHAT_BYTES = MAX_DOC_BYTES + 6 * 1024 * 1024  # a full game plus a canvas snapshot
+MAX_ART_BYTES = MAX_DOC_BYTES + 16 * 1024 * 1024  # a full game plus one drawing PNG per object (v7 art jobs)
 MAX_SMALL_BYTES = 64 * 1024
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 AUTHOR_CHARS = 32

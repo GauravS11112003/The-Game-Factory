@@ -10,3 +10,9 @@ export { renderBackground, backgroundLayers, layerPlacement, REF_W, REF_H, type 
 export { fullTheme, buildRecolorMap, docDrawings, fontStack, contrast, luminance, mix, rgba, hexNum, parseHex, fillFor,
   strokePalette, type FullTheme } from './color.ts';
 export { THEMES, DEFAULT_THEME, themePreset } from './presets.ts';
+// v7: the finished look (AI art, terrain, backdrop) shared by the runtime and the Studio canvas — see art.ts header
+export { objectLook, chosenVariant, isTerrainObject, objectBitmap, renderTerrain, terrainSkinFor, renderBackdrop, renderLookBackground,
+  hasBackdrop, artImage, artImageSync, artCanvas, artCanvasSync, onArtReady, preloadArt, docArtSvgs, artBox, inkCenter, paintTerrain,
+  terrainModel, skyCanvas, type Look, type LookObj, type LookDoc, type LookBitmap, type TerrainModel, type ResolvedSkin } from './art.ts';
+export { backdropPlacement, svgSize, type BackdropPlace } from './backdrop.ts';
+export { defaultSkin, resolveSkin, buildTerrain, decorSpots } from './terrain.ts';

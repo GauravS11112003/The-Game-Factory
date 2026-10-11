@@ -30,7 +30,7 @@ V3_MODULES = ("creative", "collab", "live", "export_phaser")
 # v4 routers (docs/v4/CONTRACTS_V4.md §6), optional in the same way: blocks, written rules, the dashboard, connectors.
 V4_MODULES = ("blocks", "logic", "dashboard", "export_connectors")
 # v6 Studio (docs/v6/CONTRACTS_V6.md §5): games, templates and the AI copilot.
-V6_MODULES = ("studio",)
+V6_MODULES = ("studio", "studio_art")  # v7 art API (docs/v7/CONTRACTS_V7.md §3)
 
 
 def mount(app: FastAPI) -> None:
