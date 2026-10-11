@@ -27,6 +27,389 @@
       "title": "ActionDef",
       "type": "object"
     },
+    "ArtDirection": {
+      "additionalProperties": false,
+      "description": "One game-wide style guide that every piece of AI art follows, so the whole game matches.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "rev": {
+          "default": 1,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "prompt": {
+          "default": "",
+          "maxLength": 300,
+          "type": "string"
+        },
+        "summary": {
+          "default": "",
+          "maxLength": 300,
+          "type": "string"
+        },
+        "guide": {
+          "default": "",
+          "maxLength": 6000,
+          "type": "string"
+        },
+        "palette": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 10,
+          "type": "array"
+        },
+        "kinds": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        }
+      },
+      "title": "ArtDirection",
+      "type": "object"
+    },
+    "ArtDirectionBody": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "game": {
+          "$ref": "#/$defs/GameDoc"
+        },
+        "prompt": {
+          "default": "",
+          "maxLength": 300,
+          "type": "string"
+        }
+      },
+      "required": [
+        "game"
+      ],
+      "title": "ArtDirectionBody",
+      "type": "object"
+    },
+    "ArtDirectionResult": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "direction": {
+          "$ref": "#/$defs/ArtDirection"
+        },
+        "theme": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StudioTheme"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "source": {
+          "enum": [
+            "model",
+            "keywords"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "direction",
+        "source"
+      ],
+      "title": "ArtDirectionResult",
+      "type": "object"
+    },
+    "ArtJobBody": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "game": {
+          "$ref": "#/$defs/GameDoc"
+        },
+        "scene": {
+          "type": "string"
+        },
+        "objects": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 80,
+          "type": "array"
+        },
+        "backdrop": {
+          "default": false,
+          "type": "boolean"
+        },
+        "variants": {
+          "default": 3,
+          "maximum": 4,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "images": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        }
+      },
+      "required": [
+        "game",
+        "scene"
+      ],
+      "title": "ArtJobBody",
+      "type": "object"
+    },
+    "ArtJobItem": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "object_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "status": {
+          "enum": [
+            "queued",
+            "drawing",
+            "reviewing",
+            "done",
+            "failed"
+          ],
+          "type": "string"
+        },
+        "art": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ObjectArt"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "backdrop": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Backdrop"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "ArtJobItem",
+      "type": "object"
+    },
+    "ArtJobStatus": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "running",
+            "done",
+            "failed"
+          ],
+          "type": "string"
+        },
+        "done": {
+          "type": "integer"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "rev": {
+          "type": "integer"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/ArtJobItem"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "status",
+        "done",
+        "total",
+        "rev",
+        "items"
+      ],
+      "title": "ArtJobStatus",
+      "type": "object"
+    },
+    "ArtVariant": {
+      "additionalProperties": false,
+      "description": "One finished drawing of an object by Claude: an SVG whose viewBox is `0 0 w h`, fitted to the object's drawing\nbox (w, h = drawing.w, drawing.h), so it lines up with the physics shape made from the maker's strokes.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9_-]{1,40}$",
+          "type": "string"
+        },
+        "svg": {
+          "maxLength": 300000,
+          "type": "string"
+        },
+        "w": {
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "h": {
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "rev": {
+          "default": 0,
+          "type": "integer"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "svg",
+        "w",
+        "h"
+      ],
+      "title": "ArtVariant",
+      "type": "object"
+    },
+    "Backdrop": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "rev": {
+          "default": 0,
+          "type": "integer"
+        },
+        "sky": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 4,
+          "type": "array"
+        },
+        "layers": {
+          "items": {
+            "$ref": "#/$defs/BackdropLayer"
+          },
+          "maxItems": 4,
+          "type": "array"
+        }
+      },
+      "title": "Backdrop",
+      "type": "object"
+    },
+    "BackdropLayer": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "svg": {
+          "maxLength": 300000,
+          "type": "string"
+        },
+        "w": {
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "h": {
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "depth": {
+          "default": 0.5,
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        "anchor": {
+          "default": "bottom",
+          "enum": [
+            "top",
+            "bottom",
+            "fill"
+          ],
+          "type": "string"
+        },
+        "tile_x": {
+          "default": true,
+          "type": "boolean"
+        },
+        "height": {
+          "default": 0.5,
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "type": "number"
+        }
+      },
+      "required": [
+        "svg",
+        "w",
+        "h"
+      ],
+      "title": "BackdropLayer",
+      "type": "object"
+    },
     "BackgroundDef": {
       "additionalProperties": false,
       "patternProperties": {
@@ -333,6 +716,36 @@
           "minItems": 1,
           "type": "array"
         },
+        "look": {
+          "default": "game",
+          "enum": [
+            "game",
+            "sketch"
+          ],
+          "type": "string"
+        },
+        "art_direction": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtDirection"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "backdrop": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Backdrop"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "created_at": {
           "anyOf": [
             {
@@ -538,6 +951,59 @@
       "title": "JointDef",
       "type": "object"
     },
+    "ObjectArt": {
+      "additionalProperties": false,
+      "description": "An object's look. `use` = which one plays: the maker's own strokes (cleaned up in the game view) or the chosen\nAI variant. Variants are kept so the maker can switch back and forth.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "use": {
+          "default": "sketch",
+          "enum": [
+            "sketch",
+            "ai"
+          ],
+          "type": "string"
+        },
+        "chosen": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9_-]{1,40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "variants": {
+          "items": {
+            "$ref": "#/$defs/ArtVariant"
+          },
+          "maxItems": 6,
+          "type": "array"
+        },
+        "terrain": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TerrainSkin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "asked": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "title": "ObjectArt",
+      "type": "object"
+    },
     "ObjectDef": {
       "additionalProperties": false,
       "patternProperties": {
@@ -638,6 +1104,17 @@
             2
           ],
           "type": "integer"
+        },
+        "art": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ObjectArt"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -1077,6 +1554,29 @@
             "keywords"
           ],
           "type": "string"
+        },
+        "art_prompt": {
+          "anyOf": [
+            {
+              "maxLength": 300,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -1113,7 +1613,11 @@
             "add_joint",
             "set_counters",
             "set_game_counters",
-            "ask_draw"
+            "ask_draw",
+            "set_art",
+            "set_art_direction",
+            "set_backdrop",
+            "set_look"
           ],
           "type": "string"
         },
@@ -1302,6 +1806,77 @@
         }
       },
       "title": "StudioTheme",
+      "type": "object"
+    },
+    "TerrainSkin": {
+      "additionalProperties": false,
+      "description": "How a ground line (physics shape \"line\") looks in the game view: solid land filled from the line down to the\nworld's bottom, a surface band along the line, an optional tiled texture inside, and decorations along the top.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "fill": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 4,
+          "minItems": 1,
+          "type": "array"
+        },
+        "surface": {
+          "default": "#3bb273",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "type": "string"
+        },
+        "surface_width": {
+          "default": 14,
+          "maximum": 80,
+          "minimum": 0,
+          "type": "number"
+        },
+        "surface_svg": {
+          "anyOf": [
+            {
+              "maxLength": 300000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "texture_svg": {
+          "anyOf": [
+            {
+              "maxLength": 300000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "decor": {
+          "items": {
+            "$ref": "#/$defs/ArtVariant"
+          },
+          "maxItems": 6,
+          "type": "array"
+        },
+        "decor_every": {
+          "default": 220,
+          "maximum": 4000,
+          "minimum": 40,
+          "type": "number"
+        },
+        "rev": {
+          "default": 0,
+          "type": "integer"
+        }
+      },
+      "title": "TerrainSkin",
       "type": "object"
     },
     "ThemeBody": {

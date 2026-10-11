@@ -751,32 +751,75 @@ export interface ApiMessage {
   message_key: string;
   args?: MessageArgs;
 }
-export interface AskCard {
+/**
+ * One game-wide style guide that every piece of AI art follows, so the whole game matches.
+ */
+export interface ArtDirection {
+  rev?: number;
+  prompt?: string;
+  summary?: string;
+  guide?: string;
+  /**
+   * @maxItems 10
+   */
+  palette?:
+    | []
+    | [string]
+    | [string, string]
+    | [string, string, string]
+    | [string, string, string, string]
+    | [string, string, string, string, string]
+    | [string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string, string, string, string];
+  kinds?: {
+    [k: string]: string;
+  };
+}
+export interface ArtDirectionBody {
+  game: GameDoc;
+  prompt?: string;
+}
+export interface GameDoc {
+  format?: "drawplay-studio";
+  version?: 1;
   id: string;
-  about: string;
-  kind: AskKind;
-  message_key: string;
-  args?: MessageArgs;
-  options: AskOption[];
-  default_option?: string | null;
-  answer?: string | null;
-  by: "model" | "heuristic" | "parser" | "validator" | "designer";
+  title?: string;
+  author?: string | null;
+  theme?: StudioTheme;
+  hud?: HudDef;
+  /**
+   * @maxItems 48
+   */
+  rules?: RuleDef[];
+  counters?: {
+    [k: string]: number;
+  };
+  /**
+   * @minItems 1
+   * @maxItems 40
+   */
+  scenes: [SceneDef, ...SceneDef[]];
+  look?: "game" | "sketch";
+  art_direction?: ArtDirection | null;
+  backdrop?: Backdrop | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
-export interface AskOption {
-  id: string;
-  label_key: string;
-  label_args?: MessageArgs;
-  ops?: EditOp[];
-  tap_target?: boolean;
-}
-export interface Attachment {
-  host: string;
-  face: Face;
-}
-export interface AttemptsBody {
-  attempts: number;
-  deaths: number;
-  clears: number;
+export interface StudioTheme {
+  id?: string | null;
+  name?: string;
+  palette?: {
+    [k: string]: string;
+  };
+  background?: BackgroundDef;
+  stroke?: StrokeStyleDef;
+  recolor?: boolean;
+  particles?: "none" | "dust" | "sparks" | "stars" | "bubbles" | "confetti" | "embers" | "snow";
+  font?: "hand" | "comic" | "pixel" | "clean" | "serif";
+  music?: "none" | "calm" | "upbeat" | "spooky" | "heroic" | "chiptune" | "racing";
 }
 export interface BackgroundDef {
   style?:
@@ -806,6 +849,432 @@ export interface BackgroundDef {
     | [string, string, string, string, string]
     | [string, string, string, string, string, string];
   parallax?: boolean;
+}
+export interface StrokeStyleDef {
+  style?: "ink" | "marker" | "neon" | "pixel" | "chalk" | "comic" | "crayon" | "watercolor";
+  outline?: string | null;
+  width_scale?: number;
+  glow?: boolean;
+  fill_closed?: boolean;
+  halftone?: boolean;
+  wobble?: number;
+}
+export interface HudDef {
+  /**
+   * @maxItems 8
+   */
+  items?:
+    | []
+    | [HudItem]
+    | [HudItem, HudItem]
+    | [HudItem, HudItem, HudItem]
+    | [HudItem, HudItem, HudItem, HudItem]
+    | [HudItem, HudItem, HudItem, HudItem, HudItem]
+    | [HudItem, HudItem, HudItem, HudItem, HudItem, HudItem]
+    | [HudItem, HudItem, HudItem, HudItem, HudItem, HudItem, HudItem]
+    | [HudItem, HudItem, HudItem, HudItem, HudItem, HudItem, HudItem, HudItem];
+  timer?: boolean;
+  title?: string | null;
+}
+export interface HudItem {
+  subject?: string;
+  counter: string;
+  label?: string | null;
+  style?: "number" | "bar" | "hearts" | "icons";
+  max?: number | null;
+}
+export interface RuleDef {
+  id: string;
+  when: EventDef;
+  /**
+   * @maxItems 4
+   */
+  conditions?:
+    | []
+    | [Condition]
+    | [Condition, Condition]
+    | [Condition, Condition, Condition]
+    | [Condition, Condition, Condition, Condition];
+  /**
+   * @minItems 1
+   * @maxItems 8
+   */
+  then:
+    | [ActionDef]
+    | [ActionDef, ActionDef]
+    | [ActionDef, ActionDef, ActionDef]
+    | [ActionDef, ActionDef, ActionDef, ActionDef]
+    | [ActionDef, ActionDef, ActionDef, ActionDef, ActionDef]
+    | [ActionDef, ActionDef, ActionDef, ActionDef, ActionDef, ActionDef]
+    | [ActionDef, ActionDef, ActionDef, ActionDef, ActionDef, ActionDef, ActionDef]
+    | [ActionDef, ActionDef, ActionDef, ActionDef, ActionDef, ActionDef, ActionDef, ActionDef];
+  once?: boolean;
+  off?: boolean | null;
+  text?: string | null;
+}
+export interface EventDef {
+  type: string;
+  params?: {
+    [k: string]: unknown;
+  };
+}
+/**
+ * `subject` is "self", "game", "other" (the object an event involved) or an object id.
+ */
+export interface Condition {
+  subject?: string;
+  counter: string;
+  op?: ">=" | "<=" | "==" | "!=" | ">" | "<";
+  value?: number;
+}
+export interface SceneDef {
+  id: string;
+  name?: string;
+  world?: WorldDef;
+  /**
+   * @maxItems 600
+   */
+  objects?: ObjectDef[];
+  /**
+   * @maxItems 48
+   */
+  rules?: RuleDef[];
+}
+export interface WorldDef {
+  kind?: string;
+  width?: number;
+  height?: number;
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  gravity?: [number, number];
+  camera?: CameraDef;
+  edges?: "none" | "walls" | "wrap" | "floor";
+  players?: 1 | 2;
+}
+export interface CameraDef {
+  mode?: "fixed" | "follow" | "auto_scroll";
+  target?: string | null;
+  axis?: "x" | "y" | "xy";
+  speed?: number;
+  zoom?: number;
+}
+export interface ObjectDef {
+  id: string;
+  name?: string;
+  kind?: string;
+  drawing?: Drawing;
+  x?: number;
+  y?: number;
+  rotation?: number;
+  scale?: number;
+  layer?: number;
+  physics?: PhysicsDef;
+  /**
+   * @maxItems 12
+   */
+  behaviors?:
+    | []
+    | [BehaviorDef]
+    | [BehaviorDef, BehaviorDef]
+    | [BehaviorDef, BehaviorDef, BehaviorDef]
+    | [BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef]
+    | [BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef]
+    | [BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef]
+    | [BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef]
+    | [BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef]
+    | [
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef
+      ]
+    | [
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef
+      ]
+    | [
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef
+      ]
+    | [
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef,
+        BehaviorDef
+      ];
+  /**
+   * @maxItems 24
+   */
+  rules?: RuleDef[];
+  counters?: {
+    [k: string]: number;
+  };
+  /**
+   * @maxItems 8
+   */
+  tags?:
+    | []
+    | [string]
+    | [string, string]
+    | [string, string, string]
+    | [string, string, string, string]
+    | [string, string, string, string, string]
+    | [string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string, string];
+  /**
+   * @maxItems 8
+   */
+  joints?:
+    | []
+    | [JointDef]
+    | [JointDef, JointDef]
+    | [JointDef, JointDef, JointDef]
+    | [JointDef, JointDef, JointDef, JointDef]
+    | [JointDef, JointDef, JointDef, JointDef, JointDef]
+    | [JointDef, JointDef, JointDef, JointDef, JointDef, JointDef]
+    | [JointDef, JointDef, JointDef, JointDef, JointDef, JointDef, JointDef]
+    | [JointDef, JointDef, JointDef, JointDef, JointDef, JointDef, JointDef, JointDef];
+  template?: boolean;
+  hidden?: boolean;
+  player?: 0 | 1 | 2;
+  art?: ObjectArt | null;
+}
+export interface Drawing {
+  /**
+   * @maxItems 400
+   */
+  strokes?: Stroke[];
+  w?: number;
+  h?: number;
+}
+/**
+ * One pen stroke, in object-local pixels with (0, 0) at the object's centre.
+ */
+export interface Stroke {
+  /**
+   * @minItems 1
+   * @maxItems 2000
+   */
+  points: [[number, number], ...[number, number][]];
+  color?: string;
+  width?: number;
+  closed?: boolean;
+  fill?: string | null;
+}
+export interface PhysicsDef {
+  body?: "none" | "static" | "dynamic" | "kinematic";
+  shape?: "auto" | "box" | "circle" | "line";
+  density?: number;
+  friction?: number;
+  bounce?: number;
+  fixed_rotation?: boolean;
+  sensor?: boolean;
+  gravity_scale?: number;
+}
+export interface BehaviorDef {
+  id: string;
+  type: string;
+  params?: {
+    [k: string]: unknown;
+  };
+  off?: boolean | null;
+}
+export interface JointDef {
+  type: "wheel" | "hinge" | "rope" | "weld" | "spring";
+  to: string;
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  at?: [number, number];
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  to_at?: [number, number];
+  motor?: boolean;
+  speed?: number;
+  length?: number | null;
+  stiffness?: number;
+}
+/**
+ * An object's look. `use` = which one plays: the maker's own strokes (cleaned up in the game view) or the chosen
+ * AI variant. Variants are kept so the maker can switch back and forth.
+ */
+export interface ObjectArt {
+  use?: "sketch" | "ai";
+  chosen?: string | null;
+  /**
+   * @maxItems 6
+   */
+  variants?:
+    | []
+    | [ArtVariant]
+    | [ArtVariant, ArtVariant]
+    | [ArtVariant, ArtVariant, ArtVariant]
+    | [ArtVariant, ArtVariant, ArtVariant, ArtVariant]
+    | [ArtVariant, ArtVariant, ArtVariant, ArtVariant, ArtVariant]
+    | [ArtVariant, ArtVariant, ArtVariant, ArtVariant, ArtVariant, ArtVariant];
+  terrain?: TerrainSkin | null;
+  asked?: boolean;
+}
+/**
+ * One finished drawing of an object by Claude: an SVG whose viewBox is `0 0 w h`, fitted to the object's drawing
+ * box (w, h = drawing.w, drawing.h), so it lines up with the physics shape made from the maker's strokes.
+ */
+export interface ArtVariant {
+  id: string;
+  svg: string;
+  w: number;
+  h: number;
+  rev?: number;
+  note?: string | null;
+}
+/**
+ * How a ground line (physics shape "line") looks in the game view: solid land filled from the line down to the
+ * world's bottom, a surface band along the line, an optional tiled texture inside, and decorations along the top.
+ */
+export interface TerrainSkin {
+  /**
+   * @minItems 1
+   * @maxItems 4
+   */
+  fill?: [string] | [string, string] | [string, string, string] | [string, string, string, string];
+  surface?: string;
+  surface_width?: number;
+  surface_svg?: string | null;
+  texture_svg?: string | null;
+  /**
+   * @maxItems 6
+   */
+  decor?:
+    | []
+    | [ArtVariant]
+    | [ArtVariant, ArtVariant]
+    | [ArtVariant, ArtVariant, ArtVariant]
+    | [ArtVariant, ArtVariant, ArtVariant, ArtVariant]
+    | [ArtVariant, ArtVariant, ArtVariant, ArtVariant, ArtVariant]
+    | [ArtVariant, ArtVariant, ArtVariant, ArtVariant, ArtVariant, ArtVariant];
+  decor_every?: number;
+  rev?: number;
+}
+export interface Backdrop {
+  rev?: number;
+  /**
+   * @maxItems 4
+   */
+  sky?: [] | [string] | [string, string] | [string, string, string] | [string, string, string, string];
+  /**
+   * @maxItems 4
+   */
+  layers?:
+    | []
+    | [BackdropLayer]
+    | [BackdropLayer, BackdropLayer]
+    | [BackdropLayer, BackdropLayer, BackdropLayer]
+    | [BackdropLayer, BackdropLayer, BackdropLayer, BackdropLayer];
+}
+export interface BackdropLayer {
+  svg: string;
+  w: number;
+  h: number;
+  depth?: number;
+  anchor?: "top" | "bottom" | "fill";
+  tile_x?: boolean;
+  height?: number;
+}
+export interface ArtDirectionResult {
+  direction: ArtDirection;
+  theme?: StudioTheme | null;
+  source: "model" | "keywords";
+}
+export interface ArtJobBody {
+  game: GameDoc;
+  scene: string;
+  /**
+   * @maxItems 80
+   */
+  objects?: string[];
+  backdrop?: boolean;
+  variants?: number;
+  images?: {
+    [k: string]: string;
+  };
+}
+export interface ArtJobItem {
+  object_id?: string | null;
+  status: "queued" | "drawing" | "reviewing" | "done" | "failed";
+  art?: ObjectArt | null;
+  backdrop?: Backdrop | null;
+  error?: string | null;
+}
+export interface ArtJobStatus {
+  id: string;
+  status: "running" | "done" | "failed";
+  done: number;
+  total: number;
+  rev: number;
+  items: ArtJobItem[];
+}
+export interface AskCard {
+  id: string;
+  about: string;
+  kind: AskKind;
+  message_key: string;
+  args?: MessageArgs;
+  options: AskOption[];
+  default_option?: string | null;
+  answer?: string | null;
+  by: "model" | "heuristic" | "parser" | "validator" | "designer";
+}
+export interface AskOption {
+  id: string;
+  label_key: string;
+  label_args?: MessageArgs;
+  ops?: EditOp[];
+  tap_target?: boolean;
+}
+export interface Attachment {
+  host: string;
+  face: Face;
+}
+export interface AttemptsBody {
+  attempts: number;
+  deaths: number;
+  clears: number;
 }
 export interface BeatFlat {
   kind: "flat";
@@ -902,14 +1371,6 @@ export interface BeatCheckpoint {
 export interface BeatGoal {
   kind: "goal";
   style: "flag" | "staircase";
-}
-export interface BehaviorDef {
-  id: string;
-  type: string;
-  params?: {
-    [k: string]: unknown;
-  };
-  off?: boolean | null;
 }
 export interface BindCheckpoint {
   kind: "checkpoint";
@@ -1379,233 +1840,6 @@ export interface OpDo {
 export interface ScriptAfter {
   seconds: number;
   goto: string;
-}
-export interface ObjectDef {
-  id: string;
-  name?: string;
-  kind?: string;
-  drawing?: Drawing;
-  x?: number;
-  y?: number;
-  rotation?: number;
-  scale?: number;
-  layer?: number;
-  physics?: PhysicsDef;
-  /**
-   * @maxItems 12
-   */
-  behaviors?:
-    | []
-    | [BehaviorDef]
-    | [BehaviorDef, BehaviorDef]
-    | [BehaviorDef, BehaviorDef, BehaviorDef]
-    | [BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef]
-    | [BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef]
-    | [BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef]
-    | [BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef]
-    | [BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef, BehaviorDef]
-    | [
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef
-      ]
-    | [
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef
-      ]
-    | [
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef
-      ]
-    | [
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef,
-        BehaviorDef
-      ];
-  /**
-   * @maxItems 24
-   */
-  rules?: RuleDef[];
-  counters?: {
-    [k: string]: number;
-  };
-  /**
-   * @maxItems 8
-   */
-  tags?:
-    | []
-    | [string]
-    | [string, string]
-    | [string, string, string]
-    | [string, string, string, string]
-    | [string, string, string, string, string]
-    | [string, string, string, string, string, string]
-    | [string, string, string, string, string, string, string]
-    | [string, string, string, string, string, string, string, string];
-  /**
-   * @maxItems 8
-   */
-  joints?:
-    | []
-    | [JointDef]
-    | [JointDef, JointDef]
-    | [JointDef, JointDef, JointDef]
-    | [JointDef, JointDef, JointDef, JointDef]
-    | [JointDef, JointDef, JointDef, JointDef, JointDef]
-    | [JointDef, JointDef, JointDef, JointDef, JointDef, JointDef]
-    | [JointDef, JointDef, JointDef, JointDef, JointDef, JointDef, JointDef]
-    | [JointDef, JointDef, JointDef, JointDef, JointDef, JointDef, JointDef, JointDef];
-  template?: boolean;
-  hidden?: boolean;
-  player?: 0 | 1 | 2;
-}
-export interface Drawing {
-  /**
-   * @maxItems 400
-   */
-  strokes?: Stroke[];
-  w?: number;
-  h?: number;
-}
-/**
- * One pen stroke, in object-local pixels with (0, 0) at the object's centre.
- */
-export interface Stroke {
-  /**
-   * @minItems 1
-   * @maxItems 2000
-   */
-  points: [[number, number], ...[number, number][]];
-  color?: string;
-  width?: number;
-  closed?: boolean;
-  fill?: string | null;
-}
-export interface PhysicsDef {
-  body?: "none" | "static" | "dynamic" | "kinematic";
-  shape?: "auto" | "box" | "circle" | "line";
-  density?: number;
-  friction?: number;
-  bounce?: number;
-  fixed_rotation?: boolean;
-  sensor?: boolean;
-  gravity_scale?: number;
-}
-export interface RuleDef {
-  id: string;
-  when: EventDef;
-  /**
-   * @maxItems 4
-   */
-  conditions?:
-    | []
-    | [Condition]
-    | [Condition, Condition]
-    | [Condition, Condition, Condition]
-    | [Condition, Condition, Condition, Condition];
-  /**
-   * @minItems 1
-   * @maxItems 8
-   */
-  then:
-    | [ActionDef]
-    | [ActionDef, ActionDef]
-    | [ActionDef, ActionDef, ActionDef]
-    | [ActionDef, ActionDef, ActionDef, ActionDef]
-    | [ActionDef, ActionDef, ActionDef, ActionDef, ActionDef]
-    | [ActionDef, ActionDef, ActionDef, ActionDef, ActionDef, ActionDef]
-    | [ActionDef, ActionDef, ActionDef, ActionDef, ActionDef, ActionDef, ActionDef]
-    | [ActionDef, ActionDef, ActionDef, ActionDef, ActionDef, ActionDef, ActionDef, ActionDef];
-  once?: boolean;
-  off?: boolean | null;
-  text?: string | null;
-}
-export interface EventDef {
-  type: string;
-  params?: {
-    [k: string]: unknown;
-  };
-}
-/**
- * `subject` is "self", "game", "other" (the object an event involved) or an object id.
- */
-export interface Condition {
-  subject?: string;
-  counter: string;
-  op?: ">=" | "<=" | "==" | "!=" | ">" | "<";
-  value?: number;
-}
-export interface JointDef {
-  type: "wheel" | "hinge" | "rope" | "weld" | "spring";
-  to: string;
-  /**
-   * @minItems 2
-   * @maxItems 2
-   */
-  at?: [number, number];
-  /**
-   * @minItems 2
-   * @maxItems 2
-   */
-  to_at?: [number, number];
-  motor?: boolean;
-  speed?: number;
-  length?: number | null;
-  stiffness?: number;
-}
-export interface StudioTheme {
-  id?: string | null;
-  name?: string;
-  palette?: {
-    [k: string]: string;
-  };
-  background?: BackgroundDef;
-  stroke?: StrokeStyleDef;
-  recolor?: boolean;
-  particles?: "none" | "dust" | "sparks" | "stars" | "bubbles" | "confetti" | "embers" | "snow";
-  font?: "hand" | "comic" | "pixel" | "clean" | "serif";
-  music?: "none" | "calm" | "upbeat" | "spooky" | "heroic" | "chiptune" | "racing";
-}
-export interface StrokeStyleDef {
-  style?: "ink" | "marker" | "neon" | "pixel" | "chalk" | "comic" | "crayon" | "watercolor";
-  outline?: string | null;
-  width_scale?: number;
-  glow?: boolean;
-  fill_closed?: boolean;
-  halftone?: boolean;
-  wobble?: number;
 }
 /**
  * v4: points at one version of a public block (app/spec/blocks.py).
@@ -2663,13 +2897,6 @@ export interface BuildResultJson {
   rejected: EditRecord[];
   ms: number;
 }
-export interface CameraDef {
-  mode?: "fixed" | "follow" | "auto_scroll";
-  target?: string | null;
-  axis?: "x" | "y" | "xy";
-  speed?: number;
-  zoom?: number;
-}
 /**
  * A designer menu row (§3.8): pre-verified in a sandbox, never raw geometry.
  */
@@ -2836,79 +3063,6 @@ export interface EditsBody {
 export interface GameCreate {
   title: string;
   author: string;
-}
-export interface GameDoc {
-  format?: "drawplay-studio";
-  version?: 1;
-  id: string;
-  title?: string;
-  author?: string | null;
-  theme?: StudioTheme;
-  hud?: HudDef;
-  /**
-   * @maxItems 48
-   */
-  rules?: RuleDef[];
-  counters?: {
-    [k: string]: number;
-  };
-  /**
-   * @minItems 1
-   * @maxItems 40
-   */
-  scenes: [SceneDef, ...SceneDef[]];
-  created_at?: string | null;
-  updated_at?: string | null;
-}
-export interface HudDef {
-  /**
-   * @maxItems 8
-   */
-  items?:
-    | []
-    | [HudItem]
-    | [HudItem, HudItem]
-    | [HudItem, HudItem, HudItem]
-    | [HudItem, HudItem, HudItem, HudItem]
-    | [HudItem, HudItem, HudItem, HudItem, HudItem]
-    | [HudItem, HudItem, HudItem, HudItem, HudItem, HudItem]
-    | [HudItem, HudItem, HudItem, HudItem, HudItem, HudItem, HudItem]
-    | [HudItem, HudItem, HudItem, HudItem, HudItem, HudItem, HudItem, HudItem];
-  timer?: boolean;
-  title?: string | null;
-}
-export interface HudItem {
-  subject?: string;
-  counter: string;
-  label?: string | null;
-  style?: "number" | "bar" | "hearts" | "icons";
-  max?: number | null;
-}
-export interface SceneDef {
-  id: string;
-  name?: string;
-  world?: WorldDef;
-  /**
-   * @maxItems 600
-   */
-  objects?: ObjectDef[];
-  /**
-   * @maxItems 48
-   */
-  rules?: RuleDef[];
-}
-export interface WorldDef {
-  kind?: string;
-  width?: number;
-  height?: number;
-  /**
-   * @minItems 2
-   * @maxItems 2
-   */
-  gravity?: [number, number];
-  camera?: CameraDef;
-  edges?: "none" | "walls" | "wrap" | "floor";
-  players?: 1 | 2;
 }
 export interface Health {
   ok: boolean;
@@ -3132,7 +3286,11 @@ export interface StudioEdit {
     | "add_joint"
     | "set_counters"
     | "set_game_counters"
-    | "ask_draw";
+    | "ask_draw"
+    | "set_art"
+    | "set_art_direction"
+    | "set_backdrop"
+    | "set_look";
   target?: string | null;
   scene?: string | null;
   data?: {
@@ -3392,6 +3550,8 @@ export interface StudioChatResult {
    */
   suggestions?: [] | [string] | [string, string] | [string, string, string] | [string, string, string, string];
   source: "model" | "keywords";
+  art_prompt?: string | null;
+  error?: string | null;
 }
 export interface StudioGameCard {
   id: string;

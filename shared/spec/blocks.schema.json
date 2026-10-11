@@ -38,6 +38,55 @@
       ],
       "type": "string"
     },
+    "ArtVariant": {
+      "additionalProperties": false,
+      "description": "One finished drawing of an object by Claude: an SVG whose viewBox is `0 0 w h`, fitted to the object's drawing\nbox (w, h = drawing.w, drawing.h), so it lines up with the physics shape made from the maker's strokes.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9_-]{1,40}$",
+          "type": "string"
+        },
+        "svg": {
+          "maxLength": 300000,
+          "type": "string"
+        },
+        "w": {
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "h": {
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "rev": {
+          "default": 0,
+          "type": "integer"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "svg",
+        "w",
+        "h"
+      ],
+      "title": "ArtVariant",
+      "type": "object"
+    },
     "BCrumble": {
       "additionalProperties": false,
       "patternProperties": {
@@ -2225,6 +2274,59 @@
       ],
       "type": "string"
     },
+    "ObjectArt": {
+      "additionalProperties": false,
+      "description": "An object's look. `use` = which one plays: the maker's own strokes (cleaned up in the game view) or the chosen\nAI variant. Variants are kept so the maker can switch back and forth.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "use": {
+          "default": "sketch",
+          "enum": [
+            "sketch",
+            "ai"
+          ],
+          "type": "string"
+        },
+        "chosen": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9_-]{1,40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "variants": {
+          "items": {
+            "$ref": "#/$defs/ArtVariant"
+          },
+          "maxItems": 6,
+          "type": "array"
+        },
+        "terrain": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TerrainSkin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "asked": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "title": "ObjectArt",
+      "type": "object"
+    },
     "ObjectDef": {
       "additionalProperties": false,
       "patternProperties": {
@@ -2325,6 +2427,17 @@
             2
           ],
           "type": "integer"
+        },
+        "art": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ObjectArt"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -3458,6 +3571,77 @@
         }
       },
       "title": "StudioTheme",
+      "type": "object"
+    },
+    "TerrainSkin": {
+      "additionalProperties": false,
+      "description": "How a ground line (physics shape \"line\") looks in the game view: solid land filled from the line down to the\nworld's bottom, a surface band along the line, an optional tiled texture inside, and decorations along the top.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "fill": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 4,
+          "minItems": 1,
+          "type": "array"
+        },
+        "surface": {
+          "default": "#3bb273",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "type": "string"
+        },
+        "surface_width": {
+          "default": 14,
+          "maximum": 80,
+          "minimum": 0,
+          "type": "number"
+        },
+        "surface_svg": {
+          "anyOf": [
+            {
+              "maxLength": 300000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "texture_svg": {
+          "anyOf": [
+            {
+              "maxLength": 300000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "decor": {
+          "items": {
+            "$ref": "#/$defs/ArtVariant"
+          },
+          "maxItems": 6,
+          "type": "array"
+        },
+        "decor_every": {
+          "default": 220,
+          "maximum": 4000,
+          "minimum": 40,
+          "type": "number"
+        },
+        "rev": {
+          "default": 0,
+          "type": "integer"
+        }
+      },
+      "title": "TerrainSkin",
       "type": "object"
     },
     "WhenAllCoins": {

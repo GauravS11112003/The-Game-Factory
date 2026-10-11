@@ -42,6 +42,75 @@ class Drawing(Spec):
     h: float = Field(default=0, ge=0)
 
 
+# ---- AI art (docs/v7/CONTRACTS_V7.md): the drawing is the blueprint, Claude draws the finished look ----------------
+
+_SVG_MAX = 300_000  # characters of one sanitized SVG
+
+
+class ArtVariant(Spec):
+    """One finished drawing of an object by Claude: an SVG whose viewBox is `0 0 w h`, fitted to the object's drawing
+    box (w, h = drawing.w, drawing.h), so it lines up with the physics shape made from the maker's strokes."""
+
+    id: str = Field(pattern=_ID)
+    svg: str = Field(max_length=_SVG_MAX)
+    w: float = Field(gt=0)
+    h: float = Field(gt=0)
+    rev: int = 0  # the ArtDirection.rev it was drawn for
+    note: str | None = Field(default=None, max_length=200)  # one line: what Claude made it into
+
+
+class TerrainSkin(Spec):
+    """How a ground line (physics shape "line") looks in the game view: solid land filled from the line down to the
+    world's bottom, a surface band along the line, an optional tiled texture inside, and decorations along the top."""
+
+    fill: list[str] = Field(default_factory=lambda: ["#8d6e63", "#5d4037"], min_length=1, max_length=4)  # top to bottom
+    surface: str = Field(default="#3bb273", pattern=_HEX)  # the band drawn along the line
+    surface_width: float = Field(default=14, ge=0, le=80)
+    surface_svg: str | None = Field(default=None, max_length=_SVG_MAX)  # a horizontally tileable strip (grass, ice)
+    texture_svg: str | None = Field(default=None, max_length=_SVG_MAX)  # a tileable pattern inside the land
+    decor: list[ArtVariant] = Field(default_factory=list, max_length=6)  # rocks, craters, flowers
+    decor_every: float = Field(default=220, ge=40, le=4000)  # average px between decorations
+    rev: int = 0
+
+
+class ObjectArt(Spec):
+    """An object's look. `use` = which one plays: the maker's own strokes (cleaned up in the game view) or the chosen
+    AI variant. Variants are kept so the maker can switch back and forth."""
+
+    use: Literal["sketch", "ai"] = "sketch"
+    chosen: str | None = Field(default=None, pattern=_ID)  # an ArtVariant id
+    variants: list[ArtVariant] = Field(default_factory=list, max_length=6)
+    terrain: TerrainSkin | None = None  # ground lines
+    asked: bool = False  # the maker has seen the "AI or mine?" card for the current variants
+
+
+class ArtDirection(Spec):
+    """One game-wide style guide that every piece of AI art follows, so the whole game matches."""
+
+    rev: int = Field(default=1, ge=1)  # bumps on every restyle
+    prompt: str = Field(default="", max_length=300)  # the maker's words: "hill climb racing in space"
+    summary: str = Field(default="", max_length=300)  # one line for the UI
+    guide: str = Field(default="", max_length=6000)  # the full style guide (palette, line, shading, mood, rules)
+    palette: list[str] = Field(default_factory=list, max_length=10)
+    kinds: dict[str, str] = Field(default_factory=dict)  # object kind -> what it becomes ("car" -> "lunar rover")
+
+
+class BackdropLayer(Spec):
+    svg: str = Field(max_length=_SVG_MAX)
+    w: float = Field(gt=0)  # the SVG's viewBox size
+    h: float = Field(gt=0)
+    depth: float = Field(default=0.5, ge=0, le=1)  # parallax: 0 = fixed sky, 1 = moves with the world
+    anchor: Literal["top", "bottom", "fill"] = "bottom"
+    tile_x: bool = True
+    height: float = Field(default=0.5, gt=0, le=1)  # share of the view height the layer covers
+
+
+class Backdrop(Spec):
+    rev: int = 0
+    sky: list[str] = Field(default_factory=list, max_length=4)  # gradient behind the layers, top to bottom
+    layers: list[BackdropLayer] = Field(default_factory=list, max_length=4)  # back to front
+
+
 # ---- objects --------------------------------------------------------------------------------------
 
 
@@ -122,6 +191,7 @@ class ObjectDef(Spec):
     template: bool = False  # not placed: spawners and shooters make copies of it
     hidden: bool = False
     player: Literal[0, 1, 2] = 0  # which player's controls drive its behaviours (0 = none / AI)
+    art: ObjectArt | None = None  # v7: AI art variants and which look plays
 
 
 # ---- world, hud, theme ----------------------------------------------------------------------------
@@ -212,6 +282,9 @@ class GameDoc(Spec):
     rules: list[RuleDef] = Field(default_factory=list, max_length=48)  # game-wide rules (every scene)
     counters: dict[str, float] = Field(default_factory=dict)  # game counters: score, lives, time
     scenes: list[SceneDef] = Field(min_length=1, max_length=40)
+    look: Literal["game", "sketch"] = "game"  # v7: play with the finished art, or show the raw sketch everywhere
+    art_direction: ArtDirection | None = None  # v7
+    backdrop: Backdrop | None = None  # v7: AI-painted parallax world behind everything (replaces theme.background)
     created_at: str | None = None
     updated_at: str | None = None
 
@@ -222,6 +295,7 @@ EditAction = Literal[
     "set_world", "set_theme", "set_hud", "set_title", "add_scene", "update_object", "delete_object",
     "duplicate_object", "add_behavior", "update_behavior", "remove_behavior", "add_rule", "update_rule", "remove_rule",
     "add_joint", "set_counters", "set_game_counters", "ask_draw",
+    "set_art", "set_art_direction", "set_backdrop", "set_look",  # v7
 ]
 
 
@@ -254,6 +328,8 @@ class StudioChatResult(Spec):
     edits: list[StudioEdit]
     suggestions: list[str] = Field(default_factory=list, max_length=4)  # next things the maker could say
     source: Literal["model", "keywords"]
+    art_prompt: str | None = Field(default=None, max_length=300)  # v7: the look changed; restyle the art with this
+    error: str | None = None  # v7: why the model path failed ("timeout", "budget") when source is keywords
 
 
 class RecognizeBody(Spec):
@@ -283,6 +359,46 @@ class ThemeResult(Spec):
     source: Literal["model", "keywords"]
 
 
+# ---- v7 art API (docs/v7/CONTRACTS_V7.md section 3) ------------------------------------------------------------------
+
+
+class ArtDirectionBody(Spec):
+    game: GameDoc
+    prompt: str = Field(default="", max_length=300)  # empty: from the game's kind, title and theme
+
+
+class ArtDirectionResult(Spec):
+    direction: ArtDirection
+    theme: StudioTheme | None = None  # a matching palette, font and particles for the HUD and the sketch view
+    source: Literal["model", "keywords"]
+
+
+class ArtJobBody(Spec):
+    game: GameDoc
+    scene: str
+    objects: list[str] = Field(default_factory=list, max_length=80)  # ids to draw (each gets variants or a skin)
+    backdrop: bool = False
+    variants: int = Field(default=3, ge=1, le=4)
+    images: dict[str, str] = Field(default_factory=dict)  # object id -> base64 PNG of the maker's drawing
+
+
+class ArtJobItem(Spec):
+    object_id: str | None = None  # null for the backdrop
+    status: Literal["queued", "drawing", "reviewing", "done", "failed"]
+    art: ObjectArt | None = None  # variants (or terrain) when done
+    backdrop: Backdrop | None = None
+    error: str | None = None
+
+
+class ArtJobStatus(Spec):
+    id: str
+    status: Literal["running", "done", "failed"]
+    done: int
+    total: int
+    rev: int
+    items: list[ArtJobItem]
+
+
 class StudioGameCard(Spec):
     id: str
     title: str
@@ -300,5 +416,7 @@ EXPORTS: list[Any] = [
     Stroke, Drawing, PhysicsDef, BehaviorDef, Condition, EventDef, ActionDef, RuleDef, JointDef, ObjectDef, CameraDef,
     WorldDef, HudItem, HudDef, BackgroundDef, StrokeStyleDef, StudioTheme, SceneDef, GameDoc, StudioEdit, ChatTurn,
     StudioChatBody, StudioChatResult, RecognizeBody, RecognizeResult, ThemeBody, ThemeResult, StudioGameCard,
+    ArtVariant, TerrainSkin, ObjectArt, ArtDirection, BackdropLayer, Backdrop, ArtDirectionBody, ArtDirectionResult,
+    ArtJobBody, ArtJobItem, ArtJobStatus,
 ]
 ROOT = GameDoc
