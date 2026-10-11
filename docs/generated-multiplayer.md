@@ -12,6 +12,10 @@ Multiplayer selection stays with saved creation drafts, retries, chat revisions,
 
 Browser invitations open the web game. To play inside the Messages window, both players install [Spectrum’s Messages app](https://apps.apple.com/app/id6777616651), and the deployment must have an active Photon iMessage project/line. After the project is connected, **Start in iMessage** composes `play d_<draft-id>` to the configured bot number. Send the command, open the returned game card, and forward it to your friend. A fresh bot card leaves both seats open, so moving from Safari into Spectrum doesn't occupy the host seat twice.
 
+Messages cards use a static, tappable launcher rather than squeezing the whole live room into a conversation bubble. Tap the new card to open Spectrum. The room uses a compact Messages layout and matches the generated canvas's proportions. **Enlarge** fills the available app area; where browser fullscreen is unavailable, it fills the webview. The web page cannot enlarge Spectrum's native container itself.
+
+The bot includes a plain Safari invitation alongside each generated-game card. Use that link before joining the card. If already joined, use **Open in Safari**, then **Continue in Safari** in the game. This transfers the same seat and checkpoint using an authenticated, single-use link valid for two minutes, and revokes the old session. The transfer code stays in the URL fragment, is removed before redemption, and never enters server access logs. Share the ordinary invitation or Spectrum card with your friend, not the seat-transfer link.
+
 The bot also accepts `invite room_<24-hex-id> <invitation-token>`. Configure `DAL_SPECTRUM_NUMBER` only after verifying the receiving number assigned to the Photon project. A shared Photon line may vary by recipient; do not invent a universal contact. Without an activated project, browser play works and the app explains that Messages activation is pending.
 
 ## Games created on your Mac

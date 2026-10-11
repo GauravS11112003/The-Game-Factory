@@ -3,7 +3,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { parseCommand, resultText, HELP, type Command, type Match } from './commands.ts';
 
 export interface Transport {
-  send(spaceId: string, phone: string, content: { text: string } | { url: string }): Promise<void>;
+  send(spaceId: string, phone: string, content: { text: string } | { url: string; title?: string; browserUrl?: string }): Promise<void>;
 }
 
 interface Job {
@@ -86,7 +86,11 @@ export class MessageWorker {
       this.db.prepare('UPDATE commands SET prepared = ? WHERE id = ?').run(JSON.stringify(prepared), job.id);
     }
     if (prepared.url && prepared.match && prepared.invite) {
-      await this.transport.send(job.space, job.phone, { url: prepared.url });
+      const generated = prepared.endpoint === 'play-rooms';
+      await this.transport.send(job.space, job.phone, { url: prepared.url, ...(generated ? {
+        title: prepared.match.title ?? 'Play with a friend',
+        browserUrl: `${this.publicUrl.replace(/\/$/, '')}/#/room/${prepared.match.id}?invite=${encodeURIComponent(prepared.invite)}`,
+      } : {}) });
       this.db.prepare(`INSERT INTO subscriptions(match_id, space, phone, invite, expires_at, endpoint) VALUES (?, ?, ?, ?, ?, ?)
         ON CONFLICT(match_id, space, phone) DO UPDATE SET invite=excluded.invite, expires_at=excluded.expires_at`)
         .run(prepared.match.id, job.space, job.phone, prepared.invite, prepared.match.expires_at, prepared.endpoint ?? 'matches');

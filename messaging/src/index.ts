@@ -1,7 +1,8 @@
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import { Spectrum, app as appCard } from 'spectrum-ts';
+import { Spectrum } from 'spectrum-ts';
+import { gameCard } from './cards.ts';
 import { imessage } from 'spectrum-ts/providers/imessage';
 import { GameApi, MessageWorker } from './worker.ts';
 
@@ -31,9 +32,12 @@ const spectrum = await Spectrum({
 const worker = new MessageWorker(db, api, {
   async send(spaceId, phone, content) {
     const space = await imessage(spectrum).space.get(spaceId, phone ? { phone } : undefined);
-    await space.send('url' in content
-      ? delivery === 'link' ? content.url : appCard(content.url, { live: true })
-      : content.text);
+    if ('url' in content) {
+      await space.send(delivery === 'link' ? content.browserUrl ?? content.url : gameCard(content.url, content.title));
+      if (delivery === 'card' && content.browserUrl) {
+        await space.send(`Tap the game card to play in Messages. Safari alternative (open before joining the card):\n${content.browserUrl}`);
+      }
+    } else await space.send(content.text);
   },
 }, publicUrl);
 let stopping = false;

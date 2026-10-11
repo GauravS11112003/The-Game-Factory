@@ -178,6 +178,37 @@ def snapshot(room_id, token="", invite=""):
         return public(room)
 
 
+def handoff(room_id, token):
+    """A short-lived, single-use transfer keeps Safari from taking the other seat."""
+    with transaction() as conn:
+        room = load(conn, room_id)
+        p = member(room, token)
+        if room["phase"] == "expired":
+            fail(410, "This invitation expired. Start a new game.")
+        code = secrets.token_urlsafe(32)
+        p["handoff"] = {"hash": digest(code), "expires_at": time.time() + 120}
+        save(conn, room)
+        return {"handoff": code}
+
+
+def resume(room_id, code, claim):
+    with transaction() as conn:
+        room = load(conn, room_id)
+        if room["phase"] == "expired":
+            fail(410, "This invitation expired. Start a new game.")
+        for p in room["players"]:
+            transfer = p.get("handoff", {})
+            if transfer.get("expires_at", 0) > time.time() and secrets.compare_digest(transfer.get("hash", ""), digest(code)):
+                token = secrets.token_urlsafe(32)
+                p.update(token=token, token_hash=digest(token), claim_hash=digest(claim), connection="", online_until=0, ready=False)
+                p.pop("handoff", None)
+                room["inputs"][p["seat"]] = []
+                advance(room)
+                save(conn, room)
+                return {"match": public(room), "token": token, "seat": p["seat"], "invite": room["invite"]}
+        fail(403, "This Safari link expired or was already used. Open a new link from your game.")
+
+
 def connect(room_id, token, connection):
     with transaction() as conn:
         room = load(conn, room_id)

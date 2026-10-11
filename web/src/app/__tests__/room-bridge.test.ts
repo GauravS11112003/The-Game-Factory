@@ -8,7 +8,7 @@ function fixture() {
   const adapter = { version: 1, start: (m: any) => calls.push(['start', m]), input: (...m: any[]) => calls.push(['input', ...m]), snapshot: () => ({ x: 5 }), restore: (m: any) => calls.push(['restore', m]), pause: (m: any) => calls.push(['pause', m]), result: () => null };
   const html = roomDocument('<html><body></body></html>', 'test-nonce');
   const script = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)![1];
-  vm.runInNewContext(script, { window: { drawPlayMultiplayer: adapter, drawPlayGame: { ready: true } }, parent, setInterval: (fn: () => void) => { timers.push(fn); return timers.length; }, clearInterval: () => {}, addEventListener: (_: string, fn: (e: any) => void) => { listener = fn; } });
+  vm.runInNewContext(script, { document: { querySelector: () => ({ width: 1280, height: 720 }) }, window: { drawPlayMultiplayer: adapter, drawPlayGame: { ready: true } }, parent, setInterval: (fn: () => void) => { timers.push(fn); return timers.length; }, clearInterval: () => {}, addEventListener: (_: string, fn: (e: any) => void) => { listener = fn; } });
   timers[0]();
   const message = (data: any, overrides = {}) => listener({ source: parent, data: { channel: 'draw-play-room', nonce: 'test-nonce', ...data }, ...overrides });
   return { emitted, calls, timers, message, html };
@@ -16,6 +16,7 @@ function fixture() {
 describe('isolated multiplayer bridge', () => {
   it('accepts only its parent/nonce and pauses until the shared round starts', () => {
     const f = fixture();
+    expect(f.emitted.find(m => m.type === 'ready').aspect).toBeCloseTo(16 / 9);
     f.message({ type: 'start', round: 1, seat: 0, seed: 4 }, { source: {} });
     f.message({ type: 'start', round: 1, seat: 0, seed: 4, nonce: 'wrong' });
     expect(f.calls.filter(c => c[0] === 'start')).toHaveLength(0);

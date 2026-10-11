@@ -1,0 +1,42 @@
+/* A Messages webview has far less space than the creator studio. */
+body[data-screen='room'] main.v2 { max-width: 1100px; padding: 8px; }
+.room-screen { --room-aspect: 1.77777778; gap: 10px; padding: 0; }
+.room-lobby.card { margin: 0; padding: 10px 12px; border-radius: 14px; }
+.room-title { font-size: clamp(1.1rem, 3vw, 1.6rem); line-height: 1.15; margin: 0 0 4px; }
+.room-lobby p { font-size: 12px; margin: 5px 0; }
+.room-seats { gap: 6px; margin: 6px 0; }
+.room-seats span { flex: 1 1 110px; min-width: 0; font-size: 12px; padding: 6px 8px; border-radius: 8px; overflow-wrap: anywhere; }
+.room-actions { gap: 6px; }
+.room-actions .pill { font-size: 13px; padding: 6px 10px; min-height: 36px; }
+.room-lobby .room-error:empty { display: none; }
+.room-stage { display: grid; gap: 8px; min-width: 0; }
+.room-game { margin-inline: auto; }
+.room-game iframe.imagined-game { width: 100%; height: auto; min-height: 0; aspect-ratio: var(--room-aspect); border-radius: 10px; }
+.room-controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.room-controls:empty { display: none; }
+.room-controls button { min-width: 0; min-height: 44px; font-size: 13px; line-height: 1.1; padding: 6px; border-radius: 10px; }
+.room-controls button:active { background: var(--hi); }
+body[data-room-surface='messages'] .app-head,
+body.room-is-enlarged .app-head { display: none; }
+body[data-room-surface='messages'] main.v2 { padding: 6px; }
+.room-messages .room-lobby { box-shadow: none; }
+.room-messages .room-lobby .small { font-size: 11px; }
+body.room-is-enlarged { overflow: hidden; }
+.room-screen.room-enlarged { position: fixed; inset: 0; z-index: 100; width: 100%; height: 100dvh; max-width: none; margin: 0; box-sizing: border-box; padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left)); background: var(--paper); grid-template-rows: auto minmax(0, 1fr); }
+.room-enlarged .room-stage { min-height: 0; grid-template-rows: minmax(0, 1fr) auto; }
+.room-enlarged .room-game { align-self: center; }
+.room-enlarged .room-lobby .small { display: none; }
+@media (max-width: 600px) {
+  body[data-screen='room'] .app-head { display: none; }
+  .room-actions .pill { font-size: 12px; padding: 5px 8px; }
+  .room-controls button { font-size: 11px; }
+}
+@media (max-height: 480px) and (orientation: landscape) {
+  .room-enlarged .room-lobby { display: flex; align-items: center; gap: 8px; padding: 4px 8px; }
+  .room-enlarged .room-title, .room-enlarged .room-seats { display: none; }
+  .room-enlarged .room-lobby [role='status'] { flex: 1; min-width: 0; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .room-enlarged .room-actions { flex-wrap: nowrap; }
+  .room-enlarged .room-stage { display: flex; align-items: center; position: relative; }
+  .room-enlarged .room-controls { position: absolute; inset: 0; grid-template-columns: 86px 86px; grid-template-rows: repeat(var(--room-control-rows, 4), 44px); grid-auto-flow: column; justify-content: space-between; align-content: center; pointer-events: none; }
+  .room-enlarged .room-controls button { pointer-events: auto; font-size: 11px; }
+}

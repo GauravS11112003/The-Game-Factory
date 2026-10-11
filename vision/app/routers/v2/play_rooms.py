@@ -31,6 +31,11 @@ class Join(BaseModel):
     name: str = Field(min_length=1, max_length=16)
     claim: str = Field(min_length=32, max_length=100)
 
+class Resume(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    handoff: str = Field(min_length=32, max_length=100)
+    claim: str = Field(min_length=32, max_length=100)
+
 class ImportedBuild(BaseModel):
     model_config = ConfigDict(extra="forbid")
     title: str = Field(min_length=1, max_length=120)
@@ -87,6 +92,14 @@ def snapshot(room_id: str, authorization: str = Header(default=""), x_race_invit
 def join(room_id: str, body: Join):
     return rooms.join(room_id, body.invite, body.name, body.claim)
 
+@router.post("/play-rooms/{room_id}/handoff")
+def handoff(room_id: str, authorization: str = Header(default="")):
+    return rooms.handoff(room_id, ticket(authorization))
+
+@router.post("/play-rooms/{room_id}/resume")
+def resume(room_id: str, body: Resume):
+    return rooms.resume(room_id, body.handoff, body.claim)
+
 @router.get("/play-rooms/{room_id}/game")
 def game(room_id: str, authorization: str = Header(default="")):
     rooms.snapshot(room_id, ticket(authorization))
@@ -95,7 +108,7 @@ def game(room_id: str, authorization: str = Header(default="")):
 @router.get("/play-rooms/{room_id}/card")
 def card(room_id: str, invite: str, request: Request):
     room = rooms.snapshot(room_id, invite=invite)
-    url = f"{base_url(request)}/#/room/{room_id}?{urlencode({'invite': invite})}"
+    url = f"{base_url(request)}/#/room/{room_id}?{urlencode({'invite': invite, 'surface': 'messages'})}"
     title = html.escape(room["title"])
     return HTMLResponse(f'<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>{title} · draw.play</title><meta property="og:title" content="{title}"><meta property="og:description" content="Play this new game together"><meta http-equiv="refresh" content="0;url={html.escape(url, quote=True)}"></head><body><a href="{html.escape(url, quote=True)}">Join {title}</a></body></html>', headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
 
