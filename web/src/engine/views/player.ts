@@ -5,7 +5,8 @@
  * - legs and arms the rig found swing about their hips and shoulders;
  * - the body is cut into horizontal bands that shear with the jelly sway and the walk wobble, so even one stiff
  *   drawing bends like ink on paper (eyes and arms ride the band at their height);
- * - a one-drawing character (a raster sprite, or a drawing with nothing to swing) waddles as a whole instead.
+ * - a one-drawing character (a raster sprite, or a drawing with nothing to swing) waddles as a whole instead;
+ * - v4 flipped gravity: the character hangs upside down from its feet, turning over through flat in 220 ms.
  * Death: the sprite is cut into 12-16 precomputed Voronoi shards that fly with gravity and spin; respawn plays it in
  * reverse.
  */
@@ -14,7 +15,7 @@ import type { ArtDoc, ArtPath, ArtPlayer } from '../../core/art/types.ts';
 import { RigAnimator, shearAt } from '../../core/art/anim.ts';
 import { voronoiCells, rng, hash32 } from '../../core/art/geom.ts';
 import type { RectCells } from '../../core/types.gen.ts';
-import { DAMAGE, RIG } from '../../core/params.ts';
+import { COLLISION, DAMAGE, RIG } from '../../core/params.ts';
 import { bakePaths } from '../../render/canvas_ink.ts';
 import { bake, boxOf, CELL, imageOf } from '../gfx.ts';
 import type { Baked, TexBank } from '../gfx.ts';
@@ -31,7 +32,16 @@ export interface PlayerPose {
   onGround: boolean;
   state: 'idle' | 'run' | 'skid' | 'jump' | 'fall' | 'dead' | 'respawn' | 'win';
   invuln: number;
+  /** v4 gravity sign: at −1 the character hangs upside down from its feet (it walks along ceilings). */
+  gravity?: 1 | -1;
 }
+
+const FLIP_MS = 220; // the turn-over when gravity flips (the drawing squashes through flat, like a card)
+/**
+ * The sim's body box height (px). PlayerView.y is the bottom of that box in both gravities, so upside down the
+ * feet touch the ceiling at y − BODY_PX: the drawing hangs from there (and turns over about the box's middle).
+ */
+export const BODY_PX = COLLISION.body_px[1];
 
 /** What the character is drawn from: the ArtDoc vectors (tagged by rig part), or one raster drawing. */
 export type CharacterSource =
@@ -68,10 +78,16 @@ export class PlayerSprite {
   private hasEyes = false;
   private heightPx = 30;
   private baseAlpha: number;
+  private reduced: boolean;
+  // the shown gravity sign eases from gFrom to gTo over FLIP_MS (gT 0..1)
+  private gFrom = 1;
+  private gTo: 1 | -1 = 1;
+  private gT = 1;
 
-  constructor(scene: Phaser.Scene, bank: TexBank, src: CharacterSource, o: { name: string; alpha?: number; tint?: number; seed?: number }) {
+  constructor(scene: Phaser.Scene, bank: TexBank, src: CharacterSource, o: { name: string; alpha?: number; tint?: number; seed?: number; reduced?: boolean }) {
     this.root = scene.add.container(0, 0);
     this.baseAlpha = o.alpha ?? 1;
+    this.reduced = !!o.reduced;
     let swingable = false;
     if (src.kind === 'vector') {
       const { doc, art } = src;
@@ -160,10 +176,35 @@ export class PlayerSprite {
     this.anim.land(impact);
   }
 
-  /** Snap without the turn animation and forget motion (spawn, respawn, rewind). */
+  /** Snap without the turn animation and forget motion (spawn, respawn, rewind); gravity is the right way up again. */
   reset(facing: 1 | -1): void {
     this.anim.reset();
     this.anim.face(facing);
+    this.gFrom = 1;
+    this.gTo = 1;
+    this.gT = 1;
+  }
+
+  /** The gravity sign as shown now (−1 … 1, through 0 mid-flip). */
+  private gravityShown(target: 1 | -1, dt: number): number {
+    if (target !== this.gTo) {
+      this.gFrom = this.gravityNow();
+      this.gTo = target;
+      this.gT = this.reduced ? 1 : 0;
+    }
+    if (this.gT < 1) this.gT = Math.min(1, this.gT + dt / FLIP_MS);
+    return this.gravityNow();
+  }
+
+  private gravityNow(): number {
+    const k = this.gT;
+    const e = k < 0.5 ? 2 * k * k : 1 - 2 * (1 - k) * (1 - k);
+    return this.gFrom + (this.gTo - this.gFrom) * e;
+  }
+
+  /** True while the character is (or is turning) upside down. */
+  get upsideDown(): boolean {
+    return this.gTo === -1;
   }
 
   hide(): void {
@@ -191,15 +232,20 @@ export class PlayerSprite {
 
   /** Pose from (interpolated) sim state; dt in ms of scaled real time (0 freezes), now in ms; look in world px. */
   pose(p: PlayerPose, dt: number, now: number, look: [number, number] | null, vmax: number): void {
+    // upside down (v4 gravity −1): the whole rig mirrors about the feet line, so the drawing hangs from its feet;
+    // a flip turns it over through flat. The animator works in "the player's own up", so vy flips with it.
+    const g = this.gravityShown(p.gravity === -1 ? -1 : 1, dt);
+    const gs = g < 0 ? -1 : 1;
+    const feetY = p.y * CELL - ((1 - g) / 2) * BODY_PX;
     const headX = p.x * CELL;
-    const headY = p.y * CELL - this.heightPx * 0.7;
+    const headY = feetY - this.heightPx * 0.7 * gs;
     const pose = this.anim.update({
-      dt, now, vx: p.vx, vy: p.vy, facing: p.facing, onGround: p.onGround, state: p.state, vmax,
-      look: look ? [look[0] - headX, look[1] - headY] : null,
+      dt, now, vx: p.vx, vy: p.vy * gs, facing: p.facing, onGround: p.onGround, state: p.state, vmax,
+      look: look ? [look[0] - headX, (look[1] - headY) * gs] : null,
     });
-    this.root.setPosition(p.x * CELL, p.y * CELL + pose.hop);
-    this.root.setScale(pose.flip * pose.sx, pose.sy);
-    this.root.setRotation(pose.rot);
+    this.root.setPosition(p.x * CELL, feetY + pose.hop * gs);
+    this.root.setScale(pose.flip * pose.sx, pose.sy * (Math.abs(g) < 0.08 ? 0.08 * gs : g));
+    this.root.setRotation(pose.rot * gs);
     const H = this.heightPx;
     for (const b of this.bands) b.img.setPosition(shearAt(pose, b.upPx, H), pose.bob);
     for (const part of this.parts) {

@@ -33,6 +33,7 @@ import { IN_D, IN_J, IN_L, IN_R, IN_RUN } from '../sim/types.ts';
 import { BODY_H, HALF_W, firebarReach } from '../sim/world.ts';
 import type { DPlatform, EntDef } from '../sim/world.ts';
 import { deathProbHearts } from '../difficulty/model.ts';
+import { coinsMatter, ruleDigest } from './search4.ts';
 import type { RouteKind } from '../types.gen.ts';
 
 export const GOAL = -1;
@@ -287,6 +288,8 @@ export class Explorer {
   private stuff: Uint8Array;
   private stateful: number[] = [];
   private timedDefs: number[] = [];
+  /** v4: collected coins steer some rule (they join the node key). */
+  private readonly coinsKey: boolean;
 
   constructor(sim: SimCore, opts: ExploreOptions) {
     this.sim = sim;
@@ -298,6 +301,7 @@ export class Explorer {
     this.reachRows = sim.W.ab.double_jump ? 8 : 6;
     this.stuff = this.buildStuff();
     const W = sim.W;
+    this.coinsKey = W.v4 && coinsMatter(W);
     for (const i of W.keys) this.stateful.push(i);
     for (const i of W.doors) this.stateful.push(i);
     for (const i of W.enemies) this.stateful.push(i);
@@ -352,6 +356,10 @@ export class Explorer {
         case 'key': mark(d.x - 8, d.y - 8, d.x + 8, d.y + 8); break;
         case 'coin': case 'big_coin': mark(d.x - 8, d.y - 8, d.x + 8, d.y + 8, 2); break;
         case 'spring': case 'goal': case 'checkpoint': mark(d.box[0], d.box[1], d.box[2], d.box[3]); break;
+        // v4 primitives (CONTRACTS_V4 §5)
+        case 'portal': mark(d.x - d.r, d.y - d.r, d.x + d.r, d.y + d.r); break;
+        case 'pickup': mark(d.x - 8, d.y - 8, d.x + 8, d.y + 8); break;
+        case 'npc': case 'zone': mark(d.box[0], d.box[1], d.box[2], d.box[3], 2); break;
         default: break;
       }
     }
@@ -418,6 +426,8 @@ export class Explorer {
       if (d.k === 'falling_platform') s += e.s === 0 ? 'i' : 'x';
       else s += e.on ? '1' : '0';
     }
+    // v4: rule state (score, counters, hidden flags, latches, collected things, active effects) is part of the node
+    if (S.r) s += '/' + ruleDigest(S, this.sim.W, this.coinsKey);
     return s;
   }
 

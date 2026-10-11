@@ -2,14 +2,17 @@
  * The game's DOM chrome (PLAN_V2 §5.1, §7.9): the 16:9 paper stage the canvas letterboxes into, the HUD's
  * mute / music / restart / pause buttons (marker-outlined paper pills, sized in stage % so they line up with the HUD
  * plates at any scale) and the landscape touch controls (left thumb ◀ ▶ with slide-between, a big Jump on the right,
- * a small ↓ above it, "Always run"). Styles are injected once and prefixed.
+ * a small ↓ above it, "Always run"). Styles are injected once and prefixed. v4 modes reshape them (setControls):
+ * runner and flappy get one big Jump / Flap button, top-down an ▲ ▼ pair; a rule's key (action, Space) gets its own.
  * A level skinned with Adobe Firefly art carries a small credit pill at the bottom centre ("Art: Adobe Firefly ·
  * drawn by Maya"); a click folds it to "✦ Art" (remembered), and the host can switch it off.
  */
 import { paperBase } from '../render/paper.ts';
 import { loadHandFont } from '../render/fonts.ts';
+import { msg } from '../render/text.ts';
 import type { Theme } from '../core/types.gen.ts';
-import type { Input } from './input.ts';
+import type { TouchLayout } from './controls.ts';
+import type { Input, TouchKey } from './input.ts';
 import { writeAlwaysRun } from './input.ts';
 
 const CSS = `
@@ -41,6 +44,17 @@ const CSS = `
 .dalg-run{position:absolute;left:2%;bottom:36%;pointer-events:auto;border:2px solid rgba(31,27,24,.7);border-radius:999px;
   background:rgba(255,253,246,.7);padding:2px 10px;font-size:clamp(11px,1.8vw,15px);color:#1F1B18}
 .dalg-run[aria-pressed=true]{background:rgba(62,158,79,.3)}
+.dalg-act,.dalg-spc{position:absolute;width:9%;aspect-ratio:1;pointer-events:auto;border:2.5px solid rgba(31,27,24,.75);border-radius:50%;
+  background:rgba(255,236,170,.6);display:grid;place-items:center;color:#1F1B18;font-size:clamp(10px,1.7vw,15px);touch-action:none}
+.dalg-act{right:23%;bottom:25%}
+.dalg-spc{right:33%;bottom:11%;background:rgba(214,206,250,.6)}
+.dalg-act.held,.dalg-spc.held{background:rgba(44,123,229,.25)}
+.dalg-touch [hidden]{display:none}
+.dalg-touch.big .dalg-jump{width:24%;right:4%;bottom:6%;font-size:clamp(16px,3vw,28px)}
+.dalg-touch.big .dalg-act{right:31%;bottom:8%}
+.dalg-touch.big .dalg-spc{right:31%;bottom:32%}
+.dalg-touch.updown .dalg-jump{width:11%;right:7%;bottom:36%;font-size:clamp(16px,3vw,28px)}
+.dalg-touch.updown .dalg-down{width:11%;right:7%;bottom:6%}
 .dalg-credit{position:absolute;left:50%;bottom:1.6%;transform:translateX(-50%) rotate(-.6deg);pointer-events:auto;cursor:pointer;
   border:1.5px solid rgba(31,27,24,.5);border-radius:999px;background:rgba(255,253,246,.8);color:#1F1B18;font:inherit;
   font-size:clamp(9px,1.45cqw,13px);line-height:1.3;padding:1px 10px 2px;max-width:62%;white-space:nowrap;overflow:hidden;
@@ -86,6 +100,10 @@ export interface Chrome {
   setMusicOn(on: boolean): void;
   setTheme(t: Theme): void;
   showTouch(on: boolean): void;
+  /** True while the touch controls show (a coarse pointer, or the stage was touched). */
+  readonly touchShown: boolean;
+  /** The touch buttons for the level's mode and the keys its rules listen to (engine/controls.ts). */
+  setControls(t: TouchLayout): void;
   /** The skin credit line ("Art: Adobe Firefly · drawn by Maya"); null hides the pill. */
   setCredit(text: string | null): void;
   /** The credit pill allowed at all (MountOptions.credits / GameHandle.setCredits). */
@@ -181,6 +199,7 @@ export function createChrome(
   const touch = document.createElement('div');
   touch.className = 'dalg-touch';
   const cleanups: (() => void)[] = [];
+  let applyLayout: ((t: TouchLayout) => void) | null = null;
   if (o.touch && o.input) {
     const input = o.input;
     const pad = document.createElement('div');
@@ -223,7 +242,7 @@ export function createChrome(
     };
     pad.addEventListener('pointerup', padUp);
     pad.addEventListener('pointercancel', padUp);
-    const hold = (node: HTMLElement, k: 'jump' | 'down' | 'run'): void => {
+    const hold = (node: HTMLElement, k: Exclude<TouchKey, 'left' | 'right'>): void => {
       const ids = new Set<number>();
       node.addEventListener('pointerdown', (e) => {
         e.preventDefault();
@@ -264,8 +283,33 @@ export function createChrome(
       writeAlwaysRun(input.alwaysRun);
       run.setAttribute('aria-pressed', String(input.alwaysRun));
     });
-    touch.append(pad, jump, down, runBtn, run);
+    // v4: buttons for the keys a rule listens to (E / Enter, and Space when Space has its own rule)
+    const act = document.createElement('div');
+    act.className = 'dalg-act';
+    act.dataset.role = 'touch-action';
+    act.textContent = msg('play4.touch_action', {}, 'Action');
+    act.hidden = true;
+    const spc = document.createElement('div');
+    spc.className = 'dalg-spc';
+    spc.dataset.role = 'touch-space';
+    spc.textContent = msg('play4.touch_space', {}, 'Space');
+    spc.hidden = true;
+    hold(act, 'action');
+    hold(spc, 'space');
+    touch.append(pad, jump, down, runBtn, run, act, spc);
     ui.append(touch);
+    applyLayout = (t) => {
+      pad.hidden = !t.pad;
+      down.hidden = !t.down;
+      runBtn.hidden = !t.run;
+      run.hidden = !t.alwaysRun;
+      act.hidden = !t.action;
+      spc.hidden = !t.space;
+      touch.classList.toggle('big', t.big);
+      touch.classList.toggle('updown', t.jump === 'up');
+      jump.textContent = t.jump === 'up' ? '▲' : t.jump === 'flap' ? msg('play4.touch_flap', {}, 'Flap') : msg('play4.touch_jump', {}, 'Jump');
+      down.textContent = t.jump === 'up' ? '▼' : '↓';
+    };
     const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
     if (coarse) touch.classList.add('on');
     const firstTouch = (): void => touch.classList.add('on');
@@ -342,6 +386,12 @@ export function createChrome(
     },
     showTouch(on) {
       touch.classList.toggle('on', on);
+    },
+    get touchShown() {
+      return touch.classList.contains('on');
+    },
+    setControls(t) {
+      applyLayout?.(t);
     },
     setCredit(text) {
       creditText = text && text.trim() ? text.trim() : null;

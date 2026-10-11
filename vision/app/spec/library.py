@@ -29,6 +29,13 @@ class LibrarySymbol(Spec):
     color: InkColor
 
 
+class BlockRef(Spec):
+    """v4: points at one version of a public block (app/spec/blocks.py)."""
+
+    block_id: str = Field(pattern=r"^blk_[a-z0-9]{8}$")
+    version: int = Field(ge=1)
+
+
 class LibraryType(Spec):
     id: str
     game_id: str
@@ -43,7 +50,9 @@ class LibraryType(Spec):
     symbol: LibrarySymbol | None = None
     author: str
     created_at: str
+    block: BlockRef | None = None  # v4: the public block this was copied from
+    hidden: bool | None = None  # v4: instances start hidden until a rule shows them
 
 
-EXPORTS: list[Any] = [Rig, LibraryArt, LibrarySymbol, LibraryType]
+EXPORTS: list[Any] = [Rig, LibraryArt, LibrarySymbol, BlockRef, LibraryType]
 ROOT = LibraryType

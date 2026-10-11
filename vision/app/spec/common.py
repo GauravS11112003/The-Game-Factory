@@ -109,6 +109,17 @@ StageName = TypeAliasType(
     Literal["upload", "cv", "ink", "perceive", "understood", "design", "designed", "refine", "critic"],
 )
 LlmMode = TypeAliasType("LlmMode", Literal["live", "fake", "off"])
+# ---- v4 (docs/v4/CONTRACTS_V4.md) ----
+# How a game plays. platformer is v2 (gravity, run, jump); topdown has no gravity and moves in four directions;
+# runner always moves right; flappy always moves right and Jump flaps in the air.
+GameMode = TypeAliasType("GameMode", Literal["platformer", "topdown", "runner", "flappy"])
+# Keys a rule can listen to: the space bar, or the action key (E or Enter). Input bits 64 and 128 (§4.1).
+RuleKey = TypeAliasType("RuleKey", Literal["space", "action"])
+ZoneEffect = TypeAliasType("ZoneEffect", Literal["wind", "water", "ice", "low_gravity", "conveyor", "slow"])
+PickupEffect = TypeAliasType(
+    "PickupEffect", Literal["none", "speed", "jump", "flip", "heart", "score", "freeze", "low_gravity"]
+)
+SoundName = TypeAliasType("SoundName", Literal["ding", "boing", "zap", "whoosh", "boom", "fanfare"])
 
 
 class World(Spec):
@@ -144,5 +155,6 @@ EXPORTS: list[Any] = [
     CellXY, RectCells, Scalar, MessageArgs, MessageRef, LibRef, InkColor, Origin, Role, StampKind, Face, Dir,
     Dir4, Collision, Archetype, Tier, Band, Dial, ChallengeBand, Stage, ProfileId, Theme, Severity, Safety,
     CallKind, Effort, DifficultyWish, SetpieceKind, StageName, LlmMode, World, InkWorld,
+    GameMode, RuleKey, ZoneEffect, PickupEffect, SoundName,
 ]
 ROOT = None

@@ -1,0 +1,17 @@
+{
+  "id": "S1",
+  "seed": 4101,
+  "designer_note": "A rule written in words: space flips gravity.",
+  "mode": "platformer",
+  "logic": [
+    { "id": "flip", "when": { "kind": "key", "key": "space" }, "then": [{ "kind": "flip_gravity" }, { "kind": "sound", "name": "whoosh" }], "once": false }
+  ],
+  "patches": [ { "beat": "*", "stretch": false, "auto_checkpoints": false } ],
+  "draw": [
+    { "kind": "npc", "beat": "0.0", "dx": 5, "dy": 0, "name": "Pip", "lines": ["Hi! I'm Pip.", "Press space to flip gravity!", "Walk on the ceiling over the spikes."] },
+    { "kind": "mass", "beat": "1.0", "dx": -2, "dy": -7, "w": 14, "h": 2 },
+    { "kind": "coins", "beat": "1.0", "dx": 1, "dy": -4.4, "n": 4, "w": 8 },
+    { "kind": "mass", "beat": "2.0", "dx": -2, "dy": -7, "w": 16, "h": 2 },
+    { "kind": "big_coin", "beat": "2.0", "dx": 6, "dy": -4.4 }
+  ]
+}

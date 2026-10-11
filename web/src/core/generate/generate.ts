@@ -11,7 +11,7 @@
  */
 import type { BuildInput, BuildResult } from '../index.ts';
 import { PROMPT_LEVEL } from '../params.ts';
-import type { Beat, EditOp, EditRecord, GameRules, InkColor, InkDoc, InkStroke, LevelPlan, LibraryType, PlaytestReport, Role, SceneGraph, SceneObject, Tier } from '../types.gen.ts';
+import type { Beat, EditOp, EditRecord, GameMode, GameRules, InkColor, InkDoc, InkStroke, LevelPlan, LibraryType, PlaytestReport, Role, RuleV4, SceneGraph, SceneObject, Tier } from '../types.gen.ts';
 import { build, finish, prepare } from '../build/build.ts';
 import { resolveRules } from '../build/level.ts';
 import { hardFlags } from '../edits/invariants.ts';
@@ -50,6 +50,9 @@ export interface GenerateOptions {
   ink?: 'draft' | 'marker';
   library?: LibraryType[];
   fixer?: boolean; // default true
+  /** v4: the level's own rules (BuildInput.logic) and its mode (BuildInput.mode), e.g. a showcase level's. */
+  logic?: RuleV4[] | null;
+  mode?: GameMode | null;
 }
 
 export interface PlanFix {
@@ -243,7 +246,8 @@ export function generateLevel(plan: LevelPlan, rules: GameRules, seed: number, o
     const ink = o.ink === 'marker' ? inkIt(draft) : draft;
     const graph0 = perceiveHeuristic(ink, { library, parent: null });
     const edits = o.overrides?.edits?.length ? resolveEdits(o.overrides.edits, graph0, ink) : [];
-    const input: BuildInput = { ink, graph0, edits, rules: r, library, parent: null, tier: 'faithful', repairUnsolvable: false, seed };
+    const input: BuildInput = { ink, graph0, edits, rules: r, library, parent: null, tier: 'faithful', repairUnsolvable: false, seed,
+      ...(o.logic?.length ? { logic: o.logic } : {}), ...(o.mode ? { mode: o.mode } : {}) };
     const f = prepare(input);
     // unsolvable always sends the frontier beat to the fixer; a fairness flag does so only for model / keyword plans
     // (an authored Starter World level keeps its beats, and its flags are reported to the author)

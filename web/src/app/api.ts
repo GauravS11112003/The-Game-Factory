@@ -483,3 +483,6 @@ export const api = {
     return r.blob();
   },
 };
+
+/** v4: the shared request helper for the v4 endpoints (v4api.ts). */
+export { request as apiRequest };

@@ -1,0 +1,17 @@
+{
+  "$comment": "v4 lane engine strings (docs/v4/CONTRACTS_V4.md §8). Merged over messages.json at load time; same rules: ≤ 20 words per sentence, {placeholders} only.",
+  "messages": {
+    "hud.score": "Score {n}",
+    "hud.counter": "{name}: {n}",
+    "play4.touch_jump": "Jump",
+    "play4.touch_flap": "Flap",
+    "play4.touch_action": "Action",
+    "play4.touch_space": "Space",
+    "play4.hint_topdown": "Walk around with the arrow keys or W A S D.",
+    "play4.hint_runner": "You run by yourself. Jump with {keys}.",
+    "play4.hint_flappy": "Tap {keys} to flap.",
+    "play4.hint_space": "Space has a trick here: jump with W, Z or ↑.",
+    "play4.hint_space_short": "Space has a trick here!",
+    "play4.hint_action": "Press E or Enter for your special move."
+  }
+}

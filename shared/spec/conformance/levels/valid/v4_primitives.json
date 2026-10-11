@@ -1,0 +1,303 @@
+{
+  "format": "dal-level",
+  "schema_version": 2,
+  "core_min": "2.0.0",
+  "id": "lvl_v4prim1",
+  "version": 1,
+  "game_id": null,
+  "parent_id": null,
+  "order_index": 0,
+  "title": "Portals and pickups",
+  "author": "conformance",
+  "created_at": "2026-10-10T00:00:00Z",
+  "license": "CC0-1.0",
+  "world": {
+    "cell": 16,
+    "screens": 1,
+    "w": 48,
+    "h": 27
+  },
+  "rules": {
+    "version": 1,
+    "physics_profile": "v2-standard",
+    "abilities": {
+      "run": true,
+      "stomp": true,
+      "double_jump": false,
+      "fast_fall": true
+    },
+    "lives": "off",
+    "hearts": 2,
+    "theme": "sketchbook",
+    "music": true,
+    "timer_pressure": false,
+    "camera": "follow",
+    "default_dial": "polished",
+    "default_band": "normal",
+    "player_type": null
+  },
+  "source": {
+    "kind": "canvas",
+    "prompt": null,
+    "pack_id": null,
+    "sheets": [
+      {
+        "index": 0,
+        "photo_url": null,
+        "qr": null
+      }
+    ]
+  },
+  "objects": [],
+  "setpieces": [],
+  "edits": [],
+  "compiled": {
+    "tiles": {
+      "legend": ".#=/\\abcd~X",
+      "rows": [
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "36.1#11.",
+        "36.1#11.",
+        "36.1#11.",
+        "36.1#11.",
+        "36.1#11.",
+        "36.1#11.",
+        "36.1#11.",
+        "36.1#11.",
+        "20#8.20#",
+        "20#8.20#",
+        "20#8.20#",
+        "20#8.20#",
+        "20#8.20#"
+      ]
+    },
+    "entities": [
+      {
+        "id": "start",
+        "type": "player_start",
+        "x": 2,
+        "y": 22
+      },
+      {
+        "id": "p1",
+        "type": "portal",
+        "x": 16,
+        "y": 21,
+        "pair": "p2"
+      },
+      {
+        "id": "p2",
+        "type": "portal",
+        "x": 40,
+        "y": 21,
+        "pair": "p1"
+      },
+      {
+        "id": "wind",
+        "type": "zone",
+        "x": 4,
+        "y": 17,
+        "w": 6,
+        "h": 5,
+        "effect": "wind",
+        "dir": "right",
+        "strength": 1
+      },
+      {
+        "id": "star",
+        "type": "pickup",
+        "x": 8,
+        "y": 21.5,
+        "item": "star",
+        "respawn_s": 5
+      },
+      {
+        "id": "c1",
+        "type": "coin",
+        "x": 12,
+        "y": 21.5
+      },
+      {
+        "id": "c2",
+        "type": "coin",
+        "x": 42,
+        "y": 21.5
+      },
+      {
+        "id": "c3",
+        "type": "coin",
+        "x": 44,
+        "y": 21.5,
+        "hidden": true
+      },
+      {
+        "id": "bob",
+        "type": "npc",
+        "x": 6,
+        "y": 22,
+        "lines": [
+          "Use the portal to cross!"
+        ]
+      },
+      {
+        "id": "goal",
+        "type": "goal",
+        "x": 45,
+        "y": 22,
+        "trigger": [
+          44.75,
+          19,
+          46.5,
+          22
+        ]
+      }
+    ],
+    "triggers": [],
+    "sprites": {
+      "player": null,
+      "objects": {}
+    },
+    "logic": [
+      {
+        "id": "pk_star",
+        "when": {
+          "kind": "collect",
+          "target": "star"
+        },
+        "then": [
+          {
+            "kind": "speed",
+            "times": 1.6,
+            "seconds": 5
+          }
+        ]
+      },
+      {
+        "id": "r1",
+        "when": {
+          "kind": "collect",
+          "item": "coin"
+        },
+        "then": [
+          {
+            "kind": "add_counter",
+            "name": "coins",
+            "n": 1
+          },
+          {
+            "kind": "add_score",
+            "n": 5
+          }
+        ]
+      },
+      {
+        "id": "r2",
+        "when": {
+          "kind": "counter",
+          "name": "coins",
+          "at_least": 2
+        },
+        "then": [
+          {
+            "kind": "toggle",
+            "target": "c3",
+            "to": "on"
+          }
+        ]
+      },
+      {
+        "id": "r3",
+        "when": {
+          "kind": "score",
+          "at_least": 10
+        },
+        "then": [
+          {
+            "kind": "shake"
+          }
+        ]
+      },
+      {
+        "id": "r4",
+        "when": {
+          "kind": "all_coins"
+        },
+        "then": [
+          {
+            "kind": "sound",
+            "name": "fanfare"
+          }
+        ]
+      },
+      {
+        "id": "r5",
+        "when": {
+          "kind": "touch",
+          "target": "bob"
+        },
+        "then": [
+          {
+            "kind": "heal"
+          }
+        ],
+        "once": true
+      },
+      {
+        "id": "r6",
+        "when": {
+          "kind": "zone",
+          "rect": [
+            40,
+            18,
+            44,
+            22
+          ]
+        },
+        "then": [
+          {
+            "kind": "say",
+            "text": "Almost there",
+            "seconds": 2
+          }
+        ]
+      },
+      {
+        "id": "r7",
+        "when": {
+          "kind": "timer",
+          "seconds": 60
+        },
+        "then": [
+          {
+            "kind": "freeze_enemies",
+            "seconds": 3
+          }
+        ]
+      }
+    ]
+  },
+  "design": null,
+  "embedded_library": [],
+  "meta": {
+    "transcript": "",
+    "intent": null,
+    "safety": "unchecked",
+    "level_hash": "sha256:ef8986a2b0dadb7f55ee6f0af207622d4f7e2d2c3c853711c9247158ba828c9d",
+    "core_version": "2.0.0",
+    "warnings": [],
+    "build": null
+  }
+}

@@ -2,7 +2,8 @@
  * Entity art (PLAN_V2 §7.3 recipes, §7.6): the kid's own vector strokes (every `part_of` part) baked into sprites,
  * crisp, never cropped from a raster and never whitened; house doodles in pencil for designer additions (walker blob,
  * hopper frog, flyer bat, shooter cannon, chaser angry blob, crusher block, pencil flags, springs, arrows); the house
- * coin (the kid's dot is not drawn again); spikes re-based onto their host face with 9 px teeth.
+ * coin (the kid's dot is not drawn again); spikes re-based onto their host face with 9 px teeth. v4 portals, zones,
+ * pickups and npcs get house art from v4art.ts (a kid-drawn portal keeps its drawing inside its pair's colour ring).
  */
 import type { Entity, InkStroke, SceneObject } from '../types.gen.ts';
 import { RASTER } from '../params.ts';
@@ -12,6 +13,7 @@ import type { CleanStroke } from './clean.ts';
 import { CELL, circlePts, clamp, hash32, starPts } from './geom.ts';
 import type { V } from './geom.ts';
 import { extractRig } from './rig.ts';
+import { npcArt, pickupArt, PORTAL_LONE, portalArt, zoneArt } from './v4art.ts';
 import {
   ellipse, emitBlueLine, emitFill, emitMarker, emitPencil, inkForOrigin, inkHex, poly, PX, StyleBook,
 } from './styles.ts';
@@ -21,6 +23,8 @@ export interface SpriteSource {
   obj: SceneObject | null;
   strokes: InkStroke[]; // the object's strokes plus all of its parts
   partRoles: Map<string, string>; // stroke id → role of the object it came from (pole, goal, …)
+  /** v4 portals: the pair's colour (v4art.portalColors), shared by both ends. */
+  color?: string;
 }
 
 /** Emit one cleaned stroke in the right ink. mode 'sprite' gives closed outlines a paper fill (a solid character). */
@@ -575,6 +579,24 @@ export function buildSprite(e: Entity, src: SpriteSource, b: StyleBook, seed: nu
     }
     case 'hint_arrow':
       emitDoodle(paths, b, houseArrow(e.dir), 'pencil', sd);
+      break;
+    // ---- v4 (core/art/v4art.ts) ----
+    case 'portal':
+      // the kid's own portal keeps its drawing inside a ring of the pair's colour
+      portalArt(paths, b, src.color ?? PORTAL_LONE, houseInk, sd, hasKid);
+      if (hasKid) emitKid(fitInto(local, [-0.7, -0.7, 0.7, 0.7], 'center', true));
+      break;
+    case 'zone':
+      zoneArt(paths, b, e, houseInk, sd, !hasKid);
+      if (hasKid) emitKid(local);
+      break;
+    case 'pickup':
+      if (hasKid) emitKid(fitInto(local, [-0.65, -0.65, 0.65, 0.65], 'center', true));
+      else pickupArt(paths, b, e.item, houseInk, sd);
+      break;
+    case 'npc':
+      if (hasKid) emitKid(local);
+      npcArt(paths, b, e, houseInk, sd, !hasKid);
       break;
     default:
       if (hasKid) emitKid(local);

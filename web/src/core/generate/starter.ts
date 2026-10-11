@@ -9,7 +9,7 @@
  * - Classic Starter: the v1 fixtures migrated under `v1-classic` (§2.6), analyzed for their design block.
  */
 import { STARTER } from '../params.ts';
-import type { DesignBlock, EditOp, GameRules, LevelPlan, LevelV2, PlaytestReport } from '../types.gen.ts';
+import type { DesignBlock, EditOp, GameMode, GameRules, LevelPlan, LevelV2, PlaytestReport, RuleV4 } from '../types.gen.ts';
 import { analyze } from '../bot/index.ts';
 import { levelHash } from '../build/hash.ts';
 import { resolveRules } from '../build/level.ts';
@@ -22,6 +22,18 @@ import type { LayoutOverrides } from './layout.ts';
 export const STARTER_GAME = { id: 'game_world', title: 'Starter World', author: 'Starter World', license: 'CC0-1.0' } as const;
 export const CLASSIC_GAME = { id: 'game_classic', title: 'Classic Starter', author: 'team', license: 'CC0-1.0' } as const;
 export const STARTER_TIME = '2026-10-10T00:00:00Z';
+/** v4 showcase (docs/v4/CONTRACTS_V4.md): one level per mode, with rules and v4 primitives (shared/starter/showcase). */
+export const SHOWCASE_GAME = { id: 'game_showcase', title: 'draw.play Showcase', author: 'team', license: 'CC0-1.0' } as const;
+
+/** The game a starter level belongs to and how its level ids read (Starter World: lvl_world_l1…). */
+export interface StarterGame {
+  id: string;
+  author: string;
+  license: string;
+  prefix: string;
+}
+const WORLD_IDS: StarterGame = { id: STARTER_GAME.id, author: STARTER_GAME.author, license: STARTER_GAME.license, prefix: 'lvl_world_' };
+export const SHOWCASE_IDS: StarterGame = { id: SHOWCASE_GAME.id, author: SHOWCASE_GAME.author, license: SHOWCASE_GAME.license, prefix: 'lvl_show_' };
 
 export interface StarterOverrides extends LayoutOverrides {
   id?: string;
@@ -29,6 +41,9 @@ export interface StarterOverrides extends LayoutOverrides {
   edits?: EditOp[];
   designer_note?: string;
   rules?: Partial<GameRules>;
+  /** v4: the level's own rules (compiled.logic) and mode, built into the level rather than the game's rules. */
+  logic?: RuleV4[];
+  mode?: GameMode;
 }
 
 export interface StarterBuilt {
@@ -42,20 +57,20 @@ export function starterLevelId(id: string): string {
 }
 
 /** Build one Starter World level from its plan and overrides. */
-export function buildStarterLevel(id: string, plan: LevelPlan, ov: StarterOverrides, order: number): StarterBuilt {
+export function buildStarterLevel(id: string, plan: LevelPlan, ov: StarterOverrides, order: number, game: StarterGame = WORLD_IDS): StarterBuilt {
   const rules = resolveRules({ version: 1, physics_profile: 'v2-standard', theme: plan.theme ?? 'sketchbook', ...(ov.rules ?? {}) });
   const seed = typeof ov.seed === 'number' ? ov.seed : 1000 + order;
-  const gen = generateLevel(plan, rules, seed, { tier: 'faithful', overrides: ov, clamp: 'envelope', ink: 'marker' });
+  const gen = generateLevel(plan, rules, seed, { tier: 'faithful', overrides: ov, clamp: 'envelope', ink: 'marker', logic: ov.logic ?? null, mode: ov.mode ?? null });
   const lv: LevelV2 = JSON.parse(JSON.stringify(gen.result.level));
-  lv.id = starterLevelId(id);
+  lv.id = `${game.prefix}${id.toLowerCase()}`;
   lv.version = 1;
-  lv.game_id = STARTER_GAME.id;
+  lv.game_id = game.id;
   lv.parent_id = null;
   lv.order_index = order;
   lv.title = gen.plan.title;
-  lv.author = STARTER_GAME.author;
+  lv.author = game.author;
   lv.created_at = STARTER_TIME;
-  lv.license = STARTER_GAME.license;
+  lv.license = game.license;
   lv.source = { ...lv.source, kind: 'prompt', prompt: null };
   lv.meta = { ...lv.meta, intent: gen.plan.kid_summary || null, safety: 'ok', core_version: lv.meta.core_version };
   if (lv.design) lv.design = { ...lv.design, designer_note: ov.designer_note ?? null, source: 'none' };

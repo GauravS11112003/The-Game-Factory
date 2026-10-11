@@ -15,6 +15,7 @@ import type { BuildInput, BuildResult } from '../index.ts';
 import { PERCEPTION, REPAIR } from '../params.ts';
 import type { EditRecord, MessageRef, PlaytestReport, SceneObject, Setpiece, Stage } from '../types.gen.ts';
 import { ensureComponents } from '../ink/index.ts';
+import { typedRulesLogic } from '../logic/index.ts';
 import { withParentInk } from '../scene/remix.ts';
 import { checkReport, hardFlags } from '../edits/invariants.ts';
 import { tierRank } from '../edits/vocabulary.ts';
@@ -53,11 +54,14 @@ function stageOf(edits: readonly EditRecord[]): Stage {
 export function prepare(i: BuildInput): Faithful {
   // a paper remix scan inherits the parent's strokes, exactly as perceiveHeuristic saw them (§6.5)
   const ink = ensureComponents(withParentInk(i.ink, i.parent));
-  const rules = resolveRules(i.rules);
+  // v4 (CONTRACTS_V4 §2.4): the level's rules (given, or parsed from the typed rules) and its mode
+  const logic = Array.isArray(i.logic) ? { rules: i.logic, mode: null } : typedRulesLogic(ink.typed_rules ?? [], i.graph0?.objects ?? []);
+  const rules = resolveRules(i.rules, i.mode ?? logic.mode);
   const profile = profileOf(rules);
   const world = worldOf(ink);
   const w = workFromGraph(i.graph0 ?? { objects: [] }, world);
   w.st = emptyState();
+  if (logic.rules.length) w.st.logic = logic.rules;
   const library = i.library ?? [];
   const ctx: Ctx = { ink, library, rules, profile, tier: 'faithful', report: null };
   const edits = i.edits ?? [];

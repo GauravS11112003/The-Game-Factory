@@ -33,11 +33,12 @@ describe('core API surface', () => {
     },
   );
 
-  it('replay codec round-trips and rejects bad input', () => {
-    const frames = Uint8Array.from([0, 0, 0, 1, 1, 4, 4, 4, 4, 31]);
+  it('replay codec round-trips all 8 input bits and rejects bad input', () => {
+    // v4 §4.1: RESTART 32, SPACE 64 and ACTION 128 are valid input bits
+    const frames = Uint8Array.from([0, 0, 0, 1, 1, 4, 4, 4, 4, 31, 32, 64, 128, 255]);
     expect(Array.from(core.decodeReplay(core.encodeReplay(frames)))).toEqual(Array.from(frames));
     expect(core.encodeReplay(new Uint8Array(0))).toBe('');
-    expect(() => core.encodeReplay(Uint8Array.from([32]))).toThrow();
+    expect(() => core.decodeReplay('AQA=')).toThrow(); // not a whole record
     expect(() => core.decodeReplay('AAAA')).toThrow(); // zero-length run
   });
 });

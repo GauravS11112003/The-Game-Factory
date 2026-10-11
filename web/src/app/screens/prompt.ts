@@ -7,8 +7,10 @@
  * browser core (lava, key, tower, spikes, moving, saw, easy/hard → one of the canned plans seeded by the text) and the
  * draft opens straight in the editor, playable with ▶. Kid marker strokes over a draft object replace it ("your
  * ground wins"), and "Ink it" turns the rest into marker.
+ * v4: `?text=` fills the box (the top bar's "Describe a game", templates) and `?mode=` picks the game mode. The mode
+ * is saved in the game's rules when there is a game, kept in the draft drawing, and shown in the URL.
  */
-import type { Beat, ChallengeBand, Dial, GameRules, LevelPlan } from '../../core/types.gen.ts';
+import type { Beat, ChallengeBand, Dial, GameMode, GameRules, LevelPlan } from '../../core/types.gen.ts';
 import { WORLD } from '../../core/params.ts';
 import { api, ApiError } from '../api.ts';
 import { coreClient, CoreError } from '../core_client.ts';
@@ -20,6 +22,8 @@ import { DEFAULT_RULES } from '../rules.ts';
 import { store } from '../store.ts';
 import { drawLevelThumb } from '../thumbs.ts';
 import { emptyDoc } from '../../editor/doc.ts';
+import { isMode, MODES } from '../ws/model.ts';
+import { modeName } from '../ws/ui.ts';
 
 const EXAMPLES = ['prompt.example_1', 'prompt.example_2', 'prompt.example_3', 'prompt.example_4'];
 
@@ -60,12 +64,15 @@ export function promptScreen(root: HTMLElement, query: URLSearchParams): () => v
   let band: ChallengeBand = 'normal';
   let busy = false;
   let draft: PlanResult | null = null;
+  const askedMode = query.get('mode');
+  let mode: GameMode | null = isMode(askedMode) ? askedMode : null;
 
-  const text = h('textarea', { class: 'text prompt-text', rows: 3, maxLength: 300, placeholder: t('prompt.placeholder') });
+  const text = h('textarea', { class: 'text prompt-text', rows: 3, maxLength: 300, placeholder: t('prompt.placeholder'), value: (query.get('text') ?? '').trim().slice(0, 300) });
   const examples = h('div', { class: 'chips' }, h('span', { class: 'small muted' }, t('prompt.try')),
     ...EXAMPLES.map((k) => h('button', { type: 'button', class: 'chip', onclick: () => { text.value = t(k); text.focus(); } }, t(k))));
   const screensRow = h('div', { class: 'row wrap' });
   const dialRow = h('div', { class: 'chips' });
+  const modeRow = h('div', { class: 'chips' });
   const go = h('button', { type: 'button', class: 'pill primary big' }, icon('pencil'), t('prompt.make'));
   const out = h('div', { class: 'prompt-out' });
 
@@ -83,7 +90,38 @@ export function promptScreen(root: HTMLElement, query: URLSearchParams): () => v
       ...(dial === 'challenging' ? (['normal', 'hard'] as ChallengeBand[]).map((b) => h('button', {
         type: 'button', class: `chip${band === b ? ' on' : ''}`, onclick: () => { band = b; renderOptions(); },
       }, t(`band.${b}`))) : []));
+    const cur = mode ?? rules.mode ?? 'platformer';
+    modeRow.replaceChildren(h('span', { class: 'small muted' }, t('studio4.mode_label')),
+      ...MODES.map((m) => h('button', {
+        type: 'button', class: `chip${cur === m ? ' on' : ''}`, 'aria-pressed': String(cur === m), onclick: () => pickMode(m),
+      }, modeName(m))));
     go.disabled = busy;
+  }
+
+  /** Keep the chosen mode in the URL so a reload (or a shared link) keeps it. */
+  function pickMode(m: GameMode): void {
+    mode = m;
+    renderOptions();
+    const q = new URLSearchParams(query);
+    q.set('mode', m);
+    try {
+      history.replaceState(null, '', `#/prompt?${q.toString()}`);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  /** For a game, the mode lives in its rules: save it there before building (quietly, when allowed). */
+  async function saveMode(): Promise<void> {
+    if (!gameId || !mode) return;
+    try {
+      const cur = await api.rules(gameId); // fresh, so a slow first load never saves defaults over the game's rules
+      if (!cur || (cur.mode ?? 'platformer') === mode) return;
+      const r = await api.putRules(gameId, { ...cur, mode });
+      rules = { ...rules, ...(r.rules ?? cur), mode };
+    } catch {
+      /* not allowed or not live yet: the draft drawing still carries the mode */
+    }
   }
 
   async function make(): Promise<void> {
@@ -95,11 +133,13 @@ export function promptScreen(root: HTMLElement, query: URLSearchParams): () => v
     busy = true;
     renderOptions();
     out.replaceChildren(card(null, h('p', { class: 'muted' }, t('prompt.thinking'))));
+    await saveMode();
+    if (disposed) return;
     try {
       const b = await api.promptLevel({ prompt, game_id: gameId, screens, dial, band: dial === 'challenging' ? band : null });
       if (!b.draft_id || !b.build_id) throw new ApiError(501, 'error.not_implemented');
       store.setDraftBuild(b.draft_id, { build_id: b.build_id, events_url: b.events_url });
-      store.setDraftDoc(b.draft_id, emptyDoc({ screens, gameId, title: '' }));
+      store.setDraftDoc(b.draft_id, emptyDoc({ screens, gameId, title: '', mode }));
       const tier = dial === 'faithful' ? 'faithful' : dial === 'challenging' ? band : 'polished';
       navigate(`#/preview/${encodeURIComponent(b.draft_id)}?b=${encodeURIComponent(b.build_id)}&dial=${tier}`);
       return;
@@ -113,7 +153,7 @@ export function promptScreen(root: HTMLElement, query: URLSearchParams): () => v
     }
     // Offline: the keyword planner in the browser core.
     try {
-      draft = await coreClient().plan({ prompt, screens, rules, seed: textSeed(prompt) });
+      draft = await coreClient().plan({ prompt, screens, rules: mode ? { ...rules, mode } : rules, seed: textSeed(prompt) });
       if (disposed) return;
       showDraft(draft);
     } catch (e) {
@@ -144,9 +184,9 @@ export function promptScreen(root: HTMLElement, query: URLSearchParams): () => v
   function openDraft(d: PlanResult): void {
     let n = 1;
     const strokes = d.ink.strokes.map((s) => ({ ...s, origin: 'draft' as const, t: s.t ?? n++ }));
-    const doc = emptyDoc({ screens: d.ink.world.screens, strokes, gameId, title: kidText(d.plan.title ?? '') });
+    const doc = emptyDoc({ screens: d.ink.world.screens, strokes, gameId, title: kidText(d.plan.title ?? ''), mode });
     store.setEditorDoc(doc);
-    navigate(`#/draw?from=prompt${gameId ? `&game=${encodeURIComponent(gameId)}` : ''}`);
+    navigate(`#/draw?from=prompt${gameId ? `&game=${encodeURIComponent(gameId)}` : ''}${mode ? `&mode=${mode}` : ''}`);
   }
 
   go.onclick = () => void make();
@@ -157,7 +197,7 @@ export function promptScreen(root: HTMLElement, query: URLSearchParams): () => v
   root.append(card('prompt-card',
     h('h1', { class: 'marker-underline' }, t('ui.prompt')),
     h('p', null, t('prompt.help')),
-    text, examples, screensRow, dialRow,
+    text, examples, screensRow, dialRow, modeRow,
     h('div', { class: 'row end' }, go)), out);
   renderOptions();
   text.focus();

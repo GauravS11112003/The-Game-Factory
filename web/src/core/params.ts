@@ -344,7 +344,7 @@ export const FLAGS = {
 // ---- gameplay (§5) ----------------------------------------------------------------------------
 export const SIM = {
   hz: 60,
-  input_bits: { L: 1, R: 2, J: 4, RUN: 8, D: 16 },
+  input_bits: { L: 1, R: 2, J: 4, RUN: 8, D: 16, RESTART: 32, SPACE: 64, ACTION: 128 },
   trig_table_size: 1024,
   auto_run_after_s: 0.5,
   vibrate_ms: 10,
@@ -715,10 +715,22 @@ export const LATENCY = {
   sse_failures_before_poll: 2,
 } as const;
 
+/** v4 modes, zones, portals, pickups and talkers (docs/v4/CONTRACTS_V4.md §3, §5). Speeds px/s, accelerations px/s². */
+export const V4 = {
+  flappy: { flap_frac: 0.8, gravity: 0.6 }, // flap vy = −flap_frac × jump_base
+  topdown: { accel: 2400, diagonal: 0.7071 }, // walking reaches full speed in ≈ 3 frames
+  zone: { wind_accel: 220, conveyor_v: 60, water_gravity: 0.35, water_max_fall: 90, swim_frac: 0.5, ice_friction: 0.15, low_gravity: 0.5, slow: 0.5 },
+  portal: { radius_c: 0.75, cooldown_f: 30 },
+  pickup: { radius_px: 14 },
+  npc: { say_s: 3 },
+  pit_top_c: 2, // flipped gravity: leaving the top of the world by 2 cells is a pit death (§2.3)
+  pickup_effects: { speed: 1.6, jump: 1.4, score: 10, low_gravity: 0.5 }, // §5 effect → action map
+} as const;
+
 /** Everything above, as published in shared/spec/params.json. */
 export const PARAMS = {
   WORLD, CANVAS, PAPER, GROUPING, GRAMMAR, PERCEPTION, FIT, RASTER, EDIT_BOUNDS, ARCHETYPES_BY_TIER, COST, INVARIANTS,
   REPAIR, VALIDATOR, DESIGN, BOT, DIFFICULTY, DIAL, FLAGS, SIM, DERIVED, ABILITIES, COLLISION, DAMAGE, GRIDS, ENEMIES,
   HAZARDS, SCORING, CAMERA, PERF, ART, RIG, JUICE, AUDIO, UI, LIBRARY, PROMPT_LEVEL, RUNS, REMIX, STARTER, MODEL,
-  BUDGET, LATENCY,
+  BUDGET, LATENCY, V4,
 } as const;

@@ -22,7 +22,7 @@ from app.collab import db, identity
 log = logging.getLogger("dal.v3.activity")
 
 BADGES = ("first_level", "first_accept", "creature_maker", "quest_hero", "featured", "jam_entrant", "helper")
-CREDIT_KINDS = ("level", "creature", "art", "quest", "review")
+CREDIT_KINDS = ("level", "creature", "art", "quest", "review", "block")  # block: v4, a public block used in a game
 PLAY_MILESTONES = (10, 100, 1000)
 FEATURED_PLAYS = 100
 CREATURES_FOR_BADGE = 5
@@ -325,6 +325,7 @@ def player_stats(player_id: str) -> dict[str, Any]:
         "clear_rate": round(total_clears / total_plays, 4) if total_plays else None,
         "creatures": credits_by.get("creature", 0), "art": credits_by.get("art", 0),
         "quests_done": credits_by.get("quest", 0), "reviews": credits_by.get("review", 0),
+        "blocks_used": credits_by.get("block", 0),
         "games": int(db.scalar("SELECT COUNT(*) FROM members WHERE player_id = ?", (player_id,), 0)),
     }
 
@@ -366,7 +367,7 @@ def player_levels(player_id: str, *, include_unlisted: bool = False, limit: int 
 
 
 def game_credits(game_id: str) -> dict[str, Any]:
-    """{contributors: [{player, role, levels, creatures, art, quests, reviews, total}], authors: [names]}."""
+    """{contributors: [{player, role, levels, creatures, art, quests, reviews, blocks, total}], authors: [names]}."""
     from app import db_v2
     from app.collab import members
 
@@ -381,8 +382,9 @@ def game_credits(game_id: str) -> dict[str, Any]:
     for pid, p in players.items():
         c = counts.get(pid, {})
         item = {"player": p, "role": roles.get(pid), "levels": c.get("level", 0), "creatures": c.get("creature", 0),
-                "art": c.get("art", 0), "quests": c.get("quest", 0), "reviews": c.get("review", 0)}
-        item["total"] = sum(item[k] for k in ("levels", "creatures", "art", "quests", "reviews"))
+                "art": c.get("art", 0), "quests": c.get("quest", 0), "reviews": c.get("review", 0),
+                "blocks": c.get("block", 0)}
+        item["total"] = sum(item[k] for k in ("levels", "creatures", "art", "quests", "reviews", "blocks"))
         if item["total"] or item["role"] in members.KEEPERS:
             out.append(item)
     out.sort(key=lambda x: (0 if x["role"] == "owner" else 1, -x["total"], str(x["player"]["name"]).lower()))

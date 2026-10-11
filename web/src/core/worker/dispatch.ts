@@ -44,6 +44,7 @@ export const METHOD_PARAMS: Record<WorkerMethod, readonly string[]> = {
   generate_level: ['plan'],
   rules_check: ['levels', 'rules'],
   library_check: ['levels', 'type'],
+  parse_logic: ['sentences'],
 };
 
 // Params arrive as untyped JSON; the core validates its own inputs.
@@ -56,6 +57,9 @@ function buildInput(p: Record<string, Any>, withTier: boolean): Any {
     library: Array.isArray(p.library) ? p.library : [], parent: p.parent ?? null,
     repairUnsolvable: p.repairUnsolvable === undefined ? true : !!p.repairUnsolvable, seed: typeof p.seed === 'number' ? p.seed : 1,
   };
+  // v4 (CONTRACTS_V4 §2.4): parsed rules and the level's mode travel with the build
+  if (Array.isArray(p.logic)) out.logic = p.logic;
+  if (typeof p.mode === 'string') out.mode = p.mode;
   if (withTier) out.tier = p.tier ?? 'faithful';
   if (!out.graph0 && out.ink) out.graph0 = core.perceiveHeuristic(out.ink, { library: out.library, parent: out.parent });
   return out;
@@ -110,6 +114,8 @@ function call(method: WorkerMethod, p: Record<string, Any>, ctx: DispatchContext
       return core.rulesCheck(Array.isArray(p.levels) ? p.levels : [], p.rules, { repair: p.repair !== false });
     case 'library_check':
       return core.libraryUpdateCheck(Array.isArray(p.levels) ? p.levels : [], p.type, Array.isArray(p.library) ? p.library : []);
+    case 'parse_logic': // v4 (CONTRACTS_V4 §2.4): written rules → RuleV4[] with the offline keyword parser
+      return core.parseLogic(Array.isArray(p.sentences) ? p.sentences.map(String) : [], Array.isArray(p.entity_ids) ? p.entity_ids.map(String) : [], p.aliases && typeof p.aliases === 'object' ? { aliases: p.aliases } : undefined);
   }
 }
 

@@ -16,7 +16,9 @@ export function gameplayView(level: LevelV2): Record<string, unknown> {
     for (const [k, v] of Object.entries(e)) if (!ENTITY_ART_FIELDS.includes(k)) out[k] = v;
     return out;
   });
-  return { world: level.world, rules: level.rules, tiles: c.tiles, entities, triggers: c.triggers ?? [] };
+  const view: Record<string, unknown> = { world: level.world, rules: level.rules, tiles: c.tiles, entities, triggers: c.triggers ?? [] };
+  if (c.logic && c.logic.length) view.logic = c.logic; // v4: absent or empty keeps the v2 hash (CONTRACTS_V4 §2)
+  return view;
 }
 
 export function levelHash(level: LevelV2): string {

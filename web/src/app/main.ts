@@ -4,16 +4,20 @@
  * Routes: home feed, draw (long-canvas editor), scan (pack tray), prompt (tell me a level), preview/:draft, play/:id,
  * game/:id, game/:id/rules, game/:id/library (or library?game=), tree/:id, dev.
  * v3 collaboration (lane 5): bible/:game, review/:game, quests/:game, credits/:game, profile/:id, me, activity, jams.
- * Chrome is paper and ink (§7.9); every sentence comes from shared/spec/messages.json.
+ * v4 workspace (docs/v4/CONTRACTS_V4.md §7): the sidebar shell, #/ workspace home, #/games, #/new, #/blocks
+ * (+ /new, /:id), #/styles, #/templates; the v2 home feed moved to #/explore; #/game/:id is the game workspace.
+ * Chrome is paper and ink (§7.9); every sentence comes from shared/spec/messages.json and the v4 lane files.
  */
+import '@fontsource/atkinson-hyperlegible/400.css';
+import '@fontsource/atkinson-hyperlegible/700.css';
+import '@fontsource/patrick-hand/400.css';
 import './style.css';
 import { card, h, icon } from './dom.ts';
 import { t } from './messages.ts';
 import { parseHash } from './router.ts';
-import { store } from './store.ts';
+import { mountShell } from './shell.ts';
 import { devScreen } from './screens/dev.ts';
 import { drawScreen } from './screens/draw.ts';
-import { gameScreen } from './screens/game.ts';
 import { homeScreen } from './screens/home.ts';
 import { libraryScreen } from './screens/library.ts';
 import { playScreen } from './screens/play.ts';
@@ -30,9 +34,17 @@ import { jamsScreen } from './screens/jams.ts';
 import { profileScreen } from './screens/profile.ts';
 import { questsScreen } from './screens/quests.ts';
 import { reviewScreen } from './screens/review.ts';
-import { collabChrome } from './collab/bell.ts';
 import { captureContribution } from './collab/contribute.ts';
 import { refreshPlayer } from './identity.ts';
+// v4 workspace
+import { gamesScreen } from './screens/games.ts';
+import { newGameScreen } from './screens/new_game.ts';
+import { workspaceScreen } from './screens/workspace.ts';
+import { blockStudioScreen } from './ws/block_studio.ts';
+import { blocksScreen } from './ws/blocks.ts';
+import { gameWorkspaceScreen } from './ws/game_workspace.ts';
+import { stylesScreen } from './ws/styles.ts';
+import { templatesScreen } from './ws/templates.ts';
 
 type Cleanup = (() => void) | void;
 
@@ -42,33 +54,8 @@ function soon(titleKey: string): (root: HTMLElement) => Cleanup {
   };
 }
 
-function header(): HTMLElement {
-  const mute = h('button', { type: 'button', class: 'tool', title: t('ui.mute') });
-  const sync = (): void => {
-    const m = store.flag('muted');
-    mute.replaceChildren(h('span', { class: 'emo' }, m ? '🔇' : '🔊'));
-    mute.title = t(m ? 'ui.unmute' : 'ui.mute');
-  };
-  mute.onclick = () => {
-    store.setFlag('muted', !store.flag('muted'));
-    sync();
-  };
-  sync();
-  return h('header', { class: 'app-head' },
-    h('a', { class: 'logo', href: '#/' }, h('span', { class: 'logo-mark' }, '✎'), ' draw-a-level'),
-    h('nav', null,
-      h('a', { href: '#/', data: { nav: '' } }, icon('home'), h('span', null, t('ui.home'))),
-      h('a', { href: '#/draw', data: { nav: 'draw' } }, icon('marker'), h('span', null, t('home.draw'))),
-      h('a', { href: '#/scan', data: { nav: 'scan' } }, icon('camera'), h('span', null, t('home.scan'))),
-      h('a', { href: '#/prompt', data: { nav: 'prompt' } }, icon('pencil'), h('span', null, t('home.prompt'))),
-      h('a', { href: '#/jams', data: { nav: 'jams' } }, h('span', { class: 'emo' }, '🎪'), h('span', null, t('collab.jams.nav')))),
-    collabChrome(),
-    mute);
-}
-
 const app = document.getElementById('app')!;
-const head = header();
-document.body.prepend(head);
+const shell = mountShell();
 
 let cleanup: Cleanup;
 
@@ -83,13 +70,33 @@ function route(): void {
   document.querySelectorAll('.modal-back').forEach((n) => n.remove());
   const { path, query } = parseHash();
   const [first = '', second] = path;
-  for (const a of head.querySelectorAll<HTMLAnchorElement>('nav a')) a.classList.toggle('on', a.dataset.nav === first);
+  shell.setActive(path);
   document.body.dataset.screen = first || 'home';
+  if (first === 'game' && second) shell.noteGame(second);
   if (first === 'draw' || first === 'scan' || first === 'prompt' || (first === 'game' && path[2] === 'library')) captureContribution(query);
   try {
     switch (first) {
       case '':
+        cleanup = workspaceScreen(app, shell);
+        break;
+      case 'explore':
         cleanup = homeScreen(app);
+        break;
+      case 'games':
+        cleanup = gamesScreen(app, shell);
+        break;
+      case 'new':
+        cleanup = newGameScreen(app, query, shell);
+        break;
+      case 'blocks':
+        if (second) cleanup = blockStudioScreen(app, second === 'new' ? null : second, query);
+        else cleanup = blocksScreen(app, query);
+        break;
+      case 'styles':
+        cleanup = stylesScreen(app);
+        break;
+      case 'templates':
+        cleanup = templatesScreen(app);
         break;
       case 'draw':
         cleanup = drawScreen(app, query);
@@ -107,7 +114,7 @@ function route(): void {
       case 'game':
         if (second && path[2] === 'rules') cleanup = rulesScreen(app, second);
         else if (second && path[2] === 'library') cleanup = libraryScreen(app, second);
-        else if (second) cleanup = gameScreen(app, second);
+        else if (second) cleanup = gameWorkspaceScreen(app, second, query);
         break;
       case 'tree':
         if (second) cleanup = treeScreen(app, second);

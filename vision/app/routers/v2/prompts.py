@@ -19,6 +19,7 @@ from app import db_v2
 from app.build import drafts, runner
 from app.build.orchestrator import BuildRequest
 from app.mind import client, moderate, sanitize
+from app.routers.v2.builds import record_draft
 from app.spec.api import BuildAccepted, PromptLevelBody
 
 router = APIRouter()
@@ -56,6 +57,7 @@ async def create_prompt_level(request: Request) -> Any:
     drafts.draft_dir(draft_id).mkdir(parents=True, exist_ok=True)
     drafts.save_state(draft_id, drafts.new_state(draft_id, "prompt", model=client.mode(), dial=body.dial, band=band,
                                                  game_id=body.game_id, prompt=prompt))
+    record_draft(request, draft_id, game_id=body.game_id, kind="prompt", title=sanitize.text(prompt, 40) or None)
     runner.start(BuildRequest(build_id=build_id, draft_id=draft_id, kind="prompt", prompt=prompt,
                               screens=int(body.screens), game_id=body.game_id, dial=body.dial, band=band))
     return JSONResponse(BuildAccepted(build_id=build_id, draft_id=draft_id,

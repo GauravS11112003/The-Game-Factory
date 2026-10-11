@@ -1,0 +1,25 @@
+{
+  "title": "Upside Down",
+  "theme": "sketchbook",
+  "screens": 2,
+  "band": "easy",
+  "kid_summary": "Press space and walk on the ceiling over the spikes.",
+  "safety_ok": true,
+  "sections": [
+    { "role": "teach", "beats": [
+      { "kind": "flat", "length": 12, "enemy": "none", "coins": 2, "spikes": "none" }
+    ] },
+    { "role": "test", "beats": [
+      { "kind": "gap", "width": 10, "floor": "spikes" },
+      { "kind": "flat", "length": 8, "enemy": "none", "coins": 0, "spikes": "none" }
+    ] },
+    { "role": "twist", "beats": [
+      { "kind": "gap", "width": 12, "floor": "spikes" },
+      { "kind": "flat", "length": 10, "enemy": "walker", "coins": 3, "spikes": "none" }
+    ] },
+    { "role": "finale", "beats": [
+      { "kind": "stairs", "n": 3, "rise": 2, "run": 4 },
+      { "kind": "goal", "style": "flag" }
+    ] }
+  ]
+}

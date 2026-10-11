@@ -15,7 +15,7 @@ from typing import Any
 
 from app.build import drafts, present
 from app.build.bridge import RPC_TIMEOUTS_S, TIERS_SLACK_S, CoreError, get_pool
-from app.build.orchestrator import TIERS_DEADLINE_MS, default_rules, graph_for_build, intent_edits
+from app.build.orchestrator import TIERS_DEADLINE_MS, default_rules, graph_for_build, intent_edits, logic_input
 
 TIERS = drafts.TIERS
 
@@ -48,7 +48,7 @@ def base_input(draft_id: str, state: dict[str, Any], edits: list[dict[str, Any]]
     return {"ink": ink, "graph0": graph_for_build(graph0, state), "edits": edits, "rules": state.get("rules") or default_rules(),
             "library": drafts.read_json(draft_id, "library.json") or [],
             "parent": drafts.read_json(draft_id, "parent.json"), "repairUnsolvable": True,
-            "seed": int(state.get("seed") or 1)}
+            "seed": int(state.get("seed") or 1), **logic_input(state)}
 
 
 def understood(state: dict[str, Any]) -> bool:

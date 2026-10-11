@@ -12,15 +12,17 @@ from pydantic import Field
 from typing_extensions import TypeAliasType
 
 from app.spec.behavior import Behavior
+from app.spec.blocks import BlockCard, BlockKind
 from app.spec.common import (
     Archetype,
-    ChallengeBand, Dial, DifficultyWish, LlmMode, MessageArgs, MessageRef, Role, SetpieceKind, Spec, Tier,
+    ChallengeBand, Dial, DifficultyWish, GameMode, LlmMode, MessageArgs, MessageRef, Role, SetpieceKind, Spec, Tier,
 )
 from app.spec.edits import Candidate, EditOp, EditRecord
 from app.spec.events import BuildEvent
 from app.spec.ink import InkDoc, InkStroke
 from app.spec.level import LevelV2
-from app.spec.library import LibraryArt, LibrarySymbol, LibraryType
+from app.spec.library import BlockRef, LibraryArt, LibrarySymbol, LibraryType
+from app.spec.logic import RuleV4
 from app.spec.report import PlaytestReport
 from app.spec.rules import GameRules
 from app.spec.scene import SceneGraph
@@ -263,6 +265,10 @@ class BuildInputJson(Spec):
     tier: Tier
     repairUnsolvable: bool
     seed: int
+    # v4 (CONTRACTS_V4 §2.4): this level's rules, already parsed (by Claude) from ink.typed_rules; when null the core
+    # parses the typed rules with its keyword parser. `mode` overrides rules.mode for this level when set.
+    logic: list[RuleV4] | None = None
+    mode: GameMode | None = None
 
 
 class BuildResultJson(Spec):
@@ -297,7 +303,7 @@ WorkerMethod = TypeAliasType(
     Literal[
         "ping", "perceive_heuristic", "merge_perception", "parse_rules", "build", "build_tiers", "apply_plan",
         "transfer_plan", "digest", "analyze", "layout_plan", "keyword_plan", "remix_diff", "migrate_v1", "verify_run",
-        "level_hash", "art_svg", "generate_level", "rules_check", "library_check",
+        "level_hash", "art_svg", "generate_level", "rules_check", "library_check", "parse_logic",
     ],
 )
 
@@ -524,6 +530,124 @@ class LibraryDraft(Spec):
     warnings: list[MessageRef] = Field(default_factory=list)
 
 
+# ---- v4 (docs/v4/CONTRACTS_V4.md §6): blocks, written rules, dashboard, connectors ----------------
+
+
+class BlockCreate(Spec):
+    """POST /blocks and POST /blocks/{id}/versions. Server fills id, version, author, created_at."""
+
+    name: str = Field(min_length=1, max_length=24)
+    kind: BlockKind
+    behavior: Behavior | None = None
+    spiky: bool = False
+    collision: Literal["solid", "one_way", "none"] = "none"
+    art: LibraryArt | None = None
+    symbol: LibrarySymbol | None = None
+    logic: list[RuleV4] = Field(default_factory=list)
+    description: str | None = Field(default=None, max_length=300)
+    tags: list[str] = Field(default_factory=list, max_length=8)
+    parent: BlockRef | None = None
+
+
+class BlockList(Spec):
+    blocks: list[BlockCard]
+    total: int
+
+
+class BlockDescribeBody(Spec):
+    """POST /blocks/describe: the maker's words (and drawing) become a block draft."""
+
+    name: str = Field(max_length=24)
+    text: str = Field(max_length=300)
+    ink: list[InkStroke] = Field(default_factory=list)
+
+
+class BlockDescribeResult(Spec):
+    kind: BlockKind
+    behavior: Behavior | None
+    spiky: bool
+    collision: Literal["solid", "one_way", "none"]
+    logic: list[RuleV4]
+    summary: str  # one short sentence saying what it does
+    unknown: list[str]  # parts of the text that could not be made, in the maker's words
+    source: Literal["model", "keywords"]
+
+
+class UseBlockBody(Spec):
+    """POST /games/{id}/blocks: add a block to a game (copies it into the game's library or its rules)."""
+
+    block_id: str = Field(pattern=r"^blk_[a-z0-9]{8}$")
+    version: int | None = None  # null = newest
+
+
+class UseBlockResult(Spec):
+    library_type: LibraryType | None  # objects
+    rules: GameRules | None  # rule packs: the game's rules after appending the pack's logic
+
+
+class LogicParseBody(Spec):
+    """POST /logic/parse: written rules ("space flips gravity") become RuleV4s."""
+
+    sentences: list[str] = Field(min_length=1, max_length=12)
+    game_id: str | None = None
+    entity_ids: list[str] = Field(default_factory=list)  # ids the rules may name (doors, portals...)
+
+
+class LogicParseResult(Spec):
+    rules: list[RuleV4]
+    mode: GameMode | None  # when a sentence names the kind of game ("it's like flappy bird")
+    unknown: list[str]  # sentences that could not be made into rules
+    source: Literal["model", "keywords"]
+
+
+class DashboardGame(Spec):
+    game_id: str
+    title: str
+    role: Literal["owner", "maintainer", "contributor"] | None
+    mode: GameMode
+    level_count: int
+    beatable: int  # levels the bot cleared
+    to_fix: int  # hard/block flags across the newest level versions (warn flags are notes, not fixes)
+    pending_reviews: int  # submissions waiting (keepers only)
+    open_quests: int
+    cover_level_id: str | None
+    updated_at: str | None
+
+
+class DraftCard(Spec):
+    draft_id: str
+    title: str | None
+    game_id: str | None
+    kind: str  # canvas | paper | prompt
+    updated_at: str
+
+
+class Dashboard(Spec):
+    """GET /dashboard (needs X-DP-Player): everything the workspace home shows."""
+
+    games: list[DashboardGame]
+    drafts: list[DraftCard]
+    blocks: list[BlockCard]  # blocks this player made
+    unread: int
+
+
+class MinecraftBody(Spec):
+    """POST /games/{id}/export/minecraft/live: build the game's first level in a running server over RCON."""
+
+    host: str = "127.0.0.1"
+    port: int = Field(default=25575, ge=1, le=65535)
+    password: str = Field(min_length=1, max_length=128)
+    level_id: str | None = None  # null = the game's first level
+    origin: tuple[int, int, int] | None = None  # null = near the nearest player
+
+
+class MinecraftResult(Spec):
+    ok: bool
+    commands: int
+    message_key: str | None = None
+    untranslated: list[str] = Field(default_factory=list)  # message keys for parts Minecraft cannot do
+
+
 EXPORTS: list[Any] = [
     ModelFace, ModelDir, PerceptionNode, BindMove, BindEnemy, BindSpring, BindCrumble, BindSaw, BindKeyDoor,
     BindCheckpoint, BindStart, BindTimer, BindLibrary, Binding, PinnedParam, PerceptionBound, PerceptionSetpiece,
@@ -534,5 +658,7 @@ EXPORTS: list[Any] = [
     DeathEvent, Telemetry, CriticBody, PublishBody, ApiMessage, LevelStats, LevelResponse, AttemptsBody, GameCreate,
     AffectedLevel, RulesCheck, PackCreate, PackCreated, CreatureSpecJson, InterpretBody, InterpretResult,
     PromptLevelBody, RulesSheetResult, LibraryDraft,
+    BlockCreate, BlockList, BlockDescribeBody, BlockDescribeResult, UseBlockBody, UseBlockResult, LogicParseBody,
+    LogicParseResult, DashboardGame, DraftCard, Dashboard, MinecraftBody, MinecraftResult,
 ]
 ROOT = None

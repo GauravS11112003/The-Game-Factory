@@ -12,6 +12,8 @@ export { cleanStroke } from './clean.ts';
 export { strokePolygons, pathBoxPx, PAPER_THEMES } from './outline.ts';
 export { StyleBook, baseStyles, inkHex, INK } from './styles.ts';
 export { decodeGrid } from './terrain.ts';
+export { pickupShape, PORTAL_COLORS, portalColors, ZONE_LOOK } from './v4art.ts';
+export type { PickupShape } from './v4art.ts';
 export { layerWidth } from './parallax.ts';
 export { voronoiCells, hash32, rng } from './geom.ts';
 export { RigAnimator, shearAt } from './anim.ts';

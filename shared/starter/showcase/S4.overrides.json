@@ -1,0 +1,26 @@
+{
+  "id": "S4",
+  "seed": 4404,
+  "designer_note": "Top-down mode, a counter rule, portals, ice and a friend who talks.",
+  "mode": "topdown",
+  "logic": [
+    { "id": "star", "when": { "kind": "collect", "item": "star" }, "then": [{ "kind": "add_counter", "name": "stars", "n": 1 }, { "kind": "sound", "name": "ding" }], "once": false },
+    { "id": "five", "when": { "kind": "counter", "name": "stars", "at_least": 5 }, "then": [{ "kind": "say", "text": "You found all my stars!", "seconds": 2 }, { "kind": "win" }], "once": true }
+  ],
+  "patches": [ { "beat": "*", "stretch": false, "auto_checkpoints": false } ],
+  "draw": [
+    { "kind": "npc", "x": 5, "y": 22, "name": "Pip", "lines": ["Welcome to my garden!", "Find all five stars for me.", "The swirls are portals!"] },
+    { "kind": "wall", "x": 16, "y": 17, "h": 11 },
+    { "kind": "wall", "x": 32, "y": 22, "h": 12 },
+    { "kind": "wall", "x": 48, "y": 16, "h": 12 },
+    { "kind": "wall", "x": 64, "y": 22, "h": 13 },
+    { "kind": "pickup", "x": 9, "y": 8, "item": "star" },
+    { "kind": "pickup", "x": 24, "y": 19, "item": "star" },
+    { "kind": "pickup", "x": 40, "y": 6, "item": "star" },
+    { "kind": "pickup", "x": 56, "y": 19, "item": "star" },
+    { "kind": "pickup", "x": 74, "y": 6, "item": "star" },
+    { "kind": "portal", "x": 24, "y": 6, "pair": "a" },
+    { "kind": "portal", "x": 70, "y": 17, "pair": "a" },
+    { "kind": "zone", "x": 76, "y": 12, "w": 8, "h": 7, "effect": "ice" }
+  ]
+}

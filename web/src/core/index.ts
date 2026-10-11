@@ -4,12 +4,12 @@
  * Every lane implements its functions in its own directory; this file only declares and re-exports the API.
  */
 import type {
-  Candidate, EditRecord, GameRules, InkDoc, LevelPlan, LevelV2, LibraryType, MessageRef, PlaytestReport, SceneGraph, Tier,
+  Candidate, EditRecord, GameMode, GameRules, InkDoc, LevelPlan, LevelV2, LibraryType, MessageRef, PlaytestReport, RuleV4, SceneGraph, Tier,
 } from './types.gen.ts';
 
 export type * from './types.gen.ts'; // InkDoc, SceneGraph, EditRecord, LevelV2, PlaytestReport, Candidate, GameRules, LibraryType, Replay, …
 export type { ArtDoc, ArtLayer, ArtPath, ArtStyle } from './art/types.ts';
-export type { CameraState, EntityView, PhysicsProfile, PlayerView, Sim, SimEvent, SimSnapshot, SimView } from './sim/types.ts';
+export type { CameraState, EntityView, PhysicsProfile, PlayerView, Sim, SimEffects, SimEvent, SimSnapshot, SimView } from './sim/types.ts';
 export type { AnalyzeOptions } from './bot/index.ts';
 /** The plan type names used in the API signatures (§11.3b). */
 export type LevelPlanJson = LevelPlan;
@@ -29,6 +29,10 @@ export interface BuildInput {
   tier: Tier;
   repairUnsolvable: boolean;
   seed: number;
+  /** v4 (CONTRACTS_V4 §2.4): this level's rules, already parsed from ink.typed_rules; null = the core parses them. */
+  logic?: RuleV4[] | null;
+  /** v4: overrides rules.mode for this level when set. */
+  mode?: GameMode | null;
 }
 export interface BuildResult {
   graph: SceneGraph;
@@ -69,6 +73,9 @@ export { decodeReplay, encodeReplay, verifyRun } from './replay/index.ts';
 /** Lane A helpers beyond §11.3(b) (A-2): ghosts, recording, detailed verdicts, the rules-aware envelope, local re-solve. */
 export { GhostTrack, ReplayRecorder, ghostTrack, replayOfTrace, verifyRunDetail } from './replay/index.ts';
 export { jumpArcs, localReach, reachFor } from './bot/index.ts';
+/** Lane A v4 (CONTRACTS_V4 §2.4): written rules → RuleV4 (offline keyword parser) and rule cards. */
+export { describeRule, logicTargets, parseLogic } from './logic/index.ts';
+export { IN_ACTION, IN_SPACE } from './sim/types.ts';
 
 // ---- Lane E ----
 export { artToSvg, buildArt, extractRig } from './art/index.ts';

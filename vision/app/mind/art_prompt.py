@@ -24,11 +24,12 @@ from app.mind.client import CallSpec, MindResult
 
 # kinds: effort, max_tokens (caps thinking + output), timeout
 client.CALLS.setdefault("art_prompt", CallSpec("low", 2000, 20))
-client.CALLS.setdefault("art_svg", CallSpec("low", 16000, 90))
-client.CALLS.setdefault("art_backdrop", CallSpec("low", 16000, 90))
+# medium effort: noticeably richer art than low; high risks running into the 16k cap (thinking + SVG) and truncating
+client.CALLS.setdefault("art_svg", CallSpec("medium", 16000, 150))
+client.CALLS.setdefault("art_backdrop", CallSpec("medium", 16000, 150))
 budget.ESTIMATE_USD.setdefault("art_prompt", 0.02)
-budget.ESTIMATE_USD.setdefault("art_svg", 0.12)
-budget.ESTIMATE_USD.setdefault("art_backdrop", 0.15)
+budget.ESTIMATE_USD.setdefault("art_svg", 0.20)
+budget.ESTIMATE_USD.setdefault("art_backdrop", 0.30)
 
 RoleGuess = Literal["player", "enemy", "platform", "hazard", "coin", "key", "door", "goal", "spring", "decoration",
                     "unknown"]

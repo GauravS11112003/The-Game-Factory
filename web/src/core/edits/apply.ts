@@ -17,7 +17,7 @@ import { gMax } from './envelope.ts';
 import { arcFeet, parseArc, parseGap, parseSlot } from './slots.ts';
 import type { SlotSpec } from './slots.ts';
 import {
-  addedId, carriedGroup, floorBelow, isDynamic, isFloor, isKid, isSurface, isWallLike, obj, objBBox, objLength,
+  addedId, carriedGroup, floorBelow, isDynamic, isFloor, isKid, isSurface, isV4, isWallLike, obj, objBBox, objLength,
   screenOfX, topAt, translateShape,
 } from './work.ts';
 import type { Ctx, Work } from './work.ts';
@@ -432,6 +432,13 @@ export function applyOp(w: Work, op: EditOp, ctx: Ctx, rec: RecMeta): Result {
       const pin = ((op as EditOp & { x_pinned?: string[] }).x_pinned ?? []).filter((x) => typeof x === 'string');
       if (o.pinned.includes('behavior') && rec.by !== 'kid') return fail('reject.pinned');
       o.behavior = b.kind === 'static' ? { kind: 'static' } : b;
+      if (isV4(b)) {
+        // v4 primitives (CONTRACTS_V4 §5) are their own entities: no terrain, no contact damage, a body box
+        o.role = 'decoration';
+        o.collision = 'none';
+        if (o.shape.k !== 'body') o.shape = { k: 'body', bbox: r4(objBBox(o)) };
+        if (op.hidden === true) (o as SceneObject & { x_hidden?: boolean }).x_hidden = true;
+      }
       if (b.kind === 'enemy' && o.role !== 'enemy' && roleAllowed(inkStrokes(o, ctx)[0]?.color ?? 'red', 'enemy')) {
         o.role = 'enemy';
         o.collision = 'hazard';
@@ -480,13 +487,17 @@ export function applyOp(w: Work, op: EditOp, ctx: Ctx, rec: RecMeta): Result {
       const before = r4(objBBox(o));
       o.lib = { type_id: t.id, version: t.version };
       const hb = t.behavior;
-      const role: Role = t.kind === 'creature' ? 'enemy' : t.kind === 'platform' ? 'platform'
+      const v4 = isV4(hb);
+      const role: Role = v4 ? 'decoration' : t.kind === 'creature' ? 'enemy' : t.kind === 'platform' ? 'platform'
         : t.kind === 'hazard' ? (hb.kind === 'saw' || hb.kind === 'firebar' ? 'saw' : 'spikes') : t.kind === 'pickup' ? 'coin' : 'decoration';
       o.role = role;
       o.role_by = 'library';
       o.conf = 1;
       o.collision = role === 'enemy' || role === 'saw' || role === 'spikes' ? 'hazard' : role === 'coin' || role === 'decoration' ? 'none' : t.collision;
-      o.behavior = role === 'decoration' || role === 'coin' ? null : JSON.parse(JSON.stringify(hb));
+      // v4 primitives (portal, zone, pickup, npc) keep their behaviour: compile turns it into the entity (CONTRACTS_V4 §5)
+      o.behavior = v4 ? JSON.parse(JSON.stringify(hb)) : role === 'decoration' || role === 'coin' ? null : JSON.parse(JSON.stringify(hb));
+      const hide = op.hidden === true || t.hidden === true;
+      if (hide) (o as SceneObject & { x_hidden?: boolean }).x_hidden = true;
       if (o.behavior && o.behavior.kind === 'enemy' && t.spiky) o.behavior.spiky = true;
       // instance art: the type's drawing at its own size (§8.1), unless the kid toggled "use my new drawing"
       const own = !!(op as EditOp & { x_own_art?: boolean }).x_own_art;

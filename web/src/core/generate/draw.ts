@@ -241,6 +241,37 @@ function drawEnemy(c: Ctx, p: Extract<Prim, { k: 'enemy' }>): void {
   dot(c, p, cx + p.w * 0.17, ey, 0.18, null);
 }
 
+/** Unit shapes for v4 art (precomputed, so the generator needs no trig): a 5-point star and an open spiral. */
+const STAR10: Pt[] = [[0, -1], [0.265, -0.364], [0.951, -0.309], [0.428, 0.139], [0.588, 0.809], [0, 0.45], [-0.588, 0.809],
+  [-0.428, 0.139], [-0.951, -0.309], [-0.265, -0.364]];
+const SPIRAL: Pt[] = [[0.15, 0], [0.151, 0.108], [0.072, 0.209], [-0.073, 0.246], [-0.23, 0.179], [-0.327, 0.014], [-0.304, -0.198],
+  [-0.145, -0.371], [0.106, -0.42], [0.358, -0.303], [0.502, -0.042], [0.464, 0.276], [0.231, 0.526], [-0.125, 0.598], [-0.475, 0.438],
+  [-0.676, 0.085], [-0.631, -0.341], [-0.331, -0.675], [0.129, -0.777], [0.581, -0.582], [0.846, -0.142], [0.803, 0.392], [0.443, 0.817],
+  [-0.118, 0.957], [-0.676, 0.737]];
+
+/** v4 primitives (CONTRACTS_V4 §5): one stroke carrying the behaviour (compile makes the entity from it), drawn in a
+ * shape that says what it is, since the kid's ink is the art: a star pickup, a spiral portal, a box zone, a figure. */
+function drawV4(c: Ctx, p: Extract<Prim, { k: 'v4' }>): void {
+  const cx = (p.x0 + p.x1) / 2;
+  const cy = (p.y0 + p.y1) / 2;
+  const rx = (p.x1 - p.x0) / 2;
+  const ry = (p.y1 - p.y0) / 2;
+  const fit = (shape: readonly Pt[]): Pt[] => shape.map(([u, v]) => [cx + u * rx, cy + v * ry] as Pt);
+  switch (p.rule.kind) {
+    case 'zone':
+      line(c, p, boxOutline(p.x0, p.y0, p.x1, p.y1), 0.3, 'decoration', { color: 'blue', closed: true, rule: p.rule });
+      break;
+    case 'npc':
+      line(c, p, fit(RING12), 0.3, 'decoration', { color: 'black', closed: true, rule: p.rule });
+      break;
+    case 'portal':
+      line(c, p, fit(SPIRAL), 0.14, 'decoration', { color: 'blue', rule: p.rule });
+      break;
+    default: // pickup
+      line(c, p, fit(STAR10), 0.26, 'decoration', { color: 'blue', closed: true, rule: p.rule });
+  }
+}
+
 function drawText(c: Ctx, p: Extract<Prim, { k: 'sign' }>): void {
   const size = 0.9;
   let x = p.x;
@@ -350,6 +381,9 @@ export function primsToStrokes(prims: readonly Prim[], seed: number): InkStroke[
       }
       case 'sign':
         drawText(c, p);
+        break;
+      case 'v4':
+        drawV4(c, p);
         break;
     }
   }

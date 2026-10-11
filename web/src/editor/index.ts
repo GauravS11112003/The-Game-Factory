@@ -11,7 +11,7 @@
  * ▶ builds locally (Faithful, repairUnsolvable false) and plays with the real camera; long-press ▶ or drag the player
  * flag to play from here; ✎ returns to the drawing.
  */
-import type { CellXY, GameRules, InkColor, InkDoc, InkStroke, LevelV2, LibraryType, Rig, Role, StampKind } from '../core/types.gen.ts';
+import type { CellXY, GameMode, GameRules, InkColor, InkDoc, InkStroke, LevelV2, LibraryType, Rig, Role, StampKind } from '../core/types.gen.ts';
 import { CANVAS, PROMPT_LEVEL, WORLD } from '../core/params.ts';
 import type { GameHandle } from '../engine/types.ts';
 import { coreClient, CoreError } from '../app/core_client.ts';
@@ -32,6 +32,7 @@ import { INK, paintFit } from './paint.ts';
 import { flagHit, render, type RenderState } from './render.ts';
 import { STAMP_KINDS, makeLibraryStamp, makeStamp, stampPreview } from './stamps.ts';
 import { openStudio } from './studio.ts';
+import { typedRuleCards } from '../app/ws/logic.ts';
 import { View } from './view.ts';
 
 import { isTap } from './tools.ts';
@@ -50,6 +51,8 @@ export interface EditorOptions {
   submitLabel?: string;
   /** Remix: the published parent (perception matches remixed objects to it; the remix diff outlines what changed). */
   parentLevel?: LevelV2 | null;
+  /** v4: a typed rule names a game mode ("it's like flappy bird"); the Rules panel offers to use it. */
+  onSuggestMode?(mode: GameMode): void;
 }
 
 export interface EditorHandle {
@@ -523,7 +526,9 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
         h('button', { type: 'button', class: 'tool', title: t('ui.close'), onclick: () => closeSide() }, icon('close'))),
       h('p', { class: 'muted small' }, t(sel.length ? 'editor.rule_for_selected' : 'editor.rule_help')),
       h('div', { class: 'row' }, input, h('button', { type: 'button', class: 'pill small', onclick: add }, t('ui.add'))),
-      list);
+      list,
+      // v4: what the rules engine makes of each sentence, as rule cards (docs/v4/CONTRACTS_V4.md §2.4)
+      typedRuleCards(doc.data.rules.map((r) => r.text), { onMode: o.onSuggestMode }));
     if (focus) input.focus();
   }
 

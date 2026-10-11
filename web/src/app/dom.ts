@@ -85,6 +85,8 @@ const ICONS: Record<string, string> = {
   coin: 'M12 4a8 8 0 100 16 8 8 0 000-16zM12 8v8',
   next: 'M5 5l8 7-8 7M14 5v14',
   remix: 'M4 7h11l-3-3M20 17H9l3 3M15 7a5 5 0 015 5M9 17a5 5 0 01-5-5',
+  search: 'M11 4a7 7 0 100 14 7 7 0 000-14zM20 20l-4-4', // v4 workspace (lane D)
+  grid: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
 };
 
 export function icon(name: keyof typeof ICONS | string, cls = 'ico'): SVGSVGElement {

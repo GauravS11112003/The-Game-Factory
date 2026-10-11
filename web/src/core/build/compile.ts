@@ -10,10 +10,12 @@
  */
 import { HAZARDS, PERCEPTION, RASTER, WORLD } from '../params.ts';
 import type {
-  Behavior, CellXY, Dir4, EEnemy, EGoal, EnemyParams, Entity, Face, SceneObject, SurfaceSeg, Tiles, Trigger,
+  Behavior, BNpc, BPickup, BPortal, BZone, CellXY, Dir4, EEnemy, EGoal, EnemyParams, Entity, EPortal, Face, RuleV4, SceneObject,
+  SurfaceSeg, Tiles, Trigger,
 } from '../types.gen.ts';
 import type { Work } from '../edits/work.ts';
-import { floorBelow, isDynamic, isFloor, objBBox, topAt } from '../edits/work.ts';
+import { floorBelow, isDynamic, isFloor, isV4, objBBox, topAt } from '../edits/work.ts';
+import { pickupRule } from '../logic/index.ts';
 import { clamp, q16, roundHalfUp } from '../util/geom.ts';
 import type { Rect } from '../util/geom.ts';
 import { fitCreatureBox, segsBBox, surfaceYAt } from './fit.ts';
@@ -93,12 +95,14 @@ export interface Compiled {
   entities: Entity[];
   triggers: Trigger[];
   grid: Grid;
+  /** v4: the level's rules (typed rules from the build, then pickup effects); empty on v2 levels. */
+  logic: RuleV4[];
 }
 
 /** Rasterize the static terrain (no entities). */
 export function rasterize(w: Work): Grid {
   const g = new Grid(w.world.w, w.world.h);
-  const statics = w.objs.filter((o) => !o.rel.part_of && !isDynamic(o) && TERRAIN.has(o.role) && (o.collision === 'solid' || o.collision === 'one_way'));
+  const statics = w.objs.filter((o) => !o.rel.part_of && !isDynamic(o) && !(o.behavior && isV4(o.behavior)) && TERRAIN.has(o.role) && (o.collision === 'solid' || o.collision === 'one_way'));
   const surfaces = statics.filter((o) => o.shape.k === 'surface');
   const floors = surfaces.filter((o) => o.shape.k === 'surface' && o.shape.fill !== 'to_top');
   // surface tops per column, for the ground fill stop rule
@@ -301,6 +305,53 @@ function platformEntity(o: SceneObject): Entity | null {
   return null;
 }
 
+/**
+ * v4 primitives (docs/v4/CONTRACTS_V4.md §5): an object carrying a portal, zone, pickup or npc behaviour compiles to
+ * that entity whatever its role. Portals get their partner's id after the loop (pairPortals).
+ */
+function v4Entity(o: SceneObject, b: BPortal | BZone | BPickup | BNpc, w: Work, rules: RuleV4[]): Entity {
+  const bb = objBBox(o);
+  const [cx, cy] = centre(o);
+  const designer = o.origin === 'designer' ? { origin: 'designer' as const } : {};
+  switch (b.kind) {
+    case 'portal':
+      return { id: o.id, type: 'portal', x: cx, y: cy, pair: null, ...designer };
+    case 'zone':
+      return {
+        id: o.id, type: 'zone', x: q16(bb[0]), y: q16(bb[1]), w: q16(Math.max(0.5, bb[2] - bb[0])), h: q16(Math.max(0.5, bb[3] - bb[1])),
+        effect: b.effect, dir: b.dir ?? 'right', strength: b.strength ?? 1, ...designer,
+      };
+    case 'pickup': {
+      const r = pickupRule(o.id, b);
+      if (r) rules.push(r);
+      return { id: o.id, type: 'pickup', x: cx, y: cy, item: b.item ?? 'star', ...(b.respawn_s ? { respawn_s: b.respawn_s } : {}), ...designer };
+    }
+    case 'npc':
+      return {
+        id: o.id, type: 'npc', x: cx, y: feetOf(o, w), w: q16(clamp(bb[2] - bb[0], 0.5, 4)), h: q16(clamp(bb[3] - bb[1], 0.5, 4)),
+        lines: b.lines, ...(b.name ? { name: b.name } : {}), ...designer,
+      };
+  }
+}
+
+/** Portals with the same BPortal.pair label link up: two → each other; more → a ring in id order; one → lone. */
+function pairPortals(ents: Entity[], w: Work): void {
+  const groups = new Map<string, EPortal[]>();
+  for (const e of ents) {
+    if (e.type !== 'portal') continue;
+    const o = w.objs.find((q) => q.id === e.id);
+    const label = o?.behavior?.kind === 'portal' ? o.behavior.pair ?? 'a' : 'a';
+    const g = groups.get(label) ?? [];
+    g.push(e);
+    groups.set(label, g);
+  }
+  for (const g of groups.values()) {
+    if (g.length < 2) continue;
+    g.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    g.forEach((p, k) => (p.pair = g[(k + 1) % g.length].id));
+  }
+}
+
 /** The §3.3 start rule, used when N7 has not placed one (never fails: falls back to the leftmost column). */
 export function defaultStart(grid: Grid): CellXY {
   const s = PERCEPTION.start;
@@ -321,9 +372,14 @@ export function compileWork(w: Work): Compiled {
   const start = w.st.start ?? defaultStart(grid);
   ents.push({ id: 'start', type: 'player_start', x: q16(start[0]), y: q16(start[1]) });
   let goal: EGoal | null = null;
+  const pickupRules: RuleV4[] = [];
   for (const o of w.objs) {
     if (o.rel.part_of) continue;
     const designer = o.origin === 'designer' ? { origin: 'designer' as const } : {};
+    if (o.behavior && isV4(o.behavior)) {
+      ents.push(v4Entity(o, o.behavior, w, pickupRules));
+      continue;
+    }
     switch (o.role) {
       case 'spikes': {
         const e = spikesEntity(o);
@@ -414,9 +470,14 @@ export function compileWork(w: Work): Compiled {
     }
   }
   if (goal) ents.push(goal);
+  pairPortals(ents, w);
+  // v4: an object whose library type or binding says `hidden` starts hidden until a rule shows it (§5)
+  const hidden = new Set(w.objs.filter((o) => (o as SceneObject & { x_hidden?: boolean }).x_hidden === true).map((o) => o.id));
+  if (hidden.size) for (const e of ents) if (hidden.has(e.id) && e.type !== 'player_start') e.hidden = true;
   const triggers: Trigger[] = [];
   if (w.st.timer_s) triggers.push({ when: `timer:${Math.round(w.st.timer_s)}`, then: 'lose' });
-  return { tiles: { legend: '.#=/\\abcd~X', rows: grid.rows() }, entities: ents, triggers, grid };
+  const logic = [...(w.st.logic ?? []), ...pickupRules];
+  return { tiles: { legend: '.#=/\\abcd~X', rows: grid.rows() }, entities: ents, triggers, grid, logic };
 }
 
 /** The standable feet line under (x, y) on the compiled grid, searching down. */

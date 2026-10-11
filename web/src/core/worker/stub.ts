@@ -152,5 +152,10 @@ export function stubResult(method: WorkerMethod, params: Record<string, unknown>
       return { affected: [] };
     case 'library_check':
       return { updated: [], broken: [] };
+    case 'parse_logic':
+      return {
+        rules: [{ id: 'r1', when: { kind: 'key', key: 'space' }, then: [{ kind: 'flip_gravity' }] }], mode: null,
+        unknown: (Array.isArray(params.sentences) ? (params.sentences as unknown[]).map(String) : []).slice(1), source: 'keywords',
+      };
   }
 }

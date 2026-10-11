@@ -13,6 +13,7 @@ import type { V } from './geom.ts';
 import { buildParallax } from './parallax.ts';
 import { buildPlayerArt } from './player.ts';
 import { buildSprite, emitStroke } from './sprites.ts';
+import { portalColors } from './v4art.ts';
 import type { SpriteSource } from './sprites.ts';
 import { baseStyles, emitMarker, inkForOrigin, StyleBook } from './styles.ts';
 import type { InkFor } from './styles.ts';
@@ -176,9 +177,12 @@ export function buildArt(level: LevelV2, ink: InkDoc | LevelInk | null | undefin
 
   // ---- entity sprites (the kid's strokes, every part included) ----
   const sprites: ArtSprite[] = [];
+  const portalHue = portalColors(entities);
   for (const e of entities) {
     const obj = objById.get(e.sprite ?? '') ?? objById.get(e.id) ?? null;
     const src: SpriteSource = { obj, strokes: [], partRoles: new Map() };
+    const hue = portalHue.get(e.id);
+    if (hue) src.color = hue;
     const libStrokes = obj ? libraryArt(obj, level, ownArt) : null;
     if (obj && libStrokes) {
       // the type's drawing stands in for the glyph; the glyph's strokes (and its parts) are consumed, not redrawn
@@ -334,7 +338,9 @@ export function buildArt(level: LevelV2, ink: InkDoc | LevelInk | null | undefin
   // ---- player and static entity layers (thumbnails, SVG); the engine animates the sprites instead ----
   const player = buildPlayerArt(characterOf(ink, level), b, seed);
   const entPaths: ArtPath[] = [];
-  for (const s of sprites) entPaths.push(...moveSpritePaths(s));
+  // v4: an entity that starts hidden (a rule shows it later) keeps its sprite but stays out of the still picture
+  const hidden = new Set(entities.filter((e) => (e as { hidden?: boolean | null }).hidden).map((e) => e.id));
+  for (const s of sprites) if (!hidden.has(s.id)) entPaths.push(...moveSpritePaths(s));
   const start = entities.find((e) => e.type === 'player_start') as Extract<Entity, { type: 'player_start' }> | undefined;
   const sx = start?.x ?? 2;
   const sy = start?.y ?? 22;

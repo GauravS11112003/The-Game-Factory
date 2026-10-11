@@ -116,6 +116,8 @@ def prepare_type(raw: dict[str, Any], game_id: str, *, prev: dict[str, Any] | No
         "art": art, "symbol": base.get("symbol"), "author": sanitize.text(base.get("author"), 16) or "someone",
         "created_at": db_v2.now_iso(),
     }
+    if isinstance(base.get("block"), dict):  # v4: copied from a public block (kept by later local versions)
+        doc["block"] = base["block"]
     return LibraryType.model_validate(doc).model_dump(mode="json", by_alias=True)
 
 

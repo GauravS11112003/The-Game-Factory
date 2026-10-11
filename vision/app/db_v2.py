@@ -62,6 +62,19 @@ NEW_TABLES: dict[str, str] = {
         safety TEXT NOT NULL DEFAULT 'unchecked', listed BOOLEAN NOT NULL DEFAULT 1, par_ms INTEGER,
         fastest_ms INTEGER, changed_json TEXT, draft_id TEXT, created_at TEXT NOT NULL,
         PRIMARY KEY (id, version))""",
+    # v4 (docs/v4/CONTRACTS_V4.md §6): public blocks (immutable per version), who uses them, and the drafts a
+    # profile started (the workspace dashboard lists the unpublished ones)
+    "blocks": """CREATE TABLE IF NOT EXISTS blocks (
+        id TEXT NOT NULL, version INTEGER NOT NULL, json TEXT NOT NULL, name TEXT NOT NULL, kind TEXT NOT NULL,
+        author TEXT NOT NULL, author_id TEXT, listed BOOLEAN NOT NULL DEFAULT 1,
+        safety TEXT NOT NULL DEFAULT 'unchecked', search TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL,
+        PRIMARY KEY (id, version))""",
+    "block_uses": """CREATE TABLE IF NOT EXISTS block_uses (
+        block_id TEXT NOT NULL, version INTEGER NOT NULL, game_id TEXT NOT NULL, type_id TEXT, kind TEXT NOT NULL,
+        player_id TEXT, created_at TEXT NOT NULL, PRIMARY KEY (block_id, version, game_id))""",
+    "drafts": """CREATE TABLE IF NOT EXISTS drafts (
+        draft_id TEXT PRIMARY KEY, player_id TEXT, game_id TEXT, kind TEXT NOT NULL, title TEXT,
+        created_at TEXT NOT NULL, updated_at TEXT NOT NULL)""",
 }
 
 INDEXES = [
@@ -72,6 +85,10 @@ INDEXES = [
     "CREATE INDEX IF NOT EXISTS ix_object_types_game ON object_types (game_id)",
     "CREATE INDEX IF NOT EXISTS ix_levels_v2_game ON levels_v2 (game_id)",
     "CREATE INDEX IF NOT EXISTS ix_levels_v2_parent ON levels_v2 (parent_id)",
+    "CREATE INDEX IF NOT EXISTS ix_levels_v2_draft ON levels_v2 (draft_id)",
+    "CREATE INDEX IF NOT EXISTS ix_blocks_author ON blocks (author_id)",
+    "CREATE INDEX IF NOT EXISTS ix_block_uses_game ON block_uses (game_id)",
+    "CREATE INDEX IF NOT EXISTS ix_drafts_player ON drafts (player_id, updated_at)",
 ]
 
 
@@ -705,3 +722,124 @@ def set_level_json_v2(level_id: str, level: dict[str, Any], *, level_hash_: str,
              rep.get("C"), rep.get("score"), rep.get("band"), int((level.get("world") or {}).get("screens") or 1),
              1 if rep.get("solvable") else (0 if rep else None), rep.get("par_ms"), rep.get("fastest_ms"), level_id),
         )
+
+
+# ---- v4: public blocks (docs/v4/CONTRACTS_V4.md §6) -----------------------------------------------------------------
+# One row per immutable version. `search` is the lowercased name, description and tags (the library's search box).
+
+_BLOCK_CARD_SQL = (
+    "SELECT b.json, b.listed, (SELECT COUNT(DISTINCT u.game_id) FROM block_uses u WHERE u.block_id = b.id) AS uses, "
+    "(SELECT COUNT(*) FROM blocks v WHERE v.id = b.id) AS versions FROM blocks b"
+)
+
+
+def _card(r: sqlite3.Row) -> dict[str, Any] | None:
+    try:
+        doc = json.loads(r["json"])
+    except (json.JSONDecodeError, TypeError):
+        return None
+    if not isinstance(doc, dict):
+        return None
+    return {**doc, "uses": int(r["uses"] or 0), "versions": int(r["versions"] or 1)}
+
+
+def insert_block(doc: dict[str, Any], *, listed: bool = True, safety: str = "unchecked") -> dict[str, Any]:
+    """Insert one immutable block version; the version number is assigned here (max + 1) under the write
+    transaction, so two saves of the same block never collide."""
+    ensure()
+    with closing(connect()) as conn, conn:
+        r = conn.execute("SELECT MAX(version) FROM blocks WHERE id = ?", (doc["id"],)).fetchone()
+        doc = dict(doc)
+        doc["version"] = int((r[0] if r is not None else 0) or 0) + 1
+        search = " ".join([str(doc.get("name") or ""), str(doc.get("description") or ""),
+                           " ".join(str(t) for t in doc.get("tags") or [])]).lower()
+        conn.execute(
+            "INSERT INTO blocks (id, version, json, name, kind, author, author_id, listed, safety, search, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (doc["id"], doc["version"], json.dumps(doc, separators=(",", ":"), ensure_ascii=False), doc["name"],
+             doc["kind"], doc["author"], doc.get("author_id"), 1 if listed else 0, safety, search,
+             doc.get("created_at") or now_iso()),
+        )
+    return doc
+
+
+def get_block(block_id: str, version: int | None = None) -> dict[str, Any] | None:
+    """A block version as a BlockCard dict (newest version unless `version`), with uses and versions counted."""
+    ensure()
+    with closing(connect()) as conn:
+        if version is None:
+            r = conn.execute(f"{_BLOCK_CARD_SQL} WHERE b.id = ? ORDER BY b.version DESC LIMIT 1", (block_id,)).fetchone()
+        else:
+            r = conn.execute(f"{_BLOCK_CARD_SQL} WHERE b.id = ? AND b.version = ?", (block_id, version)).fetchone()
+    return _card(r) if r is not None else None
+
+
+def block_id_taken(block_id: str) -> bool:
+    ensure()
+    with closing(connect()) as conn:
+        return conn.execute("SELECT 1 FROM blocks WHERE id = ? LIMIT 1", (block_id,)).fetchone() is not None
+
+
+def list_blocks(*, q: str | None = None, kind: str | None = None, author_id: str | None = None, sort: str = "new",
+                limit: int = 24, offset: int = 0, include_unlisted: bool = False) -> tuple[list[dict[str, Any]], int]:
+    """(cards, total): the newest version of every matching block. `popular` = games that use it, then newest."""
+    ensure()
+    where = ["b.version = (SELECT MAX(version) FROM blocks x WHERE x.id = b.id)"]
+    args: list[Any] = []
+    if not include_unlisted:
+        where.append("b.listed = 1")
+    if kind:
+        where.append("b.kind = ?")
+        args.append(kind)
+    if author_id:
+        where.append("b.author_id = ?")
+        args.append(author_id)
+    for word in (q or "").lower().split()[:6]:
+        esc = word.replace("!", "!!").replace("%", "!%").replace("_", "!_")
+        where.append("b.search LIKE ? ESCAPE '!'")
+        args.append(f"%{esc}%")
+    clause = " WHERE " + " AND ".join(where)
+    order = " ORDER BY uses DESC, b.created_at DESC, b.id" if sort == "popular" else " ORDER BY b.created_at DESC, b.id"
+    with closing(connect()) as conn:
+        total = int(conn.execute(f"SELECT COUNT(*) FROM blocks b{clause}", tuple(args)).fetchone()[0])
+        rows = conn.execute(f"{_BLOCK_CARD_SQL}{clause}{order} LIMIT ? OFFSET ?",
+                            (*args, max(1, int(limit)), max(0, int(offset)))).fetchall()
+    return [c for c in (_card(r) for r in rows) if c is not None], total
+
+
+def record_block_use(block_id: str, version: int, game_id: str, *, type_id: str | None, kind: str,
+                     player_id: str | None) -> bool:
+    """One row per (block version, game). True when this game had not used this version before."""
+    ensure()
+    with closing(connect()) as conn, conn:
+        cur = conn.execute(
+            "INSERT OR IGNORE INTO block_uses (block_id, version, game_id, type_id, kind, player_id, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)", (block_id, int(version), game_id, type_id, kind, player_id, now_iso()))
+    return int(cur.rowcount or 0) == 1
+
+
+# ---- v4: drafts a profile started (the dashboard's "keep going" list) ------------------------------------------------
+
+
+def record_draft(draft_id: str, *, player_id: str | None, game_id: str | None, kind: str, title: str | None) -> None:
+    ensure()
+    now = now_iso()
+    with closing(connect()) as conn, conn:
+        conn.execute(
+            "INSERT INTO drafts (draft_id, player_id, game_id, kind, title, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(draft_id) DO UPDATE SET updated_at = excluded.updated_at, "
+            "title = COALESCE(excluded.title, drafts.title), game_id = COALESCE(excluded.game_id, drafts.game_id), "
+            "player_id = COALESCE(drafts.player_id, excluded.player_id)",
+            (draft_id, player_id, game_id, kind, title, now, now),
+        )
+
+
+def unpublished_drafts(player_id: str, limit: int = 20) -> list[dict[str, Any]]:
+    """The profile's drafts that never became a published level, newest first."""
+    ensure()
+    with closing(connect()) as conn:
+        rows = conn.execute(
+            "SELECT d.* FROM drafts d WHERE d.player_id = ? AND NOT EXISTS "
+            "(SELECT 1 FROM levels_v2 l WHERE l.draft_id = d.draft_id) ORDER BY d.updated_at DESC, d.draft_id LIMIT ?",
+            (player_id, max(1, int(limit)))).fetchall()
+    return [dict(r) for r in rows]

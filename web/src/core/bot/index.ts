@@ -33,6 +33,9 @@ import { Measurer } from './measure.ts';
 import type { StepWindows } from './measure.ts';
 import { forward, frameCost, pathTo, reachableFrom, routeCost, toGoal } from './route.ts';
 import { computeSlots, emptySlots } from './slots.ts';
+import { hasWinRule, needsSearch, searchReport } from './v4.ts';
+import { simulateInputs } from '../replay/run.ts';
+import { traceToInputs } from '../replay/verify.ts';
 
 export { freeFlight, gMaxTable, jumpArcs, measureEnvelope, measureJump, reachFor, template } from './envelope.ts';
 export type { EnvelopeTable, Flight, JumpArc, Reach, ReachAbilities } from './envelope.ts';
@@ -370,10 +373,13 @@ export function analyze(level: LevelV2, o: AnalyzeOptions): PlaytestReport {
   const sigmaC = sigmaOf('casual');
   const sigmaS = sigmaOf('skilled');
   if (!W.start.id) return unsolvableReport(level, null, rep, tier, mode, 'no_start');
+  // v4 (CONTRACTS_V4 §1.4): modes, rule keys and gravity flips need the macro search; the explorer plays the rest
+  const v4Budget = BOT_BUDGET.full_per_screen * screens * mult;
+  if (W.v4 && needsSearch(W)) return searchReport(level, rep, v4Budget);
   let ex = new Explorer(sim, { mode, legacy, sigma: sigmaC, budget, stopAtGoal: mode === 'fast' });
   ex.explore();
-  if (ex.startNode < 0) return unsolvableReport(level, ex, rep, tier, mode);
-  if (!W.goals.length) return unsolvableReport(level, ex, rep, tier, mode, 'no_goal');
+  if (ex.startNode < 0) return W.v4 ? v4Fallback(level, v4Budget, () => unsolvableReport(level, ex, rep, tier, mode)) : unsolvableReport(level, ex, rep, tier, mode);
+  if (!W.goals.length && !(W.v4 && hasWinRule(W))) return unsolvableReport(level, ex, rep, tier, mode, 'no_goal');
   if (mode === 'fast' && !ex.goalFound && ex.approx) {
     // the greedy search ran out of budget: one exhaustive pass (full action set, BFS) before calling it unsolvable
     const ex2 = new Explorer(new SimCore(level, { seed: 1 }), {
@@ -389,7 +395,7 @@ export function analyze(level: LevelV2, o: AnalyzeOptions): PlaytestReport {
   const d2g = toGoal(ex, routeCost);
   const fwd = forward(ex, ex.startNode, routeCost);
   const path = pathTo(ex, fwd, GOAL);
-  if (!path.length) return unsolvableReport(level, ex, rep, tier, mode);
+  if (!path.length) return W.v4 ? v4Fallback(level, v4Budget, () => unsolvableReport(level, ex, rep, tier, mode)) : unsolvableReport(level, ex, rep, tier, mode);
   const fastP = forward(ex, ex.startNode, frameCost);
   const fastPath = Number.isFinite(fastP.dist[N]) ? pathTo(ex, fastP, GOAL) : path;
   const reach = reachableFrom(ex, ex.startNode);
@@ -436,7 +442,7 @@ export function analyze(level: LevelV2, o: AnalyzeOptions): PlaytestReport {
     s.ps = deathProbHearts(s.win, sigmaS, W.hearts);
   }
   // difficulty model
-  const goalId = W.defs[W.goals[0]].id;
+  const goalId = W.goals.length ? W.defs[W.goals[0]].id : 'win';
   const startId = W.start.id ?? 'start';
   const segInputs: SegmentInput[] = segIds.map((id, k) => ({
     id,
@@ -541,5 +547,19 @@ export function analyze(level: LevelV2, o: AnalyzeOptions): PlaytestReport {
   // the trace replays from frame 0 (verifyRun, the bot ghost): the spawn's settle inputs come first
   rep.trace = inputsToTrace(ex.startInputs.length ? [...ex.startInputs, ...tr.inputs] : tr.inputs);
   rep.approx = ex.approx || !tr.ok;
+  if (W.v4) {
+    // v4: the explorer merges some rule state (timers, cooldowns), so its route must win when replayed from frame 0
+    const run = simulateInputs(level, traceToInputs(rep.trace));
+    if (run.sim.S.won !== 1) return v4Fallback(level, v4Budget, () => unsolvableReport(level, ex, baseReport(level), tier, mode));
+  }
   return rep;
+}
+
+/** v4: when the explorer cannot show a win, the macro search tries; unsolved by both is reported approximate. */
+function v4Fallback(level: LevelV2, budget: number, unsolved: () => PlaytestReport): PlaytestReport {
+  const s = searchReport(level, baseReport(level), budget);
+  if (s.solvable) return s;
+  const u = unsolved();
+  u.approx = true;
+  return u;
 }

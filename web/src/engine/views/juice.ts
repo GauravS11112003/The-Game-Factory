@@ -5,6 +5,7 @@
  */
 import Phaser from 'phaser';
 import { ART, JUICE, PERF } from '../../core/params.ts';
+import { HAND_FONT } from '../../render/fonts.ts';
 import type { TexBank } from '../gfx.ts';
 
 const P = ART.palette;
@@ -155,21 +156,36 @@ interface Flight {
   done: () => void;
 }
 
+/** A floating "+10" (score) that rises and fades in world space. */
+interface Pop {
+  txt: Phaser.GameObjects.Text;
+  y0: number;
+  t: number;
+}
+
+const POP_MS = 750;
+export const ICE = 0xa8d8ff;
+
 export class Juice {
   private emitters = new Map<Kind, Phaser.GameObjects.Particles.ParticleEmitter>();
   private shakes: { amp: number; dur: number; t: number }[] = [];
   private flights: Flight[] = [];
+  private pops: Pop[] = [];
   private scene: Phaser.Scene;
   private hud: Phaser.GameObjects.Layer;
+  private world: Phaser.GameObjects.Layer;
   private reduced: boolean;
+  private cfg: Record<Kind, Cfg>;
   readonly tex: Record<Kind | 'coin', string>;
 
   constructor(scene: Phaser.Scene, bank: TexBank, world: Phaser.GameObjects.Layer, hud: Phaser.GameObjects.Layer, reduced: boolean) {
     this.scene = scene;
     this.hud = hud;
+    this.world = world;
     this.reduced = reduced;
     this.tex = textures(bank);
     const cfg = configs();
+    this.cfg = cfg;
     let budget = PERF.max_particles;
     for (const k of Object.keys(cfg) as Kind[]) {
       const c = { ...cfg[k], emitting: false } as Cfg;
@@ -251,6 +267,50 @@ export class Juice {
     for (let i = 0; i < n; i++) em.explode(1, x0 + Math.random() * (x1 - x0), y);
   }
 
+  // ---- v4 rule events (the existing emitters, re-tinted for one burst: no extra particle budget) ----
+
+  /** One burst with its tint swapped for this explosion only (WebGL; the Canvas renderer ignores particle tint). */
+  private tinted(k: Kind, tint: number | number[], x: number, y: number, n: number): void {
+    const em = this.emitters.get(k);
+    if (!em) return;
+    const count = this.reduced ? Math.ceil(n / 2) : n;
+    if (count <= 0) return;
+    em.setParticleTint(tint);
+    em.explode(count, x, y);
+    em.setParticleTint((this.cfg[k].tint as number | number[] | undefined) ?? 0xffffff);
+  }
+
+  /** A teleport or portal: a coloured ring and sparkles where you left and where you land. */
+  teleport(x: number, y: number, color: number = COLORS.violet): void {
+    this.tinted('ring', color, x, y - 14, 1);
+    this.tinted('sparkle', [color, COLORS.blue, 0xffffff], x, y - 14, 10);
+  }
+  /** Gravity turns over: a puff at the feet. */
+  flip(x: number, y: number): void {
+    this.burst('puff', x, y, 5);
+    this.tinted('sparkle', [COLORS.violet, 0xffffff], x, y - 14, 6);
+  }
+  pickup(x: number, y: number): void {
+    this.burst('ring', x, y, 1);
+    this.burst('sparkle', x, y, 8);
+  }
+  /** Something shown or hidden by a rule. */
+  poof(x: number, y: number): void {
+    this.burst('puff', x, y, 7);
+  }
+  /** Enemies freeze: an icy glint on each. */
+  freezeAt(x: number, y: number): void {
+    this.tinted('sparkle', [ICE, 0xffffff, COLORS.blue], x, y, 5);
+  }
+
+  /** A short text ("+10") rising from a world point and fading out over 750 ms. */
+  popText(x: number, y: number, text: string, color: string, resolution: number): void {
+    const txt = this.scene.add.text(x, y, text, { fontFamily: HAND_FONT, fontSize: '16px', color, stroke: '#FFFDF6', strokeThickness: 4, resolution })
+      .setOrigin(0.5, 1).setDepth(ART.depths.overlays - 2);
+    this.world.add(txt);
+    this.pops.push({ txt, y0: y, t: 0 });
+  }
+
   shake(px: number, ms: number): void {
     if (this.reduced) return;
     this.shakes.push({ amp: px, dur: ms, t: 0 });
@@ -291,12 +351,21 @@ export class Juice {
       }
     }
     this.flights = this.flights.filter((f) => f.t < dur);
+    for (const p of this.pops) {
+      p.t += dt;
+      const k = Math.min(1, p.t / POP_MS);
+      p.txt.setY(p.y0 - (this.reduced ? 6 : 26) * (1 - (1 - k) * (1 - k))).setAlpha(k < 0.6 ? 1 : 1 - (k - 0.6) / 0.4);
+      if (k >= 1) p.txt.destroy();
+    }
+    this.pops = this.pops.filter((p) => p.t < POP_MS);
   }
 
   clear(): void {
     for (const em of this.emitters.values()) em.killAll();
     for (const f of this.flights) f.img.destroy();
+    for (const p of this.pops) p.txt.destroy();
     this.flights = [];
+    this.pops = [];
     this.shakes = [];
   }
 

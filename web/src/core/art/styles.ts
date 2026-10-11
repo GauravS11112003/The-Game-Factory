@@ -23,9 +23,9 @@ function lighten(hex: string, f: number): string {
   return '#' + [ch(16), ch(8), ch(0)].map((v) => v.toString(16).padStart(2, '0')).join('');
 }
 
-/** Ink colour for a stroke colour class and theme (kraft lightens ink 8%). */
+/** Ink colour for a stroke colour class (or a '#rrggbb' house colour) and theme (kraft lightens ink 8%). */
 export function inkHex(c: InkColor | string, theme: Theme): string {
-  const base = (INK as Record<string, string>)[c] ?? P.ink;
+  const base = /^#[0-9a-fA-F]{6}$/.test(c) ? c : (INK as Record<string, string>)[c] ?? P.ink;
   return theme === 'kraft' ? lighten(base, ART.themes.kraft.ink_lighten) : base;
 }
 

@@ -71,8 +71,9 @@ export function followBuild(eventsUrl: string | null, draftId: string, onEvent: 
         } catch {
           return;
         }
-        failures = 0;
-        deliver({ seq: Number(msg.lastEventId), event: name, data } as BuildEvent);
+        const s = Number(msg.lastEventId);
+        if (s > seq) failures = 0; // only new events prove the stream is healthy (a replay must not loop reconnects)
+        deliver({ seq: s, event: name, data } as BuildEvent);
       });
     }
     es.onerror = () => {

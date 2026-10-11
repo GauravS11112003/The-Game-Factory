@@ -32,6 +32,20 @@ SEEDED: dict[str, dict[str, Any]] = {
              "description": "Invent a new monster for this world in the Creature Studio. Give it a funny name!"},
         ],
     },
+    "game_showcase": {  # v4: one level per mode, with written rules and v4 primitives
+        "pitch": "Four ways to play one drawing: platformer, flappy, runner and top-down. Each level has its own rules.",
+        "mechanics_text": "Upside Down: press space to flip gravity and walk on the ceiling.\n"
+                          "Ghost Manor: tap jump to flap through the gaps.\n"
+                          "Lava Run: you never stop running, so jump in time.\n"
+                          "Pip's Garden: walk around from above and find five stars.\n"
+                          "Write your own rules in the game workspace, like \"E makes you fast\".",
+        "quests": [
+            {"title": "Make a rule level", "kind": "level", "reward_badge": "quest_hero",
+             "description": "Draw a level and write a rule for it, like \"touching the star flips gravity\"."},
+            {"title": "Make a new block", "kind": "creature", "reward_badge": "quest_hero",
+             "description": "Make a block anyone can use: a bouncy cloud, a portal, a talking friend."},
+        ],
+    },
     "game_classic": {
         "pitch": "The very first draw.play levels, with the classic floaty jumps. Add a level in the old style!",
         "mechanics_text": "Classic physics: big floaty jumps.\n"

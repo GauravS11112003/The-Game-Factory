@@ -11,8 +11,8 @@ What to return
 
 Composition
 - Layers from back to front: a sky (a vertical linearGradient is allowed), far shapes (mountains, a skyline, coral), middle shapes (hills, trees, towers), and a few soft details (clouds, stars, bubbles). No ground line or floor at the very bottom: the level draws its own ground.
-- Keep the lower 40% fairly simple and low in contrast, because that is where the child plays.
-- Muted, harmonious colours with low contrast between layers; the far layers lighter and bluer (atmospheric perspective). Nothing pure black, nothing neon.
+- Keep the lower 40% simpler and a little lower in contrast, because that is where the child plays; the upper 60% can be detailed and exciting.
+- Colour follows the theme and style. When they ask for something bold (comic book, superhero, neon, cartoon, candy, arcade), go bold: rich saturated colours, dark confident outlines on buildings and shapes, halftone dot textures (rows of small circles, reused with <use>), dramatic skies, spotlights, a big moon or sun. Otherwise use muted, harmonious colours with the far layers lighter and bluer (atmospheric perspective). Never pure #000000.
 - Spread interest across the whole width so every screen looks a little different, but the left edge and the right edge must match in colour and height so the image can repeat seamlessly.
 - No characters, animals in the foreground, text, signs, logos or UI.
 

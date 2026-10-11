@@ -7,8 +7,8 @@ import { WORLD } from '../params.ts';
 import { PROFILES } from '../sim/profiles.ts';
 import type { PhysicsProfile } from '../sim/types.ts';
 import type {
-  CellXY, EditOp, GameRules, InkDoc, LibraryType, PlaytestReport, Role, SceneGraph, SceneObject, Setpiece, Shape, SurfaceSeg,
-  Tier,
+  Behavior, BNpc, BPickup, BPortal, BZone, CellXY, EditOp, GameRules, InkDoc, LibraryType, PlaytestReport, Role, RuleV4, SceneGraph,
+  SceneObject, Setpiece, Shape, SurfaceSeg, Tier,
 } from '../types.gen.ts';
 import { segsBBox, surfaceYAt } from '../build/fit.ts';
 import { clone, overlap1, q16, rectGap } from '../util/geom.ts';
@@ -27,6 +27,7 @@ export interface WorkState {
   added: string[]; // designer-added object ids, in order
   reprised: boolean;
   repair_alts: RepairAlt[]; // the repair search's alternatives, for DESIGN repair_choices
+  logic?: RuleV4[]; // v4: the level's typed rules (CONTRACTS_V4 §2.4), set by build only when there are some
 }
 
 export interface RepairAlt {
@@ -153,7 +154,7 @@ export function isSurface(o: SceneObject): o is SceneObject & { shape: { k: 'sur
 }
 
 export function isFloor(o: SceneObject): boolean {
-  return isSurface(o) && o.shape.k === 'surface' && o.shape.fill !== 'to_top' && (o.collision === 'solid' || o.collision === 'one_way') && !o.rel.part_of && !isDynamic(o);
+  return isSurface(o) && o.shape.k === 'surface' && o.shape.fill !== 'to_top' && (o.collision === 'solid' || o.collision === 'one_way') && !o.rel.part_of && !isDynamic(o) && !(o.behavior && isV4(o.behavior));
 }
 
 export function isWallLike(o: SceneObject): boolean {
@@ -164,6 +165,11 @@ export function isWallLike(o: SceneObject): boolean {
 export function isDynamic(o: SceneObject): boolean {
   const b = o.behavior;
   return !!b && (b.kind === 'move' || b.kind === 'crumble' || b.kind === 'falling');
+}
+
+/** v4 primitives (CONTRACTS_V4 §5): portal, zone, pickup and npc behaviours compile to their own entities, never tiles. */
+export function isV4(b: Behavior): b is BPortal | BZone | BPickup | BNpc {
+  return b.kind === 'portal' || b.kind === 'zone' || b.kind === 'pickup' || b.kind === 'npc';
 }
 
 /** Top line of an object's standable face at x (surfaces: lattice height; walls: y0), or null. */

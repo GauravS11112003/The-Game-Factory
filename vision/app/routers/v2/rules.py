@@ -17,6 +17,10 @@ PUT  /games/{id}/rules[?apply=all&repair=1]
 POST /scan/rules-sheet                  multipart photo → {patch, asks}   (lane C's deterministic OMR, no model)
 
 `v1-classic` is for migrated levels only: a game can keep it, but cannot switch to it.
+
+v4 (docs/v4/CONTRACTS_V4.md §3, §6): `mode` (platformer | topdown | runner | flappy) and the game-wide `logic` (RuleV4[])
+travel in the same GameRules patch, are checked by the same dry run and reach new builds through the game's rules
+(orchestrator load_context). "platformer" and an empty `logic` are stored as null.
 """
 from __future__ import annotations
 
@@ -84,6 +88,12 @@ def resolve(patch: dict[str, Any], current: dict[str, Any], *, bump: bool) -> di
         raise ValueError("physics_profile")
     rules = GameRules.model_validate(merged).model_dump(mode="json")
     rules["profile_hash"] = profile_hash(rules["physics_profile"]) or rules.get("profile_hash")
+    # v4 (CONTRACTS_V4 §3): "platformer" and "no game-wide rules" are stored as null, the v2 default, so a game that
+    # switches back keeps its levels' level_hash (and their runs) unchanged
+    if rules.get("mode") == "platformer":
+        rules["mode"] = None
+    if not rules.get("logic"):
+        rules["logic"] = None
     return rules
 
 

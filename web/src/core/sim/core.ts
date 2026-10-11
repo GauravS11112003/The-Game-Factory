@@ -6,8 +6,12 @@
  * Frame order (§5.4): death sequence / hit-stop → timers → kinematic solids move (riders carried by their delta)
  * → player input, x move + tile resolve, y move + tile/one-way/slope/kinematic resolve → enemies → projectiles →
  * contacts (stomp, hazards, pickups, springs, checkpoints, goal, triggers) → camera.
+ *
+ * v4 (docs/v4/CONTRACTS_V4.md §2-5), only on levels with v4 fields (SimWorld.v4): rule state lives in SimState.r
+ * (absent otherwise, so a v2 state hashes as before); modes (runner, flappy, topdown); the rules engine runs after
+ * contacts and before the goal check; flipped gravity steps the player in the vertically mirrored world.
  */
-import { ABILITIES, COLLISION, DAMAGE, ENEMIES, HAZARDS, SCORING } from '../params.ts';
+import { ABILITIES, COLLISION, DAMAGE, ENEMIES, HAZARDS, SCORING, V4 } from '../params.ts';
 import { levelHash } from '../build/hash.ts';
 import { encodeReplay } from '../replay/codec.ts';
 import type { LevelV2, Replay } from '../types.gen.ts';
@@ -21,12 +25,13 @@ import {
 } from './tiles.ts';
 import { cosT, sinT } from './trig.ts';
 import type { CameraState, EntityView, PlayerView, Sim, SimEvent, SimSnapshot, SimView } from './types.ts';
-import { INPUT_MASK, IN_D, IN_J, IN_L, IN_R, IN_RESTART, IN_RUN } from './types.ts';
+import { INPUT_MASK, INPUT_MASK_V2, IN_ACTION, IN_D, IN_J, IN_L, IN_R, IN_RESTART, IN_RUN, IN_SPACE } from './types.ts';
 import {
   BODY_H, DT, ENEMY_G, ENEMY_MAX_FALL, HALF_W, HURT_H, HURT_HALF_W, HZ, buildWorld, pathPhase, pathPos,
 } from './world.ts';
 import type {
-  DCheckpoint, DCoin, DDoor, DEnemy, DFirebar, DGoal, DKey, DPlatform, DSaw, DSpikes, DSpring, EntDef, SimWorld,
+  ActDef, DCheckpoint, DCoin, DDoor, DEnemy, DFirebar, DGoal, DKey, DNpc, DPickup, DPlatform, DPortal, DSaw, DSpikes, DSpring,
+  DZone, EntDef, SimWorld,
 } from './world.ts';
 
 // ---- state ------------------------------------------------------------------------------------
@@ -52,13 +57,39 @@ export interface EState {
 
 export interface Blob { x: number; y: number; vx: number; dist: number; owner: number; id: number }
 
+/**
+ * v4 rule and mode state (docs/v4/CONTRACTS_V4.md §2-5). Present only on v4 levels: a v2 SimState has no `r`, so its
+ * JSON (the state hash) is unchanged. Score, counters and collected pickups persist across respawns like coins; once
+ * latches and hidden flags follow the door rule (kept from the last checkpoint, §2.3).
+ */
+export interface RuleState {
+  gs: number; // gravity sign, 1 or −1 (§2.3)
+  sc: number; // score
+  cn: number[]; // counters, SimWorld.counterNames order
+  once: number[]; // per rule: fired this life (once: true)
+  m: number[]; // per rule: edge memory (touch, zone, score, counter: 0/1; timer: elapsed frames at the last check)
+  st: number; // 1 until the first live frame of this life (start triggers)
+  kp: number; // rule-key bits (64 | 128) of the last frame, for key edges
+  allc: number; // all_coins fired
+  hid: number[]; // per def: 1 = hidden (inert)
+  spM: number; spF: number; jpM: number; jpF: number; gvM: number; gvF: number; // timed effects: times, frames (−1 until respawn)
+  rvF: number; fzF: number; fzT: number; // reverse frames, freeze frames, frames frozen this life (the flyers' clock)
+  say: { t: string; g: string | null; f: number } | null;
+  lvy: number; // top-down spring push (vy) while P.lock > 0
+  sv: { hid: number[]; once: number[] } | null; // saved at the last checkpoint
+}
+
 export interface SimState {
   f: number; clock0: number; clockF: number; ent: number; rng: number; tbase: number; blobN: number;
   p: PState; e: EState[]; bl: Blob[];
   coins: number; deaths: number; lives: number; bigBanked: number; cp: number;
   save: { dead: number[]; keys: number[]; doors: number[]; big: number[] } | null;
   won: number; warned: number; errs: number; cam: CameraState;
+  r?: RuleState;
 }
+
+/** Zone and effect modifiers for one player step (world coordinates; the flipped step negates ay). */
+interface Env { ax: number; ay: number; cx: number; cy: number; gm: number; fr: number; sm: number; jm: number; water: boolean }
 
 // enemy / platform state codes
 export const S_IDLE = 0;
@@ -71,6 +102,30 @@ export const FIREBAR_OFF = 0.6;
 const DEATH_F = Math.round((DAMAGE.death.total_ms * HZ) / 1000); // 45
 const REASSEMBLE_F = Math.round((DAMAGE.death.reassemble_ms * HZ) / 1000); // 12
 const SKIP_F = Math.round((DAMAGE.death.skip_after_ms * HZ) / 1000); // 15
+const KEY_BITS = IN_SPACE | IN_ACTION;
+const NPC_SAY_F = Math.round(V4.npc.say_s * HZ);
+
+function cloneRule(r: RuleState): RuleState {
+  return {
+    ...r, cn: r.cn.slice(), once: r.once.slice(), m: r.m.slice(), hid: r.hid.slice(), say: r.say ? { ...r.say } : null,
+    sv: r.sv ? { hid: r.sv.hid.slice(), once: r.sv.once.slice() } : null,
+  };
+}
+
+/** The tile grid upside down, for the flipped-gravity step (§2.3): slope cells are solid blocks (their flat underside
+ * is what a flipped player walks on), one-way tiles are open (they never hold a flipped player). */
+function mirrorGrid(T: TileGrid): TileGrid {
+  const rows: string[] = [];
+  for (let r = T.h - 1; r >= 0; r--) {
+    let row = '';
+    for (let c = 0; c < T.w; c++) {
+      const t = T.at(c, r);
+      row += t === T_SOLID || isSlope(t) ? '#' : t === T_LAVA ? '~' : t === T_X ? 'X' : '.';
+    }
+    rows.push(row);
+  }
+  return new TileGrid(rows, T.w, T.h);
+}
 
 function cloneState(s: SimState): SimState {
   const e = new Array<EState>(s.e.length);
@@ -89,6 +144,7 @@ function cloneState(s: SimState): SimState {
     coins: s.coins, deaths: s.deaths, lives: s.lives, bigBanked: s.bigBanked, cp: s.cp,
     save: s.save ? { dead: s.save.dead.slice(), keys: s.save.keys.slice(), doors: s.save.doors.slice(), big: s.save.big.slice() } : null,
     won: s.won, warned: s.warned, errs: s.errs, cam: { ...s.cam },
+    r: s.r ? cloneRule(s.r) : undefined,
   };
 }
 
@@ -110,7 +166,8 @@ export function clockMs(frames: number): number {
 
 export class SimCore implements Sim {
   readonly W: SimWorld;
-  readonly T: TileGrid;
+  /** The tile grid the player moves in: the level's, or its mirror during a flipped-gravity step. */
+  T: TileGrid;
   S: SimState;
   /** Events of the last step (reused; copied by step()). */
   ev: SimEvent[] = [];
@@ -123,6 +180,15 @@ export class SimCore implements Sim {
   touched: number[] = [];
   /** The bot turns the camera off while exploring (it replays the route with the camera on). */
   camOff = false;
+  /** v4: coins, big coins, keys and pickups collected this frame (collect triggers). */
+  got: number[] = [];
+  /** v4: rule keys pressed this frame (edges). */
+  kEdge = 0;
+  /** v4 §2.3: the mirrored tile grid (levels where a rule flips gravity) and whether the player step is mirrored. */
+  private readonly MT: TileGrid | null = null;
+  private mir = false;
+  private readonly env: Env = { ax: 0, ay: 0, cx: 0, cy: 0, gm: 1, fr: 1, sm: 1, jm: 1, water: false };
+  private readonly rb: number[] = [0, 0, 0, 0];
   // Input recording (createSim(level, { record: true }), §8.4): one byte per step() from frame 0. restore() to an
   // earlier snapshot truncates it, so a rewind keeps the replay consistent with the state.
   private rec: Uint8Array | null = null;
@@ -138,6 +204,7 @@ export class SimCore implements Sim {
     }
     this.T = this.W.tiles;
     const W = this.W;
+    if (W.v4 && W.flips && W.mode !== 'topdown') this.MT = mirrorGrid(W.tiles);
     const p: PState = {
       x: W.start.x, y: W.start.y, vx: 0, vy: 0, gnd: 0, gref: -1, gcode: 0, coy: 0, buf: 0, jprev: 0, cut: 0, face: 1,
       drop: 0, lock: 0, lockvx: 0, aj: 0, inv: 0, hp: W.hearts, mode: 0, df: 0, hs: 0, chain: 0, skid: 0,
@@ -149,6 +216,7 @@ export class SimCore implements Sim {
       p, e, bl: [], coins: 0, deaths: 0, lives: W.lives ?? 0, bigBanked: 0, cp: -1, save: null,
       won: 0, warned: 0, errs: 0, cam: initCamera(W.start.x / CELL, W.level.world, W.cameraMode, W.prof.walk_max),
     };
+    if (W.v4) this.S.r = this.initRule();
     // settle the spawn onto its support (no time passes)
     this.settleSpawn();
     this.initial = cloneState(this.S);
@@ -237,21 +305,26 @@ export class SimCore implements Sim {
     const S = this.S;
     const P = S.p;
     const W = this.W;
+    const R = S.r;
     let state: PlayerView['state'];
     if (P.mode === 2) state = 'win';
     else if (P.mode === 1) state = 'dead';
     else if (P.mode === 3) state = 'respawn';
-    else if (P.gnd === 0) state = P.vy < 0 ? 'jump' : 'fall';
+    else if (P.gnd === 0) state = P.vy * (R ? R.gs : 1) < 0 ? 'jump' : 'fall';
     else if (P.skid > 0) state = 'skid';
-    else if (Math.abs(P.vx) > 1) state = 'run';
+    else if (Math.abs(P.vx) > 1 || (R && W.mode === 'topdown' && Math.abs(P.vy) > 1)) state = 'run';
     else state = 'idle';
     const player: PlayerView = {
       x: P.x / CELL, y: P.y / CELL, vx: P.vx, vy: P.vy, facing: P.face < 0 ? -1 : 1, on_ground: P.gnd > 0, state,
       invulnerable_f: P.inv, dead_f: P.mode === 1 || P.mode === 3 ? P.df : 0, hitstop_f: P.hs, hp: P.hp,
-      ground: P.gnd === 2 ? W.defs[P.gref].id : P.gnd === 1 ? 'tile' : null, running: P.run === 1,
+      ground: P.gnd === 2 ? W.defs[P.gref].id : P.gnd === 1 ? 'tile' : null, running: P.run === 1, gravity: R && R.gs < 0 ? -1 : 1,
     };
     const entities: EntityView[] = [];
-    for (let i = 0; i < W.defs.length; i++) entities.push(this.entityView(i));
+    for (let i = 0; i < W.defs.length; i++) {
+      const v = this.entityView(i);
+      if (R && R.hid[i]) v.active = false;
+      entities.push(v);
+    }
     for (let k = 0; k < S.bl.length; k++) {
       const b = S.bl[k];
       entities.push({ id: `${W.defs[b.owner].id}#blob${b.id}`, type: 'blob', x: b.x / CELL, y: b.y / CELL, w: 6 / CELL, h: 6 / CELL, active: true, vx: b.vx * HZ, r: 3 / CELL });
@@ -262,10 +335,15 @@ export class SimCore implements Sim {
     for (const i of W.keys) if (S.e[i].on === 0) keys.push(W.defs[i].id);
     let left: number | null = null;
     if (W.loseTimerF !== null) left = Math.max(0, W.loseTimerF - (S.clockF - S.tbase));
+    const counters: Record<string, number> = {};
+    W.counterNames.forEach((n, k) => (counters[n] = R ? R.cn[k] : 0));
     return {
       frame: S.f, player, entities, coins: S.coins, big_coins_held: held, big_coins_banked: S.bigBanked, deaths: S.deaths,
       lives: W.lives === null ? null : S.lives, hearts: P.hp, checkpoint: S.cp >= 0 ? W.defs[S.cp].id : null,
       timer_frames_left: left, won: S.won === 1, clock_frames: S.clockF, time_ms: clockMs(S.clockF), big_coins_total: W.bigs.length, keys,
+      mode: W.mode, gravity: R && R.gs < 0 ? -1 : 1, score: R ? R.sc : 0, counters,
+      effects: R ? { speed_f: R.spF, jump_f: R.jpF, gravity_f: R.gvF, reverse_f: R.rvF, freeze_f: R.fzF } : { speed_f: 0, jump_f: 0, gravity_f: 0, reverse_f: 0, freeze_f: 0 },
+      say: R && R.say ? { text: R.say.t, target: R.say.g, frames_left: R.say.f } : null, uses_keys: W.usesKeys.slice(),
     };
   }
 
@@ -293,6 +371,9 @@ export class SimCore implements Sim {
         break;
       }
       case 'crumble': case 'falling_platform':
+        e.x = d.x; e.y = d.y;
+        break;
+      case 'portal': case 'pickup': case 'npc':
         e.x = d.x; e.y = d.y;
         break;
       default:
@@ -347,6 +428,14 @@ export class SimCore implements Sim {
       }
       case 'hint_arrow':
         return { id: d.id, type: 'hint_arrow', kind: d.dir, x: c(d.x), y: c(d.y), w: 1, h: 1, active: true };
+      case 'portal':
+        return { id: d.id, type: 'portal', x: c(d.x), y: c(d.y), w: c(d.r * 2), h: c(d.r * 2), r: c(d.r), active: true, state: e.t > 0 ? 'used' : 'idle', t: e.t };
+      case 'zone':
+        return { id: d.id, type: 'zone', kind: d.effect, x: c(d.box[0]), y: c(d.box[1]), w: c(d.box[2] - d.box[0]), h: c(d.box[3] - d.box[1]), active: true, state: e.s ? 'used' : 'idle', facing: d.dx < 0 ? -1 : 1 };
+      case 'pickup':
+        return { id: d.id, type: 'pickup', kind: d.item, x: c(e.x), y: c(e.y), w: 1, h: 1, active: e.on === 1, state: e.on ? 'idle' : 'used', t: e.t };
+      case 'npc':
+        return { id: d.id, type: 'npc', x: c(d.x), y: c(d.y), w: c(d.box[2] - d.box[0]), h: c(d.box[3] - d.box[1]), active: true, state: e.n > 0 ? 'used' : 'idle', t: e.n };
     }
   }
 
@@ -373,22 +462,26 @@ export class SimCore implements Sim {
   private kinRect(i: number): boolean {
     const d = this.W.defs[i];
     const e = this.S.e[i];
+    const R = this.S.r;
+    if (R && R.hid[i]) return false;
     if (d.k === 'door') {
       if (e.on === 0) return false;
       this.kx0 = d.box[0]; this.ky0 = d.box[1]; this.kx1 = d.box[2]; this.ky1 = d.box[3]; this.kOne = false;
-      return true;
-    }
-    if (d.k === 'enemy') {
+    } else if (d.k === 'enemy') {
       if (e.on === 0) return false;
       this.kx0 = e.x - d.hw; this.ky0 = e.y - d.h; this.kx1 = e.x + d.hw; this.ky1 = e.y; this.kOne = false;
-      return true;
-    }
-    if (d.k === 'moving_platform' || d.k === 'crumble' || d.k === 'falling_platform') {
+    } else if (d.k === 'moving_platform' || d.k === 'crumble' || d.k === 'falling_platform') {
       if (!this.platformActive(d, e)) return false;
       this.kx0 = e.x; this.ky0 = e.y; this.kx1 = e.x + d.w; this.ky1 = e.y + d.h; this.kOne = d.oneWay;
-      return true;
+    } else return false;
+    if (this.mir) {
+      // flipped gravity (§2.3): one-way platforms never hold the player; boxes are mirrored like the tiles
+      if (this.kOne) return false;
+      const y0 = this.ky0;
+      this.ky0 = this.W.hPx - this.ky1;
+      this.ky1 = this.W.hPx - y0;
     }
-    return false;
+    return true;
   }
 
   // ---- the frame ------------------------------------------------------------------------
@@ -399,8 +492,15 @@ export class SimCore implements Sim {
     const S = this.S;
     const P = S.p;
     const W = this.W;
-    input &= INPUT_MASK;
+    const R = S.r;
+    // the rule keys reach the sim only on levels with a key rule (a v2 level never sees them, §4.1)
+    input &= W.usesKeys.length ? INPUT_MASK : INPUT_MASK_V2;
     S.f++;
+    if (R) {
+      this.got.length = 0;
+      this.kEdge = input & KEY_BITS & ~R.kp;
+      R.kp = input & KEY_BITS;
+    }
     const J = (input & IN_J) !== 0;
     const Jp = J && P.jprev === 0;
     if (S.errs === 0) {
@@ -477,8 +577,9 @@ export class SimCore implements Sim {
     if (P.mode === 0) this.playerStep(input, J, Jp);
     this.enemiesStep();
     this.blobsStep();
+    if (R) this.v4Timers(R);
     if (P.mode === 0) this.contacts(J);
-    if (P.mode === 0 && P.y > W.hPx + 2 * CELL) this.die('pit', P.x);
+    if (P.mode === 0 && (R ? this.pitV4(R) : P.y > W.hPx + 2 * CELL)) this.die('pit', P.x);
     if (P.mode === 0) this.crushCheck();
     for (const i of W.springs) if (S.e[i].t < 999) S.e[i].t++;
     for (const i of W.doors) if (S.e[i].on === 0 && S.e[i].t < 999) S.e[i].t++;
@@ -499,16 +600,105 @@ export class SimCore implements Sim {
   // ---- player -----------------------------------------------------------------------------
 
   private playerStep(input: number, J: boolean, Jp: boolean): void {
+    const R = this.S.r;
+    if (!R) {
+      this.playerMove(input, J, Jp, null);
+      return;
+    }
+    const env = this.envOf(R);
+    const b = this.modeInput(input, R);
+    if (this.W.mode === 'topdown') {
+      this.topdownStep(b, env);
+      return;
+    }
+    if (R.gs > 0 || !this.MT) {
+      this.playerMove(b, J, Jp, env);
+      return;
+    }
+    // flipped gravity (§2.3): step in the vertically mirrored world, where "down" is toward the ceiling
+    const P = this.S.p;
+    const k = this.W.hPx + BODY_H;
+    const n0 = this.ev.length;
+    P.y = k - P.y; P.vy = -P.vy; P.prevFeet = k - P.prevFeet; P.vyPre = -P.vyPre;
+    env.ay = -env.ay;
+    this.T = this.MT;
+    this.mir = true;
+    this.playerMove(b, J, Jp, env);
+    this.T = this.W.tiles;
+    this.mir = false;
+    P.y = k - P.y; P.vy = -P.vy; P.prevFeet = k - P.prevFeet; P.vyPre = -P.vyPre;
+    for (let i = n0; i < this.ev.length; i++) {
+      const e = this.ev[i];
+      if (e.y !== undefined) e.y = k / CELL - e.y;
+      if (e.vy !== undefined) e.vy = -e.vy;
+    }
+  }
+
+  /** Mode input (§3): runner holds Right, flappy holds Right at walk speed; reverse_controls swaps the controls first. */
+  private modeInput(input: number, R: RuleState): number {
+    let b = input;
+    if (R.rvF !== 0) {
+      const l = b & IN_L;
+      const r = b & IN_R;
+      b = (b & ~(IN_L | IN_R)) | (l ? IN_R : 0) | (r ? IN_L : 0);
+      if (this.W.mode === 'topdown') {
+        const j = b & IN_J;
+        const d = b & IN_D;
+        b = (b & ~(IN_J | IN_D)) | (j ? IN_D : 0) | (d ? IN_J : 0);
+      }
+    }
+    // forced movement starts with the clock (the first input)
+    if (this.S.clock0 >= 0) {
+      if (this.W.mode === 'runner') b = (b & ~IN_L) | IN_R;
+      else if (this.W.mode === 'flappy') b = (b & ~(IN_L | IN_RUN | IN_D)) | IN_R;
+    }
+    return b;
+  }
+
+  /** Effects and zones under the feet (§2.2, §5) for this frame's player step. */
+  private envOf(R: RuleState): Env {
+    const env = this.env;
+    const W = this.W;
+    const S = this.S;
+    const P = S.p;
+    env.ax = 0; env.ay = 0; env.cx = 0; env.cy = 0; env.fr = 1; env.water = false;
+    env.gm = R.gvM; env.sm = R.spM; env.jm = R.jpM;
+    // the feet point, 1 px inside the body so a box drawn down to the floor holds a standing player
+    const fy = R.gs < 0 ? P.y - BODY_H + 1 : P.y - 1;
+    const Z = V4.zone;
+    for (const i of W.zones) {
+      const e = S.e[i];
+      const d = W.defs[i] as DZone;
+      const b = d.box;
+      const inside = !R.hid[i] && P.x >= b[0] && P.x < b[2] && fy >= b[1] && fy < b[3];
+      e.s = inside ? 1 : 0;
+      if (!inside) continue;
+      switch (d.effect) {
+        case 'wind': env.ax += Z.wind_accel * d.strength * d.dx; env.ay += Z.wind_accel * d.strength * d.dy; break;
+        case 'conveyor': env.cx += Z.conveyor_v * d.strength * d.dx; env.cy += Z.conveyor_v * d.strength * d.dy; break;
+        case 'water': env.gm *= Z.water_gravity; env.water = true; break;
+        case 'ice': env.fr *= Z.ice_friction; break;
+        case 'low_gravity': env.gm *= Z.low_gravity; break;
+        case 'slow': env.sm *= Z.slow; break;
+      }
+    }
+    return env;
+  }
+
+  /** The platformer step (§5.3); `env` (v4) scales speed, friction, jump and gravity and adds wind, conveyors and water. */
+  private playerMove(input: number, J: boolean, Jp: boolean, env: Env | null): void {
     const P = this.S.p;
     const W = this.W;
     const prof = W.prof;
+    const flappy = env !== null && W.mode === 'flappy';
     // 1. carry by the kinematic we stand on
     if (P.gnd === 2) {
       const ks = this.S.e[P.gref];
       if (this.kinRect(P.gref)) {
         if (ks.dx !== 0) this.moveX(ks.dx, true);
-        if (ks.dy !== 0) {
-          P.y += ks.dy;
+        const kdy = this.mir ? -ks.dy : ks.dy;
+        if (kdy !== 0) {
+          P.y += kdy;
           P.prevFeet = P.y;
         }
       } else {
@@ -528,6 +718,12 @@ export class SimCore implements Sim {
       P.run = running ? 1 : 0;
       let vmax = running ? (prof.run_max as number) : prof.walk_max;
       let walkCap = prof.walk_max;
+      if (env) {
+        vmax *= env.sm;
+        walkCap *= env.sm;
+      }
+      const friction = env ? prof.friction * env.fr : prof.friction;
+      const skidDecel = env ? prof.skid_decel * env.fr : prof.skid_decel;
       if (P.gnd === 1 && isSlope(P.gcode) && dir !== 0) {
         const f = dir === slopeRise(P.gcode) ? COLLISION.slope_uphill : COLLISION.slope_downhill;
         vmax *= f;
@@ -538,16 +734,16 @@ export class SimCore implements Sim {
         P.vx = target;
       } else if (P.gnd > 0) {
         if (dir === 0) {
-          P.vx = towards(P.vx, 0, prof.friction * DT);
+          P.vx = towards(P.vx, 0, friction * DT);
           P.skid = 0;
         } else if (P.vx * dir < 0) {
           if (P.skid === 0 && Math.abs(P.vx) > prof.walk_max * 0.5) this.emit({ type: 'skid', frame: this.S.f, x: P.x / CELL, y: P.y / CELL });
           P.skid = 1;
-          P.vx = towards(P.vx, 0, prof.skid_decel * DT);
+          P.vx = towards(P.vx, 0, skidDecel * DT);
         } else {
           P.skid = 0;
           const sp = Math.abs(P.vx);
-          if (sp > vmax) P.vx = towards(P.vx, target, prof.friction * DT);
+          if (sp > vmax) P.vx = towards(P.vx, target, friction * DT);
           else if (sp < walkCap) P.vx = dir * Math.min(walkCap, sp + prof.accel_walk * DT, vmax);
           else P.vx = dir * Math.min(vmax, sp + prof.accel_run * DT);
         }
@@ -566,8 +762,26 @@ export class SimCore implements Sim {
       }
     }
     if (dir !== 0) P.face = dir;
-    // 3. jump, drop-through, double jump (§5.1, §5.3, §5.4)
-    if (P.buf > 0 && (P.gnd > 0 || P.coy > 0)) {
+    if (env && env.ax !== 0) P.vx += env.ax * DT;
+    const jm = env ? env.jm : 1;
+    // 3. jump, drop-through, double jump (§5.1, §5.3, §5.4); flappy: every Jump press flaps, in the air too (§3)
+    if (flappy) {
+      if (Jp) {
+        P.vy = -V4.flappy.flap_frac * prof.jump_base * jm;
+        P.gnd = 0;
+        P.gref = -1;
+        P.coy = 0;
+        P.buf = 0;
+        P.cut = 0;
+        this.emit({ type: 'jump', frame: this.S.f, x: P.x / CELL, y: P.y / CELL, vy: P.vy });
+      }
+    } else if (env && env.water && Jp && P.gnd === 0) {
+      // water: Jump swims up anywhere (§5)
+      P.vy = Math.min(P.vy, -V4.zone.swim_frac * prof.jump_base * jm);
+      P.buf = 0;
+      P.cut = 0;
+      this.emit({ type: 'jump', frame: this.S.f, x: P.x / CELL, y: P.y / CELL, vy: P.vy });
+    } else if (P.buf > 0 && (P.gnd > 0 || P.coy > 0)) {
       if ((input & IN_D) !== 0 && P.gnd > 0 && this.onOneWay()) {
         P.drop = COLLISION.drop_through_f;
         P.gnd = 0;
@@ -577,6 +791,7 @@ export class SimCore implements Sim {
         this.emit({ type: 'drop_through', frame: this.S.f, x: P.x / CELL, y: P.y / CELL });
       } else {
         P.vy = -(prof.jump_base + prof.jump_vx_bonus * Math.abs(P.vx));
+        if (env) P.vy *= jm;
         // jumping off a moving platform keeps its horizontal motion
         if (P.gnd === 2 && P.gref >= 0) P.vx += this.S.e[P.gref].dx * HZ;
         P.gnd = 0;
@@ -587,14 +802,14 @@ export class SimCore implements Sim {
         this.emit({ type: 'jump', frame: this.S.f, x: P.x / CELL, y: P.y / CELL, vy: P.vy });
       }
     } else if (Jp && P.gnd === 0 && P.coy === 0 && W.ab.double_jump && P.aj === 0) {
-      P.vy = ABILITIES.double_jump.vy;
+      P.vy = env ? ABILITIES.double_jump.vy * jm : ABILITIES.double_jump.vy;
       P.aj = 1;
       P.cut = 1;
       P.buf = 0;
       this.emit({ type: 'double_jump', frame: this.S.f, x: P.x / CELL, y: P.y / CELL, vy: P.vy });
     }
     // 4. variable jump: release cut, then gravity
-    if (P.cut && !J && P.vy < prof.release_cut) {
+    if (!flappy && P.cut && !J && P.vy < prof.release_cut) {
       P.vy = prof.release_cut;
       P.cut = 0;
     }
@@ -604,13 +819,19 @@ export class SimCore implements Sim {
       if (J && Math.abs(P.vy) < prof.apex_vy) g = prof.g_apex_held;
       else if (J && P.vy < 0) g = prof.g_rise_held;
       else g = prof.g_fall;
-      const maxF = (input & IN_D) !== 0 && W.ab.fast_fall ? prof.max_fall_fast : prof.max_fall;
+      let maxF = (input & IN_D) !== 0 && W.ab.fast_fall ? prof.max_fall_fast : prof.max_fall;
+      if (env) {
+        g = (flappy ? prof.g_fall * V4.flappy.gravity : g) * env.gm;
+        if (env.water) maxF = Math.min(maxF, V4.zone.water_max_fall);
+        if (env.ay !== 0) P.vy += env.ay * DT;
+      }
       P.vy = Math.min(P.vy + g * DT, maxF);
     } else {
       P.vy = 0;
     }
     // 5. move and resolve
     this.moveX(P.vx * DT, false);
+    if (env && env.cx !== 0 && P.gnd > 0) this.moveX(env.cx * DT, true);
     this.moveY(P.vy * DT);
     // 6. counters
     if (P.gnd === 0 && P.coy > 0) P.coy--;
@@ -777,11 +998,11 @@ export class SimCore implements Sim {
       if (!this.kinRect(i)) continue;
       if (this.kOne && P.drop > 0) continue;
       if (this.kx1 <= x0 + 0.01 || this.kx0 >= x1 - 0.01) continue;
-      const ks = this.S.e[i];
+      const kdy = this.mir ? -this.S.e[i].dy : this.S.e[i].dy;
       const top = this.ky0;
       const riding = was === 2 && P.gref === i;
-      if (!riding && prevFeet > top - ks.dy + 0.01) continue;
-      if (top < yMin - Math.abs(ks.dy) - 0.01 || top > yMax) continue;
+      if (!riding && prevFeet > top - kdy + 0.01) continue;
+      if (top < yMin - Math.abs(kdy) - 0.01 || top > yMax) continue;
       if (top < best) {
         best = top;
         bestKin = i;
@@ -861,11 +1082,13 @@ export class SimCore implements Sim {
     const P = S.p;
     const W = this.W;
     const t = S.ent;
+    const R = S.r;
     for (const i of W.kin) {
       const d = W.defs[i];
       const e = S.e[i];
       e.dx = 0;
       e.dy = 0;
+      if (R && R.hid[i]) continue; // hidden entities do not move (§2.2 toggle)
       if (d.k === 'moving_platform') {
         if (d.path && d.path.cycle > 0) {
           pathPos(d.path, t, this.tmp);
@@ -923,7 +1146,7 @@ export class SimCore implements Sim {
           if (e.y > W.hPx + 4 * CELL) e.s = 3;
         }
       } else if (d.k === 'enemy' && d.arch === 'crusher') {
-        this.crusherStep(d, e);
+        if (!R || R.fzF === 0) this.crusherStep(d, e);
       }
     }
   }
@@ -1119,11 +1342,11 @@ export class SimCore implements Sim {
     return false;
   }
 
-  private canSee(d: DEnemy, e: EState): boolean {
+  private canSee(d: DEnemy, e: EState, td = false): boolean {
     const P = this.S.p;
     if (P.mode !== 0) return false;
     const dx = P.x - e.x;
-    if (Math.abs(dx) > d.sight || Math.abs(P.y - e.y) > ENEMIES.chaser.sight_dy_c * CELL) return false;
+    if (Math.abs(dx) > d.sight || Math.abs(P.y - e.y) > (td ? d.sight : ENEMIES.chaser.sight_dy_c * CELL)) return false;
     const ex = e.x;
     const ey = e.y - d.h / 2;
     const tx = P.x;
@@ -1141,6 +1364,10 @@ export class SimCore implements Sim {
     const S = this.S;
     const W = this.W;
     const P = S.p;
+    const R = S.r;
+    const frozen = R !== undefined && R.fzF !== 0;
+    if (frozen) R.fzT++;
+    const td = R !== undefined && W.mode === 'topdown';
     for (const i of W.enemies) {
       const d = W.defs[i] as DEnemy;
       const e = S.e[i];
@@ -1149,7 +1376,16 @@ export class SimCore implements Sim {
         if (e.s === E_SQUASH && e.t < 999) e.t++;
         continue;
       }
+      if (R && (R.hid[i] || frozen)) {
+        // hidden enemies do nothing; frozen ones stand still (contact still hurts, §2.2)
+        e.py = e.y;
+        continue;
+      }
       e.py = e.y;
+      if (td && d.arch !== 'flyer') {
+        this.topdownEnemy(d, e, i);
+        continue;
+      }
       switch (d.arch) {
         case 'walker': {
           this.enemyFall(d, e);
@@ -1210,7 +1446,7 @@ export class SimCore implements Sim {
         case 'flyer': {
           const ox = e.x;
           const oy = e.y;
-          this.flyerPos(d, S.ent, this.tmp);
+          this.flyerPos(d, R ? S.ent - R.fzT : S.ent, this.tmp);
           e.x = this.tmp[0];
           e.y = this.tmp[1];
           e.vx = e.x - ox;
@@ -1336,6 +1572,7 @@ export class SimCore implements Sim {
   private blobsStep(): void {
     const S = this.S;
     const T = this.T;
+    if (S.r && S.r.fzF !== 0) return; // frozen with the enemies (§2.2)
     let w = 0;
     for (let k = 0; k < S.bl.length; k++) {
       const b = S.bl[k];
@@ -1354,6 +1591,10 @@ export class SimCore implements Sim {
     const P = S.p;
     const W = this.W;
     const T = this.T;
+    const R = S.r;
+    const H = R ? R.hid : null; // v4: hidden entities have no contact
+    const gs = R ? R.gs : 1;
+    const td = R !== undefined && W.mode === 'topdown';
     const hx0 = P.x - HURT_HALF_W;
     const hx1 = P.x + HURT_HALF_W;
     const hy0 = P.y - HURT_H;
@@ -1384,6 +1625,7 @@ export class SimCore implements Sim {
       }
     }
     for (const i of W.spikes) {
+      if (H && H[i]) continue;
       const b = (W.defs[i] as DSpikes).band;
       if (overlap(hx0, hy0, hx1, hy1, b[0], b[1], b[2], b[3])) {
         this.hit('spikes', (b[0] + b[2]) / 2, false);
@@ -1393,6 +1635,7 @@ export class SimCore implements Sim {
     for (const i of W.saws) {
       const d = W.defs[i] as DSaw;
       const e = S.e[i];
+      if (H && H[i]) continue;
       if (d.path.cycle > 0) {
         pathPos(d.path, S.ent, this.tmp);
         e.x = this.tmp[0];
@@ -1405,6 +1648,7 @@ export class SimCore implements Sim {
     }
     const br = HAZARDS.firebar.ball_r_px;
     for (const i of W.firebars) {
+      if (H && H[i]) continue;
       const d = W.defs[i] as DFirebar;
       const a = d.phase + d.turnsPerF * S.ent;
       const ca = cosT(a);
@@ -1432,7 +1676,7 @@ export class SimCore implements Sim {
     for (const i of W.enemies) {
       const d = W.defs[i] as DEnemy;
       const e = S.e[i];
-      if (e.on === 0 || d.arch === 'crusher') continue;
+      if (e.on === 0 || d.arch === 'crusher' || (H && H[i])) continue;
       const inset = 2;
       const ex0 = e.x - d.hw + inset;
       const ex1 = e.x + d.hw - inset;
@@ -1440,16 +1684,19 @@ export class SimCore implements Sim {
       const ey1 = e.y;
       if (!overlap(bx0, by0, bx1, by1, ex0, ey0, ex1, ey1)) continue;
       const prevTop = e.py - d.h;
-      if (W.ab.stomp && !d.spiky && P.vyPre > 0 && P.prevFeet <= prevTop + DAMAGE.stomp.prev_tolerance_px) {
+      // flipped gravity stomps upward onto the enemy's underside (§2.3); top-down has no stomps (§3)
+      const tol = DAMAGE.stomp.prev_tolerance_px;
+      const stomp = gs > 0 ? P.vyPre > 0 && P.prevFeet <= prevTop + tol : P.vyPre < 0 && P.prevFeet - BODY_H >= e.py - tol;
+      if (W.ab.stomp && !d.spiky && !td && stomp) {
         e.on = 0;
         e.s = E_SQUASH;
         e.t = 0;
-        P.vy = J ? DAMAGE.stomp.bounce_vy_held : DAMAGE.stomp.bounce_vy;
+        P.vy = gs * (J ? DAMAGE.stomp.bounce_vy_held : DAMAGE.stomp.bounce_vy);
         P.gnd = 0;
         P.gref = -1;
         P.cut = 0;
         P.coy = 0;
-        P.y = Math.min(P.y, prevTop);
+        P.y = gs > 0 ? Math.min(P.y, prevTop) : Math.max(P.y, e.py + BODY_H);
         P.hs = DAMAGE.stomp.hitstop_f;
         P.chain++;
         if (P.chain >= DAMAGE.stomp.chain_coin_from) this.addCoins(1);
@@ -1466,47 +1713,65 @@ export class SimCore implements Sim {
     const mag = 6;
     for (const i of W.coins) {
       const e = S.e[i];
-      if (e.on === 0) continue;
+      if (e.on === 0 || (H && H[i])) continue;
       const r = 5 + mag;
       if (distBox2(e.x, e.y, bx0, by0, bx1, by1) <= r * r) {
         e.on = 0;
         this.touched.push(i);
+        if (R) this.got.push(i);
         this.addCoins(1);
         this.emit({ type: 'coin', frame: S.f, id: W.defs[i].id, x: e.x / CELL, y: e.y / CELL, n: S.coins });
       }
     }
     for (const i of W.bigs) {
       const e = S.e[i];
-      if (e.s !== 0) continue;
+      if (e.s !== 0 || (H && H[i])) continue;
       const r = 8 + mag;
       if (distBox2(e.x, e.y, bx0, by0, bx1, by1) <= r * r) {
         e.s = 1;
         this.touched.push(i);
+        if (R) this.got.push(i);
         this.emit({ type: 'big_coin', frame: S.f, id: W.defs[i].id, x: e.x / CELL, y: e.y / CELL });
       }
     }
     for (const i of W.keys) {
       const e = S.e[i];
-      if (e.on === 0) continue;
+      if (e.on === 0 || (H && H[i])) continue;
       const r = 8 + mag;
       if (distBox2(e.x, e.y, bx0, by0, bx1, by1) <= r * r) {
         e.on = 0;
         this.touched.push(i);
+        if (R) this.got.push(i);
         this.emit({ type: 'key', frame: S.f, id: W.defs[i].id, x: e.x / CELL, y: e.y / CELL });
       }
     }
     // doors open on touch while holding one of their keys
+    if (R) this.pickupsStep(R, bx0, by0, bx1, by1);
     for (const i of W.doors) {
       const e = S.e[i];
-      if (e.on === 0) continue;
+      if (e.on === 0 || (H && H[i])) continue;
       const d = W.defs[i] as DDoor;
       if (!overlap(bx0 - 1.5, by0 - 1.5, bx1 + 1.5, by1 + 1.5, d.box[0], d.box[1], d.box[2], d.box[3])) continue;
       if (d.keys.some((k) => S.e[k].on === 0)) this.openDoor(i);
     }
-    // springs
+    // springs (top-down: they push along their dir, §3)
     for (const i of W.springs) {
       const d = W.defs[i] as DSpring;
       const b = d.box;
+      if (H && H[i]) continue;
+      if (td) {
+        if (P.lock > 0 || !overlap(bx0, by0, bx1, by1, b[0], b[1], b[2], b[3])) continue;
+        const v = HAZARDS.spring.side_vx;
+        P.lockvx = d.dir === 'left' ? -v : d.dir === 'right' ? v : 0;
+        (R as RuleState).lvy = d.dir === 'up' ? -v : 0;
+        P.lock = HAZARDS.spring.side_lock_f;
+        P.vx = P.lockvx;
+        P.vy = (R as RuleState).lvy;
+        S.e[i].t = 0;
+        this.touched.push(i);
+        this.emit({ type: 'spring', frame: S.f, id: d.id, x: d.x / CELL, y: d.y / CELL, vy: P.vy });
+        break;
+      }
       if (d.dir === 'up') {
         if (P.vy < 0 || bx1 <= b[0] + 1 || bx0 >= b[2] - 1 || P.y < b[1] || P.y > b[3] + 1) continue;
         P.vy = HAZARDS.spring.up_vy_per_strength * d.strength;
@@ -1533,7 +1798,7 @@ export class SimCore implements Sim {
     // checkpoints
     for (const i of W.checkpoints) {
       const e = S.e[i];
-      if (e.s !== 0) continue;
+      if (e.s !== 0 || (H && H[i])) continue;
       const b = (W.defs[i] as DCheckpoint).box;
       if (!overlap(bx0, by0, bx1, by1, b[0], b[1], b[2], b[3])) continue;
       e.s = 1;
@@ -1549,13 +1814,21 @@ export class SimCore implements Sim {
       const big: number[] = [];
       for (const j of W.bigs) if (S.e[j].s === 2) big.push(j);
       S.save = { dead, keys, doors, big };
+      if (R) R.sv = { hid: R.hid.slice(), once: R.once.slice() };
       this.emit({ type: 'checkpoint', frame: S.f, id: W.defs[i].id, x: (W.defs[i] as DCheckpoint).x / CELL, y: (W.defs[i] as DCheckpoint).y / CELL });
     }
     // touch triggers
     if (W.triggers.length) this.runTriggers(bx0, by0, bx1, by1);
     if (P.mode !== 0) return;
+    // v4: portals and talkers, then the rules (after contacts, before the goal check, §2)
+    if (R) {
+      this.portalsStep(R, bx0, by0, bx1, by1);
+      this.runRules(R);
+      if (this.S !== S || P.mode !== 0 || S.won) return;
+    }
     // goal
     for (const i of W.goals) {
+      if (H && H[i]) continue;
       const b = (W.defs[i] as DGoal).box;
       if (overlap(bx0, by0, bx1, by1, b[0], b[1], b[2], b[3])) {
         this.touched.push(i);
@@ -1665,7 +1938,19 @@ export class SimCore implements Sim {
     const keepCoins = W.coins.map((i) => S.e[i].on);
     const cps = W.checkpoints.map((i) => S.e[i].s);
     const save = S.save;
+    // v4: collected pickups stay collected (like coins) and talkers keep their next line
+    const R = S.r;
+    const keepPick = R ? W.pickups.map((i) => [S.e[i].on, S.e[i].t]) : null;
+    const keepNpc = R ? W.npcs.map((i) => S.e[i].n) : null;
     S.e = W.defs.map((d) => this.initEntity(d));
+    if (R && keepPick && keepNpc) {
+      W.pickups.forEach((i, k) => {
+        S.e[i].on = keepPick[k][0];
+        S.e[i].t = keepPick[k][1];
+      });
+      W.npcs.forEach((i, k) => (S.e[i].n = keepNpc[k]));
+      this.respawnRules(R);
+    }
     W.coins.forEach((i, k) => (S.e[i].on = keepCoins[k]));
     W.checkpoints.forEach((i, k) => (S.e[i].s = cps[k]));
     if (save) {
@@ -1722,9 +2007,472 @@ export class SimCore implements Sim {
     this.emit({ type: 'respawn', frame: N.f, id: W.start.id ?? 'start', x: N.p.x / CELL, y: N.p.y / CELL });
   }
 
-  private lose(): void {
-    this.emit({ type: 'lose', frame: this.S.f, cause: 'timer', x: this.S.p.x / CELL, y: this.S.p.y / CELL });
+  private lose(cause = 'timer'): void {
+    this.emit({ type: 'lose', frame: this.S.f, cause, x: this.S.p.x / CELL, y: this.S.p.y / CELL });
     this.fullReset();
+  }
+
+  // ---- v4: rules engine, modes, primitives (docs/v4/CONTRACTS_V4.md §2-5) ----------------------
+
+  private initRule(): RuleState {
+    const W = this.W;
+    return {
+      gs: 1, sc: 0, cn: W.counterNames.map(() => 0), once: W.rules.map(() => 0), m: W.rules.map(() => 0), st: 1, kp: 0, allc: 0,
+      hid: W.hidden0.slice(), spM: 1, spF: 0, jpM: 1, jpF: 0, gvM: 1, gvF: 0, rvF: 0, fzF: 0, fzT: 0, say: null, lvy: 0, sv: null,
+    };
+  }
+
+  /** A new life (§2.3): gravity 1, timed effects cleared, no bubble; latches and hidden flags back to the last checkpoint. */
+  private respawnRules(R: RuleState): void {
+    const W = this.W;
+    R.gs = 1;
+    R.spM = 1; R.spF = 0; R.jpM = 1; R.jpF = 0; R.gvM = 1; R.gvF = 0; R.rvF = 0; R.fzF = 0; R.fzT = 0;
+    R.say = null;
+    R.lvy = 0;
+    R.st = 1;
+    R.hid = R.sv ? R.sv.hid.slice() : W.hidden0.slice();
+    R.once = R.sv ? R.sv.once.slice() : W.rules.map(() => 0);
+    W.rules.forEach((rd, k) => {
+      if (rd.when.kind === 'touch' || rd.when.kind === 'zone') R.m[k] = 0;
+    });
+  }
+
+  /** Pit death; flipped gravity falls off the top of the world, top-down has walls instead of pits (§2.3, §3). */
+  private pitV4(R: RuleState): boolean {
+    const P = this.S.p;
+    if (this.W.mode === 'topdown') return false;
+    return R.gs < 0 ? P.y - BODY_H < -V4.pit_top_c * CELL : P.y > this.W.hPx + 2 * CELL;
+  }
+
+  /** Effect clocks, the speech bubble, portal cooldowns and pickup respawns (one live frame). */
+  private v4Timers(R: RuleState): void {
+    const S = this.S;
+    const W = this.W;
+    if (R.spF > 0 && --R.spF === 0) R.spM = 1;
+    if (R.jpF > 0 && --R.jpF === 0) R.jpM = 1;
+    if (R.gvF > 0 && --R.gvF === 0) R.gvM = 1;
+    if (R.rvF > 0) R.rvF--;
+    if (R.fzF > 0) R.fzF--;
+    if (R.say && R.say.f > 0 && --R.say.f === 0) R.say = null;
+    for (const i of W.portals) if (S.e[i].t > 0) S.e[i].t--;
+    for (const i of W.pickups) {
+      const e = S.e[i];
+      const d = W.defs[i] as DPickup;
+      if (e.on === 0 && d.respawn > 0 && ++e.t >= d.respawn) {
+        e.on = 1;
+        e.t = 0;
+      }
+    }
+  }
+
+  /** Pickups are collected on touch and fire collect triggers (§5). */
+  private pickupsStep(R: RuleState, bx0: number, by0: number, bx1: number, by1: number): void {
+    const S = this.S;
+    const W = this.W;
+    const r = V4.pickup.radius_px;
+    for (const i of W.pickups) {
+      const e = S.e[i];
+      if (e.on === 0 || R.hid[i]) continue;
+      if (distBox2(e.x, e.y, bx0, by0, bx1, by1) > r * r) continue;
+      e.on = 0;
+      e.t = 0;
+      this.touched.push(i);
+      this.got.push(i);
+      this.emit({ type: 'pickup', frame: S.f, id: W.defs[i].id, name: (W.defs[i] as DPickup).item, x: e.x / CELL, y: e.y / CELL });
+    }
+  }
+
+  /** Portals (touch edge → the partner's centre, velocity kept, both cool down) and talkers (touch edge → next line). */
+  private portalsStep(R: RuleState, bx0: number, by0: number, bx1: number, by1: number): void {
+    const S = this.S;
+    const W = this.W;
+    for (const i of W.portals) {
+      const d = W.defs[i] as DPortal;
+      const e = S.e[i];
+      const over = !R.hid[i] && distBox2(d.x, d.y, bx0, by0, bx1, by1) < d.r * d.r ? 1 : 0;
+      const fire = over === 1 && e.s === 0 && e.t === 0 && d.pair >= 0 && !R.hid[d.pair];
+      e.s = over;
+      if (!fire) continue;
+      const pd = W.defs[d.pair] as DPortal;
+      const pe = S.e[d.pair];
+      this.teleportTo(pd.x, pd.y, R);
+      e.t = V4.portal.cooldown_f;
+      pe.t = V4.portal.cooldown_f;
+      pe.s = 1;
+      this.touched.push(i);
+      this.emit({ type: 'portal', frame: S.f, id: d.id, name: pd.id, x: pd.x / CELL, y: pd.y / CELL });
+      break;
+    }
+    for (const i of W.npcs) {
+      const d = W.defs[i] as DNpc;
+      const e = S.e[i];
+      const over = this.touching(i) ? 1 : 0;
+      if (over && e.s === 0 && d.lines.length) {
+        const text = d.lines[e.n % d.lines.length];
+        e.n++;
+        R.say = { t: text, g: d.id, f: NPC_SAY_F };
+        this.emit({ type: 'say', frame: S.f, id: d.id, text, x: d.x / CELL, y: d.y / CELL });
+      }
+      e.s = over;
+    }
+  }
+
+  /** The player's feet go to (x, y) px; velocity is kept (§2.2 teleport, §5 portal). */
+  private teleportTo(x: number, y: number, R: RuleState): void {
+    const P = this.S.p;
+    P.x = Math.min(Math.max(x, HALF_W), this.W.wPx - HALF_W);
+    P.y = R.gs < 0 ? y + BODY_H : y;
+    P.gnd = 0;
+    P.gref = -1;
+    P.coy = 0;
+    P.prevFeet = P.y;
+  }
+
+  /** The current box (px) of def i into rb; false when it is hidden or gone (collected, defeated, open, crumbled). */
+  private entRect(i: number): boolean {
+    const S = this.S;
+    const d = this.W.defs[i];
+    const e = S.e[i];
+    const b = this.rb;
+    if (S.r && S.r.hid[i]) return false;
+    const box = (x0: number, y0: number, x1: number, y1: number): boolean => {
+      b[0] = x0; b[1] = y0; b[2] = x1; b[3] = y1;
+      return true;
+    };
+    switch (d.k) {
+      case 'spikes': return box(d.band[0], d.band[1], d.band[2], d.band[3]);
+      case 'enemy': return e.on === 1 && box(e.x - d.hw, e.y - d.h, e.x + d.hw, e.y);
+      case 'coin': return e.on === 1 && box(e.x - 8, e.y - 8, e.x + 8, e.y + 8);
+      case 'big_coin': return e.s === 0 && box(e.x - 8, e.y - 8, e.x + 8, e.y + 8);
+      case 'key': case 'pickup': return e.on === 1 && box(e.x - 8, e.y - 8, e.x + 8, e.y + 8);
+      case 'checkpoint': case 'goal': case 'spring': return box(d.box[0], d.box[1], d.box[2], d.box[3]);
+      case 'door': return e.on === 1 && box(d.box[0], d.box[1], d.box[2], d.box[3]);
+      case 'saw': return box(e.x - d.rHit, e.y - d.rHit, e.x + d.rHit, e.y + d.rHit);
+      case 'firebar': case 'hint_arrow': return box(d.x - 8, d.y - 8, d.x + 8, d.y + 8);
+      case 'moving_platform': case 'crumble': case 'falling_platform': return this.platformActive(d, e) && box(e.x, e.y, e.x + d.w, e.y + d.h);
+      case 'portal': return box(d.x - d.r, d.y - d.r, d.x + d.r, d.y + d.r);
+      case 'zone': case 'npc': return box(d.box[0], d.box[1], d.box[2], d.box[3]);
+    }
+  }
+
+  /** The player's body (grown by 1 px, so standing on a platform touches it) overlaps def i. */
+  private touching(i: number): boolean {
+    if (!this.entRect(i)) return false;
+    const P = this.S.p;
+    const b = this.rb;
+    return overlap(P.x - HALF_W - 1, P.y - BODY_H - 1, P.x + HALF_W + 1, P.y + 1, b[0], b[1], b[2], b[3]);
+  }
+
+  /** A coin (item "coin": coin or big coin) or a pickup with this item name was collected this frame. */
+  private gotItem(item: string): boolean {
+    const W = this.W;
+    for (const i of this.got) {
+      const d = W.defs[i];
+      if (item === 'coin' ? d.k === 'coin' || d.k === 'big_coin' : d.k === 'pickup' && d.item === item) return true;
+    }
+    return false;
+  }
+
+  /** Evaluates rules.logic then compiled.logic in order (§2); stops when an action ends the life or the level. */
+  private runRules(R: RuleState): void {
+    const S = this.S;
+    const P = S.p;
+    const W = this.W;
+    if (!W.rules.length) return;
+    const start = R.st === 1;
+    R.st = 0;
+    const el = S.clock0 >= 0 ? S.clockF - S.tbase : 0;
+    let allNow = false;
+    if (R.allc === 0 && this.got.length && W.coins.length + W.bigs.length > 0) {
+      const coinNow = this.got.some((i) => W.defs[i].k === 'coin' || W.defs[i].k === 'big_coin');
+      allNow = coinNow && W.coins.every((i) => S.e[i].on === 0) && W.bigs.every((i) => S.e[i].s !== 0);
+      if (allNow) R.allc = 1;
+    }
+    const fy = R.gs < 0 ? P.y - BODY_H + 1 : P.y - 1;
+    for (let k = 0; k < W.rules.length; k++) {
+      const rd = W.rules[k];
+      const w = rd.when;
+      let fire = false;
+      switch (w.kind) {
+        case 'start': fire = start; break;
+        case 'key': fire = (this.kEdge & (w.key === 'space' ? IN_SPACE : IN_ACTION)) !== 0; break;
+        case 'touch': {
+          const now = rd.ref >= 0 && this.touching(rd.ref) ? 1 : 0;
+          fire = now === 1 && R.m[k] === 0;
+          R.m[k] = now;
+          break;
+        }
+        case 'collect': fire = rd.ref >= 0 ? this.got.includes(rd.ref) : !!w.item && this.gotItem(w.item); break;
+        case 'all_coins': fire = allNow; break;
+        case 'timer': {
+          const N = rd.ref;
+          if (N > 0) fire = w.every ? Math.floor(el / N) > Math.floor(R.m[k] / N) : R.m[k] < N && el >= N;
+          R.m[k] = el;
+          break;
+        }
+        case 'zone': {
+          const b = rd.rect as number[];
+          const now = P.x >= b[0] && P.x < b[2] && fy >= b[1] && fy < b[3] ? 1 : 0;
+          fire = now === 1 && R.m[k] === 0;
+          R.m[k] = now;
+          break;
+        }
+        case 'score': {
+          const now = R.sc >= w.at_least ? 1 : 0;
+          fire = now === 1 && R.m[k] === 0;
+          R.m[k] = now;
+          break;
+        }
+        case 'counter': {
+          const now = rd.ref >= 0 && R.cn[rd.ref] >= w.at_least ? 1 : 0;
+          fire = now === 1 && R.m[k] === 0;
+          R.m[k] = now;
+          break;
+        }
+      }
+      if (!fire || (rd.once && R.once[k])) continue;
+      if (rd.once) R.once[k] = 1;
+      this.emit({ type: 'rule', frame: S.f, id: rd.id });
+      for (const ad of rd.then) {
+        this.act(ad, R);
+        if (this.S !== S || P.mode !== 0 || S.won) return;
+      }
+    }
+  }
+
+  /** One action (§2.2). */
+  private act(ad: ActDef, R: RuleState): void {
+    const S = this.S;
+    const P = S.p;
+    const W = this.W;
+    const a = ad.a;
+    const f = S.f;
+    const at = { x: P.x / CELL, y: P.y / CELL };
+    switch (a.kind) {
+      case 'flip_gravity':
+        R.gs = -R.gs;
+        P.gnd = 0;
+        P.gref = -1;
+        P.coy = 0;
+        P.cut = 0;
+        this.emit({ type: 'flip', frame: f, n: R.gs, ...at });
+        break;
+      case 'gravity': R.gvM = Math.min(2, Math.max(0.25, a.times)); R.gvF = ad.f; break;
+      case 'speed': R.spM = Math.min(3, Math.max(0.25, a.times)); R.spF = ad.f; break;
+      case 'jump_power': R.jpM = Math.min(2, Math.max(0.5, a.times)); R.jpF = ad.f; break;
+      case 'reverse_controls': R.rvF = ad.f; break;
+      case 'teleport': {
+        if (a.to) this.teleportTo(a.to[0] * CELL, a.to[1] * CELL, R);
+        else if (ad.ref >= 0 && this.entRect(ad.ref)) this.teleportTo((this.rb[0] + this.rb[2]) / 2, (this.rb[1] + this.rb[3]) / 2, R);
+        else break;
+        this.emit({ type: 'teleport', frame: f, id: a.target ?? undefined, x: P.x / CELL, y: P.y / CELL });
+        break;
+      }
+      case 'toggle': {
+        if (ad.ref < 0) break;
+        const was = R.hid[ad.ref];
+        R.hid[ad.ref] = a.to === 'on' ? 0 : a.to === 'off' ? 1 : 1 - was;
+        if (R.hid[ad.ref] !== was) this.emit({ type: 'toggle', frame: f, id: W.defs[ad.ref].id, n: R.hid[ad.ref] ? 0 : 1 });
+        break;
+      }
+      case 'open':
+        if (ad.ref >= 0 && W.defs[ad.ref].k === 'door') this.openDoor(ad.ref);
+        break;
+      case 'freeze_enemies':
+        R.fzF = ad.f;
+        this.emit({ type: 'freeze', frame: f, n: ad.f });
+        break;
+      case 'add_score':
+        R.sc += a.n;
+        this.emit({ type: 'score', frame: f, n: R.sc, ...at });
+        break;
+      case 'add_counter':
+        if (ad.ref < 0) break;
+        R.cn[ad.ref] += a.n ?? 1;
+        this.emit({ type: 'score', frame: f, name: a.name, n: R.cn[ad.ref], ...at });
+        break;
+      case 'heal': P.hp = Math.min(W.hearts, P.hp + 1); break;
+      case 'hurt': this.hit('rule', P.x, false); break;
+      case 'win': this.win(); break;
+      case 'lose': this.lose('rule'); break;
+      case 'say':
+        R.say = { t: a.text, g: a.target ?? null, f: ad.f };
+        this.emit({ type: 'say', frame: f, id: a.target ?? undefined, text: a.text });
+        break;
+      case 'sound': this.emit({ type: 'sound', frame: f, name: a.name }); break;
+      case 'shake': this.emit({ type: 'shake', frame: f }); break;
+    }
+  }
+
+  // ---- v4 top-down (§3) -----------------------------------------------------------------------
+
+  /** Four-way walking at walk speed (Run as the abilities allow); no gravity, no jumping, the world edges are walls. */
+  private topdownStep(input: number, env: Env): void {
+    const P = this.S.p;
+    const W = this.W;
+    const prof = W.prof;
+    const R = this.S.r as RuleState;
+    if (P.lock > 0) {
+      P.lock--;
+      P.vx = P.lockvx;
+      P.vy = R.lvy;
+      P.run = 0;
+    } else {
+      const dx = (input & IN_R ? 1 : 0) - (input & IN_L ? 1 : 0);
+      const dy = (input & IN_D ? 1 : 0) - (input & IN_J ? 1 : 0);
+      const running = (input & IN_RUN) !== 0 && W.ab.run && prof.run_max !== null;
+      P.run = running ? 1 : 0;
+      let v = (running ? (prof.run_max as number) : prof.walk_max) * env.sm;
+      if (dx !== 0 && dy !== 0) v *= V4.topdown.diagonal;
+      const a = V4.topdown.accel * env.fr * DT;
+      P.vx = towards(P.vx, dx * v, a);
+      P.vy = towards(P.vy, dy * v, a);
+      if (dx !== 0) P.face = dx;
+    }
+    P.vx += env.ax * DT;
+    P.vy += env.ay * DT;
+    this.tdMove((P.vx + env.cx) * DT, true);
+    this.tdMove((P.vy + env.cy) * DT, false);
+    P.gnd = 1;
+    P.gref = -1;
+    P.gcode = 0;
+    P.coy = 0;
+    P.skid = 0;
+    P.vyPre = P.vy;
+    if (P.buf > 0) P.buf--;
+    if (P.inv > 0) P.inv--;
+  }
+
+  /** Top-down move on one axis: solid and slope tiles, solid kinematics and the world edges block. */
+  private tdMove(d: number, horiz: boolean): void {
+    if (d === 0) return;
+    const P = this.S.p;
+    const T = this.T;
+    if (horiz) {
+      let nx = P.x + d;
+      const r0 = Math.floor((P.y - BODY_H) / CELL);
+      const r1 = Math.floor((P.y - EPS) / CELL);
+      const lead = d > 0 ? nx + HALF_W : nx - HALF_W;
+      const lc = d > 0 ? Math.floor((lead - EPS) / CELL) : Math.floor(lead / CELL);
+      const oc = d > 0 ? Math.floor((P.x + HALF_W - EPS) / CELL) : Math.floor((P.x - HALF_W) / CELL);
+      if (lc !== oc) {
+        for (let r = r0; r <= r1; r++) {
+          if (!T.solidish(lc, r)) continue;
+          nx = d > 0 ? lc * CELL - HALF_W : (lc + 1) * CELL + HALF_W;
+          P.vx = 0;
+          break;
+        }
+      }
+      for (const i of this.W.kin) {
+        if (!this.kinRect(i) || this.kOne) continue;
+        if (overlap(P.x - HALF_W, P.y - BODY_H, P.x + HALF_W, P.y, this.kx0, this.ky0, this.kx1, this.ky1)) continue;
+        if (!overlap(nx - HALF_W, P.y - BODY_H, nx + HALF_W, P.y, this.kx0, this.ky0, this.kx1, this.ky1)) continue;
+        nx = d > 0 ? Math.min(nx, this.kx0 - HALF_W) : Math.max(nx, this.kx1 + HALF_W);
+        P.vx = 0;
+      }
+      P.x = nx;
+      return;
+    }
+    let ny = P.y + d;
+    const c0 = Math.floor((P.x - HALF_W) / CELL);
+    const c1 = Math.floor((P.x + HALF_W - EPS) / CELL);
+    const lr = d > 0 ? Math.floor((ny - EPS) / CELL) : Math.floor((ny - BODY_H) / CELL);
+    const or = d > 0 ? Math.floor((P.y - EPS) / CELL) : Math.floor((P.y - BODY_H) / CELL);
+    if (lr !== or) {
+      for (let c = c0; c <= c1; c++) {
+        if (!T.solidish(c, lr)) continue;
+        ny = d > 0 ? lr * CELL : (lr + 1) * CELL + BODY_H;
+        P.vy = 0;
+        break;
+      }
+    }
+    for (const i of this.W.kin) {
+      if (!this.kinRect(i) || this.kOne) continue;
+      if (overlap(P.x - HALF_W, P.y - BODY_H, P.x + HALF_W, P.y, this.kx0, this.ky0, this.kx1, this.ky1)) continue;
+      if (!overlap(P.x - HALF_W, ny - BODY_H, P.x + HALF_W, ny, this.kx0, this.ky0, this.kx1, this.ky1)) continue;
+      ny = d > 0 ? Math.min(ny, this.ky0) : Math.max(ny, this.ky1 + BODY_H);
+      P.vy = 0;
+    }
+    if (ny < BODY_H) {
+      ny = BODY_H;
+      P.vy = 0;
+    } else if (ny > this.W.hPx) {
+      ny = this.W.hPx;
+      P.vy = 0;
+    }
+    P.y = ny;
+  }
+
+  /** Top-down enemies (§3): walkers patrol without falling, chasers chase in 2D, shooters fire; nothing falls. */
+  private topdownEnemy(d: DEnemy, e: EState, i: number): void {
+    const S = this.S;
+    const P = S.p;
+    if (d.arch === 'walker' || (d.arch === 'chaser' && e.s === 0)) {
+      const v = d.arch === 'chaser' ? (ENEMIES.chaser.patrol_cs * CELL) / HZ : d.speed;
+      let turn = false;
+      if (d.bounds && ((e.d > 0 && e.x + v > d.bounds[1]) || (e.d < 0 && e.x - v < d.bounds[0]))) turn = true;
+      if (turn) e.d = -e.d;
+      else if (this.enemyMoveX(d, e, e.d * v) || this.bumpsEnemy(d, e, e.d)) e.d = -e.d;
+      e.vx = e.d * v * (d.arch === 'chaser' ? HZ : 1);
+      e.g = 1;
+      if (d.arch === 'chaser' && this.canSee(d, e, true)) {
+        e.s = 1;
+        e.t = 0;
+        e.vx = 0;
+        this.emit({ type: 'alert', frame: S.f, id: d.id, x: e.x / CELL, y: e.y / CELL });
+      }
+      return;
+    }
+    if (d.arch === 'chaser') {
+      if (e.s === 1) {
+        if (++e.t >= 15) {
+          e.s = 2;
+          e.t = 0;
+          e.n = 0;
+        }
+        return;
+      }
+      const dx = P.x - e.x;
+      const dy = P.y - e.y;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      if (len > 0.5) {
+        const v = d.speed;
+        if (dx !== 0) e.d = dx < 0 ? -1 : 1;
+        this.enemyMoveX(d, e, (dx / len) * v);
+        this.enemyMoveY(d, e, (dy / len) * v);
+        e.vx = (dx / len) * v * HZ;
+      }
+      e.n = this.canSee(d, e, true) ? 0 : e.n + 1;
+      if (e.n >= Math.round(ENEMIES.chaser.give_up_s * HZ)) {
+        e.s = 0;
+        e.t = 0;
+      }
+      return;
+    }
+    if (d.arch === 'shooter') {
+      const face = d.facing === 'left' ? -1 : d.facing === 'right' ? 1 : P.x < e.x ? -1 : 1;
+      e.d = face;
+      e.t++;
+      if (e.s === 0 && e.t >= d.interval - Math.round(ENEMIES.shooter.inflate_s * HZ)) e.s = 1;
+      if (e.t >= d.interval) {
+        e.s = 0;
+        e.t = 0;
+        S.bl.push({ x: e.x + face * (d.hw + 3), y: e.y - d.h / 2, vx: face * d.blobV, dist: 0, owner: i, id: S.blobN++ });
+        this.emit({ type: 'shoot', frame: S.f, id: d.id, x: e.x / CELL, y: e.y / CELL });
+      }
+    }
+  }
+
+  /** Moves an enemy body on y against solid tiles (top-down chasers). */
+  private enemyMoveY(d: DEnemy, e: EState, dy: number): void {
+    if (dy === 0) return;
+    const ny = e.y + dy;
+    const c0 = Math.floor((e.x - d.hw) / CELL);
+    const c1 = Math.floor((e.x + d.hw - EPS) / CELL);
+    const r = dy > 0 ? Math.floor((ny - EPS) / CELL) : Math.floor((ny - d.h) / CELL);
+    for (let c = c0; c <= c1; c++) if (this.T.solidish(c, r)) return;
+    if (ny - d.h < 0 || ny > this.W.hPx) return;
+    e.y = ny;
   }
 
   private win(id?: string): void {

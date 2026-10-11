@@ -16,11 +16,12 @@ from typing_extensions import TypeAliasType
 from app.spec.behavior import EnemyParams
 from app.spec.common import (
     Archetype, Band, CallKind, CellXY, Dir4, Effort, Face, MessageRef, Origin, RectCells, Safety, Spec, Stage, Tier,
-    World,
+    World, ZoneEffect,
 )
 from app.spec.edits import EditRecord
 from app.spec.ink import LevelInk
 from app.spec.library import LibraryType, Rig
+from app.spec.logic import RuleV4
 from app.spec.report import Flag
 from app.spec.rules import GameRules
 from app.spec.scene import SceneObject, Setpiece
@@ -57,6 +58,7 @@ class _Ent(Spec):
     id: str
     origin: Origin | None = None  # art only; excluded from level_hash
     sprite: str | None = None  # art only; excluded from level_hash
+    hidden: bool | None = None  # v4: starts hidden until a rule toggles it on (null = shown)
 
 
 class EPlayerStart(_Ent):
@@ -194,11 +196,58 @@ class EHintArrow(_Ent):
     dir: Dir4
 
 
+# ---- v4 entities (docs/v4/CONTRACTS_V4.md §3) ----
+
+
+class EPortal(_Ent):
+    """Centre point; radius 0.75 cells. Touching it moves the player to `pair` (a portal id)."""
+
+    type: Literal["portal"]
+    x: float
+    y: float
+    pair: str | None = None
+
+
+class EZone(_Ent):
+    """Top-left box in cells with an effect while the player is inside (BZone)."""
+
+    type: Literal["zone"]
+    x: float
+    y: float
+    w: float
+    h: float
+    effect: ZoneEffect
+    dir: Dir4 = "right"
+    strength: float = Field(default=1.0, ge=0.5, le=2.0)
+
+
+class EPickup(_Ent):
+    """Centre point. Collecting it fires collect rules for its id and its item name."""
+
+    type: Literal["pickup"]
+    x: float
+    y: float
+    item: str = Field(default="star", pattern=r"^[a-z][a-z0-9 ]{0,15}$")
+    respawn_s: float | None = Field(default=None, gt=0, le=60)
+
+
+class ENpc(_Ent):
+    """x centre, y feet line, size in cells. Touching it shows `lines` one after another."""
+
+    type: Literal["npc"]
+    x: float
+    y: float
+    w: float = 1
+    h: float = 2
+    lines: list[str] = Field(min_length=1, max_length=6)
+    name: str | None = Field(default=None, max_length=16)
+
+
 Entity = TypeAliasType(
     "Entity",
     Annotated[
         EPlayerStart | ESpikes | EEnemy | ECoin | EBigCoin | ECheckpoint | EGoal | EKey | EDoor | ESpring | ESaw
-        | EFirebar | EMovingPlatform | ECrumble | EFalling | EHintArrow,
+        | EFirebar | EMovingPlatform | ECrumble | EFalling | EHintArrow | EPortal | EZone | EPickup | ENpc,
         Field(discriminator="type"),
     ],
 )
@@ -234,6 +283,7 @@ class Compiled(Spec):
     entities: list[Entity]
     triggers: list[Trigger] = Field(default_factory=list)
     sprites: Sprites = Field(default_factory=Sprites)
+    logic: list[RuleV4] = Field(default_factory=list)  # v4: this level's rules (in level_hash only when non-empty)
 
 
 # ---- design (informative) and meta ---------------------------------------------------------------
@@ -428,13 +478,16 @@ def canonical_json(v: Any) -> str:
 def gameplay_view(level: dict[str, Any]) -> dict[str, Any]:
     compiled = level["compiled"]
     entities = [{k: x for k, x in e.items() if k not in ENTITY_ART_FIELDS} for e in compiled.get("entities", [])]
-    return {
+    view = {
         "world": level["world"],
         "rules": level["rules"],
         "tiles": compiled["tiles"],
         "entities": entities,
         "triggers": compiled.get("triggers", []),
     }
+    if compiled.get("logic"):  # v4: absent or empty keeps the v2 hash
+        view["logic"] = compiled["logic"]
+    return view
 
 
 def level_hash(level: dict[str, Any]) -> str:
@@ -445,7 +498,7 @@ def level_hash(level: dict[str, Any]) -> str:
 
 EXPORTS: list[Any] = [
     EPlayerStart, ESpikes, EEnemy, ECoin, EBigCoin, ECheckpoint, EGoal, EKey, EDoor, ESpring, ESaw, EFirebar,
-    EMovingPlatform, ECrumble, EFalling, EHintArrow, Entity, Trigger, Tiles, PlayerSprite, Sprites, Compiled,
+    EMovingPlatform, ECrumble, EFalling, EHintArrow, EPortal, EZone, EPickup, ENpc, Entity, Trigger, Tiles, PlayerSprite, Sprites, Compiled,
     DesignSegment, Reach, DesignBlock, StageTime, ModelCallMeta, BuildMeta, LevelMeta, LevelSheet, LevelSource,
     SkinCredit, SkinBackdrop, SkinObject, LevelSkin, LevelV2,
 ]

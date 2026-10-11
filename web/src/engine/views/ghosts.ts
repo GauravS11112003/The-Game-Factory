@@ -26,6 +26,7 @@ import { loadImage, pencilize } from '../../render/pencilize.ts';
 import { fmtClock } from '../../render/text.ts';
 import type { GhostKind, GhostOption, GhostResult } from '../types.ts';
 import { makeSim } from '../simhost.ts';
+import { gravityOf, levelMode, poseInput } from '../v4.ts';
 import { PlayerSprite } from './player.ts';
 import type { CharacterSource } from './player.ts';
 import type { TexBank } from '../gfx.ts';
@@ -310,7 +311,9 @@ class Ghost {
     else if (this.view.isHidden && !shardsBusy) this.view.show();
     this.labelText.setVisible(!hidden && !this.finished);
     if (!this.view.isHidden) {
-      this.view.pose({ x, y, vx: c.vx, vy: c.vy, facing: c.facing, onGround: c.on_ground, state: this.finished ? 'win' : c.state, invuln: 0 }, dt, now, null, this.vmax);
+      // v4: the same top-down walk and flipped gravity as the player (engine/v4.ts)
+      const pi = poseInput(c, levelMode(this.level));
+      this.view.pose({ x, y, vx: pi.vx, vy: pi.vy, facing: c.facing, onGround: pi.onGround, state: this.finished ? 'win' : pi.state, invuln: 0, gravity: gravityOf(c) }, dt, now, null, this.vmax);
       this.labelText.setPosition(x * CELL, y * CELL - this.view.height - 6).setAlpha(Math.min(0.85, alpha * 2));
     }
     if (this.tag) this.tag.setAlpha(Math.min(1, this.tag.alpha + dt / 250));

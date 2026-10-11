@@ -24,9 +24,9 @@ import { DEFAULT_RULES } from '../rules.ts';
 import { openPdf } from './scan.ts';
 
 const PROFILES_SHOWN: ProfileId[] = ['v2-gentle', 'v2-standard', 'v2-snappy'];
-const THEMES: Theme[] = ['sketchbook', 'notebook', 'graph', 'kraft'];
+export const THEMES: Theme[] = ['sketchbook', 'notebook', 'graph', 'kraft'];
 /** Paper swatches for the theme boxes (the stage draws the real paper, lane E). */
-const THEME_PAPER: Record<Theme, { base: string; css: string }> = {
+export const THEME_PAPER: Record<Theme, { base: string; css: string }> = {
   sketchbook: { base: ART.themes.sketchbook.base, css: `radial-gradient(rgba(31,27,24,0.25) 1px, transparent 1.3px) 0 0 / 6px 6px, ${ART.themes.sketchbook.base}` },
   notebook: { base: '#FDFCF6', css: 'linear-gradient(90deg, transparent 5px, rgba(224,69,58,0.7) 5px, rgba(224,69,58,0.7) 6px, transparent 6px), repeating-linear-gradient(transparent 0 5px, rgba(44,123,229,0.35) 5px 6px), #FDFCF6' },
   graph: { base: '#F7FAF6', css: 'linear-gradient(rgba(62,158,79,0.3) 1px, transparent 1px) 0 0 / 5px 5px, linear-gradient(90deg, rgba(62,158,79,0.3) 1px, transparent 1px) 0 0 / 5px 5px, #F7FAF6' },

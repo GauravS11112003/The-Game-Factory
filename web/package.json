@@ -19,6 +19,8 @@
     "build:export": "vite build --config vite.export.config.ts"
   },
   "dependencies": {
+    "@fontsource/atkinson-hyperlegible": "^5.3.0",
+    "@fontsource/patrick-hand": "^5.3.0",
     "phaser": "^3.90.0"
   },
   "devDependencies": {

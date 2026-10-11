@@ -8,14 +8,26 @@
  * the player's own setting (the HUD ♪ button, persisted as `dal.v2.music`). It fades in over 400 ms, fades out when
  * paused or won, ducks briefly under a death, and alternates two variations of its 4 bars (the second pass adds a
  * melodic fill and an open hat) so the loop doesn't drone. The results card's sounds live here too: the stamp "thunk",
- * the new-record fanfare, the tally tick, the card whoosh.
+ * the new-record fanfare, the tally tick, the card whoosh. v4 adds the sounds a rule can ask for (ding, boing, zap,
+ * whoosh, boom, fanfare) and the juice of the rule events (flip, teleport, portal, pickup, speech blip, poof, freeze).
  */
 import { AUDIO } from '../core/params.ts';
 
 export type Sfx = 'jump' | 'double_jump' | 'land' | 'coin' | 'big_coin' | 'stomp' | 'death' | 'spring' | 'checkpoint'
   | 'goal' | 'crumble' | 'skid' | 'door' | 'saw' | 'ui_tap'
   // the results moment (§7.9): the card slides in, stamps slap on, numbers tally, a new best, a beaten rival
-  | 'whoosh' | 'stamp' | 'tick' | 'pb' | 'beat' | 'ghost_finish';
+  | 'whoosh' | 'stamp' | 'tick' | 'pb' | 'beat' | 'ghost_finish'
+  // v4 rules (docs/v4/CONTRACTS_V4.md §2.2, §4.2): the `sound` action's names, then the engine's own juice sounds
+  | 'ding' | 'boing' | 'zap' | 'boom' | 'fanfare'
+  | 'flip' | 'teleport' | 'portal' | 'pickup' | 'blip' | 'poof' | 'freeze' | 'score';
+
+/** The names a rule's `sound` action may use (whoosh is the card whoosh above). */
+export const RULE_SOUNDS = ['ding', 'boing', 'zap', 'whoosh', 'boom', 'fanfare'] as const;
+
+/** A rule's sound name → its sound effect; unknown names ding. */
+export function ruleSound(name: string | null | undefined): Sfx {
+  return (RULE_SOUNDS as readonly string[]).includes(name ?? '') ? (name as Sfx) : 'ding';
+}
 
 export type MusicTheme = 'sketchbook' | 'notebook' | 'graph' | 'kraft';
 
@@ -548,6 +560,75 @@ export function createMixer(o: { muted?: boolean; music?: boolean } = {}): Mixer
           // a ghost reached the goal: two soft pencil-light notes
           tone('triangle', noteHz('E5'), noteHz('E5'), 90, { gain: 0.06 });
           tone('triangle', noteHz('A5'), noteHz('A5'), 200, { gain: 0.06, when: 0.09 });
+          break;
+        // ---- v4: a rule's `sound` names ----
+        case 'ding':
+          // a small bell: the note and a quiet overtone that rings on
+          tone('sine', 1318 * p, 1318 * p, 520, { gain: 0.16, attackMs: 2, decayMs: 600 });
+          tone('sine', 2637 * p, 2637 * p, 300, { gain: 0.05, detune: 6, decayMs: 340 });
+          break;
+        case 'boing':
+          // a cartoon spring: a sweep up that wobbles back down
+          tone('triangle', 150 * p, 620 * p, 180, { gain: 0.2, attackMs: 3 });
+          tone('sine', 620 * p, 330 * p, 160, { gain: 0.12, when: 0.16 });
+          tone('sine', 330 * p, 470 * p, 120, { gain: 0.07, when: 0.3 });
+          break;
+        case 'zap':
+          tone('sawtooth', 1900 * p, 140 * p, 170, { gain: 0.09, attackMs: 1 });
+          tone('square', 950 * p, 70 * p, 150, { gain: 0.05, attackMs: 1 });
+          break;
+        case 'boom':
+          tone('sine', 95 * p, 32 * p, 520, { gain: 0.45, attackMs: 2, decayMs: 560 });
+          burst(620, 'lowpass', 700, { gain: 0.5, toHz: 70 });
+          duck(500);
+          break;
+        case 'fanfare': {
+          const notes = ['C5', 'E5', 'G5', 'C6'];
+          notes.forEach((n, i) => {
+            const f = noteHz(n) * p;
+            const last = i === notes.length - 1;
+            tone('square', f, f, last ? 420 : 110, { gain: 0.08, when: i * 0.11 });
+            tone('triangle', f, f, last ? 480 : 120, { gain: 0.14, when: i * 0.11 });
+          });
+          duck(900);
+          break;
+        }
+        // ---- v4: the engine's juice sounds ----
+        case 'flip':
+          // gravity turns over: a quick "whoop" up and back
+          tone('sine', 280 * p, 980 * p, 130, { gain: 0.15, attackMs: 4 });
+          tone('triangle', 980 * p, 420 * p, 140, { gain: 0.09, when: 0.12 });
+          break;
+        case 'teleport':
+          tone('triangle', 1500 * p, 260 * p, 220, { gain: 0.12, attackMs: 2 });
+          tone('sine', 2100 * p, 2500 * p, 200, { gain: 0.04, detune: 9, when: 0.05 });
+          burst(90, 'highpass', 4200, { gain: 0.08 });
+          break;
+        case 'portal':
+          // a warbly whirl: two detuned sweeps up
+          for (const det of [-14, 14]) tone('triangle', 320 * p, 1250 * p, 260, { gain: 0.09, detune: det, attackMs: 6 });
+          tone('sine', 1250 * p, 1250 * p, 140, { gain: 0.05, when: 0.24 });
+          break;
+        case 'pickup': {
+          const notes = [1046, 1318, 1760];
+          notes.forEach((f, i) => tone('triangle', f * p, f * p, i === 2 ? 180 : 70, { gain: 0.15, when: i * 0.055 }));
+          break;
+        }
+        case 'blip':
+          // a speech bubble pops up: soft and short
+          tone('sine', 880 * p, 1040 * p, 60, { gain: 0.07, attackMs: 3, decayMs: 70 });
+          break;
+        case 'poof':
+          burst(240, 'bandpass', 1100, { gain: 0.26, q: 0.8, toHz: 320 });
+          break;
+        case 'freeze':
+          // an icy shimmer
+          [2093, 2637, 3136, 4186].forEach((f, i) => tone('sine', f * p, f * p, 160, { gain: 0.05, when: i * 0.045, decayMs: 220 }));
+          burst(320, 'highpass', 6500, { gain: 0.07 });
+          break;
+        case 'score':
+          tone('triangle', 1046 * p, 1046 * p, 70, { gain: 0.14 });
+          tone('triangle', 1568 * p, 1568 * p, 160, { gain: 0.14, when: 0.07 });
           break;
         case 'saw':
           break; // continuous: setSaw

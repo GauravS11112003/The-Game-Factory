@@ -25,6 +25,12 @@ restarted and retried once by the bridge, otherwise `error.worker_down`. Every o
 
 Every core call goes through the worker bridge (`app.build.bridge.CorePool`); the orchestrator never builds
 levels itself.
+
+v4 written rules (docs/v4/CONTRACTS_V4.md §2.4): with typed rules and the model on, the LOGIC call (app.mind.logic)
+reads them into RuleV4s in parallel with the Ink stage. The Ink stage builds with `logic: null` (the core's keyword
+parser); the model's rules (and the mode a sentence names) are adopted before Understood and travel as
+BuildInput.logic / mode in every later build, rebuild and publish (`state.logic`). Sentences that became v4 rules no
+longer contribute v2 parser edits. Model off, late or failed: `logic` stays null and the core parses.
 """
 from __future__ import annotations
 
@@ -46,6 +52,7 @@ from app.mind import client, messages, render, sanitize
 from app.mind import critic as mcritic
 from app.mind import design as mdesign
 from app.mind import digest as mdigest
+from app.mind import logic as mlogic
 from app.mind import perceive as mperceive
 from app.mind.client import MindResult
 
@@ -58,6 +65,7 @@ ASYNC_DESIGN_HORIZON_S = 70.0  # deadline (from submit) for a DESIGN call whose 
 APPLY_TIMEOUT_S = RPC_TIMEOUTS_S.get("apply_plan", 20)
 TIERS_DEADLINE_MS = 3000  # greedy tiers ≤ 3 s (params DESIGN.greedy.max_s)
 MERGE_TIMEOUT_S = 2.0
+LOGIC_RESERVE_S = 10.0  # the LOGIC answer is adopted only while this much of the 25 s is left (else the core parses)
 
 
 def _p(section: str) -> dict[str, Any]:
@@ -274,7 +282,7 @@ class Run:
     def base_input(self, edits: list[dict[str, Any]]) -> dict[str, Any]:
         return {"ink": self.ink, "graph0": graph_for_build(self.graph0, self.state), "edits": edits, "rules": self.rules(),
                 "library": self.library, "parent": self.parent_level,
-                "repairUnsolvable": True, "seed": int(self.state.get("seed") or 1)}
+                "repairUnsolvable": True, "seed": int(self.state.get("seed") or 1), **logic_input(self.state)}
 
     def intent_edits(self, *, understood: bool) -> list[dict[str, Any]]:
         """The edits that state what the level IS (U-edits from perception, parser and kid; K edits; accepted
@@ -532,6 +540,7 @@ class Run:
             self.ink["parent"] = {"level_id": pl.get("id"), "version": pl.get("version", 1),
                                   "level_hash": (pl.get("meta") or {}).get("level_hash", "")}
         drafts.write_json(self.id, "ink.json", self.ink)
+        logic_t = self.task(self.logic_call()) if self.model_on() and self.typed_sentences() else None
 
         # ---- ① Ink ----
         self.stage("ink", "start")
@@ -583,6 +592,8 @@ class Run:
             self.stage("design", "start", "stage.design")
             design1 = self.task(self.design_call(
                 ink_ts, horizon, note="speculative: computed on the quick look; ids are stable across re-reads"))
+
+        await self.adopt_logic(logic_t)
 
         # ---- ② Understood ----
         base_ts, base_stage = ink_ts, "ink"
@@ -777,6 +788,50 @@ class Run:
             parser[str(i)] = [e for e in (res or {}).get("edits") or [] if isinstance(e, dict) and e.get("id")]
             asks.extend(a for a in (res or {}).get("asks") or [] if isinstance(a, dict))
         self.mutate(lambda s: (s["edits"].__setitem__("parser", parser), s.__setitem__("parser_asks", asks)))
+
+    # ---- v4 written rules (LOGIC) ------------------------------------------------------------------
+
+    def typed_sentences(self) -> list[tuple[int, str]]:
+        """(index in ink.typed_rules, cleaned sentence) for every non-empty typed rule."""
+        out = []
+        for i, r in enumerate(self.ink.get("typed_rules") or []):
+            t = sanitize.text(r.get("text") if isinstance(r, dict) else None, mlogic.SENTENCE_CHARS)
+            if t:
+                out.append((i, t))
+        return out
+
+    async def logic_call(self) -> mlogic.LogicOut | None:
+        """The model's reading of the typed rules (no entity ids yet: the compiled ids come from the build)."""
+        typed = self.typed_sentences()
+        sentences = [t for _, t in typed]
+        r = await mlogic.logic_call(sentences, [], draft_id=self.id,
+                                    deadline=time.monotonic() + client.CALLS["logic_parse"].timeout_s)
+        self.record(r)
+        if not r.ok or r.value is None:
+            return None
+        out = mlogic.from_flat(r.value, sentences, [])
+        out.used = {typed[i][0] for i in out.used if 0 <= i < len(typed)}  # → ink.typed_rules indexes
+        return out
+
+    async def adopt_logic(self, task: asyncio.Task[mlogic.LogicOut | None] | None) -> None:
+        """Wait (bounded) for the LOGIC answer; from here on every build carries it as BuildInput.logic / mode."""
+        if task is None:
+            return
+        wait = min(client.CALLS["logic_parse"].timeout_s, self.deadline - LOGIC_RESERVE_S - time.monotonic())
+        try:
+            out = await asyncio.wait_for(asyncio.shield(task), max(0.0, wait))
+        except asyncio.TimeoutError:
+            log.info("logic call late; the core parses the typed rules")
+            task.cancel()
+            return
+        except Exception as e:  # noqa: BLE001 - the core's keyword parser is the floor
+            log.info("logic call failed: %s", e)
+            return
+        if out is None:
+            return
+        logic = {"rules": out.rules, "mode": out.mode, "unknown": out.unknown, "source": out.source}
+        used = sorted(str(i) for i in out.used)
+        self.mutate(lambda s: s.update({"logic": logic, "logic_sentences": used}))
 
     # ---- PERCEIVE + Understood -------------------------------------------------------------------
 
@@ -1157,6 +1212,20 @@ def graph_for_build(graph0: dict[str, Any], state: dict[str, Any]) -> dict[str, 
     return g
 
 
+def logic_input(state: dict[str, Any]) -> dict[str, Any]:
+    """v4 (CONTRACTS_V4 §2.4): {logic, mode?} for BuildInput when the model read the typed rules, else {} (logic
+    null: the core runs its keyword parser on ink.typed_rules)."""
+    out: dict[str, Any] = {}
+    lg = state.get("logic") or {}
+    if isinstance(lg, dict) and isinstance(lg.get("rules"), list):
+        out["logic"] = lg["rules"]
+        if lg.get("mode"):
+            out["mode"] = lg["mode"]
+    if "mode" not in out and state.get("mode") in ("platformer", "topdown", "runner", "flappy"):
+        out["mode"] = state["mode"]  # the mode the editor sent with the build
+    return out
+
+
 def merge_typed_rules(ink: dict[str, Any], extra: list[dict[str, Any]]) -> dict[str, Any]:
     rules = list(ink.get("typed_rules") or [])
     have = {(r.get("text", "").strip().lower(), r.get("target")) for r in rules}
@@ -1178,6 +1247,7 @@ def intent_edits(state: dict[str, Any], *, understood: bool,
     records of the same target and op override earlier ones in the core; kid records come last."""
     e = state.get("edits") or {}
     superseded = set(state.get("superseded_rules") or []) if understood else set()
+    superseded |= set(state.get("logic_sentences") or [])  # v4: sentences the LOGIC call made into rules
     out: dict[str, dict[str, Any]] = {}
     for i, recs in sorted((e.get("parser") or {}).items(), key=lambda kv: int(kv[0])):
         if i in superseded:

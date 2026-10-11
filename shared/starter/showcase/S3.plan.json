@@ -1,0 +1,26 @@
+{
+  "title": "Lava Run",
+  "theme": "kraft",
+  "screens": 2,
+  "band": "easy",
+  "kid_summary": "You never stop running. Jump the lava in time.",
+  "safety_ok": true,
+  "sections": [
+    { "role": "teach", "beats": [
+      { "kind": "flat", "length": 12, "enemy": "none", "coins": 3, "spikes": "none" },
+      { "kind": "gap", "width": 3, "floor": "lava" },
+      { "kind": "flat", "length": 8, "enemy": "none", "coins": 2, "spikes": "none" }
+    ] },
+    { "role": "test", "beats": [
+      { "kind": "gap", "width": 4, "floor": "lava" },
+      { "kind": "step", "rise": 2, "length": 8 },
+      { "kind": "gap", "width": 4, "floor": "void" },
+      { "kind": "flat", "length": 8, "enemy": "none", "coins": 3, "spikes": "none" }
+    ] },
+    { "role": "finale", "beats": [
+      { "kind": "gap", "width": 5, "floor": "lava" },
+      { "kind": "flat", "length": 10, "enemy": "none", "coins": 2, "spikes": "none" },
+      { "kind": "goal", "style": "flag" }
+    ] }
+  ]
+}

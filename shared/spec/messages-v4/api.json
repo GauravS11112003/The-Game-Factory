@@ -1,0 +1,28 @@
+{
+  "$comment": "v4 lane api strings (docs/v4/CONTRACTS_V4.md §8). Merged over messages.json at load time; same rules: ≤ 20 words per sentence, {placeholders} only.",
+  "messages": {
+    "blocks.err.needs_drawing": "Draw your block first, so everyone can see it.",
+    "blocks.err.needs_behavior": "Pick what your block does before you share it.",
+    "blocks.err.needs_rules": "Add at least one rule to share a rule pack.",
+    "blocks.err.not_author": "Only the person who made this block can change it. Try remixing it instead!",
+    "blocks.err.duplicate_rule": "Two rules have the same name. Give each rule its own name.",
+    "export4.mc_built": "Your level is built in Minecraft. Go and play it!",
+    "export4.mc_partly": "Your level is built, but Minecraft skipped a few blocks.",
+    "export4.mc_unreachable": "I can't reach that Minecraft server. Check the address and that RCON is on.",
+    "export4.mc_auth": "Minecraft said the RCON password is wrong.",
+    "export4.mc_no_player": "Join the Minecraft world first, so I know where to build.",
+    "export4.mc_failed": "Building in Minecraft stopped halfway. Try again?",
+    "export4.mc_host_blocked": "I can only build on a Minecraft server on this computer or your home network.",
+    "export4.mc.moving": "Moving platforms stay still where they start.",
+    "export4.mc.crumble": "Crumbling and falling platforms stay put.",
+    "export4.mc.saw": "Saws and fire bars are left out.",
+    "export4.mc.key_door": "Keys and doors are left out, so the way is open.",
+    "export4.mc.portal": "Portals are left out.",
+    "export4.mc.zone": "Wind, water, ice and other zones are left out.",
+    "export4.mc.pickup": "Power-ups are left out.",
+    "export4.mc.npc": "Talking characters stand still and do not talk.",
+    "export4.mc.rules": "Your written rules are left out.",
+    "export4.mc.mode": "Minecraft plays every level as a platformer.",
+    "export4.mc.hidden": "Things a rule shows later are left out."
+  }
+}

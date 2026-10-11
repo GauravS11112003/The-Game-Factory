@@ -16,7 +16,7 @@
  */
 import { GRIDS, PROMPT_LEVEL, WORLD } from '../params.ts';
 import type { PhysicsProfile } from '../sim/types.ts';
-import type { Beat, EnemyParams, Face, LevelPlan } from '../types.gen.ts';
+import type { Beat, Behavior, BNpc, EnemyParams, Face, LevelPlan, PickupEffect, ZoneEffect } from '../types.gen.ts';
 import { gMax } from '../edits/envelope.ts';
 import { bandOf } from './beats.ts';
 import type { PlanBand } from './beats.ts';
@@ -41,7 +41,9 @@ export type Prim =
   | { k: 'spring'; x: number; y: number; strength: number; beat: string }
   | { k: 'key'; x: number; y: number; tag: string; door: string | null; beat: string }
   | { k: 'flag'; x: number; y: number; role: 'goal' | 'checkpoint'; beat: string }
-  | { k: 'sign'; text: string; x: number; y: number; beat: string };
+  | { k: 'sign'; text: string; x: number; y: number; beat: string }
+  // v4 (CONTRACTS_V4 §5): a portal, zone, pickup or npc drawn as ink that carries its behaviour; box in cells
+  | { k: 'v4'; x0: number; y0: number; x1: number; y1: number; rule: Behavior; beat: string };
 
 export interface Span {
   addr: string; // "<section>.<beat>" (0-based), "start", "cp<n>" (auto checkpoint), "rest" (auto filler)
@@ -56,7 +58,8 @@ export interface Span {
 
 /** A Starter World author's extras (shared/starter/L*.overrides.json, README there). */
 export interface DrawSpec {
-  kind: 'big_coin' | 'coin' | 'coins' | 'platform' | 'sign' | 'spikes' | 'enemy' | 'spring' | 'saw' | 'firebar' | 'mass' | 'wall' | 'lava';
+  kind: 'big_coin' | 'coin' | 'coins' | 'platform' | 'sign' | 'spikes' | 'enemy' | 'spring' | 'saw' | 'firebar' | 'mass' | 'wall' | 'lava'
+    | 'portal' | 'zone' | 'pickup' | 'npc'; // v4
   beat?: string; // anchor: that beat's start x and ground row; else absolute
   x?: number;
   y?: number;
@@ -82,6 +85,13 @@ export interface DrawSpec {
   strength?: number;
   move?: { dir: 'left' | 'right' | 'up' | 'down'; cells: number; speed: number };
   crumble?: { delay_s: number };
+  // v4 primitives: portal `pair`; zone `effect` (+ dir, strength); pickup `item`, `effect`, `seconds`; npc `lines`, `name`
+  pair?: string;
+  effect?: ZoneEffect | PickupEffect;
+  item?: string;
+  seconds?: number;
+  lines?: string[];
+  name?: string;
 }
 
 export interface LayoutOverrides {
@@ -897,6 +907,22 @@ function addDrawn(S: Spine, specs: readonly DrawSpec[]): void {
         break;
       case 'lava':
         S.push({ k: 'lava', x0: x, x1: x + Math.max(1, Math.round(d.w ?? 2)), y: Math.round(y), beat });
+        break;
+      // v4: (x, y) is the centre of a portal or pickup, the top-left of a zone, the feet of an npc
+      case 'portal':
+        S.push({ k: 'v4', x0: x - 0.95, y0: y - 0.95, x1: x + 0.95, y1: y + 0.95, rule: { kind: 'portal', pair: d.pair ?? 'a' }, beat });
+        break;
+      case 'pickup':
+        S.push({ k: 'v4', x0: x - 0.5, y0: y - 0.5, x1: x + 0.5, y1: y + 0.5, beat,
+          rule: { kind: 'pickup', item: d.item ?? 'star', effect: (d.effect as PickupEffect | undefined) ?? 'none', seconds: d.seconds ?? 5 } });
+        break;
+      case 'zone':
+        S.push({ k: 'v4', x0: x, y0: y, x1: x + Math.max(1, d.w ?? 3), y1: y + Math.max(1, d.h ?? 3), beat,
+          rule: { kind: 'zone', effect: (d.effect as ZoneEffect | undefined) ?? 'wind', dir: d.dir === 'none' || !d.dir ? 'up' : d.dir, strength: d.strength ?? 1 } });
+        break;
+      case 'npc':
+        S.push({ k: 'v4', x0: x - 0.5, y0: y - 2, x1: x + 0.5, y1: y, beat,
+          rule: { kind: 'npc', lines: (d.lines?.length ? d.lines : ['Hi!']).slice(0, 6).map((l) => String(l).slice(0, 90)) as BNpc['lines'], ...(d.name ? { name: d.name.slice(0, 16) } : {}) } });
         break;
     }
   }

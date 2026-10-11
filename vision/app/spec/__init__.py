@@ -5,7 +5,9 @@ web/src/core/types.gen.ts. Change them only through a contract PR (docs/v2/CONTR
 """
 from types import ModuleType
 
-from app.spec import api, behavior, common, edits, events, ink, level, library, plan, report, rules, runs, scene
+from app.spec import (
+    api, behavior, blocks, common, edits, events, ink, level, library, logic, plan, report, rules, runs, scene,
+)
 
 SPEC_VERSION = "1.0"
 
@@ -13,12 +15,14 @@ SPEC_VERSION = "1.0"
 SCHEMA_MODULES: dict[str, ModuleType] = {
     "common": common,
     "behavior": behavior,
+    "logic": logic,
     "ink": ink,
     "edits": edits,
     "scene": scene,
     "report": report,
     "rules": rules,
     "library": library,
+    "blocks": blocks,
     "level": level,
     "events": events,
     "run": runs,

@@ -17,6 +17,12 @@
  * ink flash and the goal jingle; the music fades out, the flag flaps, the stopped clock pops gold and the character
  * hops with its arms up while confetti keeps drifting down. Then exactly one 'win' payload goes to the app, whose
  * single results card takes over. Race ghosts keep running in real time so you see them come in.
+ *
+ * v4 (docs/v4/CONTRACTS_V4.md §3-5): the controls follow the level's mode and the keys its rules listen to
+ * (engine/controls.ts; a short note says how to play until the first input), the character hangs upside down while
+ * gravity is flipped, rule events get juice and sound, the speech bubble follows its speaker, and the HUD shows the
+ * score, counters and timed effects. Every v4 view field is read defensively (engine/v4.ts): a sim without them
+ * plays exactly like v2.
  */
 import Phaser from 'phaser';
 import type { ArtDoc, ArtPath } from '../core/art/types.ts';
@@ -48,11 +54,20 @@ import { Hud } from './views/hud.ts';
 import { Juice } from './views/juice.ts';
 import { LavaView } from './views/lava.ts';
 import { Overlays } from './views/overlays.ts';
-import { PlayerSprite } from './views/player.ts';
+import { BODY_PX, PlayerSprite } from './views/player.ts';
 import { SkinView } from './views/skin.ts';
 import type { SkinChange } from './views/skin.ts';
 import { objectArtBox, sameExceptSkin, withSkin } from '../core/art/skin.ts';
-import type { LevelSkin } from '../core/types.gen.ts';
+import { portalColors } from '../core/art/v4art.ts';
+import type { GameMode, LevelSkin, RuleKey } from '../core/types.gen.ts';
+import { ruleSound } from '../audio/index.ts';
+import { msg } from '../render/text.ts';
+import { controlHints, controlScheme, sameScheme } from './controls.ts';
+import type { ControlScheme } from './controls.ts';
+import { levelKeys, levelMode, mergeKeys, modeOf, poseInput, toggleTargets, v4Of } from './v4.ts';
+import type { SimEventV4, V4View } from './v4.ts';
+import { SayBubble } from './views/bubble.ts';
+import type { Speaker } from './views/bubble.ts';
 
 const STEP_MS = 1000 / SIM.hz;
 /** Input bit 32 = RESTART (die now, cause "restart"): recorded in the replay like any input (docs/v2/requests/E-1.md). */
@@ -160,6 +175,14 @@ export class PlayScene extends Phaser.Scene {
   private underlay: Underlay | null = null;
   private skin!: SkinView;
   private morphExclude: ReadonlySet<string> | undefined;
+  // v4 (docs/v4/CONTRACTS_V4.md §3, §4): the mode, the controls for the keys rules listen to, the speech bubble
+  private mode: GameMode = 'platformer';
+  private scheme: ControlScheme | null = null;
+  private levelKeys: RuleKey[] = [];
+  private ctlSig = '';
+  private hintOn = false;
+  private bubble!: SayBubble;
+  private portalHue = new Map<string, number>();
 
   constructor(d: SceneDeps) {
     super({ key: 'dal-play' });
@@ -207,6 +230,7 @@ export class PlayScene extends Phaser.Scene {
     this.buildBackground();
     this.buildWorld();
     this.juice = new Juice(this, this.bank, this.lAct, this.hud.layer, this.d.reduced);
+    this.bubble = new SayBubble(this, this.lAct, this.r, this.d.reduced);
     this.overlays = new Overlays(this, this.lAct);
     this.setOverlays(this.d.mount.overlays ?? {});
 
@@ -245,7 +269,9 @@ export class PlayScene extends Phaser.Scene {
     }
     this.d.input?.on((a) => this.onAction(a));
     void loadHudFont().then((ok) => {
-      if (ok && !this.destroyed) this.hud.refreshFont();
+      if (!ok || this.destroyed) return;
+      this.hud.refreshFont();
+      this.bubble.refreshFont();
     });
     if (this.d.mount.debug) {
       this.debugG = this.add.graphics().setDepth(99);
@@ -310,11 +336,11 @@ export class PlayScene extends Phaser.Scene {
     // the character's skin picture when it has one ready, else the kid's drawing
     const src = this.skin?.playerSource() ?? { kind: 'vector' as const, doc: this.doc, art: this.doc.player };
     try {
-      this.player = new PlayerSprite(this, this.bank, src, { name: 'p' });
+      this.player = new PlayerSprite(this, this.bank, src, { name: 'p', reduced: this.d.reduced });
     } catch (e) {
       if (src.kind !== 'raster') throw e;
       console.warn('character picture failed; drawing the character', e);
-      this.player = new PlayerSprite(this, this.bank, { kind: 'vector', doc: this.doc, art: this.doc.player }, { name: 'p' });
+      this.player = new PlayerSprite(this, this.bank, { kind: 'vector', doc: this.doc, art: this.doc.player }, { name: 'p', reduced: this.d.reduced });
     }
     this.player.root.setDepth(ART.depths.player);
     this.player.shards.container.setDepth(ART.depths.player + 1);
@@ -323,11 +349,13 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private makeEntities(level: LevelV2): EntityViews {
+    this.portalHue = new Map([...portalColors(level.compiled.entities)].map(([id, hex]) => [id, parseInt(hex.slice(1), 16)]));
     return new EntityViews({
       scene: this, bank: this.bank, doc: this.doc, layer: this.lInk, reduced: this.d.reduced,
       onError: (e, err) => this.entityError(e.id, e.type, (e as { x?: number }).x ?? 0, err),
       skinFor: (e) => this.skin?.entityTex(e.id) ?? null,
       skinLayer: this.lSkin,
+      toggleable: toggleTargets(level),
     }, level);
   }
 
@@ -390,6 +418,52 @@ export class PlayScene extends Phaser.Scene {
     this.player.reset(this.cur.player.facing);
     this.hud?.uncelebrate();
     this.buildGhosts();
+    // v4: controls for this level's mode and the keys its rules listen to, and a "how to play" note when they differ
+    this.levelKeys = levelKeys(this.level);
+    this.ctlSig = '';
+    this.syncControls();
+    this.showHint();
+  }
+
+  // ---- v4 controls ---------------------------------------------------------------------------------------------
+
+  /** Re-pick the control scheme when the sim reports a mode or keys it had not (cheap: compares a signature). */
+  private syncControls(): boolean {
+    const raw = this.cur as unknown as { mode?: unknown; uses_keys?: unknown };
+    const sig = `${String(raw.mode)}|${Array.isArray(raw.uses_keys) ? raw.uses_keys.join() : ''}`;
+    if (sig === this.ctlSig && this.scheme) return false;
+    this.ctlSig = sig;
+    // the sim's own report wins; a sim without the v4 fields plays the level's rules snapshot
+    this.mode = raw.mode !== undefined ? modeOf(raw.mode) : levelMode(this.level);
+    const s = controlScheme(this.mode, mergeKeys(this.levelKeys, v4Of(this.cur).uses_keys));
+    if (this.scheme && sameScheme(this.scheme, s)) return false;
+    this.scheme = s;
+    this.d.input?.setScheme(s);
+    this.d.chrome?.setControls(s.touch);
+    return true;
+  }
+
+  /** Before the first input: a short note on how this level plays (keyboard only; touch shows its own buttons). */
+  private showHint(): void {
+    if (this.hintOn) this.hud.setNote(null);
+    this.hintOn = false;
+    const m = this.d.mount.mode;
+    if (!this.scheme || !this.host.real || this.firstInput !== null || m === 'thumbnail' || this.d.chrome?.touchShown) return;
+    let text = '';
+    for (const h of controlHints(this.scheme)) {
+      const s = msg(h.key, h.args ?? {}, h.fallback);
+      if (text && text.length + 1 + s.length > 84) break; // one plate wide at most
+      text = text ? `${text} ${s}` : s;
+    }
+    if (!text) return;
+    this.hud.setNote(text);
+    this.hintOn = true;
+  }
+
+  private clearHint(): void {
+    if (!this.hintOn) return;
+    this.hintOn = false;
+    this.hud.setNote(null);
   }
 
   // ---- loop --------------------------------------------------------------------------------------
@@ -435,7 +509,10 @@ export class PlayScene extends Phaser.Scene {
     this.restartReq = false;
     if (wantKill) bits |= RESTART_BIT;
     const frame = this.sim.frame;
-    if (this.firstInput === null && bits !== 0) this.firstInput = frame;
+    if (this.firstInput === null && bits !== 0) {
+      this.firstInput = frame;
+      this.clearHint();
+    }
     this.record(bits);
     this.prev = this.cur;
     this.camPrev = this.camCur;
@@ -460,6 +537,7 @@ export class PlayScene extends Phaser.Scene {
       return;
     }
     this.ghosts?.advance(this.sim.frame, this.firstInput, now);
+    if (this.syncControls() && this.firstInput === null) this.showHint();
     for (const ev of events) this.onSimEvent(ev, now);
     if (this.cur.won && !this.won) this.onWin(now, this.sim.frame);
     if (this.sim.frame % ART.boil.every_f === 0) this.boilFrame = (this.boilFrame + 1) % ART.boil.frames;
@@ -485,16 +563,27 @@ export class PlayScene extends Phaser.Scene {
 
   private onSimEvent(ev: SimEvent, now: number): void {
     const m = this.d.mixer;
-    const [x, y] = this.px(ev);
+    const [x, y0] = this.px(ev);
     const fc = this.frameCtx(now, 0, 1);
+    if (this.onV4Event(ev as SimEventV4, x, y0, fc)) {
+      this.entities.event(ev, fc);
+      return;
+    }
+    // upside down the feet (and their dust) are at the top of the sim's body box
+    const y = this.player.upsideDown && (ev.type === 'jump' || ev.type === 'double_jump' || ev.type === 'land' || ev.type === 'skid') ? y0 - BODY_PX : y0;
+    // top-down has no ground: no take-off dust, landing squash or skid specks
+    const ground = this.mode !== 'topdown';
     switch (ev.type) {
       case 'jump':
       case 'double_jump':
-        this.juice.jump(x, y);
-        this.player.jump();
+        // a flap (flappy) happens in the air: a little puff instead of ground dust
+        if (this.mode === 'flappy' && !this.cur.player.on_ground) this.juice.puff(x, y - 6, 2);
+        else if (ground) this.juice.jump(x, y);
+        if (ground) this.player.jump();
         m?.play(ev.type);
         break;
       case 'land': {
+        if (!ground) break;
         const impact = Math.abs(ev.vy ?? this.prev.player.vy) / RIG.land_ref_vy;
         this.juice.land(x, y, impact);
         this.player.land(impact);
@@ -502,7 +591,7 @@ export class PlayScene extends Phaser.Scene {
         break;
       }
       case 'skid':
-        if (this.sim.frame - this.lastSkid >= 4) {
+        if (ground && this.sim.frame - this.lastSkid >= 4) {
           this.lastSkid = this.sim.frame;
           this.juice.skid(x, y);
         }
@@ -625,6 +714,99 @@ export class PlayScene extends Phaser.Scene {
     this.entities.event(ev, fc);
   }
 
+  /** v4 rule events (docs/v4/CONTRACTS_V4.md §4.2): juice and sound. True when the event was one of them. */
+  private onV4Event(ev: SimEventV4, x: number, y: number, fc: FrameCtx): boolean {
+    const m = this.d.mixer;
+    const p = this.cur.player;
+    switch (ev.type) {
+      case 'flip':
+        // the sprite turns over by itself (PlayerView.gravity); this is the puff and the whoop
+        this.juice.flip(p.x * CELL, p.y * CELL - BODY_PX / 2);
+        m?.play('flip');
+        return true;
+      case 'teleport':
+      case 'portal': {
+        // a ring where you left and where you landed, in the portal pair's colour; the partner portal whirls too
+        const from = this.prev.player;
+        const hue = ev.id ? this.portalHue.get(ev.id) : undefined;
+        this.juice.teleport(from.x * CELL, from.y * CELL, hue);
+        this.juice.teleport(p.x * CELL, p.y * CELL, hue);
+        m?.play(ev.type);
+        if (ev.type === 'portal') {
+          // the sim names the partner (`name`); else the level's pair
+          const pe = this.level.compiled.entities.find((e) => e.id === ev.id);
+          const partner = ev.name ?? (pe?.type === 'portal' ? pe.pair : null);
+          if (partner) this.entities.event({ ...(ev as SimEvent), id: partner }, fc);
+        }
+        return true;
+      }
+      case 'pickup': {
+        const c = (ev.id ? this.entities.centre(ev.id) : null) ?? [x, y - 8];
+        this.juice.pickup(c[0], c[1]);
+        m?.play('pickup');
+        return true;
+      }
+      case 'say':
+        m?.play('blip');
+        return true;
+      case 'sound':
+        m?.play(ruleSound(ev.name));
+        return true;
+      case 'shake':
+        this.juice.shake(5, 320);
+        this.vibrate();
+        return true;
+      case 'score': {
+        // the score, or a counter when the event names one (add_counter): its chip pops, "+n" floats up
+        const a = v4Of(this.prev);
+        const b = v4Of(this.cur);
+        const d = ev.name ? (b.counters[ev.name] ?? 0) - (a.counters[ev.name] ?? 0) : b.score - a.score;
+        if (!ev.name) this.hud.pulseScore();
+        if (d) {
+          const [t0, t1] = this.playerSpan(p.y * CELL);
+          const top = this.player.upsideDown ? t1 + 18 : t0 - 4;
+          const color = d < 0 ? '#E0453A' : ev.name ? '#6A5ACD' : '#E39B1B';
+          this.juice.popText(p.x * CELL, top, d > 0 ? `+${d}` : String(d), color, this.r);
+        }
+        m?.play('score', ev.name ? { pitch: 5 } : {});
+        return true;
+      }
+      case 'toggle': {
+        const c = ev.id ? this.entities.centre(ev.id) : null;
+        if (c) this.juice.poof(c[0], c[1]);
+        m?.play('poof');
+        return true;
+      }
+      case 'freeze':
+        for (const [ex, ey] of this.entities.enemyCentres()) this.juice.freezeAt(ex, ey);
+        m?.play('freeze');
+        return true;
+      case 'rule':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /** The drawn character's top and bottom (world px, feet at py): upside down it hangs from the body box's top. */
+  private playerSpan(py: number): [number, number] {
+    const h = this.player.height;
+    if (!this.player.upsideDown) return [py - h, py];
+    const top = py - BODY_PX;
+    return [top, top + h];
+  }
+
+  /** Who the speech bubble belongs to, on screen: its target entity, else the player (head down when flipped). */
+  private speaker(v: V4View, px: number, py: number): Speaker | null {
+    if (!v.say) return null;
+    if (v.say.target) {
+      const b = this.entities.worldBox(v.say.target);
+      if (b) return { x: (b[0] + b[2]) / 2, top: b[1], bottom: b[3], prefer: 'up' };
+    }
+    const [top, bottom] = this.playerSpan(py);
+    return { x: px, top, bottom, prefer: this.player.upsideDown ? 'down' : 'up' };
+  }
+
   private vibrate(): void {
     try {
       if (!this.d.reduced && typeof navigator.vibrate === 'function') navigator.vibrate(SIM.vibrate_ms);
@@ -723,8 +905,13 @@ export class PlayScene extends Phaser.Scene {
     try {
       return encodeReplay(raw);
     } catch {
-      // a codec without the RESTART bit yet: drop it (that run will not verify; E-1 asks for the wider mask)
-      return encodeReplay(raw.map((b) => b & 0x1f));
+      // a codec without the wider mask yet: drop the bits it can't hold (v4 SPACE / ACTION, then RESTART); that run
+      // will not verify (E-1 and CONTRACTS_V4 §4.1 ask for the 8-bit mask)
+      try {
+        return encodeReplay(raw.map((b) => b & 0x3f));
+      } catch {
+        return encodeReplay(raw.map((b) => b & 0x1f));
+      }
     }
   }
 
@@ -785,6 +972,9 @@ export class PlayScene extends Phaser.Scene {
     const adt = (p1.hitstop_f ?? 0) > 0 ? 0 : dt;
     const fc = this.frameCtx(now, adt, a);
     fc.camX = this.camShown;
+    const v4 = v4Of(this.cur);
+    fc.frozen = v4.effects.freeze_f !== 0;
+    fc.sayTarget = v4.say?.target ?? null;
     this.entities.update(this.cur.entities, this.prev.entities, fc);
     this.lava.update(now, dt, this.camShown);
     // player
@@ -794,9 +984,12 @@ export class PlayScene extends Phaser.Scene {
     const dead = p1.state === 'dead' || this.player.shards.active;
     if (!this.player.shards.update(dt) && !dead && this.player.isHidden) this.player.show();
     if (!this.player.isHidden) {
-      const look = this.entities.lookTarget(px, py - 20, this.cur.entities);
-      this.player.pose({ x: px / CELL, y: py / CELL, vx: p1.vx, vy: p1.vy, facing: p1.facing, onGround: p1.on_ground, state: this.won ? 'win' : p1.state, invuln: p1.invulnerable_f }, adt, now, look, this.vmax);
+      const look = this.entities.lookTarget(px, this.player.upsideDown ? py - BODY_PX + 20 : py - 20, this.cur.entities);
+      // top-down walks in four directions with no ground; flipped gravity hangs the character from its feet
+      const pi = poseInput(p1, this.mode);
+      this.player.pose({ x: px / CELL, y: py / CELL, vx: pi.vx, vy: pi.vy, facing: p1.facing, onGround: pi.onGround, state: this.won ? 'win' : pi.state, invuln: p1.invulnerable_f, gravity: v4.gravity }, adt, now, look, this.vmax);
     }
+    this.bubble.update(v4.say?.text ?? null, this.speaker(v4, px, py), this.camShown, now, dt);
     this.ghosts?.render(a, dt, now, this.camShown);
     this.juice.update(dt);
     this.overlays.update(now);
@@ -1327,6 +1520,7 @@ export class PlayScene extends Phaser.Scene {
     this.inkChunks.setScale(r);
     this.fgChunks.setScale(r);
     this.hud.setResolution(r);
+    this.bubble.setResolution(r);
     this.buildClouds();
     this.applySkinLook();
   }

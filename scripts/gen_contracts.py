@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -135,16 +136,18 @@ def _tidy_ts(ts: str) -> str:
 def render_types(schemas: dict[str, dict[str, Any]], work: Path) -> str:
     src = work / "dal_spec_combined.json"
     out = work / "types.gen.ts"
-    src.write_text(json.dumps(combined_ts_schema(schemas), indent=1))
+    src.write_text(json.dumps(combined_ts_schema(schemas), indent=1), encoding="utf-8", newline="\n")
     cmd = [
-        "npx", "--no-install", "--prefix", str(WEB), "json2ts",
+        shutil.which("npx") or "npx", "--no-install", "--prefix", str(WEB), "json2ts",
         "-i", str(src), "-o", str(out),
         "--additionalProperties", "false", "--unreachableDefinitions", "--bannerComment", BANNER,
     ]
     proc = subprocess.run(cmd, cwd=REPO, capture_output=True, text=True)
     if proc.returncode != 0:
         raise SystemExit(f"json2ts failed ({proc.returncode}):\n{proc.stderr or proc.stdout}")
-    ts = _tidy_ts(out.read_text())
+    ts = _tidy_ts(out.read_text(encoding="utf-8"))
+    if not ts.startswith(BANNER):  # Windows: npx.cmd drops the newlines of a multi-line --bannerComment
+        ts = BANNER + "\n" + ts.removeprefix("/* eslint-disable */\n")
     level = schemas["level"]
     appendix = (
         "\n/** Contract version of the generated types. */\n"
@@ -161,11 +164,11 @@ def generate(spec_dir: Path, types_path: Path) -> list[Path]:
     written: list[Path] = []
     for name, s in schemas.items():
         p = spec_dir / f"{name}.schema.json"
-        p.write_text(json.dumps(s, indent=2, ensure_ascii=False) + "\n")
+        p.write_text(json.dumps(s, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
         written.append(p)
     with tempfile.TemporaryDirectory(prefix="dal_contracts_") as tmp:
         types_path.parent.mkdir(parents=True, exist_ok=True)
-        types_path.write_text(render_types(schemas, Path(tmp)))
+        types_path.write_text(render_types(schemas, Path(tmp)), encoding="utf-8", newline="\n")
     written.append(types_path)
     return written
 
@@ -178,13 +181,13 @@ def check() -> list[str]:
         generate(t / "spec", t / "types.gen.ts")
         for p in sorted((t / "spec").glob("*.schema.json")):
             committed = SPEC_OUT / p.name
-            if not committed.exists() or committed.read_text() != p.read_text():
+            if not committed.exists() or committed.read_text(encoding="utf-8") != p.read_text(encoding="utf-8"):
                 stale.append(str(committed.relative_to(REPO)))
         expected = {p.name for p in (t / "spec").glob("*.schema.json")}
         for p in sorted(SPEC_OUT.glob("*.schema.json")):
             if p.name not in expected:
                 stale.append(f"{p.relative_to(REPO)} (no longer generated)")
-        if not TYPES_OUT.exists() or TYPES_OUT.read_text() != (t / "types.gen.ts").read_text():
+        if not TYPES_OUT.exists() or TYPES_OUT.read_text(encoding="utf-8") != (t / "types.gen.ts").read_text(encoding="utf-8"):
             stale.append(str(TYPES_OUT.relative_to(REPO)))
     return stale
 

@@ -11,9 +11,13 @@
  * - spikes: x0..x1 run along the face and y is the face line. Up/down faces are horizontal (x0..x1 in x); for
  *   left/right faces the face is vertical: x0..x1 is the vertical extent and y the face's x (docs/v2/requests/A-1.md);
  * - goal: `trigger` is the win rect.
+ * - v4 (docs/v4/CONTRACTS_V4.md §5): portal and pickup are centres; zone is a top-left box; npc is x centre + y feet.
+ *
+ * v4 levels (a mode, rules, v4 entities or hidden entities) set `v4`; every v4 path in the sim is behind it, so a
+ * level without v4 fields simulates exactly as in v2.
  */
 import { DAMAGE, ENEMIES, HAZARDS } from '../params.ts';
-import type { Entity, LevelV2, ProfileId, Trigger } from '../types.gen.ts';
+import type { Entity, GameMode, LevelV2, ProfileId, RuleDo, RuleKey, RuleV4, RuleWhen, Trigger, ZoneEffect } from '../types.gen.ts';
 import { PROFILES } from './profiles.ts';
 import { CELL, TileGrid } from './tiles.ts';
 import type { PhysicsProfile } from './types.ts';
@@ -87,7 +91,22 @@ export interface DPlatform extends DefBase {
   respawn: number; // frames (crumble)
 }
 export interface DHint extends DefBase { k: 'hint_arrow'; x: number; y: number; dir: string }
-export type EntDef = DSpikes | DEnemy | DCoin | DCheckpoint | DGoal | DKey | DDoor | DSpring | DSaw | DFirebar | DPlatform | DHint;
+/** v4 §5: touching moves the player to `pair` (def index, −1 = a lone portal). */
+export interface DPortal extends DefBase { k: 'portal'; x: number; y: number; r: number; pair: number }
+export interface DZone extends DefBase { k: 'zone'; box: Rect; effect: ZoneEffect; dx: number; dy: number; strength: number }
+export interface DPickup extends DefBase { k: 'pickup'; x: number; y: number; item: string; respawn: number }
+export interface DNpc extends DefBase { k: 'npc'; x: number; y: number; box: Rect; lines: string[]; name: string | null }
+export type EntDef = DSpikes | DEnemy | DCoin | DCheckpoint | DGoal | DKey | DDoor | DSpring | DSaw | DFirebar | DPlatform | DHint
+  | DPortal | DZone | DPickup | DNpc;
+
+/** A v4 action with its references resolved: `ref` = def index (teleport/toggle/open target) or counter index; `f` = frames (−1 until respawn). */
+export interface ActDef { a: RuleDo; ref: number; f: number }
+
+/**
+ * A v4 rule (§2) with its references resolved: `ref` = def index (touch, collect target), counter index (counter) or
+ * frames (timer); −1 when the reference names nothing (the rule never fires). `rect` is the zone trigger in px.
+ */
+export interface RuleDef { id: string; once: boolean; when: RuleWhen; ref: number; rect: Rect | null; then: ActDef[] }
 
 export interface TriggerDef {
   when: 'collect' | 'touch' | 'timer';
@@ -127,6 +146,31 @@ export interface SimWorld {
   winTimerF: number | null;
   errors: { id: string; message: string }[];
   byId: Map<string, number>;
+  // ---- v4 (docs/v4/CONTRACTS_V4.md) ----
+  /** The level uses a v4 feature; false keeps every v2 code path (and the state hash) unchanged. */
+  v4: boolean;
+  mode: GameMode;
+  /** rules.logic then compiled.logic, resolved (§2). */
+  rules: RuleDef[];
+  portals: number[];
+  zones: number[];
+  pickups: number[];
+  npcs: number[];
+  /** Initial hidden flag per def (1 = starts hidden). */
+  hidden0: number[];
+  /** Counter names some rule mentions (SimView.counters order). */
+  counterNames: string[];
+  usesKeys: RuleKey[];
+  /** Some rule can flip gravity (the sim then builds the mirrored tile grid). */
+  flips: boolean;
+}
+
+const MODES: readonly GameMode[] = ['platformer', 'topdown', 'runner', 'flappy'];
+const RULE_KEYS: readonly RuleKey[] = ['space', 'action'];
+
+/** Seconds → whole frames (§1.3); −1 for null (until the player respawns). */
+export function framesOf(s: number | null | undefined): number {
+  return typeof s === 'number' && s > 0 ? Math.max(1, Math.round(s * HZ)) : -1;
 }
 
 const px = (c: number): number => c * CELL;
@@ -327,10 +371,14 @@ export function buildWorld(level: LevelV2, startAt?: [number, number]): SimWorld
     start: { x: px(2), y: px(22), id: null },
     defs: [], kin: [], enemies: [], coins: [], bigs: [], keys: [], doors: [], springs: [], spikes: [], saws: [], firebars: [],
     checkpoints: [], goals: [], triggers: [], loseTimerF: null, winTimerF: null, errors, byId: new Map(),
+    v4: false, mode: MODES.includes(rules.mode as GameMode) ? (rules.mode as GameMode) : 'platformer', rules: [], portals: [], zones: [],
+    pickups: [], npcs: [], hidden0: [], counterNames: [], usesKeys: [], flips: false,
   };
+  let anyHidden = false;
   const ents = level.compiled?.entities ?? [];
   let haveStart = false;
   const keyLinks: [number, string | null | undefined][] = [];
+  const portalLinks: [number, string | null | undefined][] = [];
   const doorLinks: [number, string | null | undefined][] = [];
   for (const e of ents) {
     if (e.type === 'player_start') {
@@ -446,13 +494,52 @@ export function buildWorld(level: LevelV2, startAt?: [number, number]): SimWorld
       case 'hint_arrow':
         d = { i, id: e.id, type: e.type, k: 'hint_arrow', x: px(e.x), y: px(e.y), dir: e.dir };
         break;
+      case 'portal':
+        d = { i, id: e.id, type: e.type, k: 'portal', x: px(e.x), y: px(e.y), r: px(0.75), pair: -1 };
+        W.portals.push(i);
+        portalLinks.push([i, e.pair]);
+        break;
+      case 'zone': {
+        const x0 = px(e.x);
+        const y0 = px(e.y);
+        const dir = e.dir ?? 'right';
+        d = {
+          i, id: e.id, type: e.type, k: 'zone', box: [x0, y0, x0 + px(Math.max(0.25, num(e.w, 1))), y0 + px(Math.max(0.25, num(e.h, 1)))], effect: e.effect,
+          dx: dir === 'left' ? -1 : dir === 'right' ? 1 : 0, dy: dir === 'up' ? -1 : dir === 'down' ? 1 : 0, strength: clamp(num(e.strength, 1), 0.5, 2),
+        };
+        W.zones.push(i);
+        break;
+      }
+      case 'pickup':
+        d = { i, id: e.id, type: e.type, k: 'pickup', x: px(e.x), y: px(e.y), item: e.item ?? 'star', respawn: framesOf(e.respawn_s) };
+        W.pickups.push(i);
+        break;
+      case 'npc': {
+        const w = Math.max(0.25, num(e.w, 1));
+        const h = Math.max(0.25, num(e.h, 2));
+        d = { i, id: e.id, type: e.type, k: 'npc', x: px(e.x), y: px(e.y), box: [px(e.x - w / 2), px(e.y - h), px(e.x + w / 2), px(e.y)], lines: [...(e.lines ?? [])], name: e.name ?? null };
+        W.npcs.push(i);
+        break;
+      }
       default:
         errors.push({ id: (e as { id?: string }).id ?? '?', message: `unknown entity type ${(e as { type?: string }).type}` });
     }
     if (d) {
       W.defs.push(d);
+      W.hidden0.push(e.hidden ? 1 : 0);
+      if (e.hidden) anyHidden = true;
       if (!W.byId.has(d.id)) W.byId.set(d.id, i);
     }
+  }
+  // portals: `pair` names the partner's id (compile writes ids); a label shared by exactly one other portal works too
+  for (const [pi, ref] of portalLinks) {
+    const di = ref ? W.byId.get(ref) : undefined;
+    let pair = di !== undefined && di !== pi && W.defs[di].k === 'portal' ? di : -1;
+    if (pair < 0 && ref) {
+      const same = portalLinks.filter(([j, r]) => j !== pi && r === ref);
+      if (same.length === 1) pair = same[0][0];
+    }
+    (W.defs[pi] as DPortal).pair = pair;
   }
   // key ↔ door links (either side may name the other; an unnamed single pair links implicitly)
   for (const [ki, dref] of keyLinks) {
@@ -485,8 +572,61 @@ export function buildWorld(level: LevelV2, startAt?: [number, number]): SimWorld
     if (t.when === 'timer' && t.then === 'win') W.winTimerF = W.winTimerF === null ? t.ref : Math.min(W.winTimerF, t.ref);
   }
   if (!haveStart) errors.push({ id: 'start', message: 'level has no player_start' });
+  // rules switched off (`off: true`) never fire and count for nothing (keys, counters)
+  const logic: RuleV4[] = [...(Array.isArray(rules.logic) ? rules.logic : []), ...(Array.isArray(level.compiled?.logic) ? level.compiled.logic : [])].filter((r) => r && r.off !== true);
+  W.rules = resolveRules(logic, W, errors);
+  W.v4 = W.mode !== 'platformer' || W.rules.length > 0 || anyHidden || W.portals.length + W.zones.length + W.pickups.length + W.npcs.length > 0;
   if (startAt && Number.isFinite(startAt[0]) && Number.isFinite(startAt[1])) W.start = { x: px(startAt[0]), y: px(startAt[1]), id: W.start.id };
   return W;
+}
+
+/** Resolves rule references (§2) to def indices, counter indices and frames; fills counterNames, usesKeys, flips. */
+function resolveRules(list: RuleV4[], W: SimWorld, errors: { id: string; message: string }[]): RuleDef[] {
+  const counters = new Set<string>();
+  const keys = new Set<RuleKey>();
+  for (const r of list) {
+    if (r?.when?.kind === 'counter') counters.add(r.when.name);
+    if (r?.when?.kind === 'key') keys.add(r.when.key);
+    for (const a of r?.then ?? []) if (a?.kind === 'add_counter') counters.add(a.name);
+  }
+  W.counterNames = [...counters].sort();
+  W.usesKeys = RULE_KEYS.filter((k) => keys.has(k));
+  const ref = (id: string | null | undefined): number => (id ? W.byId.get(id) ?? -1 : -1);
+  const out: RuleDef[] = [];
+  for (const r of list) {
+    if (!r || !r.when || !Array.isArray(r.then)) continue;
+    const w = r.when;
+    let wref = -1;
+    let rect: Rect | null = null;
+    if (w.kind === 'touch') wref = ref(w.target);
+    else if (w.kind === 'collect') wref = w.target ? ref(w.target) : -1;
+    else if (w.kind === 'timer') wref = framesOf(w.seconds);
+    else if (w.kind === 'counter') wref = W.counterNames.indexOf(w.name);
+    else if (w.kind === 'zone') {
+      const z = w.rect;
+      rect = [px(Math.min(z[0], z[2])), px(Math.min(z[1], z[3])), px(Math.max(z[0], z[2])), px(Math.max(z[1], z[3]))];
+    }
+    if ((w.kind === 'touch' || (w.kind === 'collect' && w.target)) && wref < 0) errors.push({ id: r.id, message: `rule ${r.id} names ${w.target}, which is not in the level` });
+    const then: ActDef[] = [];
+    for (const a of r.then) {
+      let aref = -1;
+      let f = -1;
+      switch (a.kind) {
+        case 'teleport': aref = a.target ? ref(a.target) : -1; break;
+        case 'toggle': case 'open': aref = ref(a.target); break;
+        case 'add_counter': aref = W.counterNames.indexOf(a.name); break;
+        case 'gravity': case 'speed': case 'jump_power': case 'reverse_controls': f = framesOf(a.seconds); break;
+        case 'freeze_enemies': f = framesOf(a.seconds); break;
+        case 'say': f = framesOf(a.seconds ?? 3); break;
+        case 'flip_gravity': W.flips = true; break;
+        default: break;
+      }
+      if ((a.kind === 'toggle' || a.kind === 'open' || (a.kind === 'teleport' && a.target)) && aref < 0) errors.push({ id: r.id, message: `rule ${r.id} names ${(a as { target?: string }).target}, which is not in the level` });
+      then.push({ a, ref: aref, f });
+    }
+    out.push({ id: r.id, once: !!r.once, when: w, ref: wref, rect, then });
+  }
+  return out;
 }
 
 /** Outer reach (px) of a firebar's last ball from its anchor (balls at 10 px · (k + 0.6), radius 5 px). */

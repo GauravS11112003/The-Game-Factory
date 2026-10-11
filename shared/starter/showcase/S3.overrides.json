@@ -1,0 +1,14 @@
+{
+  "id": "S3",
+  "seed": 4303,
+  "designer_note": "Runner mode: you always run right. Only jumping is up to you.",
+  "mode": "runner",
+  "logic": [
+    { "id": "go", "when": { "kind": "start" }, "then": [{ "kind": "say", "text": "Keep running! Jump the lava.", "seconds": 2.5 }], "once": true },
+    { "id": "allcoins", "when": { "kind": "all_coins" }, "then": [{ "kind": "sound", "name": "fanfare" }, { "kind": "add_score", "n": 100 }], "once": true }
+  ],
+  "patches": [ { "beat": "*", "stretch": false, "auto_checkpoints": false } ],
+  "draw": [
+    { "kind": "pickup", "beat": "1.1", "dx": 4, "dy": -3, "item": "mushroom", "effect": "jump", "seconds": 4 }
+  ]
+}

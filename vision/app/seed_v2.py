@@ -38,6 +38,7 @@ log = logging.getLogger("dal.v2.seed")
 
 CLASSIC_GAME = "game_classic"
 WORLD_GAME = "game_world"
+SHOWCASE_GAME = "game_showcase"  # v4: one level per mode, with rules and v4 primitives
 V1_STARTER_GAME = "game_starter"
 TEAM = "team"
 DIST = SHARED_DIR / "starter" / "dist"
@@ -266,6 +267,11 @@ def seed_world() -> int:
     return _seed_game(WORLD_GAME, "Starter World", WORLD_CREATED, "v2-standard", lambda i: f"lvl_world_l{i + 1}")
 
 
+def seed_showcase() -> int:
+    """v4 showcase (shared/starter/showcase, built into dist/showcase): one level per mode. Level versions added."""
+    return _seed_game(SHOWCASE_GAME, "draw.play Showcase", WORLD_CREATED, "v2-standard", lambda i: f"lvl_show_s{i + 1}")
+
+
 def sequence_meta(game_id: str) -> dict[str, dict[str, Any]]:
     """Per level of a seeded game: {unlock_after: <level id> | None, bonus: bool} (§9: L5 unlocks after L4).
     Read from the stored level JSON (x_unlock_after / x_bonus) and, for levels seeded before those keys existed, from
@@ -391,7 +397,7 @@ async def seed_remix_chain(pool: CorePool | None = None) -> int:
 
 
 async def seed_all(pool: CorePool | None = None) -> dict[str, int]:
-    out = {"classic": 0, "world": 0, "remix": 0}
+    out = {"classic": 0, "world": 0, "showcase": 0, "blocks": 0, "remix": 0}
     try:
         out["classic"] = seed_classic()
     except Exception:  # noqa: BLE001 - seeds never stop the app
@@ -400,6 +406,16 @@ async def seed_all(pool: CorePool | None = None) -> dict[str, int]:
         out["world"] = seed_world()
     except Exception:  # noqa: BLE001
         log.exception("Starter World seed failed")
+    try:
+        out["showcase"] = seed_showcase()
+    except Exception:  # noqa: BLE001
+        log.exception("showcase seed failed")
+    try:
+        from app.seed_blocks import seed_blocks  # v4: starter blocks in the public library
+
+        out["blocks"] = seed_blocks()
+    except Exception:  # noqa: BLE001
+        log.exception("starter blocks seed failed")
     try:
         out["remix"] = await seed_remix_chain(pool)
     except CoreError as e:
@@ -415,4 +431,5 @@ def seed_v2_if_empty() -> bool:
     """Synchronous part of the seeds (no worker needed): Classic Starter and Starter World. True when it seeded."""
     a = seed_classic()
     b = seed_world()
-    return bool(a or b)
+    c = seed_showcase()
+    return bool(a or b or c)

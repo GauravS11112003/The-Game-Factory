@@ -1,0 +1,172 @@
+{
+  "format": "dal-level",
+  "schema_version": 2,
+  "core_min": "2.0.0",
+  "id": "lvl_v4run01",
+  "version": 1,
+  "game_id": null,
+  "parent_id": null,
+  "order_index": 0,
+  "title": "Run for the coins",
+  "author": "conformance",
+  "created_at": "2026-10-10T00:00:00Z",
+  "license": "CC0-1.0",
+  "world": {
+    "cell": 16,
+    "screens": 1,
+    "w": 48,
+    "h": 27
+  },
+  "rules": {
+    "version": 1,
+    "physics_profile": "v2-standard",
+    "abilities": {
+      "run": true,
+      "stomp": true,
+      "double_jump": false,
+      "fast_fall": true
+    },
+    "lives": "off",
+    "hearts": 1,
+    "theme": "sketchbook",
+    "music": true,
+    "timer_pressure": false,
+    "camera": "follow",
+    "default_dial": "polished",
+    "default_band": "normal",
+    "player_type": null,
+    "mode": "runner"
+  },
+  "source": {
+    "kind": "canvas",
+    "prompt": null,
+    "pack_id": null,
+    "sheets": [
+      {
+        "index": 0,
+        "photo_url": null,
+        "qr": null
+      }
+    ]
+  },
+  "objects": [],
+  "setpieces": [],
+  "edits": [],
+  "compiled": {
+    "tiles": {
+      "legend": ".#=/\\abcd~X",
+      "rows": [
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "44.1#3.",
+        "44.1#3.",
+        "44.1#3.",
+        "44.1#3.",
+        "44.1#3.",
+        "44.1#3.",
+        "44.1#3.",
+        "44.1#3.",
+        "48#",
+        "48#",
+        "48#",
+        "48#",
+        "48#"
+      ]
+    },
+    "entities": [
+      {
+        "id": "start",
+        "type": "player_start",
+        "x": 2,
+        "y": 22
+      },
+      {
+        "id": "c1",
+        "type": "coin",
+        "x": 10,
+        "y": 21.5
+      },
+      {
+        "id": "c2",
+        "type": "coin",
+        "x": 20,
+        "y": 19
+      },
+      {
+        "id": "c3",
+        "type": "coin",
+        "x": 30,
+        "y": 21.5
+      },
+      {
+        "id": "goal",
+        "type": "goal",
+        "x": 46.5,
+        "y": 22,
+        "trigger": [
+          46,
+          19,
+          47,
+          22
+        ]
+      }
+    ],
+    "triggers": [],
+    "sprites": {
+      "player": null,
+      "objects": {}
+    },
+    "logic": [
+      {
+        "id": "r1",
+        "when": {
+          "kind": "collect",
+          "item": "coin"
+        },
+        "then": [
+          {
+            "kind": "add_counter",
+            "name": "coins",
+            "n": 1
+          }
+        ]
+      },
+      {
+        "id": "r2",
+        "when": {
+          "kind": "counter",
+          "name": "coins",
+          "at_least": 3
+        },
+        "then": [
+          {
+            "kind": "win"
+          }
+        ]
+      }
+    ]
+  },
+  "design": null,
+  "embedded_library": [],
+  "meta": {
+    "transcript": "",
+    "intent": null,
+    "safety": "unchecked",
+    "level_hash": "sha256:93ac94ae994d3d9ad730c7ce04aa0fdb6134a5f9775c756eb31d4f36e6423ebe",
+    "core_version": "2.0.0",
+    "warnings": [],
+    "build": null
+  }
+}

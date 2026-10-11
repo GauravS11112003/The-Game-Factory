@@ -4,8 +4,15 @@
  * (docs/v2/requests/E-2.md lists the keys lane E asks for). Raw codes never reach the screen.
  */
 import table from '../../../shared/spec/messages.json';
+import v4Shell from '../../../shared/spec/messages-v4/shell.json';
+import v4Core from '../../../shared/spec/messages-v4/core.json';
+import v4Engine from '../../../shared/spec/messages-v4/engine.json';
+import v4Api from '../../../shared/spec/messages-v4/api.json';
+import v4Ui from '../../../shared/spec/messages-v4/ui.json';
 
-const MESSAGES: Record<string, string> = ((table as { messages?: Record<string, string> }).messages ?? {}) as Record<string, string>;
+type Table = { messages?: Record<string, string> };
+const MESSAGES: Record<string, string> = Object.assign({},
+  ...[table, v4Shell, v4Core, v4Engine, v4Api, v4Ui].map((x) => (x as Table).messages ?? {}));
 
 function arg(v: unknown): string {
   if (v === undefined || v === null) return '';
@@ -16,7 +23,7 @@ function arg(v: unknown): string {
 /** messages.json[key] with {placeholders} filled, else the fallback template (same placeholder syntax). */
 export function msg(key: string, args: Record<string, unknown> = {}, fallback = ''): string {
   const tpl = MESSAGES[key] ?? fallback;
-  return tpl.replace(/\{([a-z_]+)\}/g, (_, name: string) => arg(args[name]));
+  return tpl.replace(/\{([A-Za-z_]+)\}/g, (_, name: string) => arg(args[name]));
 }
 
 /** m:ss.cc, the one clock format (§5.9). */

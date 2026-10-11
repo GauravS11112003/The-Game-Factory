@@ -1,0 +1,926 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://draw-a-level.dev/spec/v2/logic.schema.json",
+  "$comment": "dal-level spec v1.0. GENERATED from vision/app/spec/logic.py by scripts/gen_contracts.py; do not edit.",
+  "title": "logic",
+  "description": "Logic: the v4 rules engine (docs/v4/CONTRACTS_V4.md §2).",
+  "$ref": "#/$defs/RuleV4",
+  "$defs": {
+    "CellXY": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "type": "array"
+    },
+    "DoCounter": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "add_counter",
+          "type": "string"
+        },
+        "name": {
+          "pattern": "^[a-z][a-z0-9 ]{0,15}$",
+          "type": "string"
+        },
+        "n": {
+          "default": 1,
+          "maximum": 100,
+          "minimum": -100,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "name"
+      ],
+      "title": "DoCounter",
+      "type": "object"
+    },
+    "DoFlipGravity": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "flip_gravity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DoFlipGravity",
+      "type": "object"
+    },
+    "DoFreeze": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "freeze_enemies",
+          "type": "string"
+        },
+        "seconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 60,
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "seconds"
+      ],
+      "title": "DoFreeze",
+      "type": "object"
+    },
+    "DoGravity": {
+      "additionalProperties": false,
+      "description": "Scale gravity (0.5 = moon jumps).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "gravity",
+          "type": "string"
+        },
+        "times": {
+          "maximum": 2,
+          "minimum": 0.25,
+          "type": "number"
+        },
+        "seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 600,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind",
+        "times"
+      ],
+      "title": "DoGravity",
+      "type": "object"
+    },
+    "DoHeal": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "heal",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DoHeal",
+      "type": "object"
+    },
+    "DoHurt": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "hurt",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DoHurt",
+      "type": "object"
+    },
+    "DoJumpPower": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "jump_power",
+          "type": "string"
+        },
+        "times": {
+          "maximum": 2,
+          "minimum": 0.5,
+          "type": "number"
+        },
+        "seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 600,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind",
+        "times"
+      ],
+      "title": "DoJumpPower",
+      "type": "object"
+    },
+    "DoLose": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "lose",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DoLose",
+      "type": "object"
+    },
+    "DoOpen": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "open",
+          "type": "string"
+        },
+        "target": {
+          "pattern": "^[A-Za-z0-9_]{1,40}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "target"
+      ],
+      "title": "DoOpen",
+      "type": "object"
+    },
+    "DoReverse": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "reverse_controls",
+          "type": "string"
+        },
+        "seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 600,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DoReverse",
+      "type": "object"
+    },
+    "DoSay": {
+      "additionalProperties": false,
+      "description": "A speech bubble over the player (or over `target`) for `seconds`.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "say",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 90,
+          "minLength": 1,
+          "type": "string"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9_]{1,40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "seconds": {
+          "default": 3,
+          "exclusiveMinimum": 0,
+          "maximum": 10,
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "text"
+      ],
+      "title": "DoSay",
+      "type": "object"
+    },
+    "DoScore": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "add_score",
+          "type": "string"
+        },
+        "n": {
+          "maximum": 1000,
+          "minimum": -1000,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "n"
+      ],
+      "title": "DoScore",
+      "type": "object"
+    },
+    "DoShake": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "shake",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DoShake",
+      "type": "object"
+    },
+    "DoSound": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "sound",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/SoundName"
+        }
+      },
+      "required": [
+        "kind",
+        "name"
+      ],
+      "title": "DoSound",
+      "type": "object"
+    },
+    "DoSpeed": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "speed",
+          "type": "string"
+        },
+        "times": {
+          "maximum": 3,
+          "minimum": 0.25,
+          "type": "number"
+        },
+        "seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 600,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind",
+        "times"
+      ],
+      "title": "DoSpeed",
+      "type": "object"
+    },
+    "DoTeleport": {
+      "additionalProperties": false,
+      "description": "Move the player to a cell (to) or onto an entity (target). Exactly one is set.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "teleport",
+          "type": "string"
+        },
+        "to": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CellXY"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "target": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9_]{1,40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DoTeleport",
+      "type": "object"
+    },
+    "DoToggle": {
+      "additionalProperties": false,
+      "description": "Show or hide an entity: a hidden entity is not drawn, not solid and does nothing.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "toggle",
+          "type": "string"
+        },
+        "target": {
+          "pattern": "^[A-Za-z0-9_]{1,40}$",
+          "type": "string"
+        },
+        "to": {
+          "default": "flip",
+          "enum": [
+            "on",
+            "off",
+            "flip"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "target"
+      ],
+      "title": "DoToggle",
+      "type": "object"
+    },
+    "DoWin": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "win",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DoWin",
+      "type": "object"
+    },
+    "RectCells": {
+      "maxItems": 4,
+      "minItems": 4,
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "type": "array"
+    },
+    "RuleDo": {
+      "discriminator": {
+        "mapping": {
+          "add_counter": "#/$defs/DoCounter",
+          "add_score": "#/$defs/DoScore",
+          "flip_gravity": "#/$defs/DoFlipGravity",
+          "freeze_enemies": "#/$defs/DoFreeze",
+          "gravity": "#/$defs/DoGravity",
+          "heal": "#/$defs/DoHeal",
+          "hurt": "#/$defs/DoHurt",
+          "jump_power": "#/$defs/DoJumpPower",
+          "lose": "#/$defs/DoLose",
+          "open": "#/$defs/DoOpen",
+          "reverse_controls": "#/$defs/DoReverse",
+          "say": "#/$defs/DoSay",
+          "shake": "#/$defs/DoShake",
+          "sound": "#/$defs/DoSound",
+          "speed": "#/$defs/DoSpeed",
+          "teleport": "#/$defs/DoTeleport",
+          "toggle": "#/$defs/DoToggle",
+          "win": "#/$defs/DoWin"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/DoFlipGravity"
+        },
+        {
+          "$ref": "#/$defs/DoGravity"
+        },
+        {
+          "$ref": "#/$defs/DoSpeed"
+        },
+        {
+          "$ref": "#/$defs/DoJumpPower"
+        },
+        {
+          "$ref": "#/$defs/DoReverse"
+        },
+        {
+          "$ref": "#/$defs/DoTeleport"
+        },
+        {
+          "$ref": "#/$defs/DoToggle"
+        },
+        {
+          "$ref": "#/$defs/DoOpen"
+        },
+        {
+          "$ref": "#/$defs/DoFreeze"
+        },
+        {
+          "$ref": "#/$defs/DoScore"
+        },
+        {
+          "$ref": "#/$defs/DoCounter"
+        },
+        {
+          "$ref": "#/$defs/DoHeal"
+        },
+        {
+          "$ref": "#/$defs/DoHurt"
+        },
+        {
+          "$ref": "#/$defs/DoWin"
+        },
+        {
+          "$ref": "#/$defs/DoLose"
+        },
+        {
+          "$ref": "#/$defs/DoSay"
+        },
+        {
+          "$ref": "#/$defs/DoSound"
+        },
+        {
+          "$ref": "#/$defs/DoShake"
+        }
+      ]
+    },
+    "RuleKey": {
+      "enum": [
+        "space",
+        "action"
+      ],
+      "type": "string"
+    },
+    "RuleV4": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9_]{1,40}$",
+          "type": "string"
+        },
+        "when": {
+          "$ref": "#/$defs/RuleWhen"
+        },
+        "then": {
+          "items": {
+            "$ref": "#/$defs/RuleDo"
+          },
+          "maxItems": 4,
+          "minItems": 1,
+          "type": "array"
+        },
+        "once": {
+          "default": false,
+          "type": "boolean"
+        },
+        "off": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "when",
+        "then"
+      ],
+      "title": "RuleV4",
+      "type": "object"
+    },
+    "RuleWhen": {
+      "discriminator": {
+        "mapping": {
+          "all_coins": "#/$defs/WhenAllCoins",
+          "collect": "#/$defs/WhenCollect",
+          "counter": "#/$defs/WhenCounter",
+          "key": "#/$defs/WhenKey",
+          "score": "#/$defs/WhenScore",
+          "start": "#/$defs/WhenStart",
+          "timer": "#/$defs/WhenTimer",
+          "touch": "#/$defs/WhenTouch",
+          "zone": "#/$defs/WhenZone"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/WhenStart"
+        },
+        {
+          "$ref": "#/$defs/WhenKey"
+        },
+        {
+          "$ref": "#/$defs/WhenTouch"
+        },
+        {
+          "$ref": "#/$defs/WhenCollect"
+        },
+        {
+          "$ref": "#/$defs/WhenAllCoins"
+        },
+        {
+          "$ref": "#/$defs/WhenTimer"
+        },
+        {
+          "$ref": "#/$defs/WhenZone"
+        },
+        {
+          "$ref": "#/$defs/WhenScore"
+        },
+        {
+          "$ref": "#/$defs/WhenCounter"
+        }
+      ]
+    },
+    "SoundName": {
+      "enum": [
+        "ding",
+        "boing",
+        "zap",
+        "whoosh",
+        "boom",
+        "fanfare"
+      ],
+      "type": "string"
+    },
+    "WhenAllCoins": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "all_coins",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "WhenAllCoins",
+      "type": "object"
+    },
+    "WhenCollect": {
+      "additionalProperties": false,
+      "description": "A coin, big coin, key or pickup is collected: one entity (target), any pickup with this item name, or any\ncoin (item \"coin\"). Exactly one of target or item is set.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "collect",
+          "type": "string"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9_]{1,40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "item": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9 ]{0,15}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "WhenCollect",
+      "type": "object"
+    },
+    "WhenCounter": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "counter",
+          "type": "string"
+        },
+        "name": {
+          "pattern": "^[a-z][a-z0-9 ]{0,15}$",
+          "type": "string"
+        },
+        "at_least": {
+          "maximum": 1000,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "at_least"
+      ],
+      "title": "WhenCounter",
+      "type": "object"
+    },
+    "WhenKey": {
+      "additionalProperties": false,
+      "description": "Fires on the frame the key goes down (an edge, never while held).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "key",
+          "type": "string"
+        },
+        "key": {
+          "$ref": "#/$defs/RuleKey"
+        }
+      },
+      "required": [
+        "kind",
+        "key"
+      ],
+      "title": "WhenKey",
+      "type": "object"
+    },
+    "WhenScore": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "score",
+          "type": "string"
+        },
+        "at_least": {
+          "maximum": 100000,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "at_least"
+      ],
+      "title": "WhenScore",
+      "type": "object"
+    },
+    "WhenStart": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "start",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "WhenStart",
+      "type": "object"
+    },
+    "WhenTimer": {
+      "additionalProperties": false,
+      "description": "After `seconds` from the level start (the first input), or every `seconds` when `every`.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "timer",
+          "type": "string"
+        },
+        "seconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 600,
+          "type": "number"
+        },
+        "every": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "seconds"
+      ],
+      "title": "WhenTimer",
+      "type": "object"
+    },
+    "WhenTouch": {
+      "additionalProperties": false,
+      "description": "Fires on the frame the player starts touching the entity (edge).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "touch",
+          "type": "string"
+        },
+        "target": {
+          "pattern": "^[A-Za-z0-9_]{1,40}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "target"
+      ],
+      "title": "WhenTouch",
+      "type": "object"
+    },
+    "WhenZone": {
+      "additionalProperties": false,
+      "description": "The player's feet enter the rectangle (cells, half-open [x0, y0, x1, y1]).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "zone",
+          "type": "string"
+        },
+        "rect": {
+          "$ref": "#/$defs/RectCells"
+        }
+      },
+      "required": [
+        "kind",
+        "rect"
+      ],
+      "title": "WhenZone",
+      "type": "object"
+    }
+  }
+}

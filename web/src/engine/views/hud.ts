@@ -4,13 +4,20 @@
  * m:ss.cc (+ the timer ring that pulses in the last 10 s). Right: deaths (skull doodle), hearts and lives when
  * enabled. The minimap strip (1 px per cell: terrain, goal, checkpoints, player dot) appears for levels > 1 screen.
  * Mute / restart / pause are DOM buttons beside it (engine/chrome.ts) so they stay accessible.
+ * v4 (docs/v4/CONTRACTS_V4.md §4.2) adds a second row: the score (when a rule uses it) and the rule counters as small
+ * labelled chips on the left, and the timed effects (speed, jump, gravity, reversed controls, frozen enemies, flipped
+ * gravity) as rings that empty as they run out, under the clock.
  */
 import Phaser from 'phaser';
 import type { SimView } from '../../core/sim/types.ts';
 import type { LevelV2 } from '../../core/types.gen.ts';
 import { CAMERA, SCORING, UI } from '../../core/params.ts';
 import { decodeGrid } from '../../core/art/terrain.ts';
-import { COLORS } from './juice.ts';
+import { msg } from '../../render/text.ts';
+import { levelUsesScore, v4Of } from '../v4.ts';
+import { counterChips, EffectClock, layoutRow } from './hudmodel.ts';
+import type { EffectChip, EffectKind } from './hudmodel.ts';
+import { COLORS, ICE } from './juice.ts';
 import { VIEW_H_PX, VIEW_W_PX } from '../gfx.ts';
 import type { TexBank } from '../gfx.ts';
 
@@ -18,6 +25,68 @@ export const HUD_FONT = '"Patrick Hand", "Comic Sans MS", "Chalkboard SE", "Mark
 const DEG = Math.PI / 180;
 const PLATE_H = 30;
 const TOP = 8;
+// the v4 row under the plates
+const ROW_Y = TOP + PLATE_H + 20; // chip centre line
+const CHIP_H = 24;
+const RING_R = 11;
+const RING_STEP = 28;
+const ORANGE = 0xf08a24;
+
+const EFFECT_COLOR: Record<EffectKind, number> = {
+  speed: ORANGE, jump: COLORS.green, gravity: COLORS.violet, reverse: COLORS.red, freeze: COLORS.blue, flip: COLORS.violet,
+};
+
+interface Chip {
+  c: Phaser.GameObjects.Container;
+  g: Phaser.GameObjects.Graphics;
+  t: Phaser.GameObjects.Text;
+  w: number;
+  key: string;
+}
+
+/** An effect's little glyph, drawn in its colour about (x, y). */
+function effectIcon(g: Phaser.GameObjects.Graphics, kind: EffectKind, x: number, y: number): void {
+  const c = EFFECT_COLOR[kind];
+  g.lineStyle(2, c, 1);
+  const arrow = (x0: number, y0: number, x1: number, y1: number): void => {
+    g.lineBetween(x0, y0, x1, y1);
+    const a = Math.atan2(y1 - y0, x1 - x0);
+    g.lineBetween(x1, y1, x1 - Math.cos(a - 0.6) * 3.6, y1 - Math.sin(a - 0.6) * 3.6);
+    g.lineBetween(x1, y1, x1 - Math.cos(a + 0.6) * 3.6, y1 - Math.sin(a + 0.6) * 3.6);
+  };
+  switch (kind) {
+    case 'speed':
+      for (const dx of [-3, 2]) {
+        g.lineBetween(x + dx - 2, y - 4, x + dx + 2, y);
+        g.lineBetween(x + dx + 2, y, x + dx - 2, y + 4);
+      }
+      break;
+    case 'jump':
+      arrow(x, y + 4, x, y - 5);
+      g.lineBetween(x - 4, y + 5, x + 4, y + 5);
+      break;
+    case 'gravity':
+      g.fillStyle(c, 1);
+      g.fillCircle(x, y - 3.5, 2.8);
+      arrow(x, y, x, y + 5.5);
+      break;
+    case 'reverse':
+      arrow(x - 5, y - 2.5, x + 5, y - 2.5);
+      arrow(x + 5, y + 2.5, x - 5, y + 2.5);
+      break;
+    case 'freeze':
+      g.lineStyle(1.8, c, 1);
+      for (let k = 0; k < 3; k++) {
+        const a = (k * Math.PI) / 3 + Math.PI / 2;
+        g.lineBetween(x - Math.cos(a) * 5.5, y - Math.sin(a) * 5.5, x + Math.cos(a) * 5.5, y + Math.sin(a) * 5.5);
+      }
+      break;
+    case 'flip':
+      arrow(x, y + 1, x, y - 5.5);
+      arrow(x, y - 1, x, y + 5.5);
+      break;
+  }
+}
 
 export function clock(frames: number): string {
   const cs = Math.floor((Math.max(0, frames) * 100) / 60);
@@ -89,6 +158,13 @@ export class Hud {
   private lastDeaths = -1;
   private lastClock = '';
   readonly coinIcon: [number, number];
+  // v4 row
+  private scoreOn: boolean;
+  private chips: Chip[] = [];
+  private chipPulse = new Map<string, number>();
+  private effects: Phaser.GameObjects.Graphics;
+  private effectClock = new EffectClock();
+  private effectsDrawn = false;
 
   constructor(scene: Phaser.Scene, bank: TexBank, level: LevelV2, o: { r: number; rightReserve: number }) {
     this.scene = scene;
@@ -215,6 +291,108 @@ export class Hud {
       this.layer.add(this.miniDot);
     }
     for (const p of plates) this.layer.add(p);
+    // v4 row: chips appear as the sim reports a score or counters; effect rings under the clock
+    this.scoreOn = levelUsesScore(level);
+    this.effects = scene.add.graphics();
+    this.layer.add(this.effects);
+  }
+
+  // ---- v4 row ----------------------------------------------------------------------------------------------------
+
+  /** A small paper chip (score, a counter) whose text and width follow its value. */
+  private chip(key: string): Chip {
+    const have = this.chips.find((c) => c.key === key);
+    if (have) return have;
+    const c = this.scene.add.container(0, ROW_Y).setRotation((this.chips.length % 2 ? 0.8 : -0.8) * DEG);
+    const g = this.scene.add.graphics();
+    const t = this.scene.add.text(0, 0, '', { fontFamily: HUD_FONT, fontSize: '16px', color: '#1F1B18', resolution: this.r }).setOrigin(0.5, 0.5);
+    this.texts.push(t);
+    c.add([g, t]);
+    this.layer.add(c);
+    const chip = { c, g, t, w: 0, key };
+    this.chips.push(chip);
+    return chip;
+  }
+
+  private setChip(ch: Chip, text: string): void {
+    if (ch.t.text !== text) ch.t.setText(text);
+    const w = Math.ceil(ch.t.width) + 20;
+    if (w === ch.w) return;
+    ch.w = w;
+    ch.g.clear();
+    ch.g.fillStyle(COLORS.paper, 0.95);
+    ch.g.fillRoundedRect(-w / 2, -CHIP_H / 2, w, CHIP_H, 8);
+    ch.g.lineStyle(UI.hud_outline_px, COLORS.ink, 1);
+    ch.g.strokeRoundedRect(-w / 2, -CHIP_H / 2, w, CHIP_H, 8);
+  }
+
+  /** The score chip pops (a `score` event); a counter's chip pops when its value changes. */
+  pulseScore(): void {
+    this.chipPulse.set('score', 1);
+  }
+
+  private updateRow(v: SimView, dt: number): void {
+    const x = v4Of(v);
+    const want: { key: string; text: string; n: number }[] = [];
+    if (this.scoreOn || x.score !== 0) want.push({ key: 'score', text: msg('hud.score', { n: x.score }, 'Score {n}'), n: x.score });
+    for (const c of counterChips(x.counters)) want.push({ key: `c:${c.name}`, text: msg('hud.counter', { name: c.name, n: c.n }, '{name}: {n}'), n: c.n });
+    const shown = want.map((w) => {
+      const ch = this.chip(w.key);
+      if (w.key !== 'score' && ch.t.text && ch.t.text !== w.text) this.chipPulse.set(w.key, 1);
+      this.setChip(ch, w.text);
+      return ch;
+    });
+    // left-aligned under the coins, clear of the effect rings under the clock (and of the minimap on the right)
+    const maxX = VIEW_W_PX / 2 - RING_STEP * 3 - 8;
+    const xs = layoutRow(shown.map((c) => c.w), 8, 6, maxX);
+    for (const ch of this.chips) {
+      const i = shown.indexOf(ch);
+      const on = i >= 0 && i < xs.length;
+      ch.c.setVisible(on);
+      if (!on) continue;
+      ch.c.setX(xs[i] + ch.w / 2);
+      const p = this.chipPulse.get(ch.key) ?? 0;
+      if (p > 0) {
+        const left = Math.max(0, p - dt / 220);
+        this.chipPulse.set(ch.key, left);
+        ch.c.setScale(1 + 0.14 * Math.sin(left * Math.PI));
+      }
+    }
+    this.drawEffects(this.effectClock.update(x.effects, x.gravity));
+  }
+
+  /** Effect rings centred under the clock: the coloured arc empties as the effect runs out (dashed = until respawn). */
+  private drawEffects(list: EffectChip[]): void {
+    const g = this.effects;
+    if (!list.length) {
+      if (this.effectsDrawn) g.clear();
+      this.effectsDrawn = false;
+      return;
+    }
+    this.effectsDrawn = true;
+    g.clear();
+    const x0 = VIEW_W_PX / 2 - ((list.length - 1) * RING_STEP) / 2;
+    list.forEach((e, i) => {
+      const cx = x0 + i * RING_STEP;
+      const c = EFFECT_COLOR[e.kind];
+      g.fillStyle(e.kind === 'freeze' ? ICE : COLORS.paper, e.kind === 'freeze' ? 0.55 : 0.95);
+      g.fillCircle(cx, ROW_Y, RING_R);
+      g.lineStyle(1.4, COLORS.ink, 0.35);
+      g.strokeCircle(cx, ROW_Y, RING_R);
+      g.lineStyle(2.8, c, 1);
+      if (e.forever) {
+        for (let k = 0; k < 8; k++) {
+          g.beginPath();
+          g.arc(cx, ROW_Y, RING_R, (k / 8) * Math.PI * 2, (k / 8) * Math.PI * 2 + 0.45, false);
+          g.strokePath();
+        }
+      } else {
+        g.beginPath();
+        g.arc(cx, ROW_Y, RING_R, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0.02, e.frac), false);
+        g.strokePath();
+      }
+      effectIcon(g, e.kind, cx, ROW_Y);
+    });
   }
 
   /** HUD point (logical px) the coin flies to. */
@@ -388,6 +566,7 @@ export class Hud {
       this.miniDot.fillStyle(COLORS.red, 1);
       this.miniDot.fillCircle(this.miniX + (v.player.x + 2) * s, y0 + (v.player.y + 2) - 1, 1.6);
     }
+    this.updateRow(v, dt);
   }
 
   destroy(): void {

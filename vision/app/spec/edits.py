@@ -38,6 +38,7 @@ class OpBind(Spec):
     op: Literal["bind"]
     target: str
     behavior: Behavior
+    hidden: bool | None = None  # v4: the object starts hidden until a rule shows it (CONTRACTS_V4 §5)
 
 
 class OpLink(Spec):
@@ -56,6 +57,7 @@ class OpUseLibrary(Spec):
     target: str
     type_id: str
     version: int = Field(ge=1)
+    hidden: bool | None = None  # v4: this instance starts hidden until a rule shows it
 
 
 # ---- N · Normalize ------------------------------------------------------------------------------

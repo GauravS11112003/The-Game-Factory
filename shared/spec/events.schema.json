@@ -329,6 +329,121 @@
       "title": "BMove",
       "type": "object"
     },
+    "BNpc": {
+      "additionalProperties": false,
+      "description": "A character that talks: touching it shows its lines one by one in a speech bubble.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "npc",
+          "type": "string"
+        },
+        "lines": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 6,
+          "minItems": 1,
+          "type": "array"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "maxLength": 16,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind",
+        "lines"
+      ],
+      "title": "BNpc",
+      "type": "object"
+    },
+    "BPickup": {
+      "additionalProperties": false,
+      "description": "Something to collect. `item` names it for rules (\"star\"); `effect` is a ready-made rule fired on collect.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "pickup",
+          "type": "string"
+        },
+        "item": {
+          "default": "star",
+          "pattern": "^[a-z][a-z0-9 ]{0,15}$",
+          "type": "string"
+        },
+        "effect": {
+          "$ref": "#/$defs/PickupEffect",
+          "default": "none"
+        },
+        "seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 60,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 5.0
+        },
+        "respawn_s": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 60,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BPickup",
+      "type": "object"
+    },
+    "BPortal": {
+      "additionalProperties": false,
+      "description": "Touching a portal moves the player to its partner: the other portal with the same `pair` label in the level\n(a lone portal does nothing).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "portal",
+          "type": "string"
+        },
+        "pair": {
+          "default": "a",
+          "pattern": "^[a-z0-9]{1,8}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BPortal",
+      "type": "object"
+    },
     "BSaw": {
       "additionalProperties": false,
       "patternProperties": {
@@ -411,6 +526,38 @@
       "title": "BStatic",
       "type": "object"
     },
+    "BZone": {
+      "additionalProperties": false,
+      "description": "An area with an effect while the player is inside: wind and conveyor push toward `dir`, water slows and lets\nyou swim up, ice is slippery, low_gravity floats, slow halves speed. `strength` scales the effect.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "zone",
+          "type": "string"
+        },
+        "effect": {
+          "$ref": "#/$defs/ZoneEffect"
+        },
+        "dir": {
+          "$ref": "#/$defs/Dir4",
+          "default": "right"
+        },
+        "strength": {
+          "default": 1.0,
+          "maximum": 2.0,
+          "minimum": 0.5,
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "effect"
+      ],
+      "title": "BZone",
+      "type": "object"
+    },
     "Band": {
       "enum": [
         "trivial",
@@ -429,9 +576,13 @@
           "falling": "#/$defs/BFalling",
           "firebar": "#/$defs/BFirebar",
           "move": "#/$defs/BMove",
+          "npc": "#/$defs/BNpc",
+          "pickup": "#/$defs/BPickup",
+          "portal": "#/$defs/BPortal",
           "saw": "#/$defs/BSaw",
           "spring": "#/$defs/BSpring",
-          "static": "#/$defs/BStatic"
+          "static": "#/$defs/BStatic",
+          "zone": "#/$defs/BZone"
         },
         "propertyName": "kind"
       },
@@ -459,8 +610,43 @@
         },
         {
           "$ref": "#/$defs/BFirebar"
+        },
+        {
+          "$ref": "#/$defs/BPortal"
+        },
+        {
+          "$ref": "#/$defs/BZone"
+        },
+        {
+          "$ref": "#/$defs/BPickup"
+        },
+        {
+          "$ref": "#/$defs/BNpc"
         }
       ]
+    },
+    "BlockRef": {
+      "additionalProperties": false,
+      "description": "v4: points at one version of a public block (app/spec/blocks.py).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "block_id": {
+          "pattern": "^blk_[a-z0-9]{8}$",
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "block_id",
+        "version"
+      ],
+      "title": "BlockRef",
+      "type": "object"
     },
     "Blocking": {
       "additionalProperties": false,
@@ -666,6 +852,12 @@
         },
         "sprites": {
           "$ref": "#/$defs/Sprites"
+        },
+        "logic": {
+          "items": {
+            "$ref": "#/$defs/RuleV4"
+          },
+          "type": "array"
         }
       },
       "required": [
@@ -891,6 +1083,479 @@
       ],
       "type": "string"
     },
+    "DoCounter": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "add_counter",
+          "type": "string"
+        },
+        "name": {
+          "pattern": "^[a-z][a-z0-9 ]{0,15}$",
+          "type": "string"
+        },
+        "n": {
+          "default": 1,
+          "maximum": 100,
+          "minimum": -100,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "name"
+      ],
+      "title": "DoCounter",
+      "type": "object"
+    },
+    "DoFlipGravity": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "flip_gravity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DoFlipGravity",
+      "type": "object"
+    },
+    "DoFreeze": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "freeze_enemies",
+          "type": "string"
+        },
+        "seconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 60,
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "seconds"
+      ],
+      "title": "DoFreeze",
+      "type": "object"
+    },
+    "DoGravity": {
+      "additionalProperties": false,
+      "description": "Scale gravity (0.5 = moon jumps).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "gravity",
+          "type": "string"
+        },
+        "times": {
+          "maximum": 2,
+          "minimum": 0.25,
+          "type": "number"
+        },
+        "seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 600,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind",
+        "times"
+      ],
+      "title": "DoGravity",
+      "type": "object"
+    },
+    "DoHeal": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "heal",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DoHeal",
+      "type": "object"
+    },
+    "DoHurt": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "hurt",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DoHurt",
+      "type": "object"
+    },
+    "DoJumpPower": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "jump_power",
+          "type": "string"
+        },
+        "times": {
+          "maximum": 2,
+          "minimum": 0.5,
+          "type": "number"
+        },
+        "seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 600,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind",
+        "times"
+      ],
+      "title": "DoJumpPower",
+      "type": "object"
+    },
+    "DoLose": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "lose",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DoLose",
+      "type": "object"
+    },
+    "DoOpen": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "open",
+          "type": "string"
+        },
+        "target": {
+          "pattern": "^[A-Za-z0-9_]{1,40}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "target"
+      ],
+      "title": "DoOpen",
+      "type": "object"
+    },
+    "DoReverse": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "reverse_controls",
+          "type": "string"
+        },
+        "seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 600,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DoReverse",
+      "type": "object"
+    },
+    "DoSay": {
+      "additionalProperties": false,
+      "description": "A speech bubble over the player (or over `target`) for `seconds`.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "say",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 90,
+          "minLength": 1,
+          "type": "string"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9_]{1,40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "seconds": {
+          "default": 3,
+          "exclusiveMinimum": 0,
+          "maximum": 10,
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "text"
+      ],
+      "title": "DoSay",
+      "type": "object"
+    },
+    "DoScore": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "add_score",
+          "type": "string"
+        },
+        "n": {
+          "maximum": 1000,
+          "minimum": -1000,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "n"
+      ],
+      "title": "DoScore",
+      "type": "object"
+    },
+    "DoShake": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "shake",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DoShake",
+      "type": "object"
+    },
+    "DoSound": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "sound",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/SoundName"
+        }
+      },
+      "required": [
+        "kind",
+        "name"
+      ],
+      "title": "DoSound",
+      "type": "object"
+    },
+    "DoSpeed": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "speed",
+          "type": "string"
+        },
+        "times": {
+          "maximum": 3,
+          "minimum": 0.25,
+          "type": "number"
+        },
+        "seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 600,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind",
+        "times"
+      ],
+      "title": "DoSpeed",
+      "type": "object"
+    },
+    "DoTeleport": {
+      "additionalProperties": false,
+      "description": "Move the player to a cell (to) or onto an entity (target). Exactly one is set.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "teleport",
+          "type": "string"
+        },
+        "to": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CellXY"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "target": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9_]{1,40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DoTeleport",
+      "type": "object"
+    },
+    "DoToggle": {
+      "additionalProperties": false,
+      "description": "Show or hide an entity: a hidden entity is not drawn, not solid and does nothing.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "toggle",
+          "type": "string"
+        },
+        "target": {
+          "pattern": "^[A-Za-z0-9_]{1,40}$",
+          "type": "string"
+        },
+        "to": {
+          "default": "flip",
+          "enum": [
+            "on",
+            "off",
+            "flip"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "target"
+      ],
+      "title": "DoToggle",
+      "type": "object"
+    },
+    "DoWin": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "win",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DoWin",
+      "type": "object"
+    },
     "EBigCoin": {
       "additionalProperties": false,
       "patternProperties": {
@@ -915,6 +1580,17 @@
           "anyOf": [
             {
               "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
             },
             {
               "type": "null"
@@ -973,6 +1649,17 @@
           ],
           "default": null
         },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "type": {
           "const": "checkpoint",
           "type": "string"
@@ -1024,6 +1711,17 @@
           ],
           "default": null
         },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "type": {
           "const": "coin",
           "type": "string"
@@ -1068,6 +1766,17 @@
           "anyOf": [
             {
               "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
             },
             {
               "type": "null"
@@ -1142,6 +1851,17 @@
           ],
           "default": null
         },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "type": {
           "const": "door",
           "type": "string"
@@ -1205,6 +1925,17 @@
           "anyOf": [
             {
               "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
             },
             {
               "type": "null"
@@ -1311,6 +2042,17 @@
           ],
           "default": null
         },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "type": {
           "const": "falling_platform",
           "type": "string"
@@ -1367,6 +2109,17 @@
           "anyOf": [
             {
               "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
             },
             {
               "type": "null"
@@ -1439,6 +2192,17 @@
           ],
           "default": null
         },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "type": {
           "const": "goal",
           "type": "string"
@@ -1494,6 +2258,17 @@
           ],
           "default": null
         },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "type": {
           "const": "hint_arrow",
           "type": "string"
@@ -1542,6 +2317,17 @@
           "anyOf": [
             {
               "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
             },
             {
               "type": "null"
@@ -1611,6 +2397,17 @@
           ],
           "default": null
         },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "type": {
           "const": "moving_platform",
           "type": "string"
@@ -1662,6 +2459,179 @@
       "title": "EMovingPlatform",
       "type": "object"
     },
+    "ENpc": {
+      "additionalProperties": false,
+      "description": "x centre, y feet line, size in cells. Touching it shows `lines` one after another.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Origin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sprite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "type": {
+          "const": "npc",
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "w": {
+          "default": 1,
+          "type": "number"
+        },
+        "h": {
+          "default": 2,
+          "type": "number"
+        },
+        "lines": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 6,
+          "minItems": 1,
+          "type": "array"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "maxLength": 16,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "x",
+        "y",
+        "lines"
+      ],
+      "title": "ENpc",
+      "type": "object"
+    },
+    "EPickup": {
+      "additionalProperties": false,
+      "description": "Centre point. Collecting it fires collect rules for its id and its item name.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Origin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sprite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "type": {
+          "const": "pickup",
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "item": {
+          "default": "star",
+          "pattern": "^[a-z][a-z0-9 ]{0,15}$",
+          "type": "string"
+        },
+        "respawn_s": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 60,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "x",
+        "y"
+      ],
+      "title": "EPickup",
+      "type": "object"
+    },
     "EPlayerStart": {
       "additionalProperties": false,
       "patternProperties": {
@@ -1693,6 +2663,17 @@
           ],
           "default": null
         },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "type": {
           "const": "player_start",
           "type": "string"
@@ -1711,6 +2692,80 @@
         "y"
       ],
       "title": "EPlayerStart",
+      "type": "object"
+    },
+    "EPortal": {
+      "additionalProperties": false,
+      "description": "Centre point; radius 0.75 cells. Touching it moves the player to `pair` (a portal id).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Origin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sprite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "type": {
+          "const": "portal",
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "pair": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "x",
+        "y"
+      ],
+      "title": "EPortal",
       "type": "object"
     },
     "ESaw": {
@@ -1737,6 +2792,17 @@
           "anyOf": [
             {
               "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
             },
             {
               "type": "null"
@@ -1810,6 +2876,17 @@
           "anyOf": [
             {
               "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
             },
             {
               "type": "null"
@@ -1891,6 +2968,17 @@
           ],
           "default": null
         },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "type": {
           "const": "spring",
           "type": "string"
@@ -1928,6 +3016,91 @@
         "y"
       ],
       "title": "ESpring",
+      "type": "object"
+    },
+    "EZone": {
+      "additionalProperties": false,
+      "description": "Top-left box in cells with an effect while the player is inside (BZone).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Origin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sprite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "type": {
+          "const": "zone",
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "w": {
+          "type": "number"
+        },
+        "h": {
+          "type": "number"
+        },
+        "effect": {
+          "$ref": "#/$defs/ZoneEffect"
+        },
+        "dir": {
+          "$ref": "#/$defs/Dir4",
+          "default": "right"
+        },
+        "strength": {
+          "default": 1.0,
+          "maximum": 2.0,
+          "minimum": 0.5,
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "x",
+        "y",
+        "w",
+        "h",
+        "effect"
+      ],
+      "title": "EZone",
       "type": "object"
     },
     "EditBy": {
@@ -2456,10 +3629,14 @@
           "hint_arrow": "#/$defs/EHintArrow",
           "key": "#/$defs/EKey",
           "moving_platform": "#/$defs/EMovingPlatform",
+          "npc": "#/$defs/ENpc",
+          "pickup": "#/$defs/EPickup",
           "player_start": "#/$defs/EPlayerStart",
+          "portal": "#/$defs/EPortal",
           "saw": "#/$defs/ESaw",
           "spikes": "#/$defs/ESpikes",
-          "spring": "#/$defs/ESpring"
+          "spring": "#/$defs/ESpring",
+          "zone": "#/$defs/EZone"
         },
         "propertyName": "type"
       },
@@ -2511,6 +3688,18 @@
         },
         {
           "$ref": "#/$defs/EHintArrow"
+        },
+        {
+          "$ref": "#/$defs/EPortal"
+        },
+        {
+          "$ref": "#/$defs/EZone"
+        },
+        {
+          "$ref": "#/$defs/EPickup"
+        },
+        {
+          "$ref": "#/$defs/ENpc"
         }
       ]
     },
@@ -3350,6 +4539,15 @@
       "title": "Frontier",
       "type": "object"
     },
+    "GameMode": {
+      "enum": [
+        "platformer",
+        "topdown",
+        "runner",
+        "flappy"
+      ],
+      "type": "string"
+    },
     "GameRules": {
       "additionalProperties": false,
       "patternProperties": {
@@ -3424,6 +4622,31 @@
           "anyOf": [
             {
               "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "mode": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GameMode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "logic": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/RuleV4"
+              },
+              "type": "array"
             },
             {
               "type": "null"
@@ -4335,6 +5558,28 @@
         },
         "created_at": {
           "type": "string"
+        },
+        "block": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BlockRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -4805,6 +6050,17 @@
         },
         "behavior": {
           "$ref": "#/$defs/Behavior"
+        },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -5671,6 +6927,17 @@
         "version": {
           "minimum": 1,
           "type": "integer"
+        },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -5743,6 +7010,19 @@
       ],
       "title": "ParentRef",
       "type": "object"
+    },
+    "PickupEffect": {
+      "enum": [
+        "none",
+        "speed",
+        "jump",
+        "flip",
+        "heart",
+        "score",
+        "freeze",
+        "low_gravity"
+      ],
+      "type": "string"
     },
     "PlayerSprite": {
       "additionalProperties": false,
@@ -6261,6 +7541,184 @@
       ],
       "title": "RouteStep",
       "type": "object"
+    },
+    "RuleDo": {
+      "discriminator": {
+        "mapping": {
+          "add_counter": "#/$defs/DoCounter",
+          "add_score": "#/$defs/DoScore",
+          "flip_gravity": "#/$defs/DoFlipGravity",
+          "freeze_enemies": "#/$defs/DoFreeze",
+          "gravity": "#/$defs/DoGravity",
+          "heal": "#/$defs/DoHeal",
+          "hurt": "#/$defs/DoHurt",
+          "jump_power": "#/$defs/DoJumpPower",
+          "lose": "#/$defs/DoLose",
+          "open": "#/$defs/DoOpen",
+          "reverse_controls": "#/$defs/DoReverse",
+          "say": "#/$defs/DoSay",
+          "shake": "#/$defs/DoShake",
+          "sound": "#/$defs/DoSound",
+          "speed": "#/$defs/DoSpeed",
+          "teleport": "#/$defs/DoTeleport",
+          "toggle": "#/$defs/DoToggle",
+          "win": "#/$defs/DoWin"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/DoFlipGravity"
+        },
+        {
+          "$ref": "#/$defs/DoGravity"
+        },
+        {
+          "$ref": "#/$defs/DoSpeed"
+        },
+        {
+          "$ref": "#/$defs/DoJumpPower"
+        },
+        {
+          "$ref": "#/$defs/DoReverse"
+        },
+        {
+          "$ref": "#/$defs/DoTeleport"
+        },
+        {
+          "$ref": "#/$defs/DoToggle"
+        },
+        {
+          "$ref": "#/$defs/DoOpen"
+        },
+        {
+          "$ref": "#/$defs/DoFreeze"
+        },
+        {
+          "$ref": "#/$defs/DoScore"
+        },
+        {
+          "$ref": "#/$defs/DoCounter"
+        },
+        {
+          "$ref": "#/$defs/DoHeal"
+        },
+        {
+          "$ref": "#/$defs/DoHurt"
+        },
+        {
+          "$ref": "#/$defs/DoWin"
+        },
+        {
+          "$ref": "#/$defs/DoLose"
+        },
+        {
+          "$ref": "#/$defs/DoSay"
+        },
+        {
+          "$ref": "#/$defs/DoSound"
+        },
+        {
+          "$ref": "#/$defs/DoShake"
+        }
+      ]
+    },
+    "RuleKey": {
+      "enum": [
+        "space",
+        "action"
+      ],
+      "type": "string"
+    },
+    "RuleV4": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9_]{1,40}$",
+          "type": "string"
+        },
+        "when": {
+          "$ref": "#/$defs/RuleWhen"
+        },
+        "then": {
+          "items": {
+            "$ref": "#/$defs/RuleDo"
+          },
+          "maxItems": 4,
+          "minItems": 1,
+          "type": "array"
+        },
+        "once": {
+          "default": false,
+          "type": "boolean"
+        },
+        "off": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "when",
+        "then"
+      ],
+      "title": "RuleV4",
+      "type": "object"
+    },
+    "RuleWhen": {
+      "discriminator": {
+        "mapping": {
+          "all_coins": "#/$defs/WhenAllCoins",
+          "collect": "#/$defs/WhenCollect",
+          "counter": "#/$defs/WhenCounter",
+          "key": "#/$defs/WhenKey",
+          "score": "#/$defs/WhenScore",
+          "start": "#/$defs/WhenStart",
+          "timer": "#/$defs/WhenTimer",
+          "touch": "#/$defs/WhenTouch",
+          "zone": "#/$defs/WhenZone"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/WhenStart"
+        },
+        {
+          "$ref": "#/$defs/WhenKey"
+        },
+        {
+          "$ref": "#/$defs/WhenTouch"
+        },
+        {
+          "$ref": "#/$defs/WhenCollect"
+        },
+        {
+          "$ref": "#/$defs/WhenAllCoins"
+        },
+        {
+          "$ref": "#/$defs/WhenTimer"
+        },
+        {
+          "$ref": "#/$defs/WhenZone"
+        },
+        {
+          "$ref": "#/$defs/WhenScore"
+        },
+        {
+          "$ref": "#/$defs/WhenCounter"
+        }
+      ]
     },
     "Safety": {
       "enum": [
@@ -7096,6 +8554,17 @@
       "title": "Slots",
       "type": "object"
     },
+    "SoundName": {
+      "enum": [
+        "ding",
+        "boing",
+        "zap",
+        "whoosh",
+        "boom",
+        "fanfare"
+      ],
+      "type": "string"
+    },
     "Sprites": {
       "additionalProperties": false,
       "patternProperties": {
@@ -7342,6 +8811,228 @@
       "title": "Validation",
       "type": "object"
     },
+    "WhenAllCoins": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "all_coins",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "WhenAllCoins",
+      "type": "object"
+    },
+    "WhenCollect": {
+      "additionalProperties": false,
+      "description": "A coin, big coin, key or pickup is collected: one entity (target), any pickup with this item name, or any\ncoin (item \"coin\"). Exactly one of target or item is set.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "collect",
+          "type": "string"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9_]{1,40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "item": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9 ]{0,15}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "WhenCollect",
+      "type": "object"
+    },
+    "WhenCounter": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "counter",
+          "type": "string"
+        },
+        "name": {
+          "pattern": "^[a-z][a-z0-9 ]{0,15}$",
+          "type": "string"
+        },
+        "at_least": {
+          "maximum": 1000,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "at_least"
+      ],
+      "title": "WhenCounter",
+      "type": "object"
+    },
+    "WhenKey": {
+      "additionalProperties": false,
+      "description": "Fires on the frame the key goes down (an edge, never while held).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "key",
+          "type": "string"
+        },
+        "key": {
+          "$ref": "#/$defs/RuleKey"
+        }
+      },
+      "required": [
+        "kind",
+        "key"
+      ],
+      "title": "WhenKey",
+      "type": "object"
+    },
+    "WhenScore": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "score",
+          "type": "string"
+        },
+        "at_least": {
+          "maximum": 100000,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "at_least"
+      ],
+      "title": "WhenScore",
+      "type": "object"
+    },
+    "WhenStart": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "start",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "WhenStart",
+      "type": "object"
+    },
+    "WhenTimer": {
+      "additionalProperties": false,
+      "description": "After `seconds` from the level start (the first input), or every `seconds` when `every`.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "timer",
+          "type": "string"
+        },
+        "seconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 600,
+          "type": "number"
+        },
+        "every": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "seconds"
+      ],
+      "title": "WhenTimer",
+      "type": "object"
+    },
+    "WhenTouch": {
+      "additionalProperties": false,
+      "description": "Fires on the frame the player starts touching the entity (edge).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "touch",
+          "type": "string"
+        },
+        "target": {
+          "pattern": "^[A-Za-z0-9_]{1,40}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "target"
+      ],
+      "title": "WhenTouch",
+      "type": "object"
+    },
+    "WhenZone": {
+      "additionalProperties": false,
+      "description": "The player's feet enter the rectangle (cells, half-open [x0, y0, x1, y1]).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "zone",
+          "type": "string"
+        },
+        "rect": {
+          "$ref": "#/$defs/RectCells"
+        }
+      },
+      "required": [
+        "kind",
+        "rect"
+      ],
+      "title": "WhenZone",
+      "type": "object"
+    },
     "World": {
       "additionalProperties": false,
       "description": "Level world. w = 48·screens, h = 27 (§2.1, §6.1).",
@@ -7376,6 +9067,17 @@
       ],
       "title": "World",
       "type": "object"
+    },
+    "ZoneEffect": {
+      "enum": [
+        "wind",
+        "water",
+        "ice",
+        "low_gravity",
+        "conveyor",
+        "slow"
+      ],
+      "type": "string"
     }
   }
 }

@@ -72,10 +72,13 @@ export type Role =
   | "decoration"
   | "library_tag"
   | "unknown";
-export type Behavior = BStatic | BEnemy | BMove | BSpring | BCrumble | BFalling | BSaw | BFirebar;
+export type Behavior =
+  BStatic | BEnemy | BMove | BSpring | BCrumble | BFalling | BSaw | BFirebar | BPortal | BZone | BPickup | BNpc;
 export type Archetype = "walker" | "hopper" | "flyer" | "shooter" | "chaser" | "crusher";
 export type Dir4 = "up" | "down" | "left" | "right";
 export type Dir = "up" | "down" | "left" | "right" | "none";
+export type ZoneEffect = "wind" | "water" | "ice" | "low_gravity" | "conveyor" | "slow";
+export type PickupEffect = "none" | "speed" | "jump" | "flip" | "heart" | "score" | "freeze" | "low_gravity";
 export type Face = "top" | "bottom" | "left" | "right";
 /**
  * @minItems 2
@@ -138,6 +141,47 @@ export type Binding =
   | BindStart
   | BindTimer
   | BindLibrary;
+export type BlockKind = "creature" | "platform" | "hazard" | "pickup" | "prop" | "player" | "rules";
+export type InkColor = "black" | "red" | "green" | "blue" | "pencil" | "draft";
+export type Origin = "kid" | "parent" | "designer" | "library" | "draft" | "migrated";
+export type StampKind =
+  | "coin"
+  | "big_coin"
+  | "spikes"
+  | "flag"
+  | "checkpoint"
+  | "spring"
+  | "saw"
+  | "walker"
+  | "hopper"
+  | "flyer"
+  | "key"
+  | "door"
+  | "start"
+  | "library";
+export type RuleWhen =
+  WhenStart | WhenKey | WhenTouch | WhenCollect | WhenAllCoins | WhenTimer | WhenZone | WhenScore | WhenCounter;
+export type RuleKey = "space" | "action";
+export type RuleDo =
+  | DoFlipGravity
+  | DoGravity
+  | DoSpeed
+  | DoJumpPower
+  | DoReverse
+  | DoTeleport
+  | DoToggle
+  | DoOpen
+  | DoFreeze
+  | DoScore
+  | DoCounter
+  | DoHeal
+  | DoHurt
+  | DoWin
+  | DoLose
+  | DoSay
+  | DoSound
+  | DoShake;
+export type SoundName = "ding" | "boing" | "zap" | "whoosh" | "boom" | "fanfare";
 export type FailureKind =
   | "gap_too_wide"
   | "ledge_too_high"
@@ -165,23 +209,6 @@ export type LlmMode = "live" | "fake" | "off";
 export type StageName =
   "upload" | "cv" | "ink" | "perceive" | "understood" | "design" | "designed" | "refine" | "critic";
 export type StageStatus = "start" | "done" | "skipped" | "failed" | "late";
-export type InkColor = "black" | "red" | "green" | "blue" | "pencil" | "draft";
-export type Origin = "kid" | "parent" | "designer" | "library" | "draft" | "migrated";
-export type StampKind =
-  | "coin"
-  | "big_coin"
-  | "spikes"
-  | "flag"
-  | "checkpoint"
-  | "spring"
-  | "saw"
-  | "walker"
-  | "hopper"
-  | "flyer"
-  | "key"
-  | "door"
-  | "start"
-  | "library";
 export type RoleBy = "heuristic" | "model" | "kid" | "stamp" | "library" | "parser" | "draft" | "migrated" | "designer";
 export type Shape = ShapeSurface | ShapeStrip | ShapeBody | ShapePoint | ShapeWall;
 export type Collision = "solid" | "one_way" | "none" | "hazard" | "trigger";
@@ -192,6 +219,7 @@ export type ProfileId = "v2-standard" | "v2-gentle" | "v2-snappy" | "v1-classic"
 export type Theme = "sketchbook" | "notebook" | "graph" | "kraft";
 export type Dial = "faithful" | "polished" | "challenging";
 export type ChallengeBand = "normal" | "hard";
+export type GameMode = "platformer" | "topdown" | "runner" | "flappy";
 export type Entity =
   | EPlayerStart
   | ESpikes
@@ -208,7 +236,11 @@ export type Entity =
   | EMovingPlatform
   | ECrumble
   | EFalling
-  | EHintArrow;
+  | EHintArrow
+  | EPortal
+  | EZone
+  | EPickup
+  | ENpc;
 export type FlagCode =
   | "unsolvable"
   | "tight_window"
@@ -257,7 +289,8 @@ export type WorkerMethod =
   | "art_svg"
   | "generate_level"
   | "rules_check"
-  | "library_check";
+  | "library_check"
+  | "parse_logic";
 
 export interface Abilities {
   run?: boolean;
@@ -317,6 +350,7 @@ export interface OpBind {
   op: "bind";
   target: string;
   behavior: Behavior;
+  hidden?: boolean | null;
 }
 export interface BStatic {
   kind: "static";
@@ -380,6 +414,52 @@ export interface BFirebar {
   speed_deg_s?: number;
   phase?: number;
 }
+/**
+ * Touching a portal moves the player to its partner: the other portal with the same `pair` label in the level
+ * (a lone portal does nothing).
+ */
+export interface BPortal {
+  kind: "portal";
+  pair?: string;
+}
+/**
+ * An area with an effect while the player is inside: wind and conveyor push toward `dir`, water slows and lets
+ * you swim up, ice is slippery, low_gravity floats, slow halves speed. `strength` scales the effect.
+ */
+export interface BZone {
+  kind: "zone";
+  effect: ZoneEffect;
+  dir?: Dir4;
+  strength?: number;
+}
+/**
+ * Something to collect. `item` names it for rules ("star"); `effect` is a ready-made rule fired on collect.
+ */
+export interface BPickup {
+  kind: "pickup";
+  item?: string;
+  effect?: PickupEffect;
+  seconds?: number | null;
+  respawn_s?: number | null;
+}
+/**
+ * A character that talks: touching it shows its lines one by one in a speech bubble.
+ */
+export interface BNpc {
+  kind: "npc";
+  /**
+   * @minItems 1
+   * @maxItems 6
+   */
+  lines:
+    | [string]
+    | [string, string]
+    | [string, string, string]
+    | [string, string, string, string]
+    | [string, string, string, string, string]
+    | [string, string, string, string, string, string];
+  name?: string | null;
+}
 export interface OpLink {
   op: "link";
   key: string;
@@ -394,6 +474,7 @@ export interface OpUseLibrary {
   target: string;
   type_id: string;
   version: number;
+  hidden?: boolean | null;
 }
 export interface OpStraighten {
   op: "straighten";
@@ -783,6 +864,324 @@ export interface BindTimer {
   kind: "timer";
   seconds: number;
 }
+export interface Block {
+  id: string;
+  version: number;
+  name: string;
+  kind: BlockKind;
+  behavior?: Behavior | null;
+  spiky?: boolean;
+  collision?: "solid" | "one_way" | "none";
+  art?: LibraryArt | null;
+  symbol?: LibrarySymbol | null;
+  logic?: RuleV4[];
+  description?: string | null;
+  /**
+   * @maxItems 8
+   */
+  tags?:
+    | []
+    | [string]
+    | [string, string]
+    | [string, string, string]
+    | [string, string, string, string]
+    | [string, string, string, string, string]
+    | [string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string, string];
+  author: string;
+  author_id?: string | null;
+  parent?: BlockRef | null;
+  created_at: string;
+}
+export interface LibraryArt {
+  strokes: InkStroke[];
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  size_cells: [number, number];
+  rig?: Rig | null;
+}
+export interface InkStroke {
+  id: string;
+  color: InkColor;
+  kind: "line" | "dot" | "blob";
+  pts: CellXY[];
+  w: number[];
+  closed: boolean;
+  sheet: number;
+  origin: Origin;
+  stamp?: StampKind | null;
+  label?: Role | null;
+  rule?: Behavior | null;
+  lib?: LibRef | null;
+  t?: number | null;
+}
+export interface LibRef {
+  type_id: string;
+  version: number;
+}
+/**
+ * Rig extracted from a creature drawing (§7.6). Parts are stroke ids.
+ */
+export interface Rig {
+  legs?: string[];
+  arms?: string[];
+  eyes?: string[];
+  synth_legs?: boolean;
+  hip_y?: number;
+}
+export interface LibrarySymbol {
+  /**
+   * @minItems 3
+   * @maxItems 3
+   */
+  samples: [InkStroke[], InkStroke[], InkStroke[]];
+  color: InkColor;
+}
+export interface RuleV4 {
+  id: string;
+  when: RuleWhen;
+  /**
+   * @minItems 1
+   * @maxItems 4
+   */
+  then: [RuleDo] | [RuleDo, RuleDo] | [RuleDo, RuleDo, RuleDo] | [RuleDo, RuleDo, RuleDo, RuleDo];
+  once?: boolean;
+  off?: boolean | null;
+}
+export interface WhenStart {
+  kind: "start";
+}
+/**
+ * Fires on the frame the key goes down (an edge, never while held).
+ */
+export interface WhenKey {
+  kind: "key";
+  key: RuleKey;
+}
+/**
+ * Fires on the frame the player starts touching the entity (edge).
+ */
+export interface WhenTouch {
+  kind: "touch";
+  target: string;
+}
+/**
+ * A coin, big coin, key or pickup is collected: one entity (target), any pickup with this item name, or any
+ * coin (item "coin"). Exactly one of target or item is set.
+ */
+export interface WhenCollect {
+  kind: "collect";
+  target?: string | null;
+  item?: string | null;
+}
+export interface WhenAllCoins {
+  kind: "all_coins";
+}
+/**
+ * After `seconds` from the level start (the first input), or every `seconds` when `every`.
+ */
+export interface WhenTimer {
+  kind: "timer";
+  seconds: number;
+  every?: boolean;
+}
+/**
+ * The player's feet enter the rectangle (cells, half-open [x0, y0, x1, y1]).
+ */
+export interface WhenZone {
+  kind: "zone";
+  rect: RectCells;
+}
+export interface WhenScore {
+  kind: "score";
+  at_least: number;
+}
+export interface WhenCounter {
+  kind: "counter";
+  name: string;
+  at_least: number;
+}
+export interface DoFlipGravity {
+  kind: "flip_gravity";
+}
+/**
+ * Scale gravity (0.5 = moon jumps).
+ */
+export interface DoGravity {
+  kind: "gravity";
+  times: number;
+  seconds?: number | null;
+}
+export interface DoSpeed {
+  kind: "speed";
+  times: number;
+  seconds?: number | null;
+}
+export interface DoJumpPower {
+  kind: "jump_power";
+  times: number;
+  seconds?: number | null;
+}
+export interface DoReverse {
+  kind: "reverse_controls";
+  seconds?: number | null;
+}
+/**
+ * Move the player to a cell (to) or onto an entity (target). Exactly one is set.
+ */
+export interface DoTeleport {
+  kind: "teleport";
+  to?: CellXY | null;
+  target?: string | null;
+}
+/**
+ * Show or hide an entity: a hidden entity is not drawn, not solid and does nothing.
+ */
+export interface DoToggle {
+  kind: "toggle";
+  target: string;
+  to?: "on" | "off" | "flip";
+}
+export interface DoOpen {
+  kind: "open";
+  target: string;
+}
+export interface DoFreeze {
+  kind: "freeze_enemies";
+  seconds: number;
+}
+export interface DoScore {
+  kind: "add_score";
+  n: number;
+}
+export interface DoCounter {
+  kind: "add_counter";
+  name: string;
+  n?: number;
+}
+export interface DoHeal {
+  kind: "heal";
+}
+export interface DoHurt {
+  kind: "hurt";
+}
+export interface DoWin {
+  kind: "win";
+}
+export interface DoLose {
+  kind: "lose";
+}
+/**
+ * A speech bubble over the player (or over `target`) for `seconds`.
+ */
+export interface DoSay {
+  kind: "say";
+  text: string;
+  target?: string | null;
+  seconds?: number;
+}
+export interface DoSound {
+  kind: "sound";
+  name: SoundName;
+}
+export interface DoShake {
+  kind: "shake";
+}
+/**
+ * v4: points at one version of a public block (app/spec/blocks.py).
+ */
+export interface BlockRef {
+  block_id: string;
+  version: number;
+}
+/**
+ * A block as listed: the newest version plus usage counted by the server.
+ */
+export interface BlockCard {
+  id: string;
+  version: number;
+  name: string;
+  kind: BlockKind;
+  behavior?: Behavior | null;
+  spiky?: boolean;
+  collision?: "solid" | "one_way" | "none";
+  art?: LibraryArt | null;
+  symbol?: LibrarySymbol | null;
+  logic?: RuleV4[];
+  description?: string | null;
+  /**
+   * @maxItems 8
+   */
+  tags?:
+    | []
+    | [string]
+    | [string, string]
+    | [string, string, string]
+    | [string, string, string, string]
+    | [string, string, string, string, string]
+    | [string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string, string];
+  author: string;
+  author_id?: string | null;
+  parent?: BlockRef | null;
+  created_at: string;
+  uses?: number;
+  versions?: number;
+}
+/**
+ * POST /blocks and POST /blocks/{id}/versions. Server fills id, version, author, created_at.
+ */
+export interface BlockCreate {
+  name: string;
+  kind: BlockKind;
+  behavior?: Behavior | null;
+  spiky?: boolean;
+  collision?: "solid" | "one_way" | "none";
+  art?: LibraryArt | null;
+  symbol?: LibrarySymbol | null;
+  logic?: RuleV4[];
+  description?: string | null;
+  /**
+   * @maxItems 8
+   */
+  tags?:
+    | []
+    | [string]
+    | [string, string]
+    | [string, string, string]
+    | [string, string, string, string]
+    | [string, string, string, string, string]
+    | [string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string, string];
+  parent?: BlockRef | null;
+}
+/**
+ * POST /blocks/describe: the maker's words (and drawing) become a block draft.
+ */
+export interface BlockDescribeBody {
+  name: string;
+  text: string;
+  ink?: InkStroke[];
+}
+export interface BlockDescribeResult {
+  kind: BlockKind;
+  behavior: Behavior | null;
+  spiky: boolean;
+  collision: "solid" | "one_way" | "none";
+  logic: RuleV4[];
+  summary: string;
+  unknown: string[];
+  source: "model" | "keywords";
+}
+export interface BlockList {
+  blocks: BlockCard[];
+  total: number;
+}
 export interface Blocking {
   from: CellXY;
   to_object: string;
@@ -847,25 +1246,6 @@ export interface InkWorld {
   screens: number;
   w: number;
   h?: 27;
-}
-export interface InkStroke {
-  id: string;
-  color: InkColor;
-  kind: "line" | "dot" | "blob";
-  pts: CellXY[];
-  w: number[];
-  closed: boolean;
-  sheet: number;
-  origin: Origin;
-  stamp?: StampKind | null;
-  label?: Role | null;
-  rule?: Behavior | null;
-  lib?: LibRef | null;
-  t?: number | null;
-}
-export interface LibRef {
-  type_id: string;
-  version: number;
 }
 export interface InkComponent {
   id: number;
@@ -1072,6 +1452,8 @@ export interface GameRules {
   default_dial?: Dial;
   default_band?: ChallengeBand;
   player_type?: string | null;
+  mode?: GameMode | null;
+  logic?: RuleV4[] | null;
 }
 export interface LevelSource {
   kind: "canvas" | "paper" | "prompt" | "migrated";
@@ -1102,6 +1484,7 @@ export interface Compiled {
   entities: Entity[];
   triggers?: Trigger[];
   sprites?: Sprites;
+  logic?: RuleV4[];
 }
 export interface Tiles {
   legend: ".#=/\\abcd~X";
@@ -1111,6 +1494,7 @@ export interface EPlayerStart {
   id: string;
   origin?: Origin | null;
   sprite?: string | null;
+  hidden?: boolean | null;
   type: "player_start";
   x: number;
   y: number;
@@ -1119,6 +1503,7 @@ export interface ESpikes {
   id: string;
   origin?: Origin | null;
   sprite?: string | null;
+  hidden?: boolean | null;
   type: "spikes";
   host: string | null;
   face: Face;
@@ -1131,6 +1516,7 @@ export interface EEnemy {
   id: string;
   origin?: Origin | null;
   sprite?: string | null;
+  hidden?: boolean | null;
   type: "enemy";
   archetype: Archetype | "static";
   x: number;
@@ -1145,6 +1531,7 @@ export interface ECoin {
   id: string;
   origin?: Origin | null;
   sprite?: string | null;
+  hidden?: boolean | null;
   type: "coin";
   x: number;
   y: number;
@@ -1153,6 +1540,7 @@ export interface EBigCoin {
   id: string;
   origin?: Origin | null;
   sprite?: string | null;
+  hidden?: boolean | null;
   type: "big_coin";
   x: number;
   y: number;
@@ -1161,6 +1549,7 @@ export interface ECheckpoint {
   id: string;
   origin?: Origin | null;
   sprite?: string | null;
+  hidden?: boolean | null;
   type: "checkpoint";
   x: number;
   y: number;
@@ -1169,6 +1558,7 @@ export interface EGoal {
   id: string;
   origin?: Origin | null;
   sprite?: string | null;
+  hidden?: boolean | null;
   type: "goal";
   x: number;
   y: number;
@@ -1178,6 +1568,7 @@ export interface EKey {
   id: string;
   origin?: Origin | null;
   sprite?: string | null;
+  hidden?: boolean | null;
   type: "key";
   x: number;
   y: number;
@@ -1187,6 +1578,7 @@ export interface EDoor {
   id: string;
   origin?: Origin | null;
   sprite?: string | null;
+  hidden?: boolean | null;
   type: "door";
   x: number;
   y: number;
@@ -1198,6 +1590,7 @@ export interface ESpring {
   id: string;
   origin?: Origin | null;
   sprite?: string | null;
+  hidden?: boolean | null;
   type: "spring";
   x: number;
   y: number;
@@ -1209,6 +1602,7 @@ export interface ESaw {
   id: string;
   origin?: Origin | null;
   sprite?: string | null;
+  hidden?: boolean | null;
   type: "saw";
   x: number;
   y: number;
@@ -1221,6 +1615,7 @@ export interface EFirebar {
   id: string;
   origin?: Origin | null;
   sprite?: string | null;
+  hidden?: boolean | null;
   type: "firebar";
   x: number;
   y: number;
@@ -1232,6 +1627,7 @@ export interface EMovingPlatform {
   id: string;
   origin?: Origin | null;
   sprite?: string | null;
+  hidden?: boolean | null;
   type: "moving_platform";
   x: number;
   y: number;
@@ -1246,6 +1642,7 @@ export interface ECrumble {
   id: string;
   origin?: Origin | null;
   sprite?: string | null;
+  hidden?: boolean | null;
   type: "crumble";
   x: number;
   y: number;
@@ -1258,6 +1655,7 @@ export interface EFalling {
   id: string;
   origin?: Origin | null;
   sprite?: string | null;
+  hidden?: boolean | null;
   type: "falling_platform";
   x: number;
   y: number;
@@ -1269,10 +1667,81 @@ export interface EHintArrow {
   id: string;
   origin?: Origin | null;
   sprite?: string | null;
+  hidden?: boolean | null;
   type: "hint_arrow";
   x: number;
   y: number;
   dir: Dir4;
+}
+/**
+ * Centre point; radius 0.75 cells. Touching it moves the player to `pair` (a portal id).
+ */
+export interface EPortal {
+  id: string;
+  origin?: Origin | null;
+  sprite?: string | null;
+  hidden?: boolean | null;
+  type: "portal";
+  x: number;
+  y: number;
+  pair?: string | null;
+}
+/**
+ * Top-left box in cells with an effect while the player is inside (BZone).
+ */
+export interface EZone {
+  id: string;
+  origin?: Origin | null;
+  sprite?: string | null;
+  hidden?: boolean | null;
+  type: "zone";
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  effect: ZoneEffect;
+  dir?: Dir4;
+  strength?: number;
+}
+/**
+ * Centre point. Collecting it fires collect rules for its id and its item name.
+ */
+export interface EPickup {
+  id: string;
+  origin?: Origin | null;
+  sprite?: string | null;
+  hidden?: boolean | null;
+  type: "pickup";
+  x: number;
+  y: number;
+  item?: string;
+  respawn_s?: number | null;
+}
+/**
+ * x centre, y feet line, size in cells. Touching it shows `lines` one after another.
+ */
+export interface ENpc {
+  id: string;
+  origin?: Origin | null;
+  sprite?: string | null;
+  hidden?: boolean | null;
+  type: "npc";
+  x: number;
+  y: number;
+  w?: number;
+  h?: number;
+  /**
+   * @minItems 1
+   * @maxItems 6
+   */
+  lines:
+    | [string]
+    | [string, string]
+    | [string, string, string]
+    | [string, string, string, string]
+    | [string, string, string, string, string]
+    | [string, string, string, string, string, string];
+  name?: string | null;
 }
 /**
  * v1 rules carried over unchanged (§2.6): collect:/touch:/timer: → open:/win/lose.
@@ -1290,16 +1759,6 @@ export interface Sprites {
 export interface PlayerSprite {
   url: string;
   rig?: Rig | null;
-}
-/**
- * Rig extracted from a creature drawing (§7.6). Parts are stroke ids.
- */
-export interface Rig {
-  legs?: string[];
-  arms?: string[];
-  eyes?: string[];
-  synth_legs?: boolean;
-  hip_y?: number;
 }
 export interface DesignBlock {
   tier: Tier;
@@ -1354,23 +1813,8 @@ export interface LibraryType {
   symbol?: LibrarySymbol | null;
   author: string;
   created_at: string;
-}
-export interface LibraryArt {
-  strokes: InkStroke[];
-  /**
-   * @minItems 2
-   * @maxItems 2
-   */
-  size_cells: [number, number];
-  rig?: Rig | null;
-}
-export interface LibrarySymbol {
-  /**
-   * @minItems 3
-   * @maxItems 3
-   */
-  samples: [InkStroke[], InkStroke[], InkStroke[]];
-  color: InkColor;
+  block?: BlockRef | null;
+  hidden?: boolean | null;
 }
 export interface LevelMeta {
   transcript?: string;
@@ -1587,6 +2031,8 @@ export interface BuildInputJson {
   tier: Tier;
   repairUnsolvable: boolean;
   seed: number;
+  logic?: RuleV4[] | null;
+  mode?: GameMode | null;
 }
 export interface BuildResultJson {
   graph: SceneGraph;
@@ -1639,6 +2085,35 @@ export interface DeathEvent {
   cause: string;
   frame: number;
   segment: string;
+}
+/**
+ * GET /dashboard (needs X-DP-Player): everything the workspace home shows.
+ */
+export interface Dashboard {
+  games: DashboardGame[];
+  drafts: DraftCard[];
+  blocks: BlockCard[];
+  unread: number;
+}
+export interface DashboardGame {
+  game_id: string;
+  title: string;
+  role: ("owner" | "maintainer" | "contributor") | null;
+  mode: GameMode;
+  level_count: number;
+  beatable: number;
+  to_fix: number;
+  pending_reviews: number;
+  open_quests: number;
+  cover_level_id: string | null;
+  updated_at: string | null;
+}
+export interface DraftCard {
+  draft_id: string;
+  title: string | null;
+  game_id: string | null;
+  kind: string;
+  updated_at: string;
 }
 export interface DesignAskJson {
   about: string;
@@ -1795,6 +2270,52 @@ export interface LibraryDraft {
   };
   asks?: MessageRef[];
   warnings?: MessageRef[];
+}
+/**
+ * POST /logic/parse: written rules ("space flips gravity") become RuleV4s.
+ */
+export interface LogicParseBody {
+  /**
+   * @minItems 1
+   * @maxItems 12
+   */
+  sentences:
+    | [string]
+    | [string, string]
+    | [string, string, string]
+    | [string, string, string, string]
+    | [string, string, string, string, string]
+    | [string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string, string, string, string, string, string];
+  game_id?: string | null;
+  entity_ids?: string[];
+}
+export interface LogicParseResult {
+  rules: RuleV4[];
+  mode: GameMode | null;
+  unknown: string[];
+  source: "model" | "keywords";
+}
+/**
+ * POST /games/{id}/export/minecraft/live: build the game's first level in a running server over RCON.
+ */
+export interface MinecraftBody {
+  host?: string;
+  port?: number;
+  password: string;
+  level_id?: string | null;
+  origin?: [number, number, number] | null;
+}
+export interface MinecraftResult {
+  ok: boolean;
+  commands: number;
+  message_key?: string | null;
+  untranslated?: string[];
 }
 export interface PackCreate {
   kind: "new" | "game" | "remix" | "extend";
@@ -1953,6 +2474,17 @@ export interface TierSummary {
   reach: boolean;
   edit_ids: string[];
 }
+/**
+ * POST /games/{id}/blocks: add a block to a game (copies it into the game's library or its rules).
+ */
+export interface UseBlockBody {
+  block_id: string;
+  version?: number | null;
+}
+export interface UseBlockResult {
+  library_type: LibraryType | null;
+  rules: GameRules | null;
+}
 export interface WorkerError {
   code: "timeout" | "invalid" | "internal";
   message: string;
@@ -1975,4 +2507,4 @@ export interface WorkerResponse {
 export const SPEC_VERSION = "1.0";
 
 /** shared/spec/level.schema.json, embedded so core.validateLevel() needs no JSON import. */
-export const LEVEL_SCHEMA: Record<string, unknown> = {"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"https://draw-a-level.dev/spec/v2/level.schema.json","$comment":"dal-level spec v1.0. GENERATED from vision/app/spec/level.py by scripts/gen_contracts.py; do not edit.","title":"level","description":"LevelV2 (`dal-level`, schema_version 2): PLAN_V2 §2.","$ref":"#/$defs/LevelV2","$defs":{"Abilities":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"run":{"default":true,"type":"boolean"},"stomp":{"default":true,"type":"boolean"},"double_jump":{"default":false,"type":"boolean"},"fast_fall":{"default":true,"type":"boolean"}},"title":"Abilities","type":"object"},"Archetype":{"enum":["walker","hopper","flyer","shooter","chaser","crusher"],"type":"string"},"Attachment":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"host":{"type":"string"},"face":{"$ref":"#/$defs/Face"}},"required":["host","face"],"title":"Attachment","type":"object"},"BCrumble":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"crumble","type":"string"},"delay_s":{"default":0.5,"type":"number"},"respawn_s":{"default":3.0,"type":"number"}},"required":["kind"],"title":"BCrumble","type":"object"},"BEnemy":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"enemy","type":"string"},"archetype":{"$ref":"#/$defs/Archetype"},"spiky":{"default":false,"type":"boolean"},"params":{"$ref":"#/$defs/EnemyParams"}},"required":["kind","archetype"],"title":"BEnemy","type":"object"},"BFalling":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"falling","type":"string"},"delay_s":{"default":0.4,"type":"number"}},"required":["kind"],"title":"BFalling","type":"object"},"BFirebar":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"firebar","type":"string"},"balls":{"default":4,"maximum":6,"minimum":3,"type":"integer"},"speed_deg_s":{"default":90,"type":"number"},"phase":{"default":0,"type":"number"}},"required":["kind"],"title":"BFirebar","type":"object"},"BMove":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"move","type":"string"},"dir":{"$ref":"#/$defs/Dir4"},"cells":{"type":"number"},"speed":{"type":"number"},"mode":{"default":"pingpong","enum":["pingpong","loop"],"type":"string"},"wait_s":{"default":0.3,"type":"number"}},"required":["kind","dir","cells","speed"],"title":"BMove","type":"object"},"BSaw":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"saw","type":"string"},"radius":{"default":1.0,"type":"number"},"dir":{"$ref":"#/$defs/Dir","default":"none"},"cells":{"default":0,"type":"number"},"speed":{"default":3.0,"type":"number"}},"required":["kind"],"title":"BSaw","type":"object"},"BSpring":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"spring","type":"string"},"dir":{"default":"up","enum":["up","left","right"],"type":"string"},"strength":{"default":1.0,"maximum":1.4,"minimum":0.6,"type":"number"}},"required":["kind"],"title":"BSpring","type":"object"},"BStatic":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"static","type":"string"}},"required":["kind"],"title":"BStatic","type":"object"},"Band":{"enum":["trivial","easy","normal","hard","expert"],"type":"string"},"Behavior":{"discriminator":{"mapping":{"crumble":"#/$defs/BCrumble","enemy":"#/$defs/BEnemy","falling":"#/$defs/BFalling","firebar":"#/$defs/BFirebar","move":"#/$defs/BMove","saw":"#/$defs/BSaw","spring":"#/$defs/BSpring","static":"#/$defs/BStatic"},"propertyName":"kind"},"oneOf":[{"$ref":"#/$defs/BStatic"},{"$ref":"#/$defs/BEnemy"},{"$ref":"#/$defs/BMove"},{"$ref":"#/$defs/BSpring"},{"$ref":"#/$defs/BCrumble"},{"$ref":"#/$defs/BFalling"},{"$ref":"#/$defs/BSaw"},{"$ref":"#/$defs/BFirebar"}]},"BuildMeta":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"stages":{"items":{"$ref":"#/$defs/StageTime"},"type":"array"},"model_calls":{"items":{"$ref":"#/$defs/ModelCallMeta"},"type":"array"},"cost_usd":{"default":0.0,"type":"number"}},"title":"BuildMeta","type":"object"},"CallKind":{"enum":["perceive","design","refine","critic","plan","creature","moderate","look"],"type":"string"},"CellXY":{"maxItems":2,"minItems":2,"prefixItems":[{"type":"number"},{"type":"number"}],"type":"array"},"ChallengeBand":{"enum":["normal","hard"],"type":"string"},"CharacterInk":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"strokes":{"items":{"$ref":"#/$defs/InkStroke"},"type":"array"}},"required":["strokes"],"title":"CharacterInk","type":"object"},"Collision":{"enum":["solid","one_way","none","hazard","trigger"],"type":"string"},"Compiled":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"tiles":{"$ref":"#/$defs/Tiles"},"entities":{"items":{"$ref":"#/$defs/Entity"},"type":"array"},"triggers":{"items":{"$ref":"#/$defs/Trigger"},"type":"array"},"sprites":{"$ref":"#/$defs/Sprites"}},"required":["tiles","entities"],"title":"Compiled","type":"object"},"ComponentFeatures":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"fill":{"type":"number"},"circ":{"type":"number"},"straight":{"type":"number"},"zigN":{"type":"number"},"zigAmp":{"type":"number"},"aspect":{"type":"number"},"holes":{"type":"integer"},"w":{"type":"number"},"corners":{"type":"integer"},"spokes":{"type":"integer"},"bumps":{"type":"integer"},"is_dot":{"type":"boolean"}},"required":["fill","circ","straight","zigN","zigAmp","aspect","holes","w","corners","spokes","bumps","is_dot"],"title":"ComponentFeatures","type":"object"},"DesignBlock":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"tier":{"$ref":"#/$defs/Tier"},"band":{"$ref":"#/$defs/Band"},"C":{"type":"number"},"score":{"maximum":100,"minimum":0,"type":"integer"},"fastest_ms":{"type":"integer"},"par_ms":{"type":"integer"},"casual_clear_s":{"type":"number"},"segments":{"items":{"$ref":"#/$defs/DesignSegment"},"type":"array"},"flags":{"items":{"$ref":"#/$defs/Flag"},"type":"array"},"solvable":{"type":"boolean"},"reach":{"$ref":"#/$defs/Reach"},"designer_note":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"source":{"enum":["model","greedy","none"],"type":"string"}},"required":["tier","band","C","score","fastest_ms","par_ms","casual_clear_s","segments","flags","solvable","reach","source"],"title":"DesignBlock","type":"object"},"DesignSegment":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"from":{"type":"string"},"to":{"type":"string"},"E":{"type":"number"},"T_ms":{"type":"integer"},"F_s":{"type":"number"},"actions":{"type":"integer"}},"required":["from","to","E","T_ms","F_s","actions"],"title":"DesignSegment","type":"object"},"Dial":{"enum":["faithful","polished","challenging"],"type":"string"},"Dir":{"enum":["up","down","left","right","none"],"type":"string"},"Dir4":{"enum":["up","down","left","right"],"type":"string"},"EBigCoin":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"type":{"const":"big_coin","type":"string"},"x":{"type":"number"},"y":{"type":"number"}},"required":["id","type","x","y"],"title":"EBigCoin","type":"object"},"ECheckpoint":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"type":{"const":"checkpoint","type":"string"},"x":{"type":"number"},"y":{"type":"number"}},"required":["id","type","x","y"],"title":"ECheckpoint","type":"object"},"ECoin":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"type":{"const":"coin","type":"string"},"x":{"type":"number"},"y":{"type":"number"}},"required":["id","type","x","y"],"title":"ECoin","type":"object"},"ECrumble":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"type":{"const":"crumble","type":"string"},"x":{"type":"number"},"y":{"type":"number"},"w":{"type":"number"},"delay_s":{"default":0.5,"type":"number"},"respawn_s":{"default":3.0,"type":"number"},"one_way":{"default":true,"type":"boolean"}},"required":["id","type","x","y","w"],"title":"ECrumble","type":"object"},"EDoor":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"type":{"const":"door","type":"string"},"x":{"type":"number"},"y":{"type":"number"},"w":{"type":"number"},"h":{"type":"number"},"key":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"required":["id","type","x","y","w","h"],"title":"EDoor","type":"object"},"EEnemy":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"type":{"const":"enemy","type":"string"},"archetype":{"anyOf":[{"$ref":"#/$defs/Archetype"},{"const":"static","type":"string"}]},"x":{"type":"number"},"y":{"type":"number"},"w":{"type":"number"},"h":{"type":"number"},"spiky":{"default":false,"type":"boolean"},"params":{"$ref":"#/$defs/EnemyParams"},"bounds":{"anyOf":[{"maxItems":2,"minItems":2,"prefixItems":[{"type":"number"},{"type":"number"}],"type":"array"},{"type":"null"}],"default":null}},"required":["id","type","archetype","x","y","w","h"],"title":"EEnemy","type":"object"},"EFalling":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"type":{"const":"falling_platform","type":"string"},"x":{"type":"number"},"y":{"type":"number"},"w":{"type":"number"},"delay_s":{"default":0.4,"type":"number"},"one_way":{"default":true,"type":"boolean"}},"required":["id","type","x","y","w"],"title":"EFalling","type":"object"},"EFirebar":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"type":{"const":"firebar","type":"string"},"x":{"type":"number"},"y":{"type":"number"},"balls":{"maximum":6,"minimum":3,"type":"integer"},"speed_deg_s":{"type":"number"},"phase":{"default":0,"type":"number"}},"required":["id","type","x","y","balls","speed_deg_s"],"title":"EFirebar","type":"object"},"EGoal":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"type":{"const":"goal","type":"string"},"x":{"type":"number"},"y":{"type":"number"},"trigger":{"$ref":"#/$defs/RectCells"}},"required":["id","type","x","y","trigger"],"title":"EGoal","type":"object"},"EHintArrow":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"type":{"const":"hint_arrow","type":"string"},"x":{"type":"number"},"y":{"type":"number"},"dir":{"$ref":"#/$defs/Dir4"}},"required":["id","type","x","y","dir"],"title":"EHintArrow","type":"object"},"EKey":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"type":{"const":"key","type":"string"},"x":{"type":"number"},"y":{"type":"number"},"door":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"required":["id","type","x","y"],"title":"EKey","type":"object"},"EMovingPlatform":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"type":{"const":"moving_platform","type":"string"},"x":{"type":"number"},"y":{"type":"number"},"w":{"type":"number"},"path":{"items":{"$ref":"#/$defs/CellXY"},"type":"array"},"speed":{"type":"number"},"mode":{"default":"pingpong","enum":["pingpong","loop"],"type":"string"},"wait_s":{"default":0.3,"type":"number"},"one_way":{"default":true,"type":"boolean"}},"required":["id","type","x","y","w","path","speed"],"title":"EMovingPlatform","type":"object"},"EPlayerStart":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"type":{"const":"player_start","type":"string"},"x":{"type":"number"},"y":{"type":"number"}},"required":["id","type","x","y"],"title":"EPlayerStart","type":"object"},"ESaw":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"type":{"const":"saw","type":"string"},"x":{"type":"number"},"y":{"type":"number"},"r":{"type":"number"},"path":{"items":{"$ref":"#/$defs/CellXY"},"type":"array"},"speed":{"default":3.0,"type":"number"},"mode":{"default":"pingpong","enum":["pingpong","loop"],"type":"string"}},"required":["id","type","x","y","r"],"title":"ESaw","type":"object"},"ESpikes":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"type":{"const":"spikes","type":"string"},"host":{"anyOf":[{"type":"string"},{"type":"null"}]},"face":{"$ref":"#/$defs/Face"},"x0":{"type":"number"},"x1":{"type":"number"},"y":{"type":"number"},"facing":{"$ref":"#/$defs/Dir4"}},"required":["id","type","host","face","x0","x1","y","facing"],"title":"ESpikes","type":"object"},"ESpring":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"type":{"const":"spring","type":"string"},"x":{"type":"number"},"y":{"type":"number"},"dir":{"default":"up","enum":["up","left","right"],"type":"string"},"strength":{"default":1.0,"maximum":1.4,"minimum":0.6,"type":"number"},"w":{"default":1,"type":"number"}},"required":["id","type","x","y"],"title":"ESpring","type":"object"},"EditBy":{"enum":["auto","heuristic","model","kid","greedy","parser","library","validator"],"type":"string"},"EditClass":{"enum":["U","N","R","P","C","K"],"type":"string"},"EditOp":{"discriminator":{"mapping":{"add_big_coin":"#/$defs/OpAddBigCoin","add_checkpoint":"#/$defs/OpAddCheckpoint","add_coin":"#/$defs/OpAddCoin","add_coin_trail":"#/$defs/OpAddCoinTrail","add_enemy":"#/$defs/OpAddEnemy","add_hazard":"#/$defs/OpAddHazard","add_hint_arrow":"#/$defs/OpAddHintArrow","add_spikes":"#/$defs/OpAddSpikes","add_spring":"#/$defs/OpAddSpring","add_step":"#/$defs/OpAddStep","animate":"#/$defs/OpAnimate","bind":"#/$defs/OpBind","clear_spawn":"#/$defs/OpClearSpawn","close_gap":"#/$defs/OpCloseGap","coin_from_dot":"#/$defs/OpCoinFromDot","dedupe":"#/$defs/OpDedupe","detach":"#/$defs/OpDetach","extend":"#/$defs/OpExtend","fit_creature":"#/$defs/OpFitCreature","fix_behavior":"#/$defs/OpFixBehavior","form_goal":"#/$defs/OpFormGoal","group":"#/$defs/OpGroup","join_seam":"#/$defs/OpJoinSeam","link":"#/$defs/OpLink","make_crumble":"#/$defs/OpMakeCrumble","make_mine":"#/$defs/OpMakeMine","nudge":"#/$defs/OpNudge","orient":"#/$defs/OpOrient","place_start":"#/$defs/OpPlaceStart","reprise":"#/$defs/OpReprise","set_collision":"#/$defs/OpSetCollision","set_par":"#/$defs/OpSetPar","set_role":"#/$defs/OpSetRole","set_start":"#/$defs/OpSetStart","set_timer":"#/$defs/OpSetTimer","shift_platform":"#/$defs/OpShiftPlatform","shrink_landing":"#/$defs/OpShrinkLanding","snap":"#/$defs/OpSnap","straighten":"#/$defs/OpStraighten","trim":"#/$defs/OpTrim","tune":"#/$defs/OpTune","use_library":"#/$defs/OpUseLibrary","widen_gap":"#/$defs/OpWidenGap"},"propertyName":"op"},"oneOf":[{"$ref":"#/$defs/OpSetRole"},{"$ref":"#/$defs/OpGroup"},{"$ref":"#/$defs/OpDetach"},{"$ref":"#/$defs/OpBind"},{"$ref":"#/$defs/OpLink"},{"$ref":"#/$defs/OpSetStart"},{"$ref":"#/$defs/OpUseLibrary"},{"$ref":"#/$defs/OpStraighten"},{"$ref":"#/$defs/OpCloseGap"},{"$ref":"#/$defs/OpSnap"},{"$ref":"#/$defs/OpOrient"},{"$ref":"#/$defs/OpFormGoal"},{"$ref":"#/$defs/OpSetCollision"},{"$ref":"#/$defs/OpPlaceStart"},{"$ref":"#/$defs/OpClearSpawn"},{"$ref":"#/$defs/OpCoinFromDot"},{"$ref":"#/$defs/OpDedupe"},{"$ref":"#/$defs/OpJoinSeam"},{"$ref":"#/$defs/OpFixBehavior"},{"$ref":"#/$defs/OpFitCreature"},{"$ref":"#/$defs/OpNudge"},{"$ref":"#/$defs/OpTrim"},{"$ref":"#/$defs/OpExtend"},{"$ref":"#/$defs/OpAddStep"},{"$ref":"#/$defs/OpAddSpring"},{"$ref":"#/$defs/OpAddCheckpoint"},{"$ref":"#/$defs/OpAddCoinTrail"},{"$ref":"#/$defs/OpAddCoin"},{"$ref":"#/$defs/OpAddBigCoin"},{"$ref":"#/$defs/OpAddHintArrow"},{"$ref":"#/$defs/OpTune"},{"$ref":"#/$defs/OpAnimate"},{"$ref":"#/$defs/OpSetPar"},{"$ref":"#/$defs/OpWidenGap"},{"$ref":"#/$defs/OpShrinkLanding"},{"$ref":"#/$defs/OpShiftPlatform"},{"$ref":"#/$defs/OpAddSpikes"},{"$ref":"#/$defs/OpAddEnemy"},{"$ref":"#/$defs/OpAddHazard"},{"$ref":"#/$defs/OpMakeCrumble"},{"$ref":"#/$defs/OpSetTimer"},{"$ref":"#/$defs/OpReprise"},{"$ref":"#/$defs/OpMakeMine"}]},"EditRecord":{"additionalProperties":false,"description":"One edit with its status. Ids are stable: `op:target:hash6(params)` (D6).","patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"op":{"$ref":"#/$defs/EditOp"},"class":{"$ref":"#/$defs/EditClass"},"by":{"$ref":"#/$defs/EditBy"},"stage":{"$ref":"#/$defs/Stage"},"tier":{"$ref":"#/$defs/Tier"},"status":{"$ref":"#/$defs/EditStatus"},"reason_key":{"type":"string"},"reason_args":{"$ref":"#/$defs/MessageArgs"},"reason_text":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"depends_on":{"items":{"type":"string"},"type":"array"},"required":{"default":false,"type":"boolean"},"group":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"validation":{"anyOf":[{"$ref":"#/$defs/Validation"},{"type":"null"}],"default":null},"ghost":{"anyOf":[{"$ref":"#/$defs/Ghost"},{"type":"null"}],"default":null},"reject_reason":{"anyOf":[{"$ref":"#/$defs/MessageRef"},{"type":"null"}],"default":null},"cid":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"required":["id","op","class","by","stage","tier","status","reason_key"],"title":"EditRecord","type":"object"},"EditStatus":{"enum":["applied","undone","rejected","suggested"],"type":"string"},"Effort":{"enum":["low","medium","high"],"type":"string"},"EnemyParams":{"additionalProperties":false,"description":"Archetype parameters (§5.7); every field optional, defaults live in core/params.ts.","patternProperties":{"^x_":{}},"properties":{"speed":{"anyOf":[{"type":"number"},{"type":"null"}],"default":null},"ledge_aware":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"interval":{"anyOf":[{"type":"number"},{"type":"null"}],"default":null},"forward":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"pattern":{"anyOf":[{"enum":["hover","horizontal","vertical","circle"],"type":"string"},{"type":"null"}],"default":null},"range":{"anyOf":[{"type":"number"},{"type":"null"}],"default":null},"radius":{"anyOf":[{"type":"number"},{"type":"null"}],"default":null},"period":{"anyOf":[{"type":"number"},{"type":"null"}],"default":null},"facing":{"anyOf":[{"enum":["left","right","toward_player"],"type":"string"},{"type":"null"}],"default":null},"blob_speed":{"anyOf":[{"type":"number"},{"type":"null"}],"default":null},"sight":{"anyOf":[{"type":"number"},{"type":"null"}],"default":null},"warn":{"anyOf":[{"type":"number"},{"type":"null"}],"default":null},"rise_speed":{"anyOf":[{"type":"number"},{"type":"null"}],"default":null}},"title":"EnemyParams","type":"object"},"Entity":{"discriminator":{"mapping":{"big_coin":"#/$defs/EBigCoin","checkpoint":"#/$defs/ECheckpoint","coin":"#/$defs/ECoin","crumble":"#/$defs/ECrumble","door":"#/$defs/EDoor","enemy":"#/$defs/EEnemy","falling_platform":"#/$defs/EFalling","firebar":"#/$defs/EFirebar","goal":"#/$defs/EGoal","hint_arrow":"#/$defs/EHintArrow","key":"#/$defs/EKey","moving_platform":"#/$defs/EMovingPlatform","player_start":"#/$defs/EPlayerStart","saw":"#/$defs/ESaw","spikes":"#/$defs/ESpikes","spring":"#/$defs/ESpring"},"propertyName":"type"},"oneOf":[{"$ref":"#/$defs/EPlayerStart"},{"$ref":"#/$defs/ESpikes"},{"$ref":"#/$defs/EEnemy"},{"$ref":"#/$defs/ECoin"},{"$ref":"#/$defs/EBigCoin"},{"$ref":"#/$defs/ECheckpoint"},{"$ref":"#/$defs/EGoal"},{"$ref":"#/$defs/EKey"},{"$ref":"#/$defs/EDoor"},{"$ref":"#/$defs/ESpring"},{"$ref":"#/$defs/ESaw"},{"$ref":"#/$defs/EFirebar"},{"$ref":"#/$defs/EMovingPlatform"},{"$ref":"#/$defs/ECrumble"},{"$ref":"#/$defs/EFalling"},{"$ref":"#/$defs/EHintArrow"}]},"Face":{"enum":["top","bottom","left","right"],"type":"string"},"Flag":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"code":{"$ref":"#/$defs/FlagCode"},"severity":{"$ref":"#/$defs/Severity"},"frame":{"anyOf":[{"type":"integer"},{"type":"null"}],"default":null},"at":{"anyOf":[{"$ref":"#/$defs/CellXY"},{"type":"null"}],"default":null},"object_ids":{"items":{"type":"string"},"type":"array"},"fix_cids":{"items":{"type":"string"},"type":"array"},"message_key":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"args":{"$ref":"#/$defs/MessageArgs"}},"required":["id","code","severity"],"title":"Flag","type":"object"},"FlagCode":{"enum":["unsolvable","tight_window","blind_jump","leap_of_faith","spawn_unsafe","invisible_lethal","softlock","long_segment","head_bonk","unreachable_drawn","skippable_setpiece","trivial","long_flat","dead_end","entity_error"],"type":"string"},"GameRules":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"version":{"minimum":1,"type":"integer"},"physics_profile":{"$ref":"#/$defs/ProfileId","default":"v2-standard"},"profile_hash":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"abilities":{"$ref":"#/$defs/Abilities"},"lives":{"default":"off","enum":["off",3,5]},"hearts":{"default":1,"maximum":3,"minimum":1,"type":"integer"},"theme":{"$ref":"#/$defs/Theme","default":"sketchbook"},"music":{"default":true,"type":"boolean"},"timer_pressure":{"default":false,"type":"boolean"},"camera":{"default":"follow","enum":["follow","no_backscroll"],"type":"string"},"default_dial":{"$ref":"#/$defs/Dial","default":"polished"},"default_band":{"$ref":"#/$defs/ChallengeBand","default":"normal"},"player_type":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"required":["version"],"title":"GameRules","type":"object"},"Ghost":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"before":{"items":{"$ref":"#/$defs/RectCells"},"type":"array"},"after":{"items":{"$ref":"#/$defs/RectCells"},"type":"array"}},"required":["before","after"],"title":"Ghost","type":"object"},"InkColor":{"enum":["black","red","green","blue","pencil","draft"],"type":"string"},"InkComponent":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"minimum":1,"type":"integer"},"color":{"$ref":"#/$defs/InkColor"},"stroke_ids":{"items":{"type":"string"},"type":"array"},"bbox":{"$ref":"#/$defs/RectCells"},"area":{"type":"number"},"f":{"$ref":"#/$defs/ComponentFeatures"}},"required":["id","color","stroke_ids","bbox","area","f"],"title":"InkComponent","type":"object"},"InkStroke":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"color":{"$ref":"#/$defs/InkColor"},"kind":{"enum":["line","dot","blob"],"type":"string"},"pts":{"items":{"$ref":"#/$defs/CellXY"},"type":"array"},"w":{"items":{"type":"number"},"type":"array"},"closed":{"type":"boolean"},"sheet":{"minimum":0,"type":"integer"},"origin":{"$ref":"#/$defs/Origin"},"stamp":{"anyOf":[{"$ref":"#/$defs/StampKind"},{"type":"null"}],"default":null},"label":{"anyOf":[{"$ref":"#/$defs/Role"},{"type":"null"}],"default":null},"rule":{"anyOf":[{"$ref":"#/$defs/Behavior"},{"type":"null"}],"default":null},"lib":{"anyOf":[{"$ref":"#/$defs/LibRef"},{"type":"null"}],"default":null},"t":{"anyOf":[{"type":"number"},{"type":"null"}],"default":null}},"required":["id","color","kind","pts","w","closed","sheet","origin"],"title":"InkStroke","type":"object"},"LevelInk":{"additionalProperties":false,"description":"The `ink` block stored inside a LevelV2 (§2.2): InkDoc minus v/source/world/sheets/parent,\nwhich the level carries in `world`, `source` and `parent_id`.","patternProperties":{"^x_":{}},"properties":{"strokes":{"items":{"$ref":"#/$defs/InkStroke"},"type":"array"},"components":{"items":{"$ref":"#/$defs/InkComponent"},"type":"array"},"character":{"anyOf":[{"$ref":"#/$defs/CharacterInk"},{"type":"null"}],"default":null},"typed_rules":{"items":{"$ref":"#/$defs/TypedRule"},"type":"array"},"rules_ink":{"items":{"type":"string"},"type":"array"},"noise":{"$ref":"#/$defs/NoiseInfo"}},"required":["strokes","components"],"title":"LevelInk","type":"object"},"LevelMeta":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"transcript":{"default":"","type":"string"},"intent":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"safety":{"$ref":"#/$defs/Safety","default":"unchecked"},"level_hash":{"type":"string"},"core_version":{"type":"string"},"warnings":{"items":{"$ref":"#/$defs/MessageRef"},"type":"array"},"build":{"anyOf":[{"$ref":"#/$defs/BuildMeta"},{"type":"null"}],"default":null}},"required":["level_hash","core_version"],"title":"LevelMeta","type":"object"},"LevelSheet":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"index":{"minimum":0,"type":"integer"},"photo_url":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"qr":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"sketch_url":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"required":["index"],"title":"LevelSheet","type":"object"},"LevelSkin":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"provider":{"enum":["firefly","claude-svg"],"type":"string"},"style_id":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"backdrop":{"anyOf":[{"$ref":"#/$defs/SkinBackdrop"},{"type":"null"}],"default":null},"objects":{"items":{"$ref":"#/$defs/SkinObject"},"type":"array"}},"required":["provider"],"title":"LevelSkin","type":"object"},"LevelSource":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"enum":["canvas","paper","prompt","migrated"],"type":"string"},"prompt":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"pack_id":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"sheets":{"items":{"$ref":"#/$defs/LevelSheet"},"type":"array"}},"required":["kind"],"title":"LevelSource","type":"object"},"LevelV2":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"format":{"const":"dal-level","type":"string"},"schema_version":{"const":2,"type":"integer"},"core_min":{"type":"string"},"id":{"type":"string"},"version":{"minimum":1,"type":"integer"},"game_id":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"parent_id":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"order_index":{"default":0,"minimum":0,"type":"integer"},"title":{"type":"string"},"author":{"type":"string"},"created_at":{"type":"string"},"license":{"default":"CC-BY-4.0","type":"string"},"world":{"$ref":"#/$defs/World"},"rules":{"$ref":"#/$defs/GameRules"},"source":{"$ref":"#/$defs/LevelSource"},"ink":{"anyOf":[{"$ref":"#/$defs/LevelInk"},{"type":"null"}],"default":null},"ink_ref":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"objects":{"items":{"$ref":"#/$defs/SceneObject"},"type":"array"},"setpieces":{"items":{"$ref":"#/$defs/Setpiece"},"type":"array"},"edits":{"items":{"$ref":"#/$defs/EditRecord"},"type":"array"},"compiled":{"$ref":"#/$defs/Compiled"},"design":{"anyOf":[{"$ref":"#/$defs/DesignBlock"},{"type":"null"}],"default":null},"embedded_library":{"items":{"$ref":"#/$defs/LibraryType"},"type":"array"},"meta":{"$ref":"#/$defs/LevelMeta"},"skin":{"anyOf":[{"$ref":"#/$defs/LevelSkin"},{"type":"null"}],"default":null}},"required":["format","schema_version","core_min","id","version","title","author","created_at","world","rules","source","compiled","meta"],"title":"LevelV2","type":"object"},"LibRef":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"type_id":{"type":"string"},"version":{"minimum":1,"type":"integer"}},"required":["type_id","version"],"title":"LibRef","type":"object"},"LibraryArt":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"strokes":{"items":{"$ref":"#/$defs/InkStroke"},"type":"array"},"size_cells":{"maxItems":2,"minItems":2,"prefixItems":[{"type":"number"},{"type":"number"}],"type":"array"},"rig":{"anyOf":[{"$ref":"#/$defs/Rig"},{"type":"null"}],"default":null}},"required":["strokes","size_cells"],"title":"LibraryArt","type":"object"},"LibrarySymbol":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"samples":{"items":{"items":{"$ref":"#/$defs/InkStroke"},"type":"array"},"maxItems":3,"minItems":3,"type":"array"},"color":{"$ref":"#/$defs/InkColor"}},"required":["samples","color"],"title":"LibrarySymbol","type":"object"},"LibraryType":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"game_id":{"type":"string"},"version":{"minimum":1,"type":"integer"},"name":{"maxLength":16,"minLength":1,"type":"string"},"letter":{"maxLength":1,"minLength":1,"type":"string"},"kind":{"enum":["creature","platform","hazard","pickup","prop","player"],"type":"string"},"behavior":{"$ref":"#/$defs/Behavior"},"spiky":{"default":false,"type":"boolean"},"collision":{"enum":["solid","one_way","none"],"type":"string"},"art":{"$ref":"#/$defs/LibraryArt"},"symbol":{"anyOf":[{"$ref":"#/$defs/LibrarySymbol"},{"type":"null"}],"default":null},"author":{"type":"string"},"created_at":{"type":"string"}},"required":["id","game_id","version","name","letter","kind","behavior","collision","art","author","created_at"],"title":"LibraryType","type":"object"},"MessageArgs":{"additionalProperties":{"$ref":"#/$defs/Scalar"},"type":"object"},"MessageRef":{"additionalProperties":false,"description":"A kid-facing sentence by key (shared/spec/messages.json); raw codes never reach the DOM.","patternProperties":{"^x_":{}},"properties":{"key":{"type":"string"},"args":{"$ref":"#/$defs/MessageArgs"}},"required":["key"],"title":"MessageRef","type":"object"},"ModelCallMeta":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"$ref":"#/$defs/CallKind"},"effort":{"$ref":"#/$defs/Effort"},"latency_ms":{"type":"integer"},"in_tok":{"type":"integer"},"out_tok":{"type":"integer"},"cost_usd":{"type":"number"},"stop_reason":{"anyOf":[{"type":"string"},{"type":"null"}]},"fallback_used":{"type":"boolean"},"served_by":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"cache_read_tok":{"anyOf":[{"type":"integer"},{"type":"null"}],"default":null}},"required":["kind","effort","latency_ms","in_tok","out_tok","cost_usd","stop_reason","fallback_used"],"title":"ModelCallMeta","type":"object"},"NoiseInfo":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"count":{"minimum":0,"type":"integer"}},"required":["count"],"title":"NoiseInfo","type":"object"},"OpAddBigCoin":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"add_big_coin","type":"string"},"slot":{"type":"string"}},"required":["op","slot"],"title":"OpAddBigCoin","type":"object"},"OpAddCheckpoint":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"add_checkpoint","type":"string"},"slot":{"type":"string"}},"required":["op","slot"],"title":"OpAddCheckpoint","type":"object"},"OpAddCoin":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"add_coin","type":"string"},"slot":{"type":"string"}},"required":["op","slot"],"title":"OpAddCoin","type":"object"},"OpAddCoinTrail":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"add_coin_trail","type":"string"},"action":{"type":"string"},"n":{"maximum":7,"minimum":3,"type":"integer"}},"required":["op","action","n"],"title":"OpAddCoinTrail","type":"object"},"OpAddEnemy":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"add_enemy","type":"string"},"slot":{"type":"string"},"archetype":{"enum":["walker","hopper","flyer","shooter","chaser","crusher"],"type":"string"}},"required":["op","slot","archetype"],"title":"OpAddEnemy","type":"object"},"OpAddHazard":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"add_hazard","type":"string"},"slot":{"type":"string"},"kind":{"enum":["saw","firebar","lava"],"type":"string"}},"required":["op","slot","kind"],"title":"OpAddHazard","type":"object"},"OpAddHintArrow":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"add_hint_arrow","type":"string"},"slot":{"type":"string"},"dir":{"$ref":"#/$defs/Dir4"}},"required":["op","slot","dir"],"title":"OpAddHintArrow","type":"object"},"OpAddSpikes":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"add_spikes","type":"string"},"slot":{"type":"string"}},"required":["op","slot"],"title":"OpAddSpikes","type":"object"},"OpAddSpring":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"add_spring","type":"string"},"slot":{"type":"string"},"strength":{"maximum":1.4,"minimum":0.6,"type":"number"}},"required":["op","slot","strength"],"title":"OpAddSpring","type":"object"},"OpAddStep":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"add_step","type":"string"},"slot":{"type":"string"},"w":{"maximum":3,"minimum":2,"type":"integer"}},"required":["op","slot","w"],"title":"OpAddStep","type":"object"},"OpAnimate":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"animate","type":"string"},"target":{"type":"string"},"archetype":{"const":"walker","type":"string"}},"required":["op","target","archetype"],"title":"OpAnimate","type":"object"},"OpBind":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"bind","type":"string"},"target":{"type":"string"},"behavior":{"$ref":"#/$defs/Behavior"}},"required":["op","target","behavior"],"title":"OpBind","type":"object"},"OpClearSpawn":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"clear_spawn","type":"string"},"start_dx":{"anyOf":[{"maximum":4,"minimum":-4,"type":"number"},{"type":"null"}],"default":null},"trimmed":{"items":{"type":"string"},"type":"array"}},"required":["op"],"title":"OpClearSpawn","type":"object"},"OpCloseGap":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"close_gap","type":"string"},"a":{"type":"string"},"b":{"type":"string"}},"required":["op","a","b"],"title":"OpCloseGap","type":"object"},"OpCoinFromDot":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"coin_from_dot","type":"string"},"target":{"type":"string"}},"required":["op","target"],"title":"OpCoinFromDot","type":"object"},"OpDedupe":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"dedupe","type":"string"},"keep":{"type":"string"},"drop":{"type":"string"}},"required":["op","keep","drop"],"title":"OpDedupe","type":"object"},"OpDetach":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"detach","type":"string"},"target":{"type":"string"},"branch":{"type":"string"}},"required":["op","target","branch"],"title":"OpDetach","type":"object"},"OpExtend":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"extend","type":"string"},"target":{"type":"string"},"side":{"$ref":"#/$defs/Side"},"cells":{"maximum":3,"minimum":1,"type":"integer"}},"required":["op","target","side","cells"],"title":"OpExtend","type":"object"},"OpFitCreature":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"fit_creature","type":"string"},"target":{"type":"string"}},"required":["op","target"],"title":"OpFitCreature","type":"object"},"OpFixBehavior":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"fix_behavior","type":"string"},"target":{"type":"string"},"param":{"type":"string"},"value":{"anyOf":[{"type":"number"},{"type":"string"},{"type":"boolean"},{"type":"null"}]}},"required":["op","target","param","value"],"title":"OpFixBehavior","type":"object"},"OpFormGoal":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"form_goal","type":"string"},"flag":{"type":"string"},"pole":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"required":["op","flag"],"title":"OpFormGoal","type":"object"},"OpGroup":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"group","type":"string"},"root":{"type":"string"},"parts":{"items":{"type":"string"},"type":"array"}},"required":["op","root","parts"],"title":"OpGroup","type":"object"},"OpJoinSeam":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"join_seam","type":"string"},"a":{"type":"string"},"b":{"type":"string"}},"required":["op","a","b"],"title":"OpJoinSeam","type":"object"},"OpLink":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"link","type":"string"},"key":{"type":"string"},"door":{"type":"string"}},"required":["op","key","door"],"title":"OpLink","type":"object"},"OpMakeCrumble":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"make_crumble","type":"string"},"surface":{"type":"string"}},"required":["op","surface"],"title":"OpMakeCrumble","type":"object"},"OpMakeMine":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"make_mine","type":"string"},"target":{"type":"string"}},"required":["op","target"],"title":"OpMakeMine","type":"object"},"OpNudge":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"nudge","type":"string"},"group":{"type":"string"},"dx":{"maximum":3,"minimum":-3,"type":"integer"},"dy":{"maximum":3,"minimum":-3,"type":"integer"}},"required":["op","group","dx","dy"],"title":"OpNudge","type":"object"},"OpOrient":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"orient","type":"string"},"target":{"type":"string"},"facing":{"$ref":"#/$defs/Dir"}},"required":["op","target","facing"],"title":"OpOrient","type":"object"},"OpPlaceStart":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"place_start","type":"string"},"at":{"anyOf":[{"$ref":"#/$defs/CellXY"},{"type":"null"}],"default":null}},"required":["op"],"title":"OpPlaceStart","type":"object"},"OpReprise":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"reprise","type":"string"},"setpiece":{"type":"string"},"slot":{"type":"string"},"escalation":{"enum":["faster","plus_saw","plus_spikes","narrower"],"type":"string"}},"required":["op","setpiece","slot","escalation"],"title":"OpReprise","type":"object"},"OpSetCollision":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"set_collision","type":"string"},"target":{"type":"string"},"mode":{"enum":["solid","one_way","none"],"type":"string"}},"required":["op","target","mode"],"title":"OpSetCollision","type":"object"},"OpSetPar":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"set_par","type":"string"},"par_ms":{"anyOf":[{"type":"integer"},{"type":"null"}],"default":null}},"required":["op"],"title":"OpSetPar","type":"object"},"OpSetRole":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"set_role","type":"string"},"target":{"type":"string"},"role":{"$ref":"#/$defs/Role"}},"required":["op","target","role"],"title":"OpSetRole","type":"object"},"OpSetStart":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"set_start","type":"string"},"near":{"type":"string"}},"required":["op","near"],"title":"OpSetStart","type":"object"},"OpSetTimer":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"set_timer","type":"string"},"k":{"maximum":2.0,"minimum":1.5,"type":"number"}},"required":["op","k"],"title":"OpSetTimer","type":"object"},"OpShiftPlatform":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"shift_platform","type":"string"},"group":{"type":"string"},"dx":{"maximum":2,"minimum":-2,"type":"integer"},"dy":{"maximum":2,"minimum":-2,"type":"integer"}},"required":["op","group","dx","dy"],"title":"OpShiftPlatform","type":"object"},"OpShrinkLanding":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"shrink_landing","type":"string"},"surface":{"type":"string"},"side":{"enum":["left","right"],"type":"string"},"cells":{"maximum":2,"minimum":1,"type":"integer"}},"required":["op","surface","side","cells"],"title":"OpShrinkLanding","type":"object"},"OpSnap":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"snap","type":"string"},"target":{"type":"string"},"host":{"type":"string"},"face":{"$ref":"#/$defs/Face"}},"required":["op","target","host","face"],"title":"OpSnap","type":"object"},"OpStraighten":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"straighten","type":"string"},"target":{"type":"string"},"mode":{"anyOf":[{"enum":["flat","slope_1_2","slope_1_1"],"type":"string"},{"type":"null"}],"default":null},"max_shift":{"anyOf":[{"maximum":0.85,"minimum":0,"type":"number"},{"type":"null"}],"default":null}},"required":["op","target"],"title":"OpStraighten","type":"object"},"OpTrim":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"trim","type":"string"},"target":{"type":"string"},"side":{"$ref":"#/$defs/Side"},"cells":{"maximum":2,"minimum":1,"type":"integer"}},"required":["op","target","side","cells"],"title":"OpTrim","type":"object"},"OpTune":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"tune","type":"string"},"entity":{"type":"string"},"param":{"type":"string"},"step":{"enum":[1,2],"type":"integer"}},"required":["op","entity","param","step"],"title":"OpTune","type":"object"},"OpUseLibrary":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"use_library","type":"string"},"target":{"type":"string"},"type_id":{"type":"string"},"version":{"minimum":1,"type":"integer"}},"required":["op","target","type_id","version"],"title":"OpUseLibrary","type":"object"},"OpWidenGap":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"widen_gap","type":"string"},"gap":{"type":"string"},"cells":{"maximum":2,"minimum":1,"type":"integer"}},"required":["op","gap","cells"],"title":"OpWidenGap","type":"object"},"Origin":{"enum":["kid","parent","designer","library","draft","migrated"],"type":"string"},"PlayerSprite":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"url":{"type":"string"},"rig":{"anyOf":[{"$ref":"#/$defs/Rig"},{"type":"null"}],"default":null}},"required":["url"],"title":"PlayerSprite","type":"object"},"ProfileId":{"enum":["v2-standard","v2-gentle","v2-snappy","v1-classic"],"type":"string"},"Reach":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"polished":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"normal":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"hard":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null}},"title":"Reach","type":"object"},"RectCells":{"maxItems":4,"minItems":4,"prefixItems":[{"type":"number"},{"type":"number"},{"type":"number"},{"type":"number"}],"type":"array"},"Relations":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"rests_on":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"attached":{"anyOf":[{"$ref":"#/$defs/Attachment"},{"type":"null"}],"default":null},"points":{"anyOf":[{"$ref":"#/$defs/Dir"},{"type":"null"}],"default":null},"part_of":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"parts":{"anyOf":[{"items":{"type":"string"},"type":"array"},{"type":"null"}],"default":null},"refers_to":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"title":"Relations","type":"object"},"Rig":{"additionalProperties":false,"description":"Rig extracted from a creature drawing (§7.6). Parts are stroke ids.","patternProperties":{"^x_":{}},"properties":{"legs":{"items":{"type":"string"},"type":"array"},"arms":{"items":{"type":"string"},"type":"array"},"eyes":{"items":{"type":"string"},"type":"array"},"synth_legs":{"default":false,"type":"boolean"},"hip_y":{"default":0.7,"type":"number"}},"title":"Rig","type":"object"},"Role":{"enum":["ground","platform","wall","ceiling","spikes","lava","saw","enemy","coin","big_coin","key","door","spring","checkpoint","goal","pole","start_marker","text","arrow","decoration","library_tag","unknown"],"type":"string"},"RoleAlt":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"role":{"$ref":"#/$defs/Role"},"conf":{"maximum":1,"minimum":0,"type":"number"}},"required":["role","conf"],"title":"RoleAlt","type":"object"},"RoleBy":{"enum":["heuristic","model","kid","stamp","library","parser","draft","migrated","designer"],"type":"string"},"Safety":{"enum":["ok","held","flag","unchecked"],"type":"string"},"Scalar":{"anyOf":[{"type":"string"},{"type":"integer"},{"type":"number"},{"type":"boolean"},{"type":"null"}]},"SceneObject":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"components":{"items":{"type":"integer"},"type":"array"},"strokes":{"items":{"type":"string"},"type":"array"},"role":{"$ref":"#/$defs/Role"},"conf":{"maximum":1,"minimum":0,"type":"number"},"role_by":{"$ref":"#/$defs/RoleBy"},"origin":{"$ref":"#/$defs/Origin"},"shape":{"$ref":"#/$defs/Shape"},"collision":{"$ref":"#/$defs/Collision"},"rel":{"$ref":"#/$defs/Relations"},"behavior":{"anyOf":[{"$ref":"#/$defs/Behavior"},{"type":"null"}],"default":null},"pinned":{"items":{"type":"string"},"type":"array"},"alt":{"items":{"$ref":"#/$defs/RoleAlt"},"type":"array"},"lib":{"anyOf":[{"$ref":"#/$defs/LibRef"},{"type":"null"}],"default":null},"text":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"required":["id","components","strokes","role","conf","role_by","origin","shape","collision","rel","pinned"],"title":"SceneObject","type":"object"},"Setpiece":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"name":{"type":"string"},"ids":{"items":{"type":"string"},"type":"array"},"kind":{"$ref":"#/$defs/SetpieceKind"},"by":{"enum":["model","geometric","kid"],"type":"string"}},"required":["name","ids","kind","by"],"title":"Setpiece","type":"object"},"SetpieceKind":{"enum":["jump","hazard_run","climb","enemy","puzzle","finale","other"],"type":"string"},"Severity":{"enum":["block","hard","warn","info","target"],"type":"string"},"Shape":{"discriminator":{"mapping":{"body":"#/$defs/ShapeBody","point":"#/$defs/ShapePoint","strip":"#/$defs/ShapeStrip","surface":"#/$defs/ShapeSurface","wall":"#/$defs/ShapeWall"},"propertyName":"k"},"oneOf":[{"$ref":"#/$defs/ShapeSurface"},{"$ref":"#/$defs/ShapeStrip"},{"$ref":"#/$defs/ShapeBody"},{"$ref":"#/$defs/ShapePoint"},{"$ref":"#/$defs/ShapeWall"}]},"ShapeBody":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"k":{"const":"body","type":"string"},"bbox":{"$ref":"#/$defs/RectCells"}},"required":["k","bbox"],"title":"ShapeBody","type":"object"},"ShapePoint":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"k":{"const":"point","type":"string"},"p":{"$ref":"#/$defs/CellXY"}},"required":["k","p"],"title":"ShapePoint","type":"object"},"ShapeStrip":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"k":{"const":"strip","type":"string"},"a":{"$ref":"#/$defs/CellXY"},"b":{"$ref":"#/$defs/CellXY"}},"required":["k","a","b"],"title":"ShapeStrip","type":"object"},"ShapeSurface":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"k":{"const":"surface","type":"string"},"segs":{"items":{"$ref":"#/$defs/SurfaceSeg"},"type":"array"},"fill":{"enum":["to_bottom","one_row","to_top","none"],"type":"string"}},"required":["k","segs","fill"],"title":"ShapeSurface","type":"object"},"ShapeWall":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"k":{"const":"wall","type":"string"},"x":{"type":"number"},"y0":{"type":"number"},"y1":{"type":"number"},"w":{"default":1,"type":"number"}},"required":["k","x","y0","y1"],"title":"ShapeWall","type":"object"},"Side":{"enum":["left","right","top","bottom"],"type":"string"},"SkinBackdrop":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"url":{"type":"string"},"credit":{"anyOf":[{"$ref":"#/$defs/SkinCredit"},{"type":"null"}],"default":null}},"required":["url"],"title":"SkinBackdrop","type":"object"},"SkinCredit":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"by":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"tool":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"prompt":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"title":"SkinCredit","type":"object"},"SkinObject":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"stroke_ids":{"items":{"type":"string"},"type":"array"},"object_id":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"url":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"label":{"default":"","type":"string"},"credit":{"anyOf":[{"$ref":"#/$defs/SkinCredit"},{"type":"null"}],"default":null},"mode":{"default":"life","enum":["life","ink"],"type":"string"}},"title":"SkinObject","type":"object"},"Sprites":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"player":{"anyOf":[{"$ref":"#/$defs/PlayerSprite"},{"type":"null"}],"default":null},"objects":{"additionalProperties":{"type":"string"},"type":"object"}},"title":"Sprites","type":"object"},"Stage":{"enum":["ink","understood","designed"],"type":"string"},"StageTime":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"stage":{"$ref":"#/$defs/Stage"},"t_ms":{"type":"integer"}},"required":["stage","t_ms"],"title":"StageTime","type":"object"},"StampKind":{"enum":["coin","big_coin","spikes","flag","checkpoint","spring","saw","walker","hopper","flyer","key","door","start","library"],"type":"string"},"SurfaceSeg":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"a":{"$ref":"#/$defs/CellXY"},"b":{"$ref":"#/$defs/CellXY"},"slope":{"type":"number"}},"required":["a","b","slope"],"title":"SurfaceSeg","type":"object"},"Theme":{"enum":["sketchbook","notebook","graph","kraft"],"type":"string"},"Tier":{"enum":["faithful","polished","normal","hard"],"type":"string"},"Tiles":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"legend":{"const":".#=/\\abcd~X","type":"string"},"rows":{"items":{"pattern":"^(?:[0-9]*[.#=/\\\\abcd~X])+$","type":"string"},"type":"array"}},"required":["legend","rows"],"title":"Tiles","type":"object"},"Trigger":{"additionalProperties":false,"description":"v1 rules carried over unchanged (§2.6): collect:/touch:/timer: → open:/win/lose.","patternProperties":{"^x_":{}},"properties":{"when":{"pattern":"^(collect:[A-Za-z0-9_]+|touch:[A-Za-z0-9_]+|timer:[0-9]+)$","type":"string"},"then":{"pattern":"^(open:[A-Za-z0-9_]+|win|lose)$","type":"string"}},"required":["when","then"],"title":"Trigger","type":"object"},"TypedRule":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"text":{"type":"string"},"target":{"anyOf":[{"type":"integer"},{"type":"null"}],"default":null}},"required":["text"],"title":"TypedRule","type":"object"},"Validation":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"solvable":{"type":"boolean"},"flags":{"items":{"type":"string"},"type":"array"},"drift_cells":{"type":"number"},"dC":{"type":"number"}},"required":["solvable","flags","drift_cells","dC"],"title":"Validation","type":"object"},"World":{"additionalProperties":false,"description":"Level world. w = 48·screens, h = 27 (§2.1, §6.1).","patternProperties":{"^x_":{}},"properties":{"cell":{"const":16,"default":16,"type":"integer"},"screens":{"maximum":6,"minimum":1,"type":"integer"},"w":{"maximum":288,"minimum":48,"type":"integer"},"h":{"const":27,"default":27,"type":"integer"}},"required":["screens","w"],"title":"World","type":"object"}}};
+export const LEVEL_SCHEMA: Record<string, unknown> = {"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"https://draw-a-level.dev/spec/v2/level.schema.json","$comment":"dal-level spec v1.0. GENERATED from vision/app/spec/level.py by scripts/gen_contracts.py; do not edit.","title":"level","description":"LevelV2 (`dal-level`, schema_version 2): PLAN_V2 §2.","$ref":"#/$defs/LevelV2","$defs":{"Abilities":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"run":{"default":true,"type":"boolean"},"stomp":{"default":true,"type":"boolean"},"double_jump":{"default":false,"type":"boolean"},"fast_fall":{"default":true,"type":"boolean"}},"title":"Abilities","type":"object"},"Archetype":{"enum":["walker","hopper","flyer","shooter","chaser","crusher"],"type":"string"},"Attachment":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"host":{"type":"string"},"face":{"$ref":"#/$defs/Face"}},"required":["host","face"],"title":"Attachment","type":"object"},"BCrumble":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"crumble","type":"string"},"delay_s":{"default":0.5,"type":"number"},"respawn_s":{"default":3.0,"type":"number"}},"required":["kind"],"title":"BCrumble","type":"object"},"BEnemy":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"enemy","type":"string"},"archetype":{"$ref":"#/$defs/Archetype"},"spiky":{"default":false,"type":"boolean"},"params":{"$ref":"#/$defs/EnemyParams"}},"required":["kind","archetype"],"title":"BEnemy","type":"object"},"BFalling":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"falling","type":"string"},"delay_s":{"default":0.4,"type":"number"}},"required":["kind"],"title":"BFalling","type":"object"},"BFirebar":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"firebar","type":"string"},"balls":{"default":4,"maximum":6,"minimum":3,"type":"integer"},"speed_deg_s":{"default":90,"type":"number"},"phase":{"default":0,"type":"number"}},"required":["kind"],"title":"BFirebar","type":"object"},"BMove":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"move","type":"string"},"dir":{"$ref":"#/$defs/Dir4"},"cells":{"type":"number"},"speed":{"type":"number"},"mode":{"default":"pingpong","enum":["pingpong","loop"],"type":"string"},"wait_s":{"default":0.3,"type":"number"}},"required":["kind","dir","cells","speed"],"title":"BMove","type":"object"},"BNpc":{"additionalProperties":false,"description":"A character that talks: touching it shows its lines one by one in a speech bubble.","patternProperties":{"^x_":{}},"properties":{"kind":{"const":"npc","type":"string"},"lines":{"items":{"type":"string"},"maxItems":6,"minItems":1,"type":"array"},"name":{"anyOf":[{"maxLength":16,"type":"string"},{"type":"null"}],"default":null}},"required":["kind","lines"],"title":"BNpc","type":"object"},"BPickup":{"additionalProperties":false,"description":"Something to collect. `item` names it for rules (\"star\"); `effect` is a ready-made rule fired on collect.","patternProperties":{"^x_":{}},"properties":{"kind":{"const":"pickup","type":"string"},"item":{"default":"star","pattern":"^[a-z][a-z0-9 ]{0,15}$","type":"string"},"effect":{"$ref":"#/$defs/PickupEffect","default":"none"},"seconds":{"anyOf":[{"exclusiveMinimum":0,"maximum":60,"type":"number"},{"type":"null"}],"default":5.0},"respawn_s":{"anyOf":[{"exclusiveMinimum":0,"maximum":60,"type":"number"},{"type":"null"}],"default":null}},"required":["kind"],"title":"BPickup","type":"object"},"BPortal":{"additionalProperties":false,"description":"Touching a portal moves the player to its partner: the other portal with the same `pair` label in the level\n(a lone portal does nothing).","patternProperties":{"^x_":{}},"properties":{"kind":{"const":"portal","type":"string"},"pair":{"default":"a","pattern":"^[a-z0-9]{1,8}$","type":"string"}},"required":["kind"],"title":"BPortal","type":"object"},"BSaw":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"saw","type":"string"},"radius":{"default":1.0,"type":"number"},"dir":{"$ref":"#/$defs/Dir","default":"none"},"cells":{"default":0,"type":"number"},"speed":{"default":3.0,"type":"number"}},"required":["kind"],"title":"BSaw","type":"object"},"BSpring":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"spring","type":"string"},"dir":{"default":"up","enum":["up","left","right"],"type":"string"},"strength":{"default":1.0,"maximum":1.4,"minimum":0.6,"type":"number"}},"required":["kind"],"title":"BSpring","type":"object"},"BStatic":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"static","type":"string"}},"required":["kind"],"title":"BStatic","type":"object"},"BZone":{"additionalProperties":false,"description":"An area with an effect while the player is inside: wind and conveyor push toward `dir`, water slows and lets\nyou swim up, ice is slippery, low_gravity floats, slow halves speed. `strength` scales the effect.","patternProperties":{"^x_":{}},"properties":{"kind":{"const":"zone","type":"string"},"effect":{"$ref":"#/$defs/ZoneEffect"},"dir":{"$ref":"#/$defs/Dir4","default":"right"},"strength":{"default":1.0,"maximum":2.0,"minimum":0.5,"type":"number"}},"required":["kind","effect"],"title":"BZone","type":"object"},"Band":{"enum":["trivial","easy","normal","hard","expert"],"type":"string"},"Behavior":{"discriminator":{"mapping":{"crumble":"#/$defs/BCrumble","enemy":"#/$defs/BEnemy","falling":"#/$defs/BFalling","firebar":"#/$defs/BFirebar","move":"#/$defs/BMove","npc":"#/$defs/BNpc","pickup":"#/$defs/BPickup","portal":"#/$defs/BPortal","saw":"#/$defs/BSaw","spring":"#/$defs/BSpring","static":"#/$defs/BStatic","zone":"#/$defs/BZone"},"propertyName":"kind"},"oneOf":[{"$ref":"#/$defs/BStatic"},{"$ref":"#/$defs/BEnemy"},{"$ref":"#/$defs/BMove"},{"$ref":"#/$defs/BSpring"},{"$ref":"#/$defs/BCrumble"},{"$ref":"#/$defs/BFalling"},{"$ref":"#/$defs/BSaw"},{"$ref":"#/$defs/BFirebar"},{"$ref":"#/$defs/BPortal"},{"$ref":"#/$defs/BZone"},{"$ref":"#/$defs/BPickup"},{"$ref":"#/$defs/BNpc"}]},"BlockRef":{"additionalProperties":false,"description":"v4: points at one version of a public block (app/spec/blocks.py).","patternProperties":{"^x_":{}},"properties":{"block_id":{"pattern":"^blk_[a-z0-9]{8}$","type":"string"},"version":{"minimum":1,"type":"integer"}},"required":["block_id","version"],"title":"BlockRef","type":"object"},"BuildMeta":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"stages":{"items":{"$ref":"#/$defs/StageTime"},"type":"array"},"model_calls":{"items":{"$ref":"#/$defs/ModelCallMeta"},"type":"array"},"cost_usd":{"default":0.0,"type":"number"}},"title":"BuildMeta","type":"object"},"CallKind":{"enum":["perceive","design","refine","critic","plan","creature","moderate","look"],"type":"string"},"CellXY":{"maxItems":2,"minItems":2,"prefixItems":[{"type":"number"},{"type":"number"}],"type":"array"},"ChallengeBand":{"enum":["normal","hard"],"type":"string"},"CharacterInk":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"strokes":{"items":{"$ref":"#/$defs/InkStroke"},"type":"array"}},"required":["strokes"],"title":"CharacterInk","type":"object"},"Collision":{"enum":["solid","one_way","none","hazard","trigger"],"type":"string"},"Compiled":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"tiles":{"$ref":"#/$defs/Tiles"},"entities":{"items":{"$ref":"#/$defs/Entity"},"type":"array"},"triggers":{"items":{"$ref":"#/$defs/Trigger"},"type":"array"},"sprites":{"$ref":"#/$defs/Sprites"},"logic":{"items":{"$ref":"#/$defs/RuleV4"},"type":"array"}},"required":["tiles","entities"],"title":"Compiled","type":"object"},"ComponentFeatures":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"fill":{"type":"number"},"circ":{"type":"number"},"straight":{"type":"number"},"zigN":{"type":"number"},"zigAmp":{"type":"number"},"aspect":{"type":"number"},"holes":{"type":"integer"},"w":{"type":"number"},"corners":{"type":"integer"},"spokes":{"type":"integer"},"bumps":{"type":"integer"},"is_dot":{"type":"boolean"}},"required":["fill","circ","straight","zigN","zigAmp","aspect","holes","w","corners","spokes","bumps","is_dot"],"title":"ComponentFeatures","type":"object"},"DesignBlock":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"tier":{"$ref":"#/$defs/Tier"},"band":{"$ref":"#/$defs/Band"},"C":{"type":"number"},"score":{"maximum":100,"minimum":0,"type":"integer"},"fastest_ms":{"type":"integer"},"par_ms":{"type":"integer"},"casual_clear_s":{"type":"number"},"segments":{"items":{"$ref":"#/$defs/DesignSegment"},"type":"array"},"flags":{"items":{"$ref":"#/$defs/Flag"},"type":"array"},"solvable":{"type":"boolean"},"reach":{"$ref":"#/$defs/Reach"},"designer_note":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"source":{"enum":["model","greedy","none"],"type":"string"}},"required":["tier","band","C","score","fastest_ms","par_ms","casual_clear_s","segments","flags","solvable","reach","source"],"title":"DesignBlock","type":"object"},"DesignSegment":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"from":{"type":"string"},"to":{"type":"string"},"E":{"type":"number"},"T_ms":{"type":"integer"},"F_s":{"type":"number"},"actions":{"type":"integer"}},"required":["from","to","E","T_ms","F_s","actions"],"title":"DesignSegment","type":"object"},"Dial":{"enum":["faithful","polished","challenging"],"type":"string"},"Dir":{"enum":["up","down","left","right","none"],"type":"string"},"Dir4":{"enum":["up","down","left","right"],"type":"string"},"DoCounter":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"add_counter","type":"string"},"name":{"pattern":"^[a-z][a-z0-9 ]{0,15}$","type":"string"},"n":{"default":1,"maximum":100,"minimum":-100,"type":"integer"}},"required":["kind","name"],"title":"DoCounter","type":"object"},"DoFlipGravity":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"flip_gravity","type":"string"}},"required":["kind"],"title":"DoFlipGravity","type":"object"},"DoFreeze":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"freeze_enemies","type":"string"},"seconds":{"exclusiveMinimum":0,"maximum":60,"type":"number"}},"required":["kind","seconds"],"title":"DoFreeze","type":"object"},"DoGravity":{"additionalProperties":false,"description":"Scale gravity (0.5 = moon jumps).","patternProperties":{"^x_":{}},"properties":{"kind":{"const":"gravity","type":"string"},"times":{"maximum":2,"minimum":0.25,"type":"number"},"seconds":{"anyOf":[{"exclusiveMinimum":0,"maximum":600,"type":"number"},{"type":"null"}],"default":null}},"required":["kind","times"],"title":"DoGravity","type":"object"},"DoHeal":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"heal","type":"string"}},"required":["kind"],"title":"DoHeal","type":"object"},"DoHurt":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"hurt","type":"string"}},"required":["kind"],"title":"DoHurt","type":"object"},"DoJumpPower":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"jump_power","type":"string"},"times":{"maximum":2,"minimum":0.5,"type":"number"},"seconds":{"anyOf":[{"exclusiveMinimum":0,"maximum":600,"type":"number"},{"type":"null"}],"default":null}},"required":["kind","times"],"title":"DoJumpPower","type":"object"},"DoLose":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"lose","type":"string"}},"required":["kind"],"title":"DoLose","type":"object"},"DoOpen":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"open","type":"string"},"target":{"pattern":"^[A-Za-z0-9_]{1,40}$","type":"string"}},"required":["kind","target"],"title":"DoOpen","type":"object"},"DoReverse":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"reverse_controls","type":"string"},"seconds":{"anyOf":[{"exclusiveMinimum":0,"maximum":600,"type":"number"},{"type":"null"}],"default":null}},"required":["kind"],"title":"DoReverse","type":"object"},"DoSay":{"additionalProperties":false,"description":"A speech bubble over the player (or over `target`) for `seconds`.","patternProperties":{"^x_":{}},"properties":{"kind":{"const":"say","type":"string"},"text":{"maxLength":90,"minLength":1,"type":"string"},"target":{"anyOf":[{"pattern":"^[A-Za-z0-9_]{1,40}$","type":"string"},{"type":"null"}],"default":null},"seconds":{"default":3,"exclusiveMinimum":0,"maximum":10,"type":"number"}},"required":["kind","text"],"title":"DoSay","type":"object"},"DoScore":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"add_score","type":"string"},"n":{"maximum":1000,"minimum":-1000,"type":"integer"}},"required":["kind","n"],"title":"DoScore","type":"object"},"DoShake":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"shake","type":"string"}},"required":["kind"],"title":"DoShake","type":"object"},"DoSound":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"sound","type":"string"},"name":{"$ref":"#/$defs/SoundName"}},"required":["kind","name"],"title":"DoSound","type":"object"},"DoSpeed":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"speed","type":"string"},"times":{"maximum":3,"minimum":0.25,"type":"number"},"seconds":{"anyOf":[{"exclusiveMinimum":0,"maximum":600,"type":"number"},{"type":"null"}],"default":null}},"required":["kind","times"],"title":"DoSpeed","type":"object"},"DoTeleport":{"additionalProperties":false,"description":"Move the player to a cell (to) or onto an entity (target). Exactly one is set.","patternProperties":{"^x_":{}},"properties":{"kind":{"const":"teleport","type":"string"},"to":{"anyOf":[{"$ref":"#/$defs/CellXY"},{"type":"null"}],"default":null},"target":{"anyOf":[{"pattern":"^[A-Za-z0-9_]{1,40}$","type":"string"},{"type":"null"}],"default":null}},"required":["kind"],"title":"DoTeleport","type":"object"},"DoToggle":{"additionalProperties":false,"description":"Show or hide an entity: a hidden entity is not drawn, not solid and does nothing.","patternProperties":{"^x_":{}},"properties":{"kind":{"const":"toggle","type":"string"},"target":{"pattern":"^[A-Za-z0-9_]{1,40}$","type":"string"},"to":{"default":"flip","enum":["on","off","flip"],"type":"string"}},"required":["kind","target"],"title":"DoToggle","type":"object"},"DoWin":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"win","type":"string"}},"required":["kind"],"title":"DoWin","type":"object"},"EBigCoin":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"hidden":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"type":{"const":"big_coin","type":"string"},"x":{"type":"number"},"y":{"type":"number"}},"required":["id","type","x","y"],"title":"EBigCoin","type":"object"},"ECheckpoint":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"hidden":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"type":{"const":"checkpoint","type":"string"},"x":{"type":"number"},"y":{"type":"number"}},"required":["id","type","x","y"],"title":"ECheckpoint","type":"object"},"ECoin":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"hidden":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"type":{"const":"coin","type":"string"},"x":{"type":"number"},"y":{"type":"number"}},"required":["id","type","x","y"],"title":"ECoin","type":"object"},"ECrumble":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"hidden":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"type":{"const":"crumble","type":"string"},"x":{"type":"number"},"y":{"type":"number"},"w":{"type":"number"},"delay_s":{"default":0.5,"type":"number"},"respawn_s":{"default":3.0,"type":"number"},"one_way":{"default":true,"type":"boolean"}},"required":["id","type","x","y","w"],"title":"ECrumble","type":"object"},"EDoor":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"hidden":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"type":{"const":"door","type":"string"},"x":{"type":"number"},"y":{"type":"number"},"w":{"type":"number"},"h":{"type":"number"},"key":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"required":["id","type","x","y","w","h"],"title":"EDoor","type":"object"},"EEnemy":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"hidden":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"type":{"const":"enemy","type":"string"},"archetype":{"anyOf":[{"$ref":"#/$defs/Archetype"},{"const":"static","type":"string"}]},"x":{"type":"number"},"y":{"type":"number"},"w":{"type":"number"},"h":{"type":"number"},"spiky":{"default":false,"type":"boolean"},"params":{"$ref":"#/$defs/EnemyParams"},"bounds":{"anyOf":[{"maxItems":2,"minItems":2,"prefixItems":[{"type":"number"},{"type":"number"}],"type":"array"},{"type":"null"}],"default":null}},"required":["id","type","archetype","x","y","w","h"],"title":"EEnemy","type":"object"},"EFalling":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"hidden":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"type":{"const":"falling_platform","type":"string"},"x":{"type":"number"},"y":{"type":"number"},"w":{"type":"number"},"delay_s":{"default":0.4,"type":"number"},"one_way":{"default":true,"type":"boolean"}},"required":["id","type","x","y","w"],"title":"EFalling","type":"object"},"EFirebar":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"hidden":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"type":{"const":"firebar","type":"string"},"x":{"type":"number"},"y":{"type":"number"},"balls":{"maximum":6,"minimum":3,"type":"integer"},"speed_deg_s":{"type":"number"},"phase":{"default":0,"type":"number"}},"required":["id","type","x","y","balls","speed_deg_s"],"title":"EFirebar","type":"object"},"EGoal":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"hidden":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"type":{"const":"goal","type":"string"},"x":{"type":"number"},"y":{"type":"number"},"trigger":{"$ref":"#/$defs/RectCells"}},"required":["id","type","x","y","trigger"],"title":"EGoal","type":"object"},"EHintArrow":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"hidden":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"type":{"const":"hint_arrow","type":"string"},"x":{"type":"number"},"y":{"type":"number"},"dir":{"$ref":"#/$defs/Dir4"}},"required":["id","type","x","y","dir"],"title":"EHintArrow","type":"object"},"EKey":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"hidden":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"type":{"const":"key","type":"string"},"x":{"type":"number"},"y":{"type":"number"},"door":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"required":["id","type","x","y"],"title":"EKey","type":"object"},"EMovingPlatform":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"hidden":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"type":{"const":"moving_platform","type":"string"},"x":{"type":"number"},"y":{"type":"number"},"w":{"type":"number"},"path":{"items":{"$ref":"#/$defs/CellXY"},"type":"array"},"speed":{"type":"number"},"mode":{"default":"pingpong","enum":["pingpong","loop"],"type":"string"},"wait_s":{"default":0.3,"type":"number"},"one_way":{"default":true,"type":"boolean"}},"required":["id","type","x","y","w","path","speed"],"title":"EMovingPlatform","type":"object"},"ENpc":{"additionalProperties":false,"description":"x centre, y feet line, size in cells. Touching it shows `lines` one after another.","patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"hidden":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"type":{"const":"npc","type":"string"},"x":{"type":"number"},"y":{"type":"number"},"w":{"default":1,"type":"number"},"h":{"default":2,"type":"number"},"lines":{"items":{"type":"string"},"maxItems":6,"minItems":1,"type":"array"},"name":{"anyOf":[{"maxLength":16,"type":"string"},{"type":"null"}],"default":null}},"required":["id","type","x","y","lines"],"title":"ENpc","type":"object"},"EPickup":{"additionalProperties":false,"description":"Centre point. Collecting it fires collect rules for its id and its item name.","patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"hidden":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"type":{"const":"pickup","type":"string"},"x":{"type":"number"},"y":{"type":"number"},"item":{"default":"star","pattern":"^[a-z][a-z0-9 ]{0,15}$","type":"string"},"respawn_s":{"anyOf":[{"exclusiveMinimum":0,"maximum":60,"type":"number"},{"type":"null"}],"default":null}},"required":["id","type","x","y"],"title":"EPickup","type":"object"},"EPlayerStart":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"hidden":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"type":{"const":"player_start","type":"string"},"x":{"type":"number"},"y":{"type":"number"}},"required":["id","type","x","y"],"title":"EPlayerStart","type":"object"},"EPortal":{"additionalProperties":false,"description":"Centre point; radius 0.75 cells. Touching it moves the player to `pair` (a portal id).","patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"hidden":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"type":{"const":"portal","type":"string"},"x":{"type":"number"},"y":{"type":"number"},"pair":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"required":["id","type","x","y"],"title":"EPortal","type":"object"},"ESaw":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"hidden":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"type":{"const":"saw","type":"string"},"x":{"type":"number"},"y":{"type":"number"},"r":{"type":"number"},"path":{"items":{"$ref":"#/$defs/CellXY"},"type":"array"},"speed":{"default":3.0,"type":"number"},"mode":{"default":"pingpong","enum":["pingpong","loop"],"type":"string"}},"required":["id","type","x","y","r"],"title":"ESaw","type":"object"},"ESpikes":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"hidden":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"type":{"const":"spikes","type":"string"},"host":{"anyOf":[{"type":"string"},{"type":"null"}]},"face":{"$ref":"#/$defs/Face"},"x0":{"type":"number"},"x1":{"type":"number"},"y":{"type":"number"},"facing":{"$ref":"#/$defs/Dir4"}},"required":["id","type","host","face","x0","x1","y","facing"],"title":"ESpikes","type":"object"},"ESpring":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"hidden":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"type":{"const":"spring","type":"string"},"x":{"type":"number"},"y":{"type":"number"},"dir":{"default":"up","enum":["up","left","right"],"type":"string"},"strength":{"default":1.0,"maximum":1.4,"minimum":0.6,"type":"number"},"w":{"default":1,"type":"number"}},"required":["id","type","x","y"],"title":"ESpring","type":"object"},"EZone":{"additionalProperties":false,"description":"Top-left box in cells with an effect while the player is inside (BZone).","patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"origin":{"anyOf":[{"$ref":"#/$defs/Origin"},{"type":"null"}],"default":null},"sprite":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"hidden":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"type":{"const":"zone","type":"string"},"x":{"type":"number"},"y":{"type":"number"},"w":{"type":"number"},"h":{"type":"number"},"effect":{"$ref":"#/$defs/ZoneEffect"},"dir":{"$ref":"#/$defs/Dir4","default":"right"},"strength":{"default":1.0,"maximum":2.0,"minimum":0.5,"type":"number"}},"required":["id","type","x","y","w","h","effect"],"title":"EZone","type":"object"},"EditBy":{"enum":["auto","heuristic","model","kid","greedy","parser","library","validator"],"type":"string"},"EditClass":{"enum":["U","N","R","P","C","K"],"type":"string"},"EditOp":{"discriminator":{"mapping":{"add_big_coin":"#/$defs/OpAddBigCoin","add_checkpoint":"#/$defs/OpAddCheckpoint","add_coin":"#/$defs/OpAddCoin","add_coin_trail":"#/$defs/OpAddCoinTrail","add_enemy":"#/$defs/OpAddEnemy","add_hazard":"#/$defs/OpAddHazard","add_hint_arrow":"#/$defs/OpAddHintArrow","add_spikes":"#/$defs/OpAddSpikes","add_spring":"#/$defs/OpAddSpring","add_step":"#/$defs/OpAddStep","animate":"#/$defs/OpAnimate","bind":"#/$defs/OpBind","clear_spawn":"#/$defs/OpClearSpawn","close_gap":"#/$defs/OpCloseGap","coin_from_dot":"#/$defs/OpCoinFromDot","dedupe":"#/$defs/OpDedupe","detach":"#/$defs/OpDetach","extend":"#/$defs/OpExtend","fit_creature":"#/$defs/OpFitCreature","fix_behavior":"#/$defs/OpFixBehavior","form_goal":"#/$defs/OpFormGoal","group":"#/$defs/OpGroup","join_seam":"#/$defs/OpJoinSeam","link":"#/$defs/OpLink","make_crumble":"#/$defs/OpMakeCrumble","make_mine":"#/$defs/OpMakeMine","nudge":"#/$defs/OpNudge","orient":"#/$defs/OpOrient","place_start":"#/$defs/OpPlaceStart","reprise":"#/$defs/OpReprise","set_collision":"#/$defs/OpSetCollision","set_par":"#/$defs/OpSetPar","set_role":"#/$defs/OpSetRole","set_start":"#/$defs/OpSetStart","set_timer":"#/$defs/OpSetTimer","shift_platform":"#/$defs/OpShiftPlatform","shrink_landing":"#/$defs/OpShrinkLanding","snap":"#/$defs/OpSnap","straighten":"#/$defs/OpStraighten","trim":"#/$defs/OpTrim","tune":"#/$defs/OpTune","use_library":"#/$defs/OpUseLibrary","widen_gap":"#/$defs/OpWidenGap"},"propertyName":"op"},"oneOf":[{"$ref":"#/$defs/OpSetRole"},{"$ref":"#/$defs/OpGroup"},{"$ref":"#/$defs/OpDetach"},{"$ref":"#/$defs/OpBind"},{"$ref":"#/$defs/OpLink"},{"$ref":"#/$defs/OpSetStart"},{"$ref":"#/$defs/OpUseLibrary"},{"$ref":"#/$defs/OpStraighten"},{"$ref":"#/$defs/OpCloseGap"},{"$ref":"#/$defs/OpSnap"},{"$ref":"#/$defs/OpOrient"},{"$ref":"#/$defs/OpFormGoal"},{"$ref":"#/$defs/OpSetCollision"},{"$ref":"#/$defs/OpPlaceStart"},{"$ref":"#/$defs/OpClearSpawn"},{"$ref":"#/$defs/OpCoinFromDot"},{"$ref":"#/$defs/OpDedupe"},{"$ref":"#/$defs/OpJoinSeam"},{"$ref":"#/$defs/OpFixBehavior"},{"$ref":"#/$defs/OpFitCreature"},{"$ref":"#/$defs/OpNudge"},{"$ref":"#/$defs/OpTrim"},{"$ref":"#/$defs/OpExtend"},{"$ref":"#/$defs/OpAddStep"},{"$ref":"#/$defs/OpAddSpring"},{"$ref":"#/$defs/OpAddCheckpoint"},{"$ref":"#/$defs/OpAddCoinTrail"},{"$ref":"#/$defs/OpAddCoin"},{"$ref":"#/$defs/OpAddBigCoin"},{"$ref":"#/$defs/OpAddHintArrow"},{"$ref":"#/$defs/OpTune"},{"$ref":"#/$defs/OpAnimate"},{"$ref":"#/$defs/OpSetPar"},{"$ref":"#/$defs/OpWidenGap"},{"$ref":"#/$defs/OpShrinkLanding"},{"$ref":"#/$defs/OpShiftPlatform"},{"$ref":"#/$defs/OpAddSpikes"},{"$ref":"#/$defs/OpAddEnemy"},{"$ref":"#/$defs/OpAddHazard"},{"$ref":"#/$defs/OpMakeCrumble"},{"$ref":"#/$defs/OpSetTimer"},{"$ref":"#/$defs/OpReprise"},{"$ref":"#/$defs/OpMakeMine"}]},"EditRecord":{"additionalProperties":false,"description":"One edit with its status. Ids are stable: `op:target:hash6(params)` (D6).","patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"op":{"$ref":"#/$defs/EditOp"},"class":{"$ref":"#/$defs/EditClass"},"by":{"$ref":"#/$defs/EditBy"},"stage":{"$ref":"#/$defs/Stage"},"tier":{"$ref":"#/$defs/Tier"},"status":{"$ref":"#/$defs/EditStatus"},"reason_key":{"type":"string"},"reason_args":{"$ref":"#/$defs/MessageArgs"},"reason_text":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"depends_on":{"items":{"type":"string"},"type":"array"},"required":{"default":false,"type":"boolean"},"group":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"validation":{"anyOf":[{"$ref":"#/$defs/Validation"},{"type":"null"}],"default":null},"ghost":{"anyOf":[{"$ref":"#/$defs/Ghost"},{"type":"null"}],"default":null},"reject_reason":{"anyOf":[{"$ref":"#/$defs/MessageRef"},{"type":"null"}],"default":null},"cid":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"required":["id","op","class","by","stage","tier","status","reason_key"],"title":"EditRecord","type":"object"},"EditStatus":{"enum":["applied","undone","rejected","suggested"],"type":"string"},"Effort":{"enum":["low","medium","high"],"type":"string"},"EnemyParams":{"additionalProperties":false,"description":"Archetype parameters (§5.7); every field optional, defaults live in core/params.ts.","patternProperties":{"^x_":{}},"properties":{"speed":{"anyOf":[{"type":"number"},{"type":"null"}],"default":null},"ledge_aware":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"interval":{"anyOf":[{"type":"number"},{"type":"null"}],"default":null},"forward":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"pattern":{"anyOf":[{"enum":["hover","horizontal","vertical","circle"],"type":"string"},{"type":"null"}],"default":null},"range":{"anyOf":[{"type":"number"},{"type":"null"}],"default":null},"radius":{"anyOf":[{"type":"number"},{"type":"null"}],"default":null},"period":{"anyOf":[{"type":"number"},{"type":"null"}],"default":null},"facing":{"anyOf":[{"enum":["left","right","toward_player"],"type":"string"},{"type":"null"}],"default":null},"blob_speed":{"anyOf":[{"type":"number"},{"type":"null"}],"default":null},"sight":{"anyOf":[{"type":"number"},{"type":"null"}],"default":null},"warn":{"anyOf":[{"type":"number"},{"type":"null"}],"default":null},"rise_speed":{"anyOf":[{"type":"number"},{"type":"null"}],"default":null}},"title":"EnemyParams","type":"object"},"Entity":{"discriminator":{"mapping":{"big_coin":"#/$defs/EBigCoin","checkpoint":"#/$defs/ECheckpoint","coin":"#/$defs/ECoin","crumble":"#/$defs/ECrumble","door":"#/$defs/EDoor","enemy":"#/$defs/EEnemy","falling_platform":"#/$defs/EFalling","firebar":"#/$defs/EFirebar","goal":"#/$defs/EGoal","hint_arrow":"#/$defs/EHintArrow","key":"#/$defs/EKey","moving_platform":"#/$defs/EMovingPlatform","npc":"#/$defs/ENpc","pickup":"#/$defs/EPickup","player_start":"#/$defs/EPlayerStart","portal":"#/$defs/EPortal","saw":"#/$defs/ESaw","spikes":"#/$defs/ESpikes","spring":"#/$defs/ESpring","zone":"#/$defs/EZone"},"propertyName":"type"},"oneOf":[{"$ref":"#/$defs/EPlayerStart"},{"$ref":"#/$defs/ESpikes"},{"$ref":"#/$defs/EEnemy"},{"$ref":"#/$defs/ECoin"},{"$ref":"#/$defs/EBigCoin"},{"$ref":"#/$defs/ECheckpoint"},{"$ref":"#/$defs/EGoal"},{"$ref":"#/$defs/EKey"},{"$ref":"#/$defs/EDoor"},{"$ref":"#/$defs/ESpring"},{"$ref":"#/$defs/ESaw"},{"$ref":"#/$defs/EFirebar"},{"$ref":"#/$defs/EMovingPlatform"},{"$ref":"#/$defs/ECrumble"},{"$ref":"#/$defs/EFalling"},{"$ref":"#/$defs/EHintArrow"},{"$ref":"#/$defs/EPortal"},{"$ref":"#/$defs/EZone"},{"$ref":"#/$defs/EPickup"},{"$ref":"#/$defs/ENpc"}]},"Face":{"enum":["top","bottom","left","right"],"type":"string"},"Flag":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"code":{"$ref":"#/$defs/FlagCode"},"severity":{"$ref":"#/$defs/Severity"},"frame":{"anyOf":[{"type":"integer"},{"type":"null"}],"default":null},"at":{"anyOf":[{"$ref":"#/$defs/CellXY"},{"type":"null"}],"default":null},"object_ids":{"items":{"type":"string"},"type":"array"},"fix_cids":{"items":{"type":"string"},"type":"array"},"message_key":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"args":{"$ref":"#/$defs/MessageArgs"}},"required":["id","code","severity"],"title":"Flag","type":"object"},"FlagCode":{"enum":["unsolvable","tight_window","blind_jump","leap_of_faith","spawn_unsafe","invisible_lethal","softlock","long_segment","head_bonk","unreachable_drawn","skippable_setpiece","trivial","long_flat","dead_end","entity_error"],"type":"string"},"GameMode":{"enum":["platformer","topdown","runner","flappy"],"type":"string"},"GameRules":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"version":{"minimum":1,"type":"integer"},"physics_profile":{"$ref":"#/$defs/ProfileId","default":"v2-standard"},"profile_hash":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"abilities":{"$ref":"#/$defs/Abilities"},"lives":{"default":"off","enum":["off",3,5]},"hearts":{"default":1,"maximum":3,"minimum":1,"type":"integer"},"theme":{"$ref":"#/$defs/Theme","default":"sketchbook"},"music":{"default":true,"type":"boolean"},"timer_pressure":{"default":false,"type":"boolean"},"camera":{"default":"follow","enum":["follow","no_backscroll"],"type":"string"},"default_dial":{"$ref":"#/$defs/Dial","default":"polished"},"default_band":{"$ref":"#/$defs/ChallengeBand","default":"normal"},"player_type":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"mode":{"anyOf":[{"$ref":"#/$defs/GameMode"},{"type":"null"}],"default":null},"logic":{"anyOf":[{"items":{"$ref":"#/$defs/RuleV4"},"type":"array"},{"type":"null"}],"default":null}},"required":["version"],"title":"GameRules","type":"object"},"Ghost":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"before":{"items":{"$ref":"#/$defs/RectCells"},"type":"array"},"after":{"items":{"$ref":"#/$defs/RectCells"},"type":"array"}},"required":["before","after"],"title":"Ghost","type":"object"},"InkColor":{"enum":["black","red","green","blue","pencil","draft"],"type":"string"},"InkComponent":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"minimum":1,"type":"integer"},"color":{"$ref":"#/$defs/InkColor"},"stroke_ids":{"items":{"type":"string"},"type":"array"},"bbox":{"$ref":"#/$defs/RectCells"},"area":{"type":"number"},"f":{"$ref":"#/$defs/ComponentFeatures"}},"required":["id","color","stroke_ids","bbox","area","f"],"title":"InkComponent","type":"object"},"InkStroke":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"color":{"$ref":"#/$defs/InkColor"},"kind":{"enum":["line","dot","blob"],"type":"string"},"pts":{"items":{"$ref":"#/$defs/CellXY"},"type":"array"},"w":{"items":{"type":"number"},"type":"array"},"closed":{"type":"boolean"},"sheet":{"minimum":0,"type":"integer"},"origin":{"$ref":"#/$defs/Origin"},"stamp":{"anyOf":[{"$ref":"#/$defs/StampKind"},{"type":"null"}],"default":null},"label":{"anyOf":[{"$ref":"#/$defs/Role"},{"type":"null"}],"default":null},"rule":{"anyOf":[{"$ref":"#/$defs/Behavior"},{"type":"null"}],"default":null},"lib":{"anyOf":[{"$ref":"#/$defs/LibRef"},{"type":"null"}],"default":null},"t":{"anyOf":[{"type":"number"},{"type":"null"}],"default":null}},"required":["id","color","kind","pts","w","closed","sheet","origin"],"title":"InkStroke","type":"object"},"LevelInk":{"additionalProperties":false,"description":"The `ink` block stored inside a LevelV2 (§2.2): InkDoc minus v/source/world/sheets/parent,\nwhich the level carries in `world`, `source` and `parent_id`.","patternProperties":{"^x_":{}},"properties":{"strokes":{"items":{"$ref":"#/$defs/InkStroke"},"type":"array"},"components":{"items":{"$ref":"#/$defs/InkComponent"},"type":"array"},"character":{"anyOf":[{"$ref":"#/$defs/CharacterInk"},{"type":"null"}],"default":null},"typed_rules":{"items":{"$ref":"#/$defs/TypedRule"},"type":"array"},"rules_ink":{"items":{"type":"string"},"type":"array"},"noise":{"$ref":"#/$defs/NoiseInfo"}},"required":["strokes","components"],"title":"LevelInk","type":"object"},"LevelMeta":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"transcript":{"default":"","type":"string"},"intent":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"safety":{"$ref":"#/$defs/Safety","default":"unchecked"},"level_hash":{"type":"string"},"core_version":{"type":"string"},"warnings":{"items":{"$ref":"#/$defs/MessageRef"},"type":"array"},"build":{"anyOf":[{"$ref":"#/$defs/BuildMeta"},{"type":"null"}],"default":null}},"required":["level_hash","core_version"],"title":"LevelMeta","type":"object"},"LevelSheet":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"index":{"minimum":0,"type":"integer"},"photo_url":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"qr":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"sketch_url":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"required":["index"],"title":"LevelSheet","type":"object"},"LevelSkin":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"provider":{"enum":["firefly","claude-svg"],"type":"string"},"style_id":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"backdrop":{"anyOf":[{"$ref":"#/$defs/SkinBackdrop"},{"type":"null"}],"default":null},"objects":{"items":{"$ref":"#/$defs/SkinObject"},"type":"array"}},"required":["provider"],"title":"LevelSkin","type":"object"},"LevelSource":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"enum":["canvas","paper","prompt","migrated"],"type":"string"},"prompt":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"pack_id":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"sheets":{"items":{"$ref":"#/$defs/LevelSheet"},"type":"array"}},"required":["kind"],"title":"LevelSource","type":"object"},"LevelV2":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"format":{"const":"dal-level","type":"string"},"schema_version":{"const":2,"type":"integer"},"core_min":{"type":"string"},"id":{"type":"string"},"version":{"minimum":1,"type":"integer"},"game_id":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"parent_id":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"order_index":{"default":0,"minimum":0,"type":"integer"},"title":{"type":"string"},"author":{"type":"string"},"created_at":{"type":"string"},"license":{"default":"CC-BY-4.0","type":"string"},"world":{"$ref":"#/$defs/World"},"rules":{"$ref":"#/$defs/GameRules"},"source":{"$ref":"#/$defs/LevelSource"},"ink":{"anyOf":[{"$ref":"#/$defs/LevelInk"},{"type":"null"}],"default":null},"ink_ref":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"objects":{"items":{"$ref":"#/$defs/SceneObject"},"type":"array"},"setpieces":{"items":{"$ref":"#/$defs/Setpiece"},"type":"array"},"edits":{"items":{"$ref":"#/$defs/EditRecord"},"type":"array"},"compiled":{"$ref":"#/$defs/Compiled"},"design":{"anyOf":[{"$ref":"#/$defs/DesignBlock"},{"type":"null"}],"default":null},"embedded_library":{"items":{"$ref":"#/$defs/LibraryType"},"type":"array"},"meta":{"$ref":"#/$defs/LevelMeta"},"skin":{"anyOf":[{"$ref":"#/$defs/LevelSkin"},{"type":"null"}],"default":null}},"required":["format","schema_version","core_min","id","version","title","author","created_at","world","rules","source","compiled","meta"],"title":"LevelV2","type":"object"},"LibRef":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"type_id":{"type":"string"},"version":{"minimum":1,"type":"integer"}},"required":["type_id","version"],"title":"LibRef","type":"object"},"LibraryArt":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"strokes":{"items":{"$ref":"#/$defs/InkStroke"},"type":"array"},"size_cells":{"maxItems":2,"minItems":2,"prefixItems":[{"type":"number"},{"type":"number"}],"type":"array"},"rig":{"anyOf":[{"$ref":"#/$defs/Rig"},{"type":"null"}],"default":null}},"required":["strokes","size_cells"],"title":"LibraryArt","type":"object"},"LibrarySymbol":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"samples":{"items":{"items":{"$ref":"#/$defs/InkStroke"},"type":"array"},"maxItems":3,"minItems":3,"type":"array"},"color":{"$ref":"#/$defs/InkColor"}},"required":["samples","color"],"title":"LibrarySymbol","type":"object"},"LibraryType":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"game_id":{"type":"string"},"version":{"minimum":1,"type":"integer"},"name":{"maxLength":16,"minLength":1,"type":"string"},"letter":{"maxLength":1,"minLength":1,"type":"string"},"kind":{"enum":["creature","platform","hazard","pickup","prop","player"],"type":"string"},"behavior":{"$ref":"#/$defs/Behavior"},"spiky":{"default":false,"type":"boolean"},"collision":{"enum":["solid","one_way","none"],"type":"string"},"art":{"$ref":"#/$defs/LibraryArt"},"symbol":{"anyOf":[{"$ref":"#/$defs/LibrarySymbol"},{"type":"null"}],"default":null},"author":{"type":"string"},"created_at":{"type":"string"},"block":{"anyOf":[{"$ref":"#/$defs/BlockRef"},{"type":"null"}],"default":null},"hidden":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null}},"required":["id","game_id","version","name","letter","kind","behavior","collision","art","author","created_at"],"title":"LibraryType","type":"object"},"MessageArgs":{"additionalProperties":{"$ref":"#/$defs/Scalar"},"type":"object"},"MessageRef":{"additionalProperties":false,"description":"A kid-facing sentence by key (shared/spec/messages.json); raw codes never reach the DOM.","patternProperties":{"^x_":{}},"properties":{"key":{"type":"string"},"args":{"$ref":"#/$defs/MessageArgs"}},"required":["key"],"title":"MessageRef","type":"object"},"ModelCallMeta":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"$ref":"#/$defs/CallKind"},"effort":{"$ref":"#/$defs/Effort"},"latency_ms":{"type":"integer"},"in_tok":{"type":"integer"},"out_tok":{"type":"integer"},"cost_usd":{"type":"number"},"stop_reason":{"anyOf":[{"type":"string"},{"type":"null"}]},"fallback_used":{"type":"boolean"},"served_by":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"cache_read_tok":{"anyOf":[{"type":"integer"},{"type":"null"}],"default":null}},"required":["kind","effort","latency_ms","in_tok","out_tok","cost_usd","stop_reason","fallback_used"],"title":"ModelCallMeta","type":"object"},"NoiseInfo":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"count":{"minimum":0,"type":"integer"}},"required":["count"],"title":"NoiseInfo","type":"object"},"OpAddBigCoin":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"add_big_coin","type":"string"},"slot":{"type":"string"}},"required":["op","slot"],"title":"OpAddBigCoin","type":"object"},"OpAddCheckpoint":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"add_checkpoint","type":"string"},"slot":{"type":"string"}},"required":["op","slot"],"title":"OpAddCheckpoint","type":"object"},"OpAddCoin":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"add_coin","type":"string"},"slot":{"type":"string"}},"required":["op","slot"],"title":"OpAddCoin","type":"object"},"OpAddCoinTrail":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"add_coin_trail","type":"string"},"action":{"type":"string"},"n":{"maximum":7,"minimum":3,"type":"integer"}},"required":["op","action","n"],"title":"OpAddCoinTrail","type":"object"},"OpAddEnemy":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"add_enemy","type":"string"},"slot":{"type":"string"},"archetype":{"enum":["walker","hopper","flyer","shooter","chaser","crusher"],"type":"string"}},"required":["op","slot","archetype"],"title":"OpAddEnemy","type":"object"},"OpAddHazard":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"add_hazard","type":"string"},"slot":{"type":"string"},"kind":{"enum":["saw","firebar","lava"],"type":"string"}},"required":["op","slot","kind"],"title":"OpAddHazard","type":"object"},"OpAddHintArrow":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"add_hint_arrow","type":"string"},"slot":{"type":"string"},"dir":{"$ref":"#/$defs/Dir4"}},"required":["op","slot","dir"],"title":"OpAddHintArrow","type":"object"},"OpAddSpikes":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"add_spikes","type":"string"},"slot":{"type":"string"}},"required":["op","slot"],"title":"OpAddSpikes","type":"object"},"OpAddSpring":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"add_spring","type":"string"},"slot":{"type":"string"},"strength":{"maximum":1.4,"minimum":0.6,"type":"number"}},"required":["op","slot","strength"],"title":"OpAddSpring","type":"object"},"OpAddStep":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"add_step","type":"string"},"slot":{"type":"string"},"w":{"maximum":3,"minimum":2,"type":"integer"}},"required":["op","slot","w"],"title":"OpAddStep","type":"object"},"OpAnimate":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"animate","type":"string"},"target":{"type":"string"},"archetype":{"const":"walker","type":"string"}},"required":["op","target","archetype"],"title":"OpAnimate","type":"object"},"OpBind":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"bind","type":"string"},"target":{"type":"string"},"behavior":{"$ref":"#/$defs/Behavior"},"hidden":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null}},"required":["op","target","behavior"],"title":"OpBind","type":"object"},"OpClearSpawn":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"clear_spawn","type":"string"},"start_dx":{"anyOf":[{"maximum":4,"minimum":-4,"type":"number"},{"type":"null"}],"default":null},"trimmed":{"items":{"type":"string"},"type":"array"}},"required":["op"],"title":"OpClearSpawn","type":"object"},"OpCloseGap":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"close_gap","type":"string"},"a":{"type":"string"},"b":{"type":"string"}},"required":["op","a","b"],"title":"OpCloseGap","type":"object"},"OpCoinFromDot":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"coin_from_dot","type":"string"},"target":{"type":"string"}},"required":["op","target"],"title":"OpCoinFromDot","type":"object"},"OpDedupe":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"dedupe","type":"string"},"keep":{"type":"string"},"drop":{"type":"string"}},"required":["op","keep","drop"],"title":"OpDedupe","type":"object"},"OpDetach":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"detach","type":"string"},"target":{"type":"string"},"branch":{"type":"string"}},"required":["op","target","branch"],"title":"OpDetach","type":"object"},"OpExtend":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"extend","type":"string"},"target":{"type":"string"},"side":{"$ref":"#/$defs/Side"},"cells":{"maximum":3,"minimum":1,"type":"integer"}},"required":["op","target","side","cells"],"title":"OpExtend","type":"object"},"OpFitCreature":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"fit_creature","type":"string"},"target":{"type":"string"}},"required":["op","target"],"title":"OpFitCreature","type":"object"},"OpFixBehavior":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"fix_behavior","type":"string"},"target":{"type":"string"},"param":{"type":"string"},"value":{"anyOf":[{"type":"number"},{"type":"string"},{"type":"boolean"},{"type":"null"}]}},"required":["op","target","param","value"],"title":"OpFixBehavior","type":"object"},"OpFormGoal":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"form_goal","type":"string"},"flag":{"type":"string"},"pole":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"required":["op","flag"],"title":"OpFormGoal","type":"object"},"OpGroup":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"group","type":"string"},"root":{"type":"string"},"parts":{"items":{"type":"string"},"type":"array"}},"required":["op","root","parts"],"title":"OpGroup","type":"object"},"OpJoinSeam":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"join_seam","type":"string"},"a":{"type":"string"},"b":{"type":"string"}},"required":["op","a","b"],"title":"OpJoinSeam","type":"object"},"OpLink":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"link","type":"string"},"key":{"type":"string"},"door":{"type":"string"}},"required":["op","key","door"],"title":"OpLink","type":"object"},"OpMakeCrumble":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"make_crumble","type":"string"},"surface":{"type":"string"}},"required":["op","surface"],"title":"OpMakeCrumble","type":"object"},"OpMakeMine":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"make_mine","type":"string"},"target":{"type":"string"}},"required":["op","target"],"title":"OpMakeMine","type":"object"},"OpNudge":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"nudge","type":"string"},"group":{"type":"string"},"dx":{"maximum":3,"minimum":-3,"type":"integer"},"dy":{"maximum":3,"minimum":-3,"type":"integer"}},"required":["op","group","dx","dy"],"title":"OpNudge","type":"object"},"OpOrient":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"orient","type":"string"},"target":{"type":"string"},"facing":{"$ref":"#/$defs/Dir"}},"required":["op","target","facing"],"title":"OpOrient","type":"object"},"OpPlaceStart":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"place_start","type":"string"},"at":{"anyOf":[{"$ref":"#/$defs/CellXY"},{"type":"null"}],"default":null}},"required":["op"],"title":"OpPlaceStart","type":"object"},"OpReprise":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"reprise","type":"string"},"setpiece":{"type":"string"},"slot":{"type":"string"},"escalation":{"enum":["faster","plus_saw","plus_spikes","narrower"],"type":"string"}},"required":["op","setpiece","slot","escalation"],"title":"OpReprise","type":"object"},"OpSetCollision":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"set_collision","type":"string"},"target":{"type":"string"},"mode":{"enum":["solid","one_way","none"],"type":"string"}},"required":["op","target","mode"],"title":"OpSetCollision","type":"object"},"OpSetPar":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"set_par","type":"string"},"par_ms":{"anyOf":[{"type":"integer"},{"type":"null"}],"default":null}},"required":["op"],"title":"OpSetPar","type":"object"},"OpSetRole":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"set_role","type":"string"},"target":{"type":"string"},"role":{"$ref":"#/$defs/Role"}},"required":["op","target","role"],"title":"OpSetRole","type":"object"},"OpSetStart":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"set_start","type":"string"},"near":{"type":"string"}},"required":["op","near"],"title":"OpSetStart","type":"object"},"OpSetTimer":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"set_timer","type":"string"},"k":{"maximum":2.0,"minimum":1.5,"type":"number"}},"required":["op","k"],"title":"OpSetTimer","type":"object"},"OpShiftPlatform":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"shift_platform","type":"string"},"group":{"type":"string"},"dx":{"maximum":2,"minimum":-2,"type":"integer"},"dy":{"maximum":2,"minimum":-2,"type":"integer"}},"required":["op","group","dx","dy"],"title":"OpShiftPlatform","type":"object"},"OpShrinkLanding":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"shrink_landing","type":"string"},"surface":{"type":"string"},"side":{"enum":["left","right"],"type":"string"},"cells":{"maximum":2,"minimum":1,"type":"integer"}},"required":["op","surface","side","cells"],"title":"OpShrinkLanding","type":"object"},"OpSnap":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"snap","type":"string"},"target":{"type":"string"},"host":{"type":"string"},"face":{"$ref":"#/$defs/Face"}},"required":["op","target","host","face"],"title":"OpSnap","type":"object"},"OpStraighten":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"straighten","type":"string"},"target":{"type":"string"},"mode":{"anyOf":[{"enum":["flat","slope_1_2","slope_1_1"],"type":"string"},{"type":"null"}],"default":null},"max_shift":{"anyOf":[{"maximum":0.85,"minimum":0,"type":"number"},{"type":"null"}],"default":null}},"required":["op","target"],"title":"OpStraighten","type":"object"},"OpTrim":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"trim","type":"string"},"target":{"type":"string"},"side":{"$ref":"#/$defs/Side"},"cells":{"maximum":2,"minimum":1,"type":"integer"}},"required":["op","target","side","cells"],"title":"OpTrim","type":"object"},"OpTune":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"tune","type":"string"},"entity":{"type":"string"},"param":{"type":"string"},"step":{"enum":[1,2],"type":"integer"}},"required":["op","entity","param","step"],"title":"OpTune","type":"object"},"OpUseLibrary":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"use_library","type":"string"},"target":{"type":"string"},"type_id":{"type":"string"},"version":{"minimum":1,"type":"integer"},"hidden":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null}},"required":["op","target","type_id","version"],"title":"OpUseLibrary","type":"object"},"OpWidenGap":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"op":{"const":"widen_gap","type":"string"},"gap":{"type":"string"},"cells":{"maximum":2,"minimum":1,"type":"integer"}},"required":["op","gap","cells"],"title":"OpWidenGap","type":"object"},"Origin":{"enum":["kid","parent","designer","library","draft","migrated"],"type":"string"},"PickupEffect":{"enum":["none","speed","jump","flip","heart","score","freeze","low_gravity"],"type":"string"},"PlayerSprite":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"url":{"type":"string"},"rig":{"anyOf":[{"$ref":"#/$defs/Rig"},{"type":"null"}],"default":null}},"required":["url"],"title":"PlayerSprite","type":"object"},"ProfileId":{"enum":["v2-standard","v2-gentle","v2-snappy","v1-classic"],"type":"string"},"Reach":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"polished":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"normal":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null},"hard":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null}},"title":"Reach","type":"object"},"RectCells":{"maxItems":4,"minItems":4,"prefixItems":[{"type":"number"},{"type":"number"},{"type":"number"},{"type":"number"}],"type":"array"},"Relations":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"rests_on":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"attached":{"anyOf":[{"$ref":"#/$defs/Attachment"},{"type":"null"}],"default":null},"points":{"anyOf":[{"$ref":"#/$defs/Dir"},{"type":"null"}],"default":null},"part_of":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"parts":{"anyOf":[{"items":{"type":"string"},"type":"array"},{"type":"null"}],"default":null},"refers_to":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"title":"Relations","type":"object"},"Rig":{"additionalProperties":false,"description":"Rig extracted from a creature drawing (§7.6). Parts are stroke ids.","patternProperties":{"^x_":{}},"properties":{"legs":{"items":{"type":"string"},"type":"array"},"arms":{"items":{"type":"string"},"type":"array"},"eyes":{"items":{"type":"string"},"type":"array"},"synth_legs":{"default":false,"type":"boolean"},"hip_y":{"default":0.7,"type":"number"}},"title":"Rig","type":"object"},"Role":{"enum":["ground","platform","wall","ceiling","spikes","lava","saw","enemy","coin","big_coin","key","door","spring","checkpoint","goal","pole","start_marker","text","arrow","decoration","library_tag","unknown"],"type":"string"},"RoleAlt":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"role":{"$ref":"#/$defs/Role"},"conf":{"maximum":1,"minimum":0,"type":"number"}},"required":["role","conf"],"title":"RoleAlt","type":"object"},"RoleBy":{"enum":["heuristic","model","kid","stamp","library","parser","draft","migrated","designer"],"type":"string"},"RuleDo":{"discriminator":{"mapping":{"add_counter":"#/$defs/DoCounter","add_score":"#/$defs/DoScore","flip_gravity":"#/$defs/DoFlipGravity","freeze_enemies":"#/$defs/DoFreeze","gravity":"#/$defs/DoGravity","heal":"#/$defs/DoHeal","hurt":"#/$defs/DoHurt","jump_power":"#/$defs/DoJumpPower","lose":"#/$defs/DoLose","open":"#/$defs/DoOpen","reverse_controls":"#/$defs/DoReverse","say":"#/$defs/DoSay","shake":"#/$defs/DoShake","sound":"#/$defs/DoSound","speed":"#/$defs/DoSpeed","teleport":"#/$defs/DoTeleport","toggle":"#/$defs/DoToggle","win":"#/$defs/DoWin"},"propertyName":"kind"},"oneOf":[{"$ref":"#/$defs/DoFlipGravity"},{"$ref":"#/$defs/DoGravity"},{"$ref":"#/$defs/DoSpeed"},{"$ref":"#/$defs/DoJumpPower"},{"$ref":"#/$defs/DoReverse"},{"$ref":"#/$defs/DoTeleport"},{"$ref":"#/$defs/DoToggle"},{"$ref":"#/$defs/DoOpen"},{"$ref":"#/$defs/DoFreeze"},{"$ref":"#/$defs/DoScore"},{"$ref":"#/$defs/DoCounter"},{"$ref":"#/$defs/DoHeal"},{"$ref":"#/$defs/DoHurt"},{"$ref":"#/$defs/DoWin"},{"$ref":"#/$defs/DoLose"},{"$ref":"#/$defs/DoSay"},{"$ref":"#/$defs/DoSound"},{"$ref":"#/$defs/DoShake"}]},"RuleKey":{"enum":["space","action"],"type":"string"},"RuleV4":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"pattern":"^[A-Za-z0-9_]{1,40}$","type":"string"},"when":{"$ref":"#/$defs/RuleWhen"},"then":{"items":{"$ref":"#/$defs/RuleDo"},"maxItems":4,"minItems":1,"type":"array"},"once":{"default":false,"type":"boolean"},"off":{"anyOf":[{"type":"boolean"},{"type":"null"}],"default":null}},"required":["id","when","then"],"title":"RuleV4","type":"object"},"RuleWhen":{"discriminator":{"mapping":{"all_coins":"#/$defs/WhenAllCoins","collect":"#/$defs/WhenCollect","counter":"#/$defs/WhenCounter","key":"#/$defs/WhenKey","score":"#/$defs/WhenScore","start":"#/$defs/WhenStart","timer":"#/$defs/WhenTimer","touch":"#/$defs/WhenTouch","zone":"#/$defs/WhenZone"},"propertyName":"kind"},"oneOf":[{"$ref":"#/$defs/WhenStart"},{"$ref":"#/$defs/WhenKey"},{"$ref":"#/$defs/WhenTouch"},{"$ref":"#/$defs/WhenCollect"},{"$ref":"#/$defs/WhenAllCoins"},{"$ref":"#/$defs/WhenTimer"},{"$ref":"#/$defs/WhenZone"},{"$ref":"#/$defs/WhenScore"},{"$ref":"#/$defs/WhenCounter"}]},"Safety":{"enum":["ok","held","flag","unchecked"],"type":"string"},"Scalar":{"anyOf":[{"type":"string"},{"type":"integer"},{"type":"number"},{"type":"boolean"},{"type":"null"}]},"SceneObject":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"id":{"type":"string"},"components":{"items":{"type":"integer"},"type":"array"},"strokes":{"items":{"type":"string"},"type":"array"},"role":{"$ref":"#/$defs/Role"},"conf":{"maximum":1,"minimum":0,"type":"number"},"role_by":{"$ref":"#/$defs/RoleBy"},"origin":{"$ref":"#/$defs/Origin"},"shape":{"$ref":"#/$defs/Shape"},"collision":{"$ref":"#/$defs/Collision"},"rel":{"$ref":"#/$defs/Relations"},"behavior":{"anyOf":[{"$ref":"#/$defs/Behavior"},{"type":"null"}],"default":null},"pinned":{"items":{"type":"string"},"type":"array"},"alt":{"items":{"$ref":"#/$defs/RoleAlt"},"type":"array"},"lib":{"anyOf":[{"$ref":"#/$defs/LibRef"},{"type":"null"}],"default":null},"text":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"required":["id","components","strokes","role","conf","role_by","origin","shape","collision","rel","pinned"],"title":"SceneObject","type":"object"},"Setpiece":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"name":{"type":"string"},"ids":{"items":{"type":"string"},"type":"array"},"kind":{"$ref":"#/$defs/SetpieceKind"},"by":{"enum":["model","geometric","kid"],"type":"string"}},"required":["name","ids","kind","by"],"title":"Setpiece","type":"object"},"SetpieceKind":{"enum":["jump","hazard_run","climb","enemy","puzzle","finale","other"],"type":"string"},"Severity":{"enum":["block","hard","warn","info","target"],"type":"string"},"Shape":{"discriminator":{"mapping":{"body":"#/$defs/ShapeBody","point":"#/$defs/ShapePoint","strip":"#/$defs/ShapeStrip","surface":"#/$defs/ShapeSurface","wall":"#/$defs/ShapeWall"},"propertyName":"k"},"oneOf":[{"$ref":"#/$defs/ShapeSurface"},{"$ref":"#/$defs/ShapeStrip"},{"$ref":"#/$defs/ShapeBody"},{"$ref":"#/$defs/ShapePoint"},{"$ref":"#/$defs/ShapeWall"}]},"ShapeBody":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"k":{"const":"body","type":"string"},"bbox":{"$ref":"#/$defs/RectCells"}},"required":["k","bbox"],"title":"ShapeBody","type":"object"},"ShapePoint":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"k":{"const":"point","type":"string"},"p":{"$ref":"#/$defs/CellXY"}},"required":["k","p"],"title":"ShapePoint","type":"object"},"ShapeStrip":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"k":{"const":"strip","type":"string"},"a":{"$ref":"#/$defs/CellXY"},"b":{"$ref":"#/$defs/CellXY"}},"required":["k","a","b"],"title":"ShapeStrip","type":"object"},"ShapeSurface":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"k":{"const":"surface","type":"string"},"segs":{"items":{"$ref":"#/$defs/SurfaceSeg"},"type":"array"},"fill":{"enum":["to_bottom","one_row","to_top","none"],"type":"string"}},"required":["k","segs","fill"],"title":"ShapeSurface","type":"object"},"ShapeWall":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"k":{"const":"wall","type":"string"},"x":{"type":"number"},"y0":{"type":"number"},"y1":{"type":"number"},"w":{"default":1,"type":"number"}},"required":["k","x","y0","y1"],"title":"ShapeWall","type":"object"},"Side":{"enum":["left","right","top","bottom"],"type":"string"},"SkinBackdrop":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"url":{"type":"string"},"credit":{"anyOf":[{"$ref":"#/$defs/SkinCredit"},{"type":"null"}],"default":null}},"required":["url"],"title":"SkinBackdrop","type":"object"},"SkinCredit":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"by":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"tool":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"prompt":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"title":"SkinCredit","type":"object"},"SkinObject":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"stroke_ids":{"items":{"type":"string"},"type":"array"},"object_id":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"url":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"label":{"default":"","type":"string"},"credit":{"anyOf":[{"$ref":"#/$defs/SkinCredit"},{"type":"null"}],"default":null},"mode":{"default":"life","enum":["life","ink"],"type":"string"}},"title":"SkinObject","type":"object"},"SoundName":{"enum":["ding","boing","zap","whoosh","boom","fanfare"],"type":"string"},"Sprites":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"player":{"anyOf":[{"$ref":"#/$defs/PlayerSprite"},{"type":"null"}],"default":null},"objects":{"additionalProperties":{"type":"string"},"type":"object"}},"title":"Sprites","type":"object"},"Stage":{"enum":["ink","understood","designed"],"type":"string"},"StageTime":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"stage":{"$ref":"#/$defs/Stage"},"t_ms":{"type":"integer"}},"required":["stage","t_ms"],"title":"StageTime","type":"object"},"StampKind":{"enum":["coin","big_coin","spikes","flag","checkpoint","spring","saw","walker","hopper","flyer","key","door","start","library"],"type":"string"},"SurfaceSeg":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"a":{"$ref":"#/$defs/CellXY"},"b":{"$ref":"#/$defs/CellXY"},"slope":{"type":"number"}},"required":["a","b","slope"],"title":"SurfaceSeg","type":"object"},"Theme":{"enum":["sketchbook","notebook","graph","kraft"],"type":"string"},"Tier":{"enum":["faithful","polished","normal","hard"],"type":"string"},"Tiles":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"legend":{"const":".#=/\\abcd~X","type":"string"},"rows":{"items":{"pattern":"^(?:[0-9]*[.#=/\\\\abcd~X])+$","type":"string"},"type":"array"}},"required":["legend","rows"],"title":"Tiles","type":"object"},"Trigger":{"additionalProperties":false,"description":"v1 rules carried over unchanged (§2.6): collect:/touch:/timer: → open:/win/lose.","patternProperties":{"^x_":{}},"properties":{"when":{"pattern":"^(collect:[A-Za-z0-9_]+|touch:[A-Za-z0-9_]+|timer:[0-9]+)$","type":"string"},"then":{"pattern":"^(open:[A-Za-z0-9_]+|win|lose)$","type":"string"}},"required":["when","then"],"title":"Trigger","type":"object"},"TypedRule":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"text":{"type":"string"},"target":{"anyOf":[{"type":"integer"},{"type":"null"}],"default":null}},"required":["text"],"title":"TypedRule","type":"object"},"Validation":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"solvable":{"type":"boolean"},"flags":{"items":{"type":"string"},"type":"array"},"drift_cells":{"type":"number"},"dC":{"type":"number"}},"required":["solvable","flags","drift_cells","dC"],"title":"Validation","type":"object"},"WhenAllCoins":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"all_coins","type":"string"}},"required":["kind"],"title":"WhenAllCoins","type":"object"},"WhenCollect":{"additionalProperties":false,"description":"A coin, big coin, key or pickup is collected: one entity (target), any pickup with this item name, or any\ncoin (item \"coin\"). Exactly one of target or item is set.","patternProperties":{"^x_":{}},"properties":{"kind":{"const":"collect","type":"string"},"target":{"anyOf":[{"pattern":"^[A-Za-z0-9_]{1,40}$","type":"string"},{"type":"null"}],"default":null},"item":{"anyOf":[{"pattern":"^[a-z][a-z0-9 ]{0,15}$","type":"string"},{"type":"null"}],"default":null}},"required":["kind"],"title":"WhenCollect","type":"object"},"WhenCounter":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"counter","type":"string"},"name":{"pattern":"^[a-z][a-z0-9 ]{0,15}$","type":"string"},"at_least":{"maximum":1000,"minimum":1,"type":"integer"}},"required":["kind","name","at_least"],"title":"WhenCounter","type":"object"},"WhenKey":{"additionalProperties":false,"description":"Fires on the frame the key goes down (an edge, never while held).","patternProperties":{"^x_":{}},"properties":{"kind":{"const":"key","type":"string"},"key":{"$ref":"#/$defs/RuleKey"}},"required":["kind","key"],"title":"WhenKey","type":"object"},"WhenScore":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"score","type":"string"},"at_least":{"maximum":100000,"minimum":1,"type":"integer"}},"required":["kind","at_least"],"title":"WhenScore","type":"object"},"WhenStart":{"additionalProperties":false,"patternProperties":{"^x_":{}},"properties":{"kind":{"const":"start","type":"string"}},"required":["kind"],"title":"WhenStart","type":"object"},"WhenTimer":{"additionalProperties":false,"description":"After `seconds` from the level start (the first input), or every `seconds` when `every`.","patternProperties":{"^x_":{}},"properties":{"kind":{"const":"timer","type":"string"},"seconds":{"exclusiveMinimum":0,"maximum":600,"type":"number"},"every":{"default":false,"type":"boolean"}},"required":["kind","seconds"],"title":"WhenTimer","type":"object"},"WhenTouch":{"additionalProperties":false,"description":"Fires on the frame the player starts touching the entity (edge).","patternProperties":{"^x_":{}},"properties":{"kind":{"const":"touch","type":"string"},"target":{"pattern":"^[A-Za-z0-9_]{1,40}$","type":"string"}},"required":["kind","target"],"title":"WhenTouch","type":"object"},"WhenZone":{"additionalProperties":false,"description":"The player's feet enter the rectangle (cells, half-open [x0, y0, x1, y1]).","patternProperties":{"^x_":{}},"properties":{"kind":{"const":"zone","type":"string"},"rect":{"$ref":"#/$defs/RectCells"}},"required":["kind","rect"],"title":"WhenZone","type":"object"},"World":{"additionalProperties":false,"description":"Level world. w = 48·screens, h = 27 (§2.1, §6.1).","patternProperties":{"^x_":{}},"properties":{"cell":{"const":16,"default":16,"type":"integer"},"screens":{"maximum":6,"minimum":1,"type":"integer"},"w":{"maximum":288,"minimum":48,"type":"integer"},"h":{"const":27,"default":27,"type":"integer"}},"required":["screens","w"],"title":"World","type":"object"},"ZoneEffect":{"enum":["wind","water","ice","low_gravity","conveyor","slow"],"type":"string"}}};

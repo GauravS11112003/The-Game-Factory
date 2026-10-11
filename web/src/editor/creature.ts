@@ -6,8 +6,10 @@
  * paper symbol. Saving writes an immutable LibraryType (editing an existing type saves version n + 1, D21).
  * Opened from the library screen, from the editor toolbar, or with a level object's strokes ("Save to library":
  * its strokes and behavior are kept).
+ * The drawing part (`inkPad`: the 3 × 3-cell pad with its own tools) and the symbol cells (`symbolCells`) need no
+ * game, so the v4 Block Studio and the workspace legend reuse them.
  */
-import type { Behavior, InkColor, InkStroke, LibraryType, Rig } from '../core/types.gen.ts';
+import type { Behavior, InkColor, InkStroke, LibrarySymbol, LibraryType, Rig } from '../core/types.gen.ts';
 import { extractRig } from '../core/index.ts';
 import { LIBRARY } from '../core/params.ts';
 import { api, ApiError } from '../app/api.ts';
@@ -93,6 +95,137 @@ function newTypeId(name: string): string {
   return `lt_${slug}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
+// ---- the drawing pad and the symbol cells (no game needed) ------------------------------------------------------------
+
+export interface InkPad {
+  readonly pad: SketchPad;
+  /** Marker, eraser, the four inks, undo, redo, clear. */
+  readonly toolrow: HTMLElement;
+  /** Ctrl/Cmd-Z and Shift-Ctrl/Cmd-Z on the pad; true when the key was used. */
+  undoKey(e: KeyboardEvent): boolean;
+}
+
+/** The 3 × 3-cell drawing pad with the body box and feet line, and its own tool row. */
+export function inkPad(o: { strokes?: InkStroke[]; onChange?: (strokes: InkStroke[]) => void }): InkPad {
+  const pad = new SketchPad({
+    px: 640, view: VIEW, pen: PEN, strokes: o.strokes ?? [], idPrefix: 'k',
+    guide: (ctx, P, S) => {
+      const [x0, y0] = P(0, 0);
+      ctx.save();
+      ctx.setLineDash([10, 7]);
+      ctx.strokeStyle = 'rgba(106,90,205,0.5)';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(x0, y0, BOX * S, BOX * S);
+      ctx.setLineDash([]);
+      ctx.strokeStyle = 'rgba(31,27,24,0.4)';
+      ctx.beginPath();
+      ctx.moveTo(0, y0 + BOX * S);
+      ctx.lineTo(ctx.canvas.width, y0 + BOX * S);
+      ctx.stroke();
+      ctx.restore();
+    },
+    onChange: (s) => {
+      syncTools();
+      o.onChange?.(s);
+    },
+  });
+  pad.canvas.setAttribute('aria-label', t('creature.help'));
+  const swatches = (['black', 'red', 'green', 'blue'] as InkColor[]).map((c) => {
+    const b = h('button', { type: 'button', class: 'swatch', title: t(`color.${c}`), 'aria-label': t(`color.${c}`), style: { background: INK[c] }, onclick: () => { pad.setColor(c); syncTools(); } });
+    b.dataset.color = c;
+    return b;
+  });
+  const markerBtn = h('button', { type: 'button', class: 'tool', onclick: () => { pad.tool = 'marker'; syncTools(); } }, icon('marker'), h('span', { class: 'lbl' }, t('tool.marker')));
+  const eraserBtn = h('button', { type: 'button', class: 'tool', onclick: () => { pad.tool = 'eraser'; syncTools(); } }, icon('eraser'), h('span', { class: 'lbl' }, t('tool.eraser')));
+  const undoBtn = h('button', { type: 'button', class: 'tool', title: t('tool.undo'), 'aria-label': t('tool.undo'), onclick: () => pad.undo() }, icon('undo'));
+  const redoBtn = h('button', { type: 'button', class: 'tool', title: t('tool.redo'), 'aria-label': t('tool.redo'), onclick: () => pad.redo() }, icon('redo'));
+  const clearBtn = h('button', { type: 'button', class: 'tool', onclick: () => pad.clear() }, icon('trash'), h('span', { class: 'lbl' }, t('studio.clear')));
+  const toolrow = h('div', { class: 'toolrow' }, markerBtn, eraserBtn, ...swatches, undoBtn, redoBtn, clearBtn);
+
+  function syncTools(): void {
+    markerBtn.classList.toggle('on', pad.tool === 'marker');
+    eraserBtn.classList.toggle('on', pad.tool === 'eraser');
+    for (const s of swatches) s.classList.toggle('on', pad.tool === 'marker' && s.dataset.color === pad.color);
+    undoBtn.disabled = !pad.canUndo();
+    redoBtn.disabled = !pad.canRedo();
+  }
+  syncTools();
+  return {
+    pad, toolrow,
+    undoKey(e: KeyboardEvent): boolean {
+      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'z' || e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return false;
+      e.preventDefault();
+      if (e.shiftKey) pad.redo();
+      else pad.undo();
+      return true;
+    },
+  };
+}
+
+export interface SymbolCells {
+  /** A `<details>` box (the help line, the ink swatches and the three cells); a plain box when `bare`. */
+  readonly el: HTMLElement;
+  /** The symbol when all three cells are drawn, else null. */
+  value(): LibrarySymbol | null;
+  /** How many cells have ink. */
+  filled(): number;
+}
+
+/** "Draw one little sign 3 times" (§8.1): three small one-colour pads. */
+export function symbolCells(o: { symbol?: LibrarySymbol | null; open?: boolean; bare?: boolean; onChange?: () => void } = {}): SymbolCells {
+  let color: InkColor = o.symbol?.color ?? 'black';
+  const pads = [0, 1, 2].map((i) => new SketchPad({
+    px: 192, view: SYMBOL_VIEW, pen: 0.09, idPrefix: `y${i}_`, singleColor: true,
+    strokes: o.symbol?.samples[i] ?? [], onChange: () => sync(),
+  }));
+  for (const sp of pads) sp.color = color;
+  const swatches = (['black', 'red', 'green', 'blue'] as InkColor[]).map((c) => {
+    const b = h('button', {
+      type: 'button', class: 'swatch small', title: t(`color.${c}`), 'aria-label': t(`color.${c}`), style: { background: INK[c] },
+      onclick: () => { color = c; for (const sp of pads) sp.setColor(c); sync(); },
+    });
+    b.dataset.color = c;
+    return b;
+  });
+  const note = h('span', { class: 'small muted', role: 'status' });
+  const body = [
+    h('div', { class: 'row wrap' }, ...swatches, note),
+    h('div', { class: 'symbol-cells' }, ...pads.map((sp, i) => h('div', { class: 'symbol-cell' }, sp.canvas,
+      h('button', { type: 'button', class: 'tool small', title: t('studio.clear'), onclick: () => sp.clear() }, icon('trash'), h('span', { class: 'lbl' }, String(i + 1)))))),
+  ];
+  const el = o.bare ? h('div', { class: 'symbol-box' }, ...body)
+    : h('details', { class: 'symbol-box', open: o.open ?? !!o.symbol },
+      h('summary', null, t('creature.symbol')),
+      h('p', { class: 'small muted' }, t('creature.symbol_help')),
+      ...body);
+  const filled = (): number => pads.filter((sp) => sp.value.length).length;
+  function sync(): void {
+    for (const s of swatches) s.classList.toggle('on', s.dataset.color === color);
+    const n = filled();
+    note.textContent = n === 0 ? '' : n < 3 ? t('creature.symbol_more', { n: 3 - n }) : t('creature.symbol_ready');
+    o.onChange?.();
+  }
+  sync();
+  return {
+    el, filled,
+    value: () => {
+      const s = pads.map((sp) => sp.value);
+      return s.every((x) => x.length) ? { samples: [s[0], s[1], s[2]], color } : null;
+    },
+  };
+}
+
+/** A library type's art for a version: strokes as drawn, size from the drawing, and its rig when one is found. */
+export function artOf(strokes: InkStroke[]): LibraryType['art'] {
+  let rig: Rig | null = null;
+  try {
+    rig = extractRig(strokes);
+  } catch {
+    rig = null;
+  }
+  return { strokes, size_cells: creatureSize(strokes), rig };
+}
+
 export function openCreatureStudio(o: CreatureStudioOptions): () => void {
   const base = o.base ?? null;
   const fromLevel = !base && !!o.strokes?.length;
@@ -111,33 +244,9 @@ export function openCreatureStudio(o: CreatureStudioOptions): () => void {
   const stage = new CreatureStage(512);
   const behavior = (): Behavior => kept ?? creatureBehavior(archetype, speed, spiky);
 
-  const pad = new SketchPad({
-    px: 640, view: VIEW, pen: PEN, strokes: startStrokes, idPrefix: 'k',
-    guide: (ctx, P, S) => {
-      const [x0, y0] = P(0, 0);
-      ctx.save();
-      ctx.setLineDash([10, 7]);
-      ctx.strokeStyle = 'rgba(106,90,205,0.5)';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(x0, y0, BOX * S, BOX * S);
-      ctx.setLineDash([]);
-      ctx.strokeStyle = 'rgba(31,27,24,0.4)';
-      ctx.beginPath();
-      ctx.moveTo(0, y0 + BOX * S);
-      ctx.lineTo(ctx.canvas.width, y0 + BOX * S);
-      ctx.stroke();
-      ctx.restore();
-    },
-    onChange: () => sync(),
-  });
-
-  // ---- symbol cells ------------------------------------------------------------------------------------------------
-  const symbolPads = [0, 1, 2].map((i) => new SketchPad({
-    px: 192, view: SYMBOL_VIEW, pen: 0.09, idPrefix: `y${i}_`, singleColor: true,
-    strokes: base?.symbol?.samples[i] ?? [], onChange: () => syncSymbol(),
-  }));
-  let symbolColor: InkColor = base?.symbol?.color ?? 'black';
-  for (const sp of symbolPads) sp.color = symbolColor;
+  const ink = inkPad({ strokes: startStrokes, onChange: () => sync() });
+  const pad = ink.pad;
+  const symbol = symbolCells({ symbol: base?.symbol ?? null });
 
   // ---- DOM ------------------------------------------------------------------------------------------------------
   const nameIn = h('input', { type: 'text', class: 'text', maxLength: LIBRARY.name_max, placeholder: t('creature.name_placeholder'), value: base?.name ?? '' });
@@ -153,42 +262,15 @@ export function openCreatureStudio(o: CreatureStudioOptions): () => void {
   const saveBtn = h('button', { type: 'button', class: 'pill primary' }, icon('star'), t(base ? 'creature.save_version' : 'creature.save'));
   const cancel = h('button', { type: 'button', class: 'pill', onclick: () => close() }, t('ui.cancel'));
 
-  const swatches = (['black', 'red', 'green', 'blue'] as InkColor[]).map((c) => {
-    const b = h('button', { type: 'button', class: 'swatch', title: t(`color.${c}`), style: { background: INK[c] }, onclick: () => { pad.setColor(c); syncTools(); } });
-    b.dataset.color = c;
-    return b;
-  });
-  const markerBtn = h('button', { type: 'button', class: 'tool', onclick: () => { pad.tool = 'marker'; syncTools(); } }, icon('marker'), h('span', { class: 'lbl' }, t('tool.marker')));
-  const eraserBtn = h('button', { type: 'button', class: 'tool', onclick: () => { pad.tool = 'eraser'; syncTools(); } }, icon('eraser'), h('span', { class: 'lbl' }, t('tool.eraser')));
-  const undoBtn = h('button', { type: 'button', class: 'tool', title: t('tool.undo'), onclick: () => pad.undo() }, icon('undo'));
-  const redoBtn = h('button', { type: 'button', class: 'tool', title: t('tool.redo'), onclick: () => pad.redo() }, icon('redo'));
-  const clearBtn = h('button', { type: 'button', class: 'tool', onclick: () => pad.clear() }, icon('trash'), h('span', { class: 'lbl' }, t('studio.clear')));
-
-  const symbolSwatches = (['black', 'red', 'green', 'blue'] as InkColor[]).map((c) => {
-    const b = h('button', {
-      type: 'button', class: 'swatch small', title: t(`color.${c}`), style: { background: INK[c] },
-      onclick: () => { symbolColor = c; for (const sp of symbolPads) sp.setColor(c); syncSymbol(); },
-    });
-    b.dataset.color = c;
-    return b;
-  });
-  const symbolNote = h('span', { class: 'small muted' });
-  const symbolBox = h('details', { class: 'symbol-box', open: !!base?.symbol },
-    h('summary', null, t('creature.symbol')),
-    h('p', { class: 'small muted' }, t('creature.symbol_help')),
-    h('div', { class: 'row wrap' }, ...symbolSwatches, symbolNote),
-    h('div', { class: 'symbol-cells' }, ...symbolPads.map((sp, i) => h('div', { class: 'symbol-cell' }, sp.canvas,
-      h('button', { type: 'button', class: 'tool small', title: t('studio.clear'), onclick: () => sp.clear() }, icon('trash'), h('span', { class: 'lbl' }, String(i + 1)))))));
-
   const panel = h('div', { class: 'modal-back', role: 'dialog', 'aria-label': t('creature.title') },
     h('div', { class: 'card paper studio creature-studio' },
       h('h2', { class: 'marker-underline' }, base ? t('creature.title_edit', { name: base.name }) : t(fromLevel ? 'creature.title_from_level' : 'creature.title')),
       h('p', { class: 'muted' }, t('creature.help')),
       h('div', { class: 'studio-body' },
         h('div', { class: 'studio-left' },
-          h('div', { class: 'toolrow' }, markerBtn, eraserBtn, ...swatches, undoBtn, redoBtn, clearBtn),
+          ink.toolrow,
           pad.canvas,
-          symbolBox),
+          symbol.el),
         h('div', { class: 'studio-right' },
           h('label', { class: 'field' }, h('span', null, t('creature.name')), h('span', { class: 'row' }, nameIn, letterEl)),
           h('div', { class: 'field' }, h('span', null, t('creature.what')), h('span', { class: 'row' }, whatIn, readBtn)),
@@ -203,14 +285,6 @@ export function openCreatureStudio(o: CreatureStudioOptions): () => void {
       h('div', { class: 'row end' }, cancel, saveBtn)));
   document.body.append(panel);
   stage.start();
-
-  function syncTools(): void {
-    markerBtn.classList.toggle('on', pad.tool === 'marker');
-    eraserBtn.classList.toggle('on', pad.tool === 'eraser');
-    for (const s of swatches) s.classList.toggle('on', pad.tool === 'marker' && s.dataset.color === pad.color);
-    undoBtn.disabled = !pad.canUndo();
-    redoBtn.disabled = !pad.canRedo();
-  }
 
   function usedLetters(): string[] {
     return o.library.filter((x) => !base || x.id !== base.id).map((x) => x.letter);
@@ -247,13 +321,6 @@ export function openCreatureStudio(o: CreatureStudioOptions): () => void {
     stage.set(pad.value, behavior(), spiky);
     letterEl.textContent = letter();
     letterEl.title = t('creature.letter', { letter: letter() });
-    syncTools();
-  }
-
-  function syncSymbol(): void {
-    for (const s of symbolSwatches) s.classList.toggle('on', s.dataset.color === symbolColor);
-    const n = symbolPads.filter((sp) => sp.value.length).length;
-    symbolNote.textContent = n === 0 ? '' : n < 3 ? t('creature.symbol_more', { n: 3 - n }) : t('creature.symbol_ready');
   }
 
   // ---- words → chips -------------------------------------------------------------------------------------------
@@ -340,19 +407,11 @@ export function openCreatureStudio(o: CreatureStudioOptions): () => void {
     saving = true;
     saveBtn.disabled = true;
     status.textContent = t('ui.saving');
-    let rig: Rig | null = null;
-    try {
-      rig = extractRig(strokes);
-    } catch {
-      rig = null;
-    }
-    const samples = symbolPads.map((sp) => sp.value);
     const b = behavior();
     const type: LibraryType = {
       id: base?.id ?? newTypeId(name), game_id: o.gameId, version: base ? base.version + 1 : 1, name, letter: letter(),
       kind: kindOf(b), behavior: b, spiky: b.kind === 'enemy' ? !!b.spiky : spiky, collision: collisionOf(b),
-      art: { strokes, size_cells: creatureSize(strokes), rig },
-      symbol: samples.every((s) => s.length) ? { samples: [samples[0], samples[1], samples[2]], color: symbolColor } : null,
+      art: artOf(strokes), symbol: symbol.value(),
       author: store.author() || t('ui.someone'), created_at: new Date().toISOString(),
     };
     try {
@@ -371,11 +430,7 @@ export function openCreatureStudio(o: CreatureStudioOptions): () => void {
 
   const onKey = (e: KeyboardEvent): void => {
     if (e.key === 'Escape') close();
-    else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !(e.target instanceof HTMLInputElement)) {
-      e.preventDefault();
-      if (e.shiftKey) pad.redo();
-      else pad.undo();
-    }
+    else ink.undoKey(e);
   };
   window.addEventListener('keydown', onKey);
 
@@ -387,7 +442,6 @@ export function openCreatureStudio(o: CreatureStudioOptions): () => void {
   }
 
   renderChips();
-  syncSymbol();
   sync();
   if (!base) nameIn.focus();
   return close;

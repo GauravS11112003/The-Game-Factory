@@ -3,7 +3,8 @@ from typing import Any, Literal
 
 from pydantic import Field
 
-from app.spec.common import ChallengeBand, Dial, ProfileId, Spec, Theme
+from app.spec.common import ChallengeBand, Dial, GameMode, ProfileId, Spec, Theme
+from app.spec.logic import RuleV4
 
 
 class Abilities(Spec):
@@ -27,6 +28,9 @@ class GameRules(Spec):
     default_dial: Dial = "polished"
     default_band: ChallengeBand = "normal"
     player_type: str | None = None  # the game's default character (library type id)
+    # v4 (docs/v4/CONTRACTS_V4.md): null = the v2 default, so v2 levels keep their level_hash
+    mode: GameMode | None = None  # null = platformer
+    logic: list[RuleV4] | None = None  # game-wide rules; run before each level's compiled.logic
 
 
 EXPORTS: list[Any] = [Abilities, GameRules]

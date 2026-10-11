@@ -38,6 +38,7 @@ RPC_TIMEOUTS_S: dict[str, float] = {
     "migrate_v1": 4, "verify_run": 8, "level_hash": 2, "art_svg": 6,
     # P5 (B-2): up to 4 layouts + fast analyses + one full build; per-level dry runs (callers pass per_level_timeout)
     "generate_level": 30, "rules_check": 8, "library_check": 8,
+    "parse_logic": 2,  # v4 (CONTRACTS_V4 §2.4): the core's keyword parser for written rules
 }
 PER_LEVEL_CHECK_S = 8.0  # rules_check / library_check: 8 s + 8 s per level (B-2)
 TIERS_SLACK_S = 15.0

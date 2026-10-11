@@ -21,6 +21,7 @@ SVG rules (strict; anything else is stripped by a sanitizer and may break your a
 
 Art direction
 - Flat colours with one simple shade tone per main area (a slightly darker colour on the lower or back side). A bold dark outline (#2b2b2b or a dark version of the fill, stroke-width about 3% of the viewBox's short side) around the silhouette and main parts, with round line joins.
+- Follow the game's style text strongly: it sets the look of every sprite in the game. For example, a comic-book or superhero style means primary colours, thick black outlines, a halftone highlight and a cape or mask on the player; a candy style means pastel colours and glossy highlights.
 - Keep the child's colours when they are meaningful (a red ink monster stays red); fill uncoloured outlines with cheerful colours that fit the role and the game style.
 - Keep every feature the child drew: the number of eyes, legs, spikes, wings, windows, petals. Exaggerate them slightly so they read at small size. Big friendly eyes for creatures. Characters face right.
 - Monsters are cute or goofy, never gory. Hazards look clearly dangerous (sharp, bright warning colours). Coins and gems sparkle with one highlight shape. Platforms have a clear flat top surface.

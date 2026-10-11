@@ -1,8 +1,16 @@
 /** Kid-facing text (PLAN_V2 §7.10): every sentence comes from shared/spec/messages.json; raw codes never reach the DOM. */
 import table from '../../../shared/spec/messages.json';
+// v4 lanes keep their sentences in their own files (docs/v4/CONTRACTS_V4.md §8), merged over messages.json.
+import v4Shell from '../../../shared/spec/messages-v4/shell.json';
+import v4Core from '../../../shared/spec/messages-v4/core.json';
+import v4Engine from '../../../shared/spec/messages-v4/engine.json';
+import v4Api from '../../../shared/spec/messages-v4/api.json';
+import v4Ui from '../../../shared/spec/messages-v4/ui.json';
 import type { MessageRef, Role } from '../core/types.gen.ts';
 
-const MESSAGES: Record<string, string> = (table as { messages: Record<string, string> }).messages;
+type Table = { messages?: Record<string, string> };
+const MESSAGES: Record<string, string> = Object.assign({},
+  ...[table, v4Shell, v4Core, v4Engine, v4Api, v4Ui].map((x) => (x as Table).messages ?? {}));
 
 export function hasMessage(key: string): boolean {
   return key in MESSAGES;
@@ -22,7 +30,7 @@ export function t(key: string, args: Record<string, unknown> = {}): string {
     console.warn(`messages.json has no key ${key}`);
     return '…';
   }
-  return tpl.replace(/\{([a-z_]+)\}/g, (_, name: string) => argText(args[name]));
+  return tpl.replace(/\{([A-Za-z_]+)\}/g, (_, name: string) => argText(args[name]));
 }
 
 /** Like t(), but returns null for a missing key (so callers can fall back). */

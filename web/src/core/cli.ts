@@ -26,7 +26,7 @@ import { lintSource } from './util/lint.ts';
 import { sha256Hex } from './util/sha256.ts';
 import { stubResult } from './worker/stub.ts';
 import { gMaxTable, measureEnvelope, reachFor } from './bot/index.ts';
-import { CLASSIC_GAME, STARTER_GAME, buildClassicLevel, buildStarterLevel, starterTarget } from './generate/starter.ts';
+import { CLASSIC_GAME, SHOWCASE_GAME, SHOWCASE_IDS, STARTER_GAME, buildClassicLevel, buildStarterLevel, starterTarget } from './generate/starter.ts';
 import type { StarterOverrides } from './generate/starter.ts';
 import { STARTER } from './params.ts';
 import type { LevelPlan, LevelV2, ProfileId, WorkerMethod } from './types.gen.ts';
@@ -335,6 +335,36 @@ function starterBuild(only: string[]): number {
     sw.push({ id: b.level.id, file, title: b.level.title, order_index: i, ...(t.id === 'L5' ? { unlock_after: 'lvl_world_l4', bonus: true } : {}) });
   });
   manifest.games.push({ ...STARTER_GAME, levels: sw });
+  // v4 showcase: shared/starter/showcase/S*.plan.json + S*.overrides.json (logic, mode, v4 draw kinds) → dist/showcase
+  const sdir = join(STARTER_DIR, 'showcase');
+  const show: Record<string, unknown>[] = [];
+  const splans = existsSync(sdir) ? readdirSync(sdir).filter((f) => /^S\d+\.plan\.json$/.test(f)).sort() : [];
+  if (splans.length && !existsSync(join(dist, 'showcase'))) mkdirSync(join(dist, 'showcase'), { recursive: true });
+  splans.forEach((f, i) => {
+    const sid = f.replace('.plan.json', '');
+    const file = `showcase/${sid}.level.json`;
+    if (only.length && !only.includes('showcase') && !only.includes(sid)) {
+      if (existsSync(join(dist, file))) {
+        const lv = readJson(join(dist, file)) as LevelV2;
+        show.push({ id: lv.id, file, title: lv.title, order_index: i });
+      }
+      return;
+    }
+    const ovPath = join(sdir, `${sid}.overrides.json`);
+    const ov = (existsSync(ovPath) ? readJson(ovPath) : {}) as StarterOverrides;
+    const b = buildStarterLevel(sid, readJson(join(sdir, f)) as LevelPlan, ov, i, SHOWCASE_IDS);
+    writeFileSync(join(dist, file), JSON.stringify(b.level, null, 2) + '\n');
+    const r = b.gen.result.report;
+    console.log(`showcase ${sid} ${b.level.title}: mode ${b.level.rules.mode ?? 'platformer'}, rules ${(b.level.compiled.logic ?? []).length}, ` +
+      `solvable ${r.solvable ? 'yes' : 'NO'}${r.approx ? ' (search)' : ''}, fastest ${fmtS(r.fastest_ms)} → dist/${file}`);
+    show.push({ id: b.level.id, file, title: b.level.title, order_index: i });
+  });
+  if (show.length) manifest.games.push({ ...SHOWCASE_GAME, levels: show });
+  const prevIndex = existsSync(join(dist, 'index.json')) ? (readJson(join(dist, 'index.json')) as { games?: { id?: string }[] }) : null;
+  if (only.length && !only.includes('classic')) {
+    const prev = prevIndex?.games?.find((g) => g.id === CLASSIC_GAME.id); // a partial rebuild keeps Classic Starter listed
+    if (prev) manifest.games.push(prev as Record<string, unknown>);
+  }
   if (!only.length || only.includes('classic')) {
     const classic: Record<string, unknown>[] = [];
     // in their own folder: seed_v2 reads dist/*.level.json as Starter World (D-2 §3.5)

@@ -1,0 +1,22 @@
+{
+  "id": "S2",
+  "seed": 4202,
+  "designer_note": "Flappy mode: jump flaps, the screen keeps moving.",
+  "mode": "flappy",
+  "logic": [
+    { "id": "hello", "when": { "kind": "start" }, "then": [{ "kind": "say", "text": "Tap jump to flap!", "seconds": 2.5 }], "once": true }
+  ],
+  "patches": [ { "beat": "*", "stretch": false, "auto_checkpoints": false } ],
+  "draw": [
+    { "kind": "mass", "x": 14, "y": 0, "w": 3, "h": 10 },
+    { "kind": "mass", "x": 24, "y": 13, "w": 3, "h": 9 },
+    { "kind": "mass", "x": 34, "y": 0, "w": 3, "h": 8 },
+    { "kind": "mass", "x": 44, "y": 15, "w": 3, "h": 7 },
+    { "kind": "mass", "x": 54, "y": 0, "w": 3, "h": 11 },
+    { "kind": "mass", "x": 64, "y": 12, "w": 3, "h": 10 },
+    { "kind": "mass", "x": 74, "y": 0, "w": 3, "h": 9 },
+    { "kind": "coin", "x": 19, "y": 14 }, { "kind": "coin", "x": 29, "y": 9 }, { "kind": "coin", "x": 39, "y": 14 },
+    { "kind": "coin", "x": 49, "y": 9 }, { "kind": "coin", "x": 59, "y": 15 }, { "kind": "coin", "x": 69, "y": 8 },
+    { "kind": "coin", "x": 79, "y": 14 }
+  ]
+}

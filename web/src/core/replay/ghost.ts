@@ -29,6 +29,8 @@ export interface GhostPose {
   dead_f: number;
   /** Speedrun clock of the ghost at this frame (ms). */
   clock_ms: number;
+  /** v4 §2.3: −1 while the ghost's gravity is flipped (y stays the bottom of the body box). */
+  gravity?: 1 | -1;
 }
 
 export interface GhostEvent {
@@ -57,7 +59,7 @@ export class GhostTrack {
   private readonly py: Float32Array;
   private readonly pvx: Float32Array;
   private readonly pvy: Float32Array;
-  private readonly bits: Uint8Array; // facing (1) | on_ground (2) | state << 2
+  private readonly bits: Uint8Array; // facing (1) | on_ground (2) | state << 2 | flipped gravity (32)
   private readonly dead: Uint8Array;
   private readonly clock: Uint32Array;
   private readonly maxX: Float32Array; // running max of x (cells), for firstReach
@@ -86,7 +88,7 @@ export class GhostTrack {
     this.maxX = new Float32Array(d.length);
     let m = -Infinity;
     for (let i = 0; i < d.length; i++) {
-      const st = d.bits[i] >> 2;
+      const st = (d.bits[i] >> 2) & 7;
       // a death sequence is not progress
       if (st !== 5 && st !== 6 && d.px[i] > m) m = d.px[i];
       this.maxX[i] = m;
@@ -104,7 +106,7 @@ export class GhostTrack {
     const b = this.bits[i];
     return {
       frame: i, x: this.px[i], y: this.py[i], vx: this.pvx[i], vy: this.pvy[i], facing: b & 1 ? -1 : 1, on_ground: (b & 2) !== 0,
-      state: STATES[b >> 2] ?? 'idle', dead_f: this.dead[i], clock_ms: clockMs(this.clock[i]),
+      state: STATES[(b >> 2) & 7] ?? 'idle', dead_f: this.dead[i], clock_ms: clockMs(this.clock[i]), gravity: b & 32 ? -1 : 1,
     };
   }
 
@@ -207,7 +209,7 @@ export function ghostTrack(level: LevelV2, src: Replay | Uint8Array | string, o?
     pvx[i] = v.vx;
     pvy[i] = v.vy;
     const st = Math.max(0, STATES.indexOf(v.state));
-    bits[i] = (v.facing < 0 ? 1 : 0) | (v.on_ground ? 2 : 0) | (st << 2);
+    bits[i] = (v.facing < 0 ? 1 : 0) | (v.on_ground ? 2 : 0) | (st << 2) | (v.gravity === -1 ? 32 : 0);
     dead[i] = Math.min(255, v.dead_f ?? 0);
     clock[i] = clk;
   };
@@ -217,9 +219,10 @@ export function ghostTrack(level: LevelV2, src: Replay | Uint8Array | string, o?
       const S = sim.S;
       const P = S.p;
       if (clock0 < 0 && S.clock0 >= 0) clock0 = S.clock0;
-      const state: PlayerView['state'] = P.mode === 2 ? 'win' : P.mode === 1 ? 'dead' : P.mode === 3 ? 'respawn' : P.gnd === 0 ? (P.vy < 0 ? 'jump' : 'fall') : P.skid > 0 ? 'skid' : Math.abs(P.vx) > 1 ? 'run' : 'idle';
+      const gs = S.r && S.r.gs < 0 ? -1 : 1;
+      const state: PlayerView['state'] = P.mode === 2 ? 'win' : P.mode === 1 ? 'dead' : P.mode === 3 ? 'respawn' : P.gnd === 0 ? (P.vy * gs < 0 ? 'jump' : 'fall') : P.skid > 0 ? 'skid' : Math.abs(P.vx) > 1 ? 'run' : 'idle';
       put(f + 1, {
-        x: P.x / CELL, y: P.y / CELL, vx: P.vx, vy: P.vy, facing: P.face < 0 ? -1 : 1, on_ground: P.gnd > 0, state,
+        x: P.x / CELL, y: P.y / CELL, vx: P.vx, vy: P.vy, facing: P.face < 0 ? -1 : 1, on_ground: P.gnd > 0, state, gravity: gs,
         invulnerable_f: P.inv, dead_f: P.mode === 1 || P.mode === 3 ? P.df : 0,
       }, S.clockF);
       len = f + 2;

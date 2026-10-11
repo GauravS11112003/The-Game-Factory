@@ -7,7 +7,7 @@ from typing import Annotated, Any, Literal
 from pydantic import Field
 from typing_extensions import TypeAliasType
 
-from app.spec.common import Archetype, Dir, Dir4, Spec
+from app.spec.common import Archetype, Dir, Dir4, PickupEffect, Spec, ZoneEffect
 
 
 class BStatic(Spec):
@@ -80,10 +80,55 @@ class BFirebar(Spec):
     phase: float = 0
 
 
+# ---- v4 primitives (docs/v4/CONTRACTS_V4.md §3) ----
+
+
+class BPortal(Spec):
+    """Touching a portal moves the player to its partner: the other portal with the same `pair` label in the level
+    (a lone portal does nothing)."""
+
+    kind: Literal["portal"]
+    pair: str = Field(default="a", pattern=r"^[a-z0-9]{1,8}$")
+
+
+class BZone(Spec):
+    """An area with an effect while the player is inside: wind and conveyor push toward `dir`, water slows and lets
+    you swim up, ice is slippery, low_gravity floats, slow halves speed. `strength` scales the effect."""
+
+    kind: Literal["zone"]
+    effect: ZoneEffect
+    dir: Dir4 = "right"
+    strength: float = Field(default=1.0, ge=0.5, le=2.0)
+
+
+class BPickup(Spec):
+    """Something to collect. `item` names it for rules ("star"); `effect` is a ready-made rule fired on collect."""
+
+    kind: Literal["pickup"]
+    item: str = Field(default="star", pattern=r"^[a-z][a-z0-9 ]{0,15}$")
+    effect: PickupEffect = "none"
+    seconds: float | None = Field(default=5.0, gt=0, le=60)
+    respawn_s: float | None = Field(default=None, gt=0, le=60)
+
+
+class BNpc(Spec):
+    """A character that talks: touching it shows its lines one by one in a speech bubble."""
+
+    kind: Literal["npc"]
+    lines: list[str] = Field(min_length=1, max_length=6)
+    name: str | None = Field(default=None, max_length=16)
+
+
 Behavior = TypeAliasType(
     "Behavior",
-    Annotated[BStatic | BEnemy | BMove | BSpring | BCrumble | BFalling | BSaw | BFirebar, Field(discriminator="kind")],
+    Annotated[
+        BStatic | BEnemy | BMove | BSpring | BCrumble | BFalling | BSaw | BFirebar | BPortal | BZone | BPickup | BNpc,
+        Field(discriminator="kind"),
+    ],
 )
 
-EXPORTS: list[Any] = [EnemyParams, BStatic, BEnemy, BMove, BSpring, BCrumble, BFalling, BSaw, BFirebar, Behavior]
+EXPORTS: list[Any] = [
+    EnemyParams, BStatic, BEnemy, BMove, BSpring, BCrumble, BFalling, BSaw, BFirebar, BPortal, BZone, BPickup, BNpc,
+    Behavior,
+]
 ROOT = Behavior

@@ -3,7 +3,7 @@
  * Studio doodle, typed rules (bound to a stroke when one was selected, §7.11), and the "play from here" flag.
  * Undo/redo is a patch stack of 200 steps; a patch removes and adds whole strokes by id, so moves keep ids.
  */
-import type { CellXY, InkStroke, LibraryType, ParentRef } from '../core/types.gen.ts';
+import type { CellXY, GameMode, InkStroke, LibraryType, ParentRef } from '../core/types.gen.ts';
 import { CANVAS, WORLD } from '../core/params.ts';
 
 export interface TypedRuleDraft {
@@ -30,6 +30,8 @@ export interface EditorDocData {
   library: LibraryType[];
   /** Remix: the parent's strokes as published, to show what the kid moved or removed (§6.5). */
   parentStrokes?: InkStroke[];
+  /** v4 game mode chosen for this drawing (docs/v4/CONTRACTS_V4.md §3); absent = the game's own mode. */
+  mode?: GameMode | null;
 }
 
 export function emptyDoc(o: Partial<EditorDocData> = {}): EditorDocData {
@@ -161,8 +163,8 @@ export class EditorDoc {
   }
 
   /** Set fields that are not part of the drawing (title, unlock, kept statuses) without an undo step. */
-  setMeta(m: Partial<Pick<EditorDocData, 'title' | 'parentUnlocked' | 'gameId' | 'library' | 'keptStatuses'>>): void {
-    const inkChanged = 'parentUnlocked' in m || 'library' in m;
+  setMeta(m: Partial<Pick<EditorDocData, 'title' | 'parentUnlocked' | 'gameId' | 'library' | 'keptStatuses' | 'mode'>>): void {
+    const inkChanged = 'parentUnlocked' in m || 'library' in m || 'mode' in m; // a new mode re-runs the hints build
     Object.assign(this.data, m);
     this.emit(inkChanged ? 'edit' : 'meta');
   }

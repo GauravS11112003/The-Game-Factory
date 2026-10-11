@@ -122,6 +122,15 @@
       ],
       "type": "string"
     },
+    "GameMode": {
+      "enum": [
+        "platformer",
+        "topdown",
+        "runner",
+        "flappy"
+      ],
+      "type": "string"
+    },
     "InkColor": {
       "enum": [
         "black",
@@ -229,6 +238,19 @@
       ],
       "type": "string"
     },
+    "PickupEffect": {
+      "enum": [
+        "none",
+        "speed",
+        "jump",
+        "flip",
+        "heart",
+        "score",
+        "freeze",
+        "low_gravity"
+      ],
+      "type": "string"
+    },
     "ProfileId": {
       "enum": [
         "v2-standard",
@@ -284,6 +306,13 @@
       ],
       "type": "string"
     },
+    "RuleKey": {
+      "enum": [
+        "space",
+        "action"
+      ],
+      "type": "string"
+    },
     "Safety": {
       "enum": [
         "ok",
@@ -331,6 +360,17 @@
         "warn",
         "info",
         "target"
+      ],
+      "type": "string"
+    },
+    "SoundName": {
+      "enum": [
+        "ding",
+        "boing",
+        "zap",
+        "whoosh",
+        "boom",
+        "fanfare"
       ],
       "type": "string"
     },
@@ -427,6 +467,17 @@
       ],
       "title": "World",
       "type": "object"
+    },
+    "ZoneEffect": {
+      "enum": [
+        "wind",
+        "water",
+        "ice",
+        "low_gravity",
+        "conveyor",
+        "slow"
+      ],
+      "type": "string"
     }
   }
 }

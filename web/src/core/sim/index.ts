@@ -1,8 +1,8 @@
 /**
  * The deterministic fixed-step Sim and the camera (lane A, §5.2, §6.2).
  *
- * createSim(level) returns a Sim that the engine steps at 60 Hz with a 5-bit input (L=1 R=2 J=4 RUN=8 D=16) and
- * renders through view() / camera(); the bot and verifyRun drive the same class.
+ * createSim(level) returns a Sim that the engine steps at 60 Hz with an 8-bit input (L=1 R=2 J=4 RUN=8 D=16,
+ * RESTART=32, v4 SPACE=64 ACTION=128) and renders through view() / camera(); the bot and verifyRun drive the same class.
  */
 import type { CellXY, LevelV2 } from '../types.gen.ts';
 import { SimCore } from './core.ts';

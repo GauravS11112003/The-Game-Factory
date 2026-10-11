@@ -9,11 +9,15 @@ POST /api/v2/builds
 
 GET /api/v2/builds/{build_id}/events   text/event-stream, `Last-Event-ID` (or `?last=`) resume, `: ping` every 10 s
 GET /api/v2/drafts/{draft_id}?since=   {state: running | done | failed, events} (all events when `since` is omitted)
+
+v4: every new draft is also recorded in the `drafts` table {draft_id, player_id (X-DP-Player), game_id, kind, title}
+so GET /dashboard can list the profile's unpublished drafts.
 """
 from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import time
 from typing import Any, AsyncIterator
 
@@ -30,6 +34,7 @@ from app.mind import client, moderate, sanitize
 from app.spec.api import BuildAccepted
 from app.spec.ink import InkDoc
 
+log = logging.getLogger("dal.v2.builds")
 router = APIRouter()
 
 HEARTBEAT_S = 10.0
@@ -44,6 +49,22 @@ IMAGE_MAGIC = (b"\xff\xd8\xff", b"\x89PNG", b"RIFF", b"GIF8")
 
 def err(status: int, key: str, args: dict[str, Any] | None = None) -> JSONResponse:
     return JSONResponse({"message_key": key, "args": args or {}}, status_code=status)
+
+
+def record_draft(request: Request, draft_id: str, *, game_id: str | None, kind: str, title: str | None) -> None:
+    """v4 (CONTRACTS_V4 §6): remember who started the draft (X-DP-Player when present) for the dashboard's drafts
+    list. Never fails a build."""
+    player_id = None
+    try:
+        from app.collab.identity import player_from_request
+
+        player_id = (player_from_request(request) or {}).get("id")
+    except Exception:  # noqa: BLE001 - anonymous drafts are recorded too
+        player_id = None
+    try:
+        db_v2.record_draft(draft_id, player_id=player_id, game_id=game_id, kind=kind, title=title)
+    except Exception as e:  # noqa: BLE001
+        log.info("draft %s not recorded: %s", draft_id, e)
 
 
 def _json_field(v: Any, what: str) -> Any:
@@ -115,6 +136,9 @@ async def create_build(request: Request) -> Any:
     band = fields.get("band") or None
     if band not in (None, "normal", "hard"):
         return err(400, "error.bad_request", {"field": "band"})
+    mode = fields.get("mode") or None  # v4: the editor's game mode for this level (CONTRACTS_V4 §2.4)
+    if mode not in (None, "platformer", "topdown", "runner", "flappy"):
+        return err(400, "error.bad_request", {"field": "mode"})
     parent_id = fields.get("parent_id") or None
     game_id = fields.get("game_id") or None
     if parent_id and db_v2.get_level_row(str(parent_id)) is None:
@@ -131,9 +155,12 @@ async def create_build(request: Request) -> Any:
     title = sanitize.text(fields.get("title"), 40) or None  # the kid's own title (F-3); blocklisted titles are dropped
     if title and moderate.blocklist_hit([title]):
         title = None
-    drafts.save_state(draft_id, drafts.new_state(draft_id, kind, model=client.mode(), dial=dial, band=band,
-                                                 game_id=game_id, parent_id=parent_id, pack_id=fields.get("pack_id") or None,
-                                                 title=title))
+    state = drafts.new_state(draft_id, kind, model=client.mode(), dial=dial, band=band, game_id=game_id,
+                             parent_id=parent_id, pack_id=fields.get("pack_id") or None, title=title)
+    if mode:
+        state["mode"] = mode  # logic_input() sends it as BuildInput.mode unless the model's rules name one
+    drafts.save_state(draft_id, state)
+    record_draft(request, draft_id, game_id=game_id, kind=kind, title=title)
     runner.start(BuildRequest(
         build_id=build_id, draft_id=draft_id, kind=kind, ink=ink, photos=photos, typed_rules=typed,
         parent_id=parent_id, game_id=game_id, pack_id=fields.get("pack_id") or None, dial=dial, band=band,

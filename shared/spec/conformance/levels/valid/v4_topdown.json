@@ -1,0 +1,169 @@
+{
+  "format": "dal-level",
+  "schema_version": 2,
+  "core_min": "2.0.0",
+  "id": "lvl_v4top01",
+  "version": 1,
+  "game_id": null,
+  "parent_id": null,
+  "order_index": 0,
+  "title": "Walk around the wall",
+  "author": "conformance",
+  "created_at": "2026-10-10T00:00:00Z",
+  "license": "CC0-1.0",
+  "world": {
+    "cell": 16,
+    "screens": 1,
+    "w": 48,
+    "h": 27
+  },
+  "rules": {
+    "version": 1,
+    "physics_profile": "v2-standard",
+    "abilities": {
+      "run": true,
+      "stomp": true,
+      "double_jump": false,
+      "fast_fall": true
+    },
+    "lives": "off",
+    "hearts": 1,
+    "theme": "sketchbook",
+    "music": true,
+    "timer_pressure": false,
+    "camera": "follow",
+    "default_dial": "polished",
+    "default_band": "normal",
+    "player_type": null,
+    "mode": "topdown"
+  },
+  "source": {
+    "kind": "canvas",
+    "prompt": null,
+    "pack_id": null,
+    "sheets": [
+      {
+        "index": 0,
+        "photo_url": null,
+        "qr": null
+      }
+    ]
+  },
+  "objects": [],
+  "setpieces": [],
+  "edits": [],
+  "compiled": {
+    "tiles": {
+      "legend": ".#=/\\abcd~X",
+      "rows": [
+        "48#",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "20.1#27.",
+        "20.1#27.",
+        "20.1#27.",
+        "20.1#27.",
+        "20.1#27.",
+        "20.1#27.",
+        "20.1#27.",
+        "20.1#27.",
+        "20.1#27.",
+        "20.1#27.",
+        "20.1#27.",
+        "20.1#27.",
+        "20.1#27.",
+        "20.1#27.",
+        "20.1#27.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48.",
+        "48#"
+      ]
+    },
+    "entities": [
+      {
+        "id": "start",
+        "type": "player_start",
+        "x": 3,
+        "y": 14
+      },
+      {
+        "id": "mud",
+        "type": "zone",
+        "x": 8,
+        "y": 10,
+        "w": 4,
+        "h": 8,
+        "effect": "slow"
+      },
+      {
+        "id": "owl",
+        "type": "npc",
+        "x": 10,
+        "y": 4,
+        "w": 1,
+        "h": 2,
+        "lines": [
+          "The way round is up top.",
+          "Good luck!"
+        ],
+        "name": "Owl"
+      },
+      {
+        "id": "gem",
+        "type": "pickup",
+        "x": 30,
+        "y": 14,
+        "item": "gem"
+      },
+      {
+        "id": "goal",
+        "type": "goal",
+        "x": 40,
+        "y": 14,
+        "trigger": [
+          39,
+          12,
+          41,
+          14
+        ]
+      }
+    ],
+    "triggers": [],
+    "sprites": {
+      "player": null,
+      "objects": {}
+    },
+    "logic": [
+      {
+        "id": "r1",
+        "when": {
+          "kind": "collect",
+          "item": "gem"
+        },
+        "then": [
+          {
+            "kind": "add_score",
+            "n": 10
+          }
+        ]
+      }
+    ]
+  },
+  "design": null,
+  "embedded_library": [],
+  "meta": {
+    "transcript": "",
+    "intent": null,
+    "safety": "unchecked",
+    "level_hash": "sha256:8a59e2f5d107f7c648f31d458d6f351c939a8b82667a3d06724c5aee6fedf663",
+    "core_version": "2.0.0",
+    "warnings": [],
+    "build": null
+  }
+}

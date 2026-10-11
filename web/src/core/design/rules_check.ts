@@ -12,6 +12,7 @@ import { analyze } from '../bot/index.ts';
 import { build } from '../build/build.ts';
 import { levelHash } from '../build/hash.ts';
 import { resolveRules } from '../build/level.ts';
+import { levelLogic } from '../logic/index.ts';
 import { perceiveHeuristic } from '../scene/perceive.ts';
 
 function inkOfLevel(lv: LevelV2): InkDoc | null {
@@ -49,7 +50,8 @@ export function repairUnder(lv: LevelV2, rules: GameRules): { solvable: boolean;
   // model's understanding live in the edit records, which the rebuild honours by id)
   const graph0: SceneGraph = lv.source.kind === 'migrated' && lv.objects?.length ? { objects: lv.objects, setpieces: lv.setpieces ?? [] } : perceiveHeuristic(ink, { library: lv.embedded_library ?? [], parent: null });
   const edits = (lv.edits ?? []).filter((e) => e.status === 'applied' || e.status === 'undone');
-  const r = build({ ink, graph0, edits, rules, library: lv.embedded_library ?? [], parent: null, tier: 'faithful', repairUnsolvable: true, seed: 1 });
+  // v4: the level keeps its own rules (CONTRACTS_V4 §2.4)
+  const r = build({ ink, graph0, edits, rules, library: lv.embedded_library ?? [], parent: null, tier: 'faithful', repairUnsolvable: true, seed: 1, logic: levelLogic(lv) });
   const repairs = r.edits.filter((e) => e.class === 'R' && e.status === 'applied' && (e.by === 'auto' || e.by === 'greedy'));
   return { solvable: r.report.solvable, repairs, level: r.level };
 }
@@ -103,7 +105,7 @@ export function libraryUpdateCheck(levels: readonly LevelV2[], type: LibraryType
     const rules = resolveRules(lv.rules);
     const graph0: SceneGraph = perceiveHeuristic(ink, { library: lib, parent: null });
     const tier = lv.design?.tier ?? 'faithful';
-    const r = build({ ink, graph0, edits, rules, library: lib, parent: null, tier, repairUnsolvable: tier === 'faithful', seed: 1 });
+    const r = build({ ink, graph0, edits, rules, library: lib, parent: null, tier, repairUnsolvable: tier === 'faithful', seed: 1, logic: levelLogic(lv) });
     if (!r.report.solvable) broken.push({ level_id: lv.id, reason_key: 'library.update_breaks', repairable: false, repairs: [], level_hash: null });
     else {
       const next: LevelV2 = { ...r.level, id: lv.id, version: lv.version + 1, game_id: lv.game_id ?? null, parent_id: lv.parent_id ?? null, order_index: lv.order_index ?? 0, title: lv.title, author: lv.author, created_at: lv.created_at, license: lv.license };

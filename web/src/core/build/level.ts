@@ -6,7 +6,7 @@
 import { WORLD } from '../params.ts';
 import { profileHash } from '../sim/profiles.ts';
 import type {
-  Band, DesignBlock, EditRecord, GameRules, InkDoc, LevelV2, LibraryType, MessageRef, PlaytestReport, SceneObject, Tier,
+  Band, DesignBlock, EditRecord, GameMode, GameRules, InkDoc, LevelV2, LibraryType, MessageRef, PlaytestReport, SceneObject, Tier,
 } from '../types.gen.ts';
 import type { Work } from '../edits/work.ts';
 import { hash8 } from '../util/ids.ts';
@@ -16,8 +16,11 @@ import { levelHash } from './hash.ts';
 
 export const PLACEHOLDER_TIME = '2026-01-01T00:00:00Z';
 
-/** GameRules with every default filled in (the resolved snapshot a level carries, §2.3). */
-export function resolveRules(r: GameRules | null | undefined): GameRules {
+/**
+ * GameRules with every default filled in (the resolved snapshot a level carries, §2.3). v4 (CONTRACTS_V4 §2.4, §3):
+ * `mode` (`modeOverride` first) and the game-wide `logic` are written only when set, so a v2 snapshot is unchanged.
+ */
+export function resolveRules(r: GameRules | null | undefined, modeOverride?: GameMode | null): GameRules {
   const x: GameRules = r ?? { version: 1 };
   const profile = x.physics_profile ?? 'v2-standard';
   return {
@@ -34,7 +37,16 @@ export function resolveRules(r: GameRules | null | undefined): GameRules {
     default_dial: x.default_dial ?? 'polished',
     default_band: x.default_band ?? 'normal',
     player_type: x.player_type ?? null,
+    ...v4Rules(x, modeOverride),
   };
+}
+
+function v4Rules(x: GameRules, modeOverride?: GameMode | null): Pick<GameRules, 'mode' | 'logic'> {
+  const out: Pick<GameRules, 'mode' | 'logic'> = {};
+  const mode = modeOverride ?? x.mode ?? null;
+  if (mode && mode !== 'platformer') out.mode = mode;
+  if (Array.isArray(x.logic) && x.logic.length) out.logic = x.logic;
+  return out;
 }
 
 export function worldOf(ink: InkDoc): { cell: 16; screens: number; w: number; h: 27 } {
@@ -112,7 +124,7 @@ export function assembleLevel(a: AssembleInput, w: Work, comp: Compiled, edits: 
     objects: cleanObjects(w.objs),
     setpieces: w.setpieces,
     edits,
-    compiled: { tiles: comp.tiles, entities: comp.entities, triggers: comp.triggers, sprites: { player: null, objects: {} } },
+    compiled: { tiles: comp.tiles, entities: comp.entities, triggers: comp.triggers, sprites: { player: null, objects: {} }, ...(comp.logic.length ? { logic: comp.logic } : {}) },
     design: designBlock(report, tier, w, note, source),
     embedded_library: a.library.filter((l) => libIds.has(`${l.id}@${l.version}`)),
     meta: { transcript: '', intent: w.intent ?? null, safety: w.safety ?? 'unchecked', level_hash: '', core_version: CORE_VERSION, warnings, build: null },
@@ -128,7 +140,7 @@ export function lightLevel(a: AssembleInput, comp: Compiled, w: Work | null = nu
     format: 'dal-level', schema_version: 2, core_min: CORE_VERSION, id: 'sandbox', version: 1, title: 'sandbox', author: '',
     created_at: PLACEHOLDER_TIME, world, rules: a.rules, source: { kind: a.ink.source, sheets: [] },
     objects: w ? cleanObjects(w.objs) : [], setpieces: w ? w.setpieces : [],
-    compiled: { tiles: comp.tiles, entities: comp.entities, triggers: comp.triggers, sprites: { player: null, objects: {} } },
+    compiled: { tiles: comp.tiles, entities: comp.entities, triggers: comp.triggers, sprites: { player: null, objects: {} }, ...(comp.logic.length ? { logic: comp.logic } : {}) },
     meta: { level_hash: '', core_version: CORE_VERSION },
   };
   level.meta.level_hash = levelHash(level);

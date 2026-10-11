@@ -34,7 +34,7 @@ from app.models import Component, CVResult, Interpretation
 
 log = logging.getLogger(__name__)
 
-MODEL = "claude-opus-5"
+MODEL = "claude-opus-5-5"
 MAX_TOKENS = 4000
 TIMEOUT_SECONDS = 20.0
 INTERPRETATIONS_DIR = FIXTURES_DIR / "interpretations"

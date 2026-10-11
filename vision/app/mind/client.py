@@ -1,7 +1,7 @@
 """The only module that talks to Anthropic (PLAN_V2 §3.10, D17).
 
-Probe-validated call shape: `beta.messages.parse` on `claude-opus-5`, thinking omitted (adaptive is the Opus 5
-default), `output_config={"effort": ...}`, server-side refusal fallbacks (`fallbacks="default"` with beta
+Probe-validated call shape: `beta.messages.parse` on `claude-opus-5-5` (v4; was `claude-opus-5`), thinking omitted
+(adaptive; Opus 5.5 rejects `disabled`), `output_config={"effort": ...}`, server-side refusal fallbacks (`fallbacks="default"` with beta
 `server-side-fallback-2026-07-01`), `max_retries=0` plus one retry on 529, and `stop_reason` checked before
 `parsed_output`. `call()` never raises: every outcome is a MindResult. The key comes from the environment only and
 is never logged or returned.
@@ -28,9 +28,9 @@ from app.mind import budget, fake, ledger
 
 log = logging.getLogger("dal.v2.mind")
 
-MODEL = "claude-opus-5"
-PRICE_IN, PRICE_OUT = 5.0, 25.0  # $/MTok; thinking bills as output
-PRICE_CACHE_WRITE, PRICE_CACHE_READ = 6.25, 0.5
+MODEL = "claude-opus-5-5"
+PRICE_IN, PRICE_OUT = 4.0, 20.0  # $/MTok; thinking bills as output
+PRICE_CACHE_WRITE, PRICE_CACHE_READ = 5.0, 0.2
 FAST_MULTIPLIER = 2.0
 MIN_CALL_S = 3.0  # params.ts MODEL.min_call_s: a call with less time left than this is skipped
 RETRY_529_MIN_LEFT_S = 8.0  # params.ts MODEL.retry_529_min_left_s
@@ -39,7 +39,7 @@ FAST_BETA = "fast-mode-2026-02-01"
 PROMPTS = Path(__file__).resolve().parent / "prompts"
 
 CallKind = Literal["perceive", "design", "refine", "critic", "plan", "creature", "moderate", "look", "handwriting"]
-Thinking = Literal["adaptive", "disabled"] | None
+Thinking = Literal["adaptive"] | None  # Opus 5.5: thinking cannot be disabled (400); lower effort instead
 Status = Literal["ok", "failed", "refused", "truncated", "skipped"]
 T = TypeVar("T", bound=BaseModel)
 

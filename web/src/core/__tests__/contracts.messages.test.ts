@@ -6,7 +6,10 @@ import type { LevelV2 } from '../types.gen.ts';
 import { LEVELS_DIR, SPEC_DIR, readJson } from './helpers.ts';
 import { stubResult } from '../worker/stub.ts';
 
-const messages = readJson<{ messages: Record<string, string> }>(join(SPEC_DIR, 'messages.json')).messages;
+// messages.json plus the v4 lane files merged over it (docs/v4/CONTRACTS_V4.md §8)
+const messages: Record<string, string> = Object.assign({},
+  ...['messages.json', ...['shell', 'core', 'engine', 'api', 'ui'].map((l) => join('messages-v4', `${l}.json`))]
+    .map((f) => readJson<{ messages: Record<string, string> }>(join(SPEC_DIR, f)).messages));
 
 function enumOf(schemaFile: string, def: string): string[] {
   const s = readJson<{ $defs: Record<string, { enum?: string[] }> }>(join(SPEC_DIR, schemaFile));

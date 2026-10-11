@@ -7,12 +7,15 @@
  *             ground spanning > 60% of a screen is never a move target; several matches → an Ask ("Which platform
  *             moves? Tap it."), never "the largest".
  *   "@<component id> …" binds to that component exactly (a rule typed while a stroke was selected).
+ * v4 (docs/v4/CONTRACTS_V4.md §2.4): a sentence the logic parser turns into rules or a mode ("space flips gravity")
+ * is logic, never also a v2 edit; it is skipped here.
  */
 import { ENEMIES, GRIDS, PERCEPTION, WORLD } from '../params.ts';
 import type { AskCard, Behavior, Dir4, EditOp, EditRecord, Role, SceneGraph, SceneObject } from '../types.gen.ts';
 import { OP_CLASS, explain } from '../edits/vocabulary.ts';
 import { clamp } from '../util/geom.ts';
 import { editId } from '../util/ids.ts';
+import { isLogicSentence, typedRuleTargets } from '../logic/index.ts';
 import { askCard } from './asks.ts';
 
 const NOUNS: [RegExp, Role[]][] = [
@@ -117,7 +120,9 @@ export function parseRules(text: string, g: SceneGraph, target?: number | null):
   };
   let last: SceneObject | null = null;
   const sentences = String(text ?? '').slice(0, 600).split(/[.!?\n;]+/).map((s) => s.trim()).filter(Boolean);
+  const lt = typedRuleTargets(objs, target);
   for (const raw of sentences) {
+    if (isLogicSentence(raw.replace(/^@\d+\s+/, ''), lt.ids, { aliases: lt.aliases })) continue;
     let s = raw.toLowerCase();
     // an exact binding: "@<component id> …"
     let exact: SceneObject | null = null;

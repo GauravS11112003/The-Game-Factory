@@ -303,6 +303,121 @@
       "title": "BMove",
       "type": "object"
     },
+    "BNpc": {
+      "additionalProperties": false,
+      "description": "A character that talks: touching it shows its lines one by one in a speech bubble.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "npc",
+          "type": "string"
+        },
+        "lines": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 6,
+          "minItems": 1,
+          "type": "array"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "maxLength": 16,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind",
+        "lines"
+      ],
+      "title": "BNpc",
+      "type": "object"
+    },
+    "BPickup": {
+      "additionalProperties": false,
+      "description": "Something to collect. `item` names it for rules (\"star\"); `effect` is a ready-made rule fired on collect.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "pickup",
+          "type": "string"
+        },
+        "item": {
+          "default": "star",
+          "pattern": "^[a-z][a-z0-9 ]{0,15}$",
+          "type": "string"
+        },
+        "effect": {
+          "$ref": "#/$defs/PickupEffect",
+          "default": "none"
+        },
+        "seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 60,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 5.0
+        },
+        "respawn_s": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 60,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BPickup",
+      "type": "object"
+    },
+    "BPortal": {
+      "additionalProperties": false,
+      "description": "Touching a portal moves the player to its partner: the other portal with the same `pair` label in the level\n(a lone portal does nothing).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "portal",
+          "type": "string"
+        },
+        "pair": {
+          "default": "a",
+          "pattern": "^[a-z0-9]{1,8}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BPortal",
+      "type": "object"
+    },
     "BSaw": {
       "additionalProperties": false,
       "patternProperties": {
@@ -385,6 +500,38 @@
       "title": "BStatic",
       "type": "object"
     },
+    "BZone": {
+      "additionalProperties": false,
+      "description": "An area with an effect while the player is inside: wind and conveyor push toward `dir`, water slows and lets\nyou swim up, ice is slippery, low_gravity floats, slow halves speed. `strength` scales the effect.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "zone",
+          "type": "string"
+        },
+        "effect": {
+          "$ref": "#/$defs/ZoneEffect"
+        },
+        "dir": {
+          "$ref": "#/$defs/Dir4",
+          "default": "right"
+        },
+        "strength": {
+          "default": 1.0,
+          "maximum": 2.0,
+          "minimum": 0.5,
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "effect"
+      ],
+      "title": "BZone",
+      "type": "object"
+    },
     "Behavior": {
       "discriminator": {
         "mapping": {
@@ -393,9 +540,13 @@
           "falling": "#/$defs/BFalling",
           "firebar": "#/$defs/BFirebar",
           "move": "#/$defs/BMove",
+          "npc": "#/$defs/BNpc",
+          "pickup": "#/$defs/BPickup",
+          "portal": "#/$defs/BPortal",
           "saw": "#/$defs/BSaw",
           "spring": "#/$defs/BSpring",
-          "static": "#/$defs/BStatic"
+          "static": "#/$defs/BStatic",
+          "zone": "#/$defs/BZone"
         },
         "propertyName": "kind"
       },
@@ -423,6 +574,18 @@
         },
         {
           "$ref": "#/$defs/BFirebar"
+        },
+        {
+          "$ref": "#/$defs/BPortal"
+        },
+        {
+          "$ref": "#/$defs/BZone"
+        },
+        {
+          "$ref": "#/$defs/BPickup"
+        },
+        {
+          "$ref": "#/$defs/BNpc"
         }
       ]
     },
@@ -1153,6 +1316,17 @@
         },
         "behavior": {
           "$ref": "#/$defs/Behavior"
+        },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -2019,6 +2193,17 @@
         "version": {
           "minimum": 1,
           "type": "integer"
+        },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -2065,6 +2250,19 @@
         "library",
         "draft",
         "migrated"
+      ],
+      "type": "string"
+    },
+    "PickupEffect": {
+      "enum": [
+        "none",
+        "speed",
+        "jump",
+        "flip",
+        "heart",
+        "score",
+        "freeze",
+        "low_gravity"
       ],
       "type": "string"
     },
@@ -2661,6 +2859,17 @@
       ],
       "title": "SurfaceSeg",
       "type": "object"
+    },
+    "ZoneEffect": {
+      "enum": [
+        "wind",
+        "water",
+        "ice",
+        "low_gravity",
+        "conveyor",
+        "slow"
+      ],
+      "type": "string"
     }
   }
 }

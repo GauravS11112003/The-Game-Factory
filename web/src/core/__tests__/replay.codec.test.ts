@@ -14,6 +14,14 @@ describe('replay codec', () => {
     expect(decodeReplay(encodeReplay(frames))).toEqual(frames);
   });
 
+  it('keeps the v4 key bits (SPACE 64, ACTION 128) and old 6-bit replays decode unchanged', () => {
+    const frames = Uint8Array.from([2, 2, 2 | 64, 2 | 64, 128, 128, 4 | 128, 64 | 128 | 32, 0]);
+    expect(Array.from(decodeReplay(encodeReplay(frames)))).toEqual(Array.from(frames));
+    // a v2 replay: RLE of 3 × R, 2 × R+J (records are u16 LE run, u8 bits)
+    const v2 = toBase64(Uint8Array.from([3, 0, 2, 2, 0, 6]));
+    expect(Array.from(decodeReplay(v2))).toEqual([2, 2, 2, 6, 6]);
+  });
+
   it('a 60 s run with typical inputs stays under 1 KB', () => {
     const frames = new Uint8Array(3600);
     for (let i = 0; i < frames.length; i++) frames[i] = (i >> 5) % 3 === 0 ? 2 | 8 : (i >> 5) % 3 === 1 ? 2 | 4 | 8 : 0;

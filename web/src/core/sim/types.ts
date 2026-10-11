@@ -1,5 +1,5 @@
 /** Runtime types of the simulation (lane A). Format types come from types.gen.ts. */
-import type { ProfileId, Replay } from '../types.gen.ts';
+import type { GameMode, ProfileId, Replay, RuleKey } from '../types.gen.ts';
 
 /** A physics profile (§5.3). px, px/s, px/s² and frames; immutable by name (a retune ships as a new name). */
 export interface PhysicsProfile {
@@ -43,7 +43,12 @@ export const IN_RUN = 8;
 export const IN_D = 16;
 /** Restart from the checkpoint (R / Select / HUD): counts as a death with cause 'restart' (docs/v2/requests/E-1.md). */
 export const IN_RESTART = 32;
-export const INPUT_MASK = 63;
+/** v4 rule keys (docs/v4/CONTRACTS_V4.md §4.1): Space when the level has a `key: space` rule, E / Enter. */
+export const IN_SPACE = 64;
+export const IN_ACTION = 128;
+export const INPUT_MASK = 255;
+/** The v2 bits (L R J RUN D RESTART); the sim drops the rule keys on levels with no key rule. */
+export const INPUT_MASK_V2 = 63;
 
 /** One sim event; the engine turns these into juice and sound, the bot into metrics. */
 export interface SimEvent {
@@ -51,7 +56,9 @@ export interface SimEvent {
     | 'jump' | 'double_jump' | 'land' | 'skid' | 'coin' | 'big_coin' | 'big_coin_banked' | 'stomp' | 'hit' | 'death'
     | 'respawn' | 'checkpoint' | 'spring' | 'crumble' | 'door_open' | 'key' | 'win' | 'lose' | 'timer_warn'
     | 'entity_error' | 'bonk' | 'drop_through' | 'shoot' | 'crusher_land' | 'hop' | 'alert' | 'life' | 'game_over'
-    | 'falling' | 'start_clock';
+    | 'falling' | 'start_clock'
+    // v4 (docs/v4/CONTRACTS_V4.md §4.2)
+    | 'flip' | 'teleport' | 'portal' | 'pickup' | 'say' | 'sound' | 'shake' | 'score' | 'toggle' | 'freeze' | 'rule';
   frame: number;
   id?: string; // entity id
   x?: number; // cells
@@ -59,7 +66,11 @@ export interface SimEvent {
   cause?: string; // death/hit cause: spikes | lava | pit | enemy | saw | firebar | blob | crusher | crush | hazard | timer
   chain?: number; // stomp chain length (≥ 1)
   vy?: number; // landing / launch speed, px/s
-  n?: number; // coins after a coin event; lives after a life event; seconds left for timer_warn
+  n?: number; // coins after a coin event; lives after a life event; seconds left for timer_warn; score / counter value
+  /** v4: sound name, counter name (score events), pickup item. */
+  name?: string;
+  /** v4: the speech bubble text (say). */
+  text?: string;
 }
 
 export interface PlayerView {
@@ -81,6 +92,11 @@ export interface PlayerView {
   running?: boolean;
   /** Ground under the feet: 'tile', or a kinematic entity id. */
   ground?: string | null;
+  /**
+   * v4 §2.3: −1 while gravity is flipped (the sprite draws upside down). Always set by SimCore. `y` stays the bottom
+   * of the 28 px body box in both gravities, so a flipped player's feet touch the ceiling at y − 28 px.
+   */
+  gravity?: 1 | -1;
 }
 
 /**
@@ -88,6 +104,8 @@ export interface PlayerView {
  * points (coin, big_coin, key, saw, firebar anchor, hint_arrow, blob) are centres; grounded things (enemy, spring,
  * checkpoint, goal, player_start) are x centre + y feet line; boxes (door, moving_platform, crumble,
  * falling_platform) are top-left; spikes are x0 / y with w = length along the face.
+ * v4 (§4.2): portal and pickup are centres, zone is top-left with w × h, npc is x centre + y feet line with w × h;
+ * `kind` is the zone effect or the pickup item, `state` 'idle' | 'used'. `active` is false for hidden entities.
  */
 export interface EntityView {
   id: string;
@@ -100,7 +118,7 @@ export interface EntityView {
   phase?: number; // 0..1 of the entity's cycle when it has one; firebar: the current angle in degrees
   /** Archetype for enemies, facing for spikes. */
   kind?: string;
-  /** Animation state: walk | crouch | air | inflate | alert | chase | patrol | warn | drop | rest | rise | squash | shake | fall | gone | idle | open | closed | armed | fired. */
+  /** Animation state: walk | crouch | air | inflate | alert | chase | patrol | warn | drop | rest | rise | squash | shake | fall | gone | idle | open | closed | armed | fired | used. */
   state?: string;
   facing?: 1 | -1;
   vx?: number; // px/s
@@ -130,6 +148,25 @@ export interface SimView {
   time_ms?: number;
   big_coins_total?: number;
   keys?: string[];
+  // ---- v4 (docs/v4/CONTRACTS_V4.md §4.2): always set by SimCore (optional only for hand-built views) ----
+  mode?: GameMode; // 'platformer' when rules.mode is null
+  gravity?: 1 | -1;
+  score?: number;
+  /** Only names some rule mentions, starting at 0. */
+  counters?: Record<string, number>;
+  /** Frames left; −1 = until respawn; 0 = off. */
+  effects?: SimEffects;
+  say?: { text: string; target: string | null; frames_left: number } | null;
+  /** Keys some rule listens to (for the controls). */
+  uses_keys?: RuleKey[];
+}
+
+export interface SimEffects {
+  speed_f: number;
+  jump_f: number;
+  gravity_f: number;
+  reverse_f: number;
+  freeze_f: number;
 }
 
 export interface CameraState {
@@ -151,7 +188,7 @@ export interface SimSnapshot {
 
 export interface Sim {
   readonly frame: number;
-  step(input: number /* bits: L R J RUN D (+ RESTART 32) */): SimEvent[];
+  step(input: number /* bits: L R J RUN D (+ RESTART 32, v4 SPACE 64, ACTION 128) */): SimEvent[];
   view(): SimView;
   camera(): CameraState;
   snapshot(): SimSnapshot;
