@@ -1,5 +1,6 @@
 import { startGeneratedRoom } from '../rooms/api.ts';
 import { api, ApiError, type ImaginedGameStatus } from '../api.ts';
+import { captureUrl, watchFirstFrame } from '../thumbs.ts';
 import { h, icon } from '../dom.ts';
 import { kidText, t } from '../messages.ts';
 import { store } from '../store.ts';
@@ -234,8 +235,10 @@ export function imagineScreen(root: HTMLElement, initialDraftId: string, options
     if (!game.play_url || game.status !== 'ready' || previewDraft === game.draft_id) return;
     previewDraft = game.draft_id;
     inputs?.dispose();
-    const frame = h('iframe', { class: 'imagined-game', title: game.title, src: game.play_url,
+    // A new game keeps its first frame as its thumbnail.
+    const frame = h('iframe', { class: 'imagined-game', title: game.title, src: game.thumbnail_url ? game.play_url : captureUrl(game.play_url),
       sandbox: 'allow-scripts', referrerPolicy: 'no-referrer', allowFullscreen: true });
+    if (!game.thumbnail_url) void watchFirstFrame(frame, game.draft_id);
     preview.replaceChildren(frame);
     restart.disabled = fullscreen.disabled = false;
     restart.onclick = () => { frame.src = game.play_url!; };

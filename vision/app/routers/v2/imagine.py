@@ -229,20 +229,52 @@ async def status(draft_id: str, request: Request) -> Response:
         elif state["status"] == "building":
             # Report an orphan without writing over a worker that may just have claimed it.
             state.update(status="failed", message_key="imagine.interrupted")
-    return JSONResponse({**state, "can_publish": allowed}, headers={"Cache-Control": "no-store"})
+    return JSONResponse({**imagine.with_thumbnail(state), "can_publish": allowed}, headers={"Cache-Control": "no-store"})
 
 
 @router.get("/imagined-games/{draft_id}/play")
-def play(draft_id: str) -> Response:
+def play(draft_id: str, capture: bool = False) -> Response:
     state = imagine.read(draft_id)
     if not state or state["status"] != "ready":
         return JSONResponse({"message_key": "error.not_found"}, status_code=404)
     path = imagine.artifact_path(draft_id)
     if not path.is_file():
         return JSONResponse({"message_key": "error.not_found"}, status_code=404)
-    return HTMLResponse(path.read_text(), headers={"Content-Security-Policy": imagine.CSP,
-                                                  "X-Content-Type-Options": "nosniff",
-                                                  "Cache-Control": "no-cache"})
+    html = path.read_text()
+    return HTMLResponse(imagine.with_capture(html) if capture else html,
+                        headers={"Content-Security-Policy": imagine.CSP, "X-Content-Type-Options": "nosniff",
+                                 "Cache-Control": "no-cache"})
+
+
+MAX_THUMB_BYTES = 3 * 1024 * 1024
+PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
+
+
+@router.get("/imagined-games/{draft_id}/thumbnail")
+def get_thumbnail(draft_id: str) -> Response:
+    path = imagine.thumbnail_path(draft_id) if imagine.read(draft_id) else None
+    if not path or not path.is_file():
+        return JSONResponse({"message_key": "error.not_found"}, status_code=404)
+    return Response(path.read_bytes(), media_type="image/png",
+                    headers={"Cache-Control": "public, max-age=31536000, immutable", "X-Content-Type-Options": "nosniff"})
+
+
+@router.put("/imagined-games/{draft_id}/thumbnail", response_class=Response)
+async def put_thumbnail(draft_id: str, request: Request) -> Response:
+    """The game's first frame, captured by whichever browser plays it first. The first picture is kept."""
+    state = imagine.read(draft_id)
+    if not state or state["status"] != "ready" or not imagine.artifact_path(draft_id).is_file():
+        return JSONResponse({"message_key": "error.not_found"}, status_code=404)
+    path = imagine.thumbnail_path(draft_id)
+    if path.is_file():
+        return Response(status_code=204)
+    data = await request.body()
+    if len(data) > MAX_THUMB_BYTES or not data.startswith(PNG_MAGIC):
+        return JSONResponse({"message_key": "error.bad_request", "args": {"field": "thumbnail"}}, status_code=400)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_bytes(data)
+    tmp.replace(path)
+    return Response(status_code=204)
 
 
 class PublishGameBody(BaseModel):

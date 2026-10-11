@@ -132,6 +132,47 @@ def artifact_path(draft_id: str) -> Path:
     return get_settings().data_dir / "generated-games" / draft_id / "game.html"
 
 
+def thumbnail_path(draft_id: str) -> Path:
+    return artifact_path(draft_id).with_name("thumbnail.png")
+
+
+def with_thumbnail(state: dict[str, Any] | None) -> dict[str, Any] | None:
+    """A generated game's status plus its first-frame picture once a player's browser has captured it."""
+    if not state or not state.get("draft_id"):
+        return state
+    try:
+        path = thumbnail_path(state["draft_id"])
+        url = f"/api/v2/imagined-games/{state['draft_id']}/thumbnail?v={int(path.stat().st_mtime)}" if path.is_file() else None
+    except (OSError, ValueError):
+        url = None
+    return {**state, "thumbnail_url": url}
+
+
+# Served only with ?capture=1: posts the game's first drawn frame to the embedding page, which uploads it as the
+# thumbnail. It waits for a canvas with more than one color, so a blank or solid loading screen is never kept, and it
+# never relies on requestAnimationFrame (browsers pause that in frames the player cannot see).
+CAPTURE_SCRIPT = """<script id="draw-play-capture">(function(){
+var tries=0,TRIES=20;
+function pick(){var best=null;document.querySelectorAll('canvas').forEach(function(c){
+if(c.width*c.height>0&&(!best||c.width*c.height>best.width*best.height))best=c;});return best;}
+function post(png){parent.postMessage({type:'draw-play:thumbnail',png:png},'*');}
+function grab(){tries++;var c=pick();if(c){try{
+var s=Math.min(1,640/c.width,480/c.height),o=document.createElement('canvas');
+o.width=Math.max(1,Math.round(c.width*s));o.height=Math.max(1,Math.round(c.height*s));
+var x=o.getContext('2d');x.drawImage(c,0,0,o.width,o.height);
+var d=x.getImageData(0,0,o.width,o.height).data,first=d[0]+','+d[1]+','+d[2]+','+d[3];
+for(var i=0;i<d.length;i+=4*97){if(d[i]+','+d[i+1]+','+d[i+2]+','+d[i+3]!==first)return post(o.toDataURL('image/png'));}
+}catch(e){return post(null);}}if(tries<TRIES)setTimeout(grab,400);else post(null);}
+function start(){setTimeout(grab,700);}
+if(document.readyState==='complete')start();else addEventListener('load',start);
+})();</script>"""
+
+
+def with_capture(html: str) -> str:
+    at = html.lower().rfind("</body>")
+    return html + CAPTURE_SCRIPT if at < 0 else html[:at] + CAPTURE_SCRIPT + html[at:]
+
+
 async def generate(draft_id: str, ink: dict[str, Any], game: dict[str, Any] | None,
                    context: str, title: str) -> None:
     state = read(draft_id) or {}

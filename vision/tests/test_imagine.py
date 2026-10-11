@@ -320,6 +320,31 @@ def test_game_draft_publish_and_original_inputs_are_preserved(client):
     assert client.post(f"/api/v2/imagined-games/{draft_id}/publish", json={"token": token}).status_code == 409
 
 
+def test_first_frame_becomes_the_game_thumbnail(client):
+    game = client.post("/api/v2/games", json={"title": "New game", "author": "Creator"}).json()["game"]
+    draft_id = client.post("/api/v2/imagined-games", json={"game_id": game["id"], "context": "Jump over clouds"}).json()["draft_id"]
+    png = b"\x89PNG\r\n\x1a\n" + b"first frame"
+    assert client.put(f"/api/v2/imagined-games/{draft_id}/thumbnail", content=png).status_code == 404
+    state = imagine.read(draft_id)
+    state.update(status="ready", title="Cloud Hop", play_url=f"/api/v2/imagined-games/{draft_id}/play")
+    imagine.artifact_path(draft_id).write_text("<html><body><canvas></canvas></body></html>")
+    imagine.save(draft_id, state)
+    db_v2.set_generated_game(game["id"], state)
+    assert client.get(f"/api/v2/imagined-games/{draft_id}").json()["thumbnail_url"] is None
+    assert "draw-play-capture" not in client.get(f"/api/v2/imagined-games/{draft_id}/play").text
+    captured = client.get(f"/api/v2/imagined-games/{draft_id}/play?capture=1").text
+    assert captured.index("draw-play-capture") < captured.index("</body>")
+    assert client.put(f"/api/v2/imagined-games/{draft_id}/thumbnail", content=b"not a png").status_code == 400
+    assert client.put(f"/api/v2/imagined-games/{draft_id}/thumbnail", content=png).status_code == 204
+    # The first picture is kept.
+    assert client.put(f"/api/v2/imagined-games/{draft_id}/thumbnail", content=png + b"later").status_code == 204
+    url = client.get(f"/api/v2/imagined-games/{draft_id}").json()["thumbnail_url"]
+    assert url and client.get(url).content == png
+    listed = client.get("/api/v2/games").json()["games"][0]
+    assert listed["generated"]["thumbnail_url"] == url and listed["generated_levels"][0]["thumbnail_url"] == url
+    assert client.get(f"/api/v2/games/{game['id']}").json()["game"]["generated"]["thumbnail_url"] == url
+
+
 def test_prompt_only_inputs_are_honest_about_no_canvas(client):
     state = client.post("/api/v2/imagined-games", json={"context": "Moon Rally", "category": "racing"}).json()
     source = client.get(f"/api/v2/imagined-games/{state['draft_id']}/inputs").json()

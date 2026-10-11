@@ -128,6 +128,8 @@ export interface ImaginedGameStatus {
   suggestions?: import('./builder-ideas.ts').GameSuggestion[];
   controls?: string[];
   play_url?: string;
+  /** The game's first frame once a browser has captured it (null until then). */
+  thumbnail_url?: string | null;
   message_key?: string;
   model?: string;
   started_at?: number;
@@ -435,6 +437,8 @@ export const api = {
   attempts: (id: string, body: AttemptsBody): Promise<void> =>
     request('POST', `/levels/${encodeURIComponent(id)}/attempts`, body, { raw: true, keepalive: true }),
   thumbnail: (id: string, png: Blob): Promise<void> => request('PUT', `/levels/${encodeURIComponent(id)}/thumbnail`, png, { raw: true }),
+  imaginedThumbnail: (draftId: string, png: Blob): Promise<void> =>
+    request('PUT', `/imagined-games/${encodeURIComponent(draftId)}/thumbnail`, png, { raw: true }),
 
   // ---- games ----
   async games(sort: Sort, personal = false): Promise<{ games: GameCard[]; levels: LevelCard[] }> {

@@ -6,7 +6,7 @@ import { kidText, t } from '../messages.ts';
 import { lockedBy } from './home.ts';
 import { loadHub, type Hub } from '../collab/hub.ts';
 import { briefCard } from '../game-brief.ts';
-import { levelThumb } from '../thumbs.ts';
+import { captureUrl, generatedThumb, levelThumb, watchFirstFrame } from '../thumbs.ts';
 import { renderThumbnail } from '../../engine/index.ts';
 import { inkFromLevel } from '../ink.ts';
 import { gameInputTools, generatedGuidelines } from '../game-inputs.ts';
@@ -120,9 +120,10 @@ export function gameScreen(root: HTMLElement, id: string): () => void {
         publish.disabled = level.status !== 'ready' || level.publication === 'published';
         publish.textContent = t(level.publication === 'published' ? 'imagine.published_short' : (level.level_number ?? 1) > 1 ? 'imagine.publish_level' : 'imagine.publish');
         publication.textContent = `Level ${level.level_number ?? generatedLevels.indexOf(level) + 1} · ${t(level.publication === 'published' ? 'imagine.published_short' : 'imagine.draft_short')}`;
-        preview.replaceChildren(level.status === 'ready' ? h('iframe', { class: 'imagined-game',
-          title: level.title, src: level.play_url, sandbox: 'allow-scripts', referrerPolicy: 'no-referrer' }) :
-          h('a', { class: 'game-empty-art', href: play.href }, t(level.status === 'failed' ? 'imagine.failed_title' : 'imagine.working')));
+        const frame = level.status === 'ready' && level.play_url ? h('iframe', { class: 'imagined-game', title: level.title,
+          src: level.thumbnail_url ? level.play_url : captureUrl(level.play_url), sandbox: 'allow-scripts', referrerPolicy: 'no-referrer' }) : null;
+        if (frame && !level.thumbnail_url) void watchFirstFrame(frame, level.draft_id).then((png) => { if (png) level.thumbnail_url = png; });
+        preview.replaceChildren(frame ?? h('a', { class: 'game-empty-art', href: play.href }, t(level.status === 'failed' ? 'imagine.failed_title' : 'imagine.working')));
       }
       publish.addEventListener('click', async () => {
         const level = selectedGenerated;
@@ -146,7 +147,7 @@ export function gameScreen(root: HTMLElement, id: string): () => void {
         const number = level.level_number ?? i + 1;
         const pick = h('button', { type: 'button', class: 'game-level-pick', data: { level: key },
           'aria-label': `Level ${number}: ${level.title}`, 'aria-pressed': 'false', onclick: () => selectGenerated(level) },
-          h('div', { class: 'game-generated-thumb' }, icon('play'), h('span', null, kidText(level.title))),
+          generatedThumb(level, h('div', { class: 'game-generated-thumb' }, icon('play'), h('span', null, kidText(level.title)))),
           h('span', { class: 'game-level-number' }, String(number)),
           h('span', { class: 'game-level-caption' }, `Level ${number}`));
         selectors.push(pick);
