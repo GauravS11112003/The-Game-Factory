@@ -22,6 +22,8 @@ function whenRef(w: RuleWhen): MessageRef {
     case 'zone': return { key: 'logic.when.zone', args: { x: w.rect[0], y: w.rect[1], x1: w.rect[2], y1: w.rect[3] } };
     case 'score': return { key: 'logic.when.score', args: { n: w.at_least } };
     case 'counter': return { key: 'logic.when.counter', args: { name: w.name, n: w.at_least } };
+    case 'frame': return { key: 'logic.when.frame', args: { target: w.target, n: w.frame + 1 } }; // v5
+    case 'choice': return { key: 'logic.when.choice', args: { target: w.target, n: w.index + 1 } };
   }
 }
 
@@ -53,6 +55,8 @@ function doRef(a: RuleDo): MessageRef {
     case 'say': return { key: a.target ? 'logic.do.say_target' : 'logic.do.say', args: { text: a.text, target: a.target ?? '' } };
     case 'sound': return { key: 'logic.do.sound', args: { name: a.name } };
     case 'shake': return { key: 'logic.do.shake', args: {} };
+    case 'set_frame': return { key: 'logic.do.set_frame', args: { target: a.target, n: a.frame + 1 } }; // v5
+    case 'push': return { key: 'logic.do.push', args: { target: a.target } };
   }
 }
 

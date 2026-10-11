@@ -13,6 +13,7 @@ from app.spec.behavior import Behavior
 from app.spec.common import Spec
 from app.spec.library import BlockRef, LibraryArt, LibrarySymbol
 from app.spec.logic import RuleV4
+from app.spec.script import Script
 
 BlockKind = TypeAliasType(
     "BlockKind", Literal["creature", "platform", "hazard", "pickup", "prop", "player", "rules"]
@@ -30,6 +31,8 @@ class Block(Spec):
     art: LibraryArt | None = None  # required unless kind == "rules"
     symbol: LibrarySymbol | None = None  # the legend symbol others can draw for it
     logic: list[RuleV4] = Field(default_factory=list)  # a rule pack, or rules that come with the object
+    frames: list[LibraryArt] | None = Field(default=None, max_length=6)  # v5: flipbook frame art
+    script: Script | None = None  # v5: developer pack behaviour
     description: str | None = Field(default=None, max_length=300)  # the maker's own words
     tags: list[str] = Field(default_factory=list, max_length=8)
     author: str

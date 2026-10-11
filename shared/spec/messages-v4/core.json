@@ -65,6 +65,12 @@
     "prim.pickup.low_gravity": "Low gravity",
     "prim.npc": "Talker",
     "prim.npc.about": "Touch it to hear what it says.",
-    "prim.hidden": "Hidden until a rule shows it"
+    "prim.hidden": "Hidden until a rule shows it",
+    "logic.when.frame": "When {target} reaches picture {n}",
+    "logic.when.choice": "When you pick answer {n} from {target}",
+    "logic.do.set_frame": "show picture {n} of {target}",
+    "logic.do.push": "push {target}",
+    "logic.if.at_least": "only if you have at least {n} {name}",
+    "logic.if.below": "only if you have fewer than {n} {name}"
   }
 }

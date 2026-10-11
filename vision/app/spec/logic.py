@@ -74,10 +74,27 @@ class WhenCounter(Spec):
     at_least: int = Field(ge=1, le=1000)
 
 
+class WhenFrame(Spec):
+    """v5: a flipbook entity reaches frame `frame` (0-based)."""
+
+    kind: Literal["frame"]
+    target: str = Field(pattern=_ID)
+    frame: int = Field(ge=0, le=5)
+
+
+class WhenChoice(Spec):
+    """v5: the player picks choice `index` (0-based) in a talking character's choices."""
+
+    kind: Literal["choice"]
+    target: str = Field(pattern=_ID)
+    index: int = Field(ge=0, le=3)
+
+
 RuleWhen = TypeAliasType(
     "RuleWhen",
     Annotated[
-        WhenStart | WhenKey | WhenTouch | WhenCollect | WhenAllCoins | WhenTimer | WhenZone | WhenScore | WhenCounter,
+        WhenStart | WhenKey | WhenTouch | WhenCollect | WhenAllCoins | WhenTimer | WhenZone | WhenScore | WhenCounter
+        | WhenFrame | WhenChoice,
         Field(discriminator="kind"),
     ],
 )
@@ -186,14 +203,39 @@ class DoShake(Spec):
     kind: Literal["shake"]
 
 
+class DoSetFrame(Spec):
+    """v5: jump a flipbook entity to frame `frame`."""
+
+    kind: Literal["set_frame"]
+    target: str = Field(pattern=_ID)
+    frame: int = Field(ge=0, le=5)
+
+
+class DoPush(Spec):
+    """v5: give a physics body a push (cells/s added to its velocity)."""
+
+    kind: Literal["push"]
+    target: str = Field(pattern=_ID)
+    vx: float = Field(default=0, ge=-30, le=30)
+    vy: float = Field(default=0, ge=-30, le=30)
+
+
 RuleDo = TypeAliasType(
     "RuleDo",
     Annotated[
         DoFlipGravity | DoGravity | DoSpeed | DoJumpPower | DoReverse | DoTeleport | DoToggle | DoOpen | DoFreeze
-        | DoScore | DoCounter | DoHeal | DoHurt | DoWin | DoLose | DoSay | DoSound | DoShake,
+        | DoScore | DoCounter | DoHeal | DoHurt | DoWin | DoLose | DoSay | DoSound | DoShake | DoSetFrame | DoPush,
         Field(discriminator="kind"),
     ],
 )
+
+
+class RuleIf(Spec):
+    """v5: a condition on a counter (counters double as the inventory: "keys", "red gems")."""
+
+    name: str = Field(pattern=_NAME)
+    at_least: int | None = Field(default=None, ge=0, le=100000)
+    below: int | None = Field(default=None, ge=0, le=100000)
 
 
 class RuleV4(Spec):
@@ -202,10 +244,12 @@ class RuleV4(Spec):
     then: list[RuleDo] = Field(min_length=1, max_length=4)
     once: bool = False  # fire at most once per life
     off: bool | None = None  # switched off by the maker: kept, shown greyed out, never fires (null = on)
+    only_if: list[RuleIf] | None = Field(default=None, max_length=3)  # v5: every condition must hold when it fires
 
 
 EXPORTS: list[Any] = [
-    WhenStart, WhenKey, WhenTouch, WhenCollect, WhenAllCoins, WhenTimer, WhenZone, WhenScore, WhenCounter, RuleWhen,
+    WhenStart, WhenKey, WhenTouch, WhenCollect, WhenAllCoins, WhenTimer, WhenZone, WhenScore, WhenCounter, WhenFrame,
+    WhenChoice, RuleWhen, RuleIf, DoSetFrame, DoPush,
     DoFlipGravity, DoGravity, DoSpeed, DoJumpPower, DoReverse, DoTeleport, DoToggle, DoOpen, DoFreeze, DoScore,
     DoCounter, DoHeal, DoHurt, DoWin, DoLose, DoSay, DoSound, DoShake, RuleDo, RuleV4,
 ]

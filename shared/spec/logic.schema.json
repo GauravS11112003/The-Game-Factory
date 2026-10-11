@@ -233,6 +233,41 @@
       "title": "DoOpen",
       "type": "object"
     },
+    "DoPush": {
+      "additionalProperties": false,
+      "description": "v5: give a physics body a push (cells/s added to its velocity).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "push",
+          "type": "string"
+        },
+        "target": {
+          "pattern": "^[A-Za-z0-9_]{1,40}$",
+          "type": "string"
+        },
+        "vx": {
+          "default": 0,
+          "maximum": 30,
+          "minimum": -30,
+          "type": "number"
+        },
+        "vy": {
+          "default": 0,
+          "maximum": 30,
+          "minimum": -30,
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "target"
+      ],
+      "title": "DoPush",
+      "type": "object"
+    },
     "DoReverse": {
       "additionalProperties": false,
       "patternProperties": {
@@ -326,6 +361,35 @@
         "n"
       ],
       "title": "DoScore",
+      "type": "object"
+    },
+    "DoSetFrame": {
+      "additionalProperties": false,
+      "description": "v5: jump a flipbook entity to frame `frame`.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "set_frame",
+          "type": "string"
+        },
+        "target": {
+          "pattern": "^[A-Za-z0-9_]{1,40}$",
+          "type": "string"
+        },
+        "frame": {
+          "maximum": 5,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "target",
+        "frame"
+      ],
+      "title": "DoSetFrame",
       "type": "object"
     },
     "DoShake": {
@@ -524,8 +588,10 @@
           "jump_power": "#/$defs/DoJumpPower",
           "lose": "#/$defs/DoLose",
           "open": "#/$defs/DoOpen",
+          "push": "#/$defs/DoPush",
           "reverse_controls": "#/$defs/DoReverse",
           "say": "#/$defs/DoSay",
+          "set_frame": "#/$defs/DoSetFrame",
           "shake": "#/$defs/DoShake",
           "sound": "#/$defs/DoSound",
           "speed": "#/$defs/DoSpeed",
@@ -589,8 +655,58 @@
         },
         {
           "$ref": "#/$defs/DoShake"
+        },
+        {
+          "$ref": "#/$defs/DoSetFrame"
+        },
+        {
+          "$ref": "#/$defs/DoPush"
         }
       ]
+    },
+    "RuleIf": {
+      "additionalProperties": false,
+      "description": "v5: a condition on a counter (counters double as the inventory: \"keys\", \"red gems\").",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "name": {
+          "pattern": "^[a-z][a-z0-9 ]{0,15}$",
+          "type": "string"
+        },
+        "at_least": {
+          "anyOf": [
+            {
+              "maximum": 100000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "below": {
+          "anyOf": [
+            {
+              "maximum": 100000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "RuleIf",
+      "type": "object"
     },
     "RuleKey": {
       "enum": [
@@ -634,6 +750,21 @@
             }
           ],
           "default": null
+        },
+        "only_if": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/RuleIf"
+              },
+              "maxItems": 3,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -648,8 +779,10 @@
       "discriminator": {
         "mapping": {
           "all_coins": "#/$defs/WhenAllCoins",
+          "choice": "#/$defs/WhenChoice",
           "collect": "#/$defs/WhenCollect",
           "counter": "#/$defs/WhenCounter",
+          "frame": "#/$defs/WhenFrame",
           "key": "#/$defs/WhenKey",
           "score": "#/$defs/WhenScore",
           "start": "#/$defs/WhenStart",
@@ -686,6 +819,12 @@
         },
         {
           "$ref": "#/$defs/WhenCounter"
+        },
+        {
+          "$ref": "#/$defs/WhenFrame"
+        },
+        {
+          "$ref": "#/$defs/WhenChoice"
         }
       ]
     },
@@ -715,6 +854,35 @@
         "kind"
       ],
       "title": "WhenAllCoins",
+      "type": "object"
+    },
+    "WhenChoice": {
+      "additionalProperties": false,
+      "description": "v5: the player picks choice `index` (0-based) in a talking character's choices.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "choice",
+          "type": "string"
+        },
+        "target": {
+          "pattern": "^[A-Za-z0-9_]{1,40}$",
+          "type": "string"
+        },
+        "index": {
+          "maximum": 3,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "target",
+        "index"
+      ],
+      "title": "WhenChoice",
       "type": "object"
     },
     "WhenCollect": {
@@ -785,6 +953,35 @@
         "at_least"
       ],
       "title": "WhenCounter",
+      "type": "object"
+    },
+    "WhenFrame": {
+      "additionalProperties": false,
+      "description": "v5: a flipbook entity reaches frame `frame` (0-based).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "frame",
+          "type": "string"
+        },
+        "target": {
+          "pattern": "^[A-Za-z0-9_]{1,40}$",
+          "type": "string"
+        },
+        "frame": {
+          "maximum": 5,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "target",
+        "frame"
+      ],
+      "title": "WhenFrame",
       "type": "object"
     },
     "WhenKey": {

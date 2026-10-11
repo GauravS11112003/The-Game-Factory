@@ -6,6 +6,7 @@ from pydantic import Field
 from app.spec.behavior import Behavior
 from app.spec.common import InkColor, Spec
 from app.spec.ink import InkStroke
+from app.spec.script import Script
 
 
 class Rig(Spec):
@@ -52,6 +53,8 @@ class LibraryType(Spec):
     created_at: str
     block: BlockRef | None = None  # v4: the public block this was copied from
     hidden: bool | None = None  # v4: instances start hidden until a rule shows them
+    frames: list[LibraryArt] | None = Field(default=None, max_length=6)  # v5: flipbook frame art (art is frame 0)
+    script: Script | None = None  # v5: a developer pack's behaviour (behavior.kind == "scripted")
 
 
 EXPORTS: list[Any] = [Rig, LibraryArt, LibrarySymbol, BlockRef, LibraryType]

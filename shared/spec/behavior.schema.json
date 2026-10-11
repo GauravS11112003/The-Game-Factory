@@ -122,6 +122,78 @@
       "title": "BFirebar",
       "type": "object"
     },
+    "BFlipbook": {
+      "additionalProperties": false,
+      "description": "Changes through its drawn frames over time (seed, sprout, flower). The frame art is the library type's frames.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "flipbook",
+          "type": "string"
+        },
+        "frames": {
+          "default": 3,
+          "maximum": 6,
+          "minimum": 2,
+          "type": "integer"
+        },
+        "frame_s": {
+          "default": 2.0,
+          "exclusiveMinimum": 0,
+          "maximum": 600,
+          "type": "number"
+        },
+        "loop": {
+          "default": false,
+          "type": "boolean"
+        },
+        "solid_from": {
+          "anyOf": [
+            {
+              "maximum": 5,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "collect_at": {
+          "anyOf": [
+            {
+              "maximum": 5,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "item": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9 ]{0,15}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BFlipbook",
+      "type": "object"
+    },
     "BMove": {
       "additionalProperties": false,
       "patternProperties": {
@@ -200,6 +272,40 @@
         "lines"
       ],
       "title": "BNpc",
+      "type": "object"
+    },
+    "BPhysics": {
+      "additionalProperties": false,
+      "description": "A loose object that falls, slides, stacks and can be pushed. Boxes stay upright; balls roll.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "physics",
+          "type": "string"
+        },
+        "shape": {
+          "default": "box",
+          "enum": [
+            "box",
+            "ball"
+          ],
+          "type": "string"
+        },
+        "material": {
+          "$ref": "#/$defs/Material",
+          "default": "wood"
+        },
+        "fixed": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BPhysics",
       "type": "object"
     },
     "BPickup": {
@@ -311,6 +417,24 @@
       "title": "BSaw",
       "type": "object"
     },
+    "BScripted": {
+      "additionalProperties": false,
+      "description": "Runs the library type's script (a developer pack, app/spec/script.py).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "scripted",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BScripted",
+      "type": "object"
+    },
     "BSpring": {
       "additionalProperties": false,
       "patternProperties": {
@@ -399,11 +523,14 @@
           "enemy": "#/$defs/BEnemy",
           "falling": "#/$defs/BFalling",
           "firebar": "#/$defs/BFirebar",
+          "flipbook": "#/$defs/BFlipbook",
           "move": "#/$defs/BMove",
           "npc": "#/$defs/BNpc",
+          "physics": "#/$defs/BPhysics",
           "pickup": "#/$defs/BPickup",
           "portal": "#/$defs/BPortal",
           "saw": "#/$defs/BSaw",
+          "scripted": "#/$defs/BScripted",
           "spring": "#/$defs/BSpring",
           "static": "#/$defs/BStatic",
           "zone": "#/$defs/BZone"
@@ -446,6 +573,15 @@
         },
         {
           "$ref": "#/$defs/BNpc"
+        },
+        {
+          "$ref": "#/$defs/BPhysics"
+        },
+        {
+          "$ref": "#/$defs/BFlipbook"
+        },
+        {
+          "$ref": "#/$defs/BScripted"
         }
       ]
     },
@@ -632,6 +768,16 @@
       },
       "title": "EnemyParams",
       "type": "object"
+    },
+    "Material": {
+      "enum": [
+        "wood",
+        "stone",
+        "rubber",
+        "ice",
+        "metal"
+      ],
+      "type": "string"
     },
     "PickupEffect": {
       "enum": [

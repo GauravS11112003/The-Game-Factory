@@ -23,6 +23,7 @@ from app.spec.ink import InkDoc, InkStroke
 from app.spec.level import LevelV2
 from app.spec.library import BlockRef, LibraryArt, LibrarySymbol, LibraryType
 from app.spec.logic import RuleV4
+from app.spec.script import Script
 from app.spec.report import PlaytestReport
 from app.spec.rules import GameRules
 from app.spec.scene import SceneGraph
@@ -547,6 +548,8 @@ class BlockCreate(Spec):
     description: str | None = Field(default=None, max_length=300)
     tags: list[str] = Field(default_factory=list, max_length=8)
     parent: BlockRef | None = None
+    frames: list[LibraryArt] | None = Field(default=None, max_length=6)  # v5
+    script: Script | None = None  # v5
 
 
 class BlockList(Spec):

@@ -119,16 +119,49 @@ class BNpc(Spec):
     name: str | None = Field(default=None, max_length=16)
 
 
+# ---- v5 primitives (docs/v5/CONTRACTS_V5.md) ----
+
+Material = TypeAliasType("Material", Literal["wood", "stone", "rubber", "ice", "metal"])
+
+
+class BPhysics(Spec):
+    """A loose object that falls, slides, stacks and can be pushed. Boxes stay upright; balls roll."""
+
+    kind: Literal["physics"]
+    shape: Literal["box", "ball"] = "box"
+    material: Material = "wood"
+    fixed: bool = False  # anchored: solid, never moves
+
+
+class BFlipbook(Spec):
+    """Changes through its drawn frames over time (seed, sprout, flower). The frame art is the library type's frames."""
+
+    kind: Literal["flipbook"]
+    frames: int = Field(default=3, ge=2, le=6)
+    frame_s: float = Field(default=2.0, gt=0, le=600)
+    loop: bool = False
+    solid_from: int | None = Field(default=None, ge=0, le=5)  # from this frame on, it is solid ground
+    collect_at: int | None = Field(default=None, ge=0, le=5)  # at this frame it can be collected as `item`
+    item: str | None = Field(default=None, pattern=r"^[a-z][a-z0-9 ]{0,15}$")
+
+
+class BScripted(Spec):
+    """Runs the library type's script (a developer pack, app/spec/script.py)."""
+
+    kind: Literal["scripted"]
+
+
 Behavior = TypeAliasType(
     "Behavior",
     Annotated[
-        BStatic | BEnemy | BMove | BSpring | BCrumble | BFalling | BSaw | BFirebar | BPortal | BZone | BPickup | BNpc,
+        BStatic | BEnemy | BMove | BSpring | BCrumble | BFalling | BSaw | BFirebar | BPortal | BZone | BPickup | BNpc
+        | BPhysics | BFlipbook | BScripted,
         Field(discriminator="kind"),
     ],
 )
 
 EXPORTS: list[Any] = [
     EnemyParams, BStatic, BEnemy, BMove, BSpring, BCrumble, BFalling, BSaw, BFirebar, BPortal, BZone, BPickup, BNpc,
-    Behavior,
+    Material, BPhysics, BFlipbook, BScripted, Behavior,
 ]
 ROOT = Behavior

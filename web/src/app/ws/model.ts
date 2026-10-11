@@ -86,6 +86,10 @@ function whenRef(w: RuleWhen): MessageRef {
       return { key: 'gw.rule.when_score', args: { n: w.at_least } };
     case 'counter':
       return { key: 'gw.rule.when_counter', args: { name: w.name, n: w.at_least } };
+    case 'frame': // v5: the core's sentences cover these
+      return { key: 'logic.when.frame', args: { target: w.target, n: w.frame + 1 } };
+    case 'choice':
+      return { key: 'logic.when.choice', args: { target: w.target, n: w.index + 1 } };
   }
 }
 

@@ -1,0 +1,1071 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://draw-a-level.dev/spec/v2/script.schema.json",
+  "$comment": "dal-level spec v1.0. GENERATED from vision/app/spec/script.py by scripts/gen_contracts.py; do not edit.",
+  "title": "script",
+  "description": "Scripts: developer packs (docs/v5/CONTRACTS_V5.md §4).",
+  "$ref": "#/$defs/Script",
+  "$defs": {
+    "CellXY": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "type": "array"
+    },
+    "DoCounter": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "add_counter",
+          "type": "string"
+        },
+        "name": {
+          "pattern": "^[a-z][a-z0-9 ]{0,15}$",
+          "type": "string"
+        },
+        "n": {
+          "default": 1,
+          "maximum": 100,
+          "minimum": -100,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "name"
+      ],
+      "title": "DoCounter",
+      "type": "object"
+    },
+    "DoFlipGravity": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "flip_gravity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DoFlipGravity",
+      "type": "object"
+    },
+    "DoFreeze": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "freeze_enemies",
+          "type": "string"
+        },
+        "seconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 60,
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "seconds"
+      ],
+      "title": "DoFreeze",
+      "type": "object"
+    },
+    "DoGravity": {
+      "additionalProperties": false,
+      "description": "Scale gravity (0.5 = moon jumps).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "gravity",
+          "type": "string"
+        },
+        "times": {
+          "maximum": 2,
+          "minimum": 0.25,
+          "type": "number"
+        },
+        "seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 600,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind",
+        "times"
+      ],
+      "title": "DoGravity",
+      "type": "object"
+    },
+    "DoHeal": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "heal",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DoHeal",
+      "type": "object"
+    },
+    "DoHurt": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "hurt",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DoHurt",
+      "type": "object"
+    },
+    "DoJumpPower": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "jump_power",
+          "type": "string"
+        },
+        "times": {
+          "maximum": 2,
+          "minimum": 0.5,
+          "type": "number"
+        },
+        "seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 600,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind",
+        "times"
+      ],
+      "title": "DoJumpPower",
+      "type": "object"
+    },
+    "DoLose": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "lose",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DoLose",
+      "type": "object"
+    },
+    "DoOpen": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "open",
+          "type": "string"
+        },
+        "target": {
+          "pattern": "^[A-Za-z0-9_]{1,40}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "target"
+      ],
+      "title": "DoOpen",
+      "type": "object"
+    },
+    "DoPush": {
+      "additionalProperties": false,
+      "description": "v5: give a physics body a push (cells/s added to its velocity).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "push",
+          "type": "string"
+        },
+        "target": {
+          "pattern": "^[A-Za-z0-9_]{1,40}$",
+          "type": "string"
+        },
+        "vx": {
+          "default": 0,
+          "maximum": 30,
+          "minimum": -30,
+          "type": "number"
+        },
+        "vy": {
+          "default": 0,
+          "maximum": 30,
+          "minimum": -30,
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "target"
+      ],
+      "title": "DoPush",
+      "type": "object"
+    },
+    "DoReverse": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "reverse_controls",
+          "type": "string"
+        },
+        "seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 600,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DoReverse",
+      "type": "object"
+    },
+    "DoSay": {
+      "additionalProperties": false,
+      "description": "A speech bubble over the player (or over `target`) for `seconds`.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "say",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 90,
+          "minLength": 1,
+          "type": "string"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9_]{1,40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "seconds": {
+          "default": 3,
+          "exclusiveMinimum": 0,
+          "maximum": 10,
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "text"
+      ],
+      "title": "DoSay",
+      "type": "object"
+    },
+    "DoScore": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "add_score",
+          "type": "string"
+        },
+        "n": {
+          "maximum": 1000,
+          "minimum": -1000,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "n"
+      ],
+      "title": "DoScore",
+      "type": "object"
+    },
+    "DoSetFrame": {
+      "additionalProperties": false,
+      "description": "v5: jump a flipbook entity to frame `frame`.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "set_frame",
+          "type": "string"
+        },
+        "target": {
+          "pattern": "^[A-Za-z0-9_]{1,40}$",
+          "type": "string"
+        },
+        "frame": {
+          "maximum": 5,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "target",
+        "frame"
+      ],
+      "title": "DoSetFrame",
+      "type": "object"
+    },
+    "DoShake": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "shake",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DoShake",
+      "type": "object"
+    },
+    "DoSound": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "sound",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/SoundName"
+        }
+      },
+      "required": [
+        "kind",
+        "name"
+      ],
+      "title": "DoSound",
+      "type": "object"
+    },
+    "DoSpeed": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "speed",
+          "type": "string"
+        },
+        "times": {
+          "maximum": 3,
+          "minimum": 0.25,
+          "type": "number"
+        },
+        "seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 600,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind",
+        "times"
+      ],
+      "title": "DoSpeed",
+      "type": "object"
+    },
+    "DoTeleport": {
+      "additionalProperties": false,
+      "description": "Move the player to a cell (to) or onto an entity (target). Exactly one is set.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "teleport",
+          "type": "string"
+        },
+        "to": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CellXY"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "target": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9_]{1,40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DoTeleport",
+      "type": "object"
+    },
+    "DoToggle": {
+      "additionalProperties": false,
+      "description": "Show or hide an entity: a hidden entity is not drawn, not solid and does nothing.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "toggle",
+          "type": "string"
+        },
+        "target": {
+          "pattern": "^[A-Za-z0-9_]{1,40}$",
+          "type": "string"
+        },
+        "to": {
+          "default": "flip",
+          "enum": [
+            "on",
+            "off",
+            "flip"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "target"
+      ],
+      "title": "DoToggle",
+      "type": "object"
+    },
+    "DoWin": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "win",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DoWin",
+      "type": "object"
+    },
+    "OpDo": {
+      "additionalProperties": false,
+      "description": "Run one rule action (say, sound, add_counter, toggle, win…); `say` without a target speaks from this object.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "do",
+          "type": "string"
+        },
+        "action": {
+          "$ref": "#/$defs/RuleDo"
+        }
+      },
+      "required": [
+        "op",
+        "action"
+      ],
+      "title": "OpDo",
+      "type": "object"
+    },
+    "OpFollow": {
+      "additionalProperties": false,
+      "description": "Move toward the player at `speed` (along x only, or freely in x and y).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "follow",
+          "type": "string"
+        },
+        "speed": {
+          "default": 2,
+          "exclusiveMinimum": 0,
+          "maximum": 20,
+          "type": "number"
+        },
+        "axis": {
+          "default": "x",
+          "enum": [
+            "x",
+            "xy"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "OpFollow",
+      "type": "object"
+    },
+    "OpGoto": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "goto",
+          "type": "string"
+        },
+        "state": {
+          "pattern": "^[a-z][a-z0-9_]{0,15}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "state"
+      ],
+      "title": "OpGoto",
+      "type": "object"
+    },
+    "OpGravity": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "gravity",
+          "type": "string"
+        },
+        "on": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "OpGravity",
+      "type": "object"
+    },
+    "OpHazard": {
+      "additionalProperties": false,
+      "description": "Touching it hurts the player (on) or not (off).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "hazard",
+          "type": "string"
+        },
+        "on": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "OpHazard",
+      "type": "object"
+    },
+    "OpHide": {
+      "additionalProperties": false,
+      "description": "Hidden objects are not drawn and do nothing (their script keeps running).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "hide",
+          "type": "string"
+        },
+        "on": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "OpHide",
+      "type": "object"
+    },
+    "OpJump": {
+      "additionalProperties": false,
+      "description": "Jump (only when standing on something, if `gravity` is on).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "jump",
+          "type": "string"
+        },
+        "power": {
+          "default": 1.0,
+          "maximum": 2.5,
+          "minimum": 0.3,
+          "type": "number"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "OpJump",
+      "type": "object"
+    },
+    "OpMove": {
+      "additionalProperties": false,
+      "description": "Set the object's velocity (cells/s; +y is down).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "move",
+          "type": "string"
+        },
+        "vx": {
+          "default": 0,
+          "maximum": 20,
+          "minimum": -20,
+          "type": "number"
+        },
+        "vy": {
+          "default": 0,
+          "maximum": 20,
+          "minimum": -20,
+          "type": "number"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "OpMove",
+      "type": "object"
+    },
+    "OpPatrol": {
+      "additionalProperties": false,
+      "description": "Walk back and forth `range` cells around where the state started.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "patrol",
+          "type": "string"
+        },
+        "speed": {
+          "default": 2,
+          "exclusiveMinimum": 0,
+          "maximum": 20,
+          "type": "number"
+        },
+        "range": {
+          "default": 4,
+          "exclusiveMinimum": 0,
+          "maximum": 40,
+          "type": "number"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "OpPatrol",
+      "type": "object"
+    },
+    "OpSolid": {
+      "additionalProperties": false,
+      "description": "The player can stand on it (on) or passes through it (off).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "solid",
+          "type": "string"
+        },
+        "on": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "OpSolid",
+      "type": "object"
+    },
+    "RuleDo": {
+      "discriminator": {
+        "mapping": {
+          "add_counter": "#/$defs/DoCounter",
+          "add_score": "#/$defs/DoScore",
+          "flip_gravity": "#/$defs/DoFlipGravity",
+          "freeze_enemies": "#/$defs/DoFreeze",
+          "gravity": "#/$defs/DoGravity",
+          "heal": "#/$defs/DoHeal",
+          "hurt": "#/$defs/DoHurt",
+          "jump_power": "#/$defs/DoJumpPower",
+          "lose": "#/$defs/DoLose",
+          "open": "#/$defs/DoOpen",
+          "push": "#/$defs/DoPush",
+          "reverse_controls": "#/$defs/DoReverse",
+          "say": "#/$defs/DoSay",
+          "set_frame": "#/$defs/DoSetFrame",
+          "shake": "#/$defs/DoShake",
+          "sound": "#/$defs/DoSound",
+          "speed": "#/$defs/DoSpeed",
+          "teleport": "#/$defs/DoTeleport",
+          "toggle": "#/$defs/DoToggle",
+          "win": "#/$defs/DoWin"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/DoFlipGravity"
+        },
+        {
+          "$ref": "#/$defs/DoGravity"
+        },
+        {
+          "$ref": "#/$defs/DoSpeed"
+        },
+        {
+          "$ref": "#/$defs/DoJumpPower"
+        },
+        {
+          "$ref": "#/$defs/DoReverse"
+        },
+        {
+          "$ref": "#/$defs/DoTeleport"
+        },
+        {
+          "$ref": "#/$defs/DoToggle"
+        },
+        {
+          "$ref": "#/$defs/DoOpen"
+        },
+        {
+          "$ref": "#/$defs/DoFreeze"
+        },
+        {
+          "$ref": "#/$defs/DoScore"
+        },
+        {
+          "$ref": "#/$defs/DoCounter"
+        },
+        {
+          "$ref": "#/$defs/DoHeal"
+        },
+        {
+          "$ref": "#/$defs/DoHurt"
+        },
+        {
+          "$ref": "#/$defs/DoWin"
+        },
+        {
+          "$ref": "#/$defs/DoLose"
+        },
+        {
+          "$ref": "#/$defs/DoSay"
+        },
+        {
+          "$ref": "#/$defs/DoSound"
+        },
+        {
+          "$ref": "#/$defs/DoShake"
+        },
+        {
+          "$ref": "#/$defs/DoSetFrame"
+        },
+        {
+          "$ref": "#/$defs/DoPush"
+        }
+      ]
+    },
+    "Script": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9_]{1,40}$",
+          "type": "string"
+        },
+        "start": {
+          "pattern": "^[a-z][a-z0-9_]{0,15}$",
+          "type": "string"
+        },
+        "states": {
+          "items": {
+            "$ref": "#/$defs/ScriptState"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "type": "array"
+        },
+        "gravity": {
+          "default": false,
+          "type": "boolean"
+        },
+        "solid": {
+          "default": false,
+          "type": "boolean"
+        },
+        "hazard": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "start",
+        "states"
+      ],
+      "title": "Script",
+      "type": "object"
+    },
+    "ScriptAfter": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "seconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 600,
+          "type": "number"
+        },
+        "goto": {
+          "pattern": "^[a-z][a-z0-9_]{0,15}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "seconds",
+        "goto"
+      ],
+      "title": "ScriptAfter",
+      "type": "object"
+    },
+    "ScriptOp": {
+      "discriminator": {
+        "mapping": {
+          "do": "#/$defs/OpDo",
+          "follow": "#/$defs/OpFollow",
+          "goto": "#/$defs/OpGoto",
+          "gravity": "#/$defs/OpGravity",
+          "hazard": "#/$defs/OpHazard",
+          "hide": "#/$defs/OpHide",
+          "jump": "#/$defs/OpJump",
+          "move": "#/$defs/OpMove",
+          "patrol": "#/$defs/OpPatrol",
+          "solid": "#/$defs/OpSolid"
+        },
+        "propertyName": "op"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/OpMove"
+        },
+        {
+          "$ref": "#/$defs/OpFollow"
+        },
+        {
+          "$ref": "#/$defs/OpPatrol"
+        },
+        {
+          "$ref": "#/$defs/OpJump"
+        },
+        {
+          "$ref": "#/$defs/OpGravity"
+        },
+        {
+          "$ref": "#/$defs/OpSolid"
+        },
+        {
+          "$ref": "#/$defs/OpHazard"
+        },
+        {
+          "$ref": "#/$defs/OpHide"
+        },
+        {
+          "$ref": "#/$defs/OpGoto"
+        },
+        {
+          "$ref": "#/$defs/OpDo"
+        }
+      ]
+    },
+    "ScriptState": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "name": {
+          "pattern": "^[a-z][a-z0-9_]{0,15}$",
+          "type": "string"
+        },
+        "enter": {
+          "items": {
+            "$ref": "#/$defs/ScriptOp"
+          },
+          "maxItems": 8,
+          "type": "array"
+        },
+        "tick": {
+          "items": {
+            "$ref": "#/$defs/ScriptOp"
+          },
+          "maxItems": 8,
+          "type": "array"
+        },
+        "touch": {
+          "items": {
+            "$ref": "#/$defs/ScriptOp"
+          },
+          "maxItems": 8,
+          "type": "array"
+        },
+        "after": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ScriptAfter"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "ScriptState",
+      "type": "object"
+    },
+    "SoundName": {
+      "enum": [
+        "ding",
+        "boing",
+        "zap",
+        "whoosh",
+        "boom",
+        "fanfare"
+      ],
+      "type": "string"
+    }
+  }
+}

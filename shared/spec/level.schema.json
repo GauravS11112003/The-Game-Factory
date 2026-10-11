@@ -168,6 +168,78 @@
       "title": "BFirebar",
       "type": "object"
     },
+    "BFlipbook": {
+      "additionalProperties": false,
+      "description": "Changes through its drawn frames over time (seed, sprout, flower). The frame art is the library type's frames.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "flipbook",
+          "type": "string"
+        },
+        "frames": {
+          "default": 3,
+          "maximum": 6,
+          "minimum": 2,
+          "type": "integer"
+        },
+        "frame_s": {
+          "default": 2.0,
+          "exclusiveMinimum": 0,
+          "maximum": 600,
+          "type": "number"
+        },
+        "loop": {
+          "default": false,
+          "type": "boolean"
+        },
+        "solid_from": {
+          "anyOf": [
+            {
+              "maximum": 5,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "collect_at": {
+          "anyOf": [
+            {
+              "maximum": 5,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "item": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9 ]{0,15}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BFlipbook",
+      "type": "object"
+    },
     "BMove": {
       "additionalProperties": false,
       "patternProperties": {
@@ -246,6 +318,40 @@
         "lines"
       ],
       "title": "BNpc",
+      "type": "object"
+    },
+    "BPhysics": {
+      "additionalProperties": false,
+      "description": "A loose object that falls, slides, stacks and can be pushed. Boxes stay upright; balls roll.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "physics",
+          "type": "string"
+        },
+        "shape": {
+          "default": "box",
+          "enum": [
+            "box",
+            "ball"
+          ],
+          "type": "string"
+        },
+        "material": {
+          "$ref": "#/$defs/Material",
+          "default": "wood"
+        },
+        "fixed": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BPhysics",
       "type": "object"
     },
     "BPickup": {
@@ -357,6 +463,24 @@
       "title": "BSaw",
       "type": "object"
     },
+    "BScripted": {
+      "additionalProperties": false,
+      "description": "Runs the library type's script (a developer pack, app/spec/script.py).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "scripted",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "BScripted",
+      "type": "object"
+    },
     "BSpring": {
       "additionalProperties": false,
       "patternProperties": {
@@ -455,11 +579,14 @@
           "enemy": "#/$defs/BEnemy",
           "falling": "#/$defs/BFalling",
           "firebar": "#/$defs/BFirebar",
+          "flipbook": "#/$defs/BFlipbook",
           "move": "#/$defs/BMove",
           "npc": "#/$defs/BNpc",
+          "physics": "#/$defs/BPhysics",
           "pickup": "#/$defs/BPickup",
           "portal": "#/$defs/BPortal",
           "saw": "#/$defs/BSaw",
+          "scripted": "#/$defs/BScripted",
           "spring": "#/$defs/BSpring",
           "static": "#/$defs/BStatic",
           "zone": "#/$defs/BZone"
@@ -502,6 +629,15 @@
         },
         {
           "$ref": "#/$defs/BNpc"
+        },
+        {
+          "$ref": "#/$defs/BPhysics"
+        },
+        {
+          "$ref": "#/$defs/BFlipbook"
+        },
+        {
+          "$ref": "#/$defs/BScripted"
         }
       ]
     },
@@ -645,6 +781,12 @@
             "$ref": "#/$defs/RuleV4"
           },
           "type": "array"
+        },
+        "scripts": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Script"
+          },
+          "type": "object"
         }
       },
       "required": [
@@ -1075,6 +1217,41 @@
       "title": "DoOpen",
       "type": "object"
     },
+    "DoPush": {
+      "additionalProperties": false,
+      "description": "v5: give a physics body a push (cells/s added to its velocity).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "push",
+          "type": "string"
+        },
+        "target": {
+          "pattern": "^[A-Za-z0-9_]{1,40}$",
+          "type": "string"
+        },
+        "vx": {
+          "default": 0,
+          "maximum": 30,
+          "minimum": -30,
+          "type": "number"
+        },
+        "vy": {
+          "default": 0,
+          "maximum": 30,
+          "minimum": -30,
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "target"
+      ],
+      "title": "DoPush",
+      "type": "object"
+    },
     "DoReverse": {
       "additionalProperties": false,
       "patternProperties": {
@@ -1168,6 +1345,35 @@
         "n"
       ],
       "title": "DoScore",
+      "type": "object"
+    },
+    "DoSetFrame": {
+      "additionalProperties": false,
+      "description": "v5: jump a flipbook entity to frame `frame`.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "set_frame",
+          "type": "string"
+        },
+        "target": {
+          "pattern": "^[A-Za-z0-9_]{1,40}$",
+          "type": "string"
+        },
+        "frame": {
+          "maximum": 5,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "target",
+        "frame"
+      ],
+      "title": "DoSetFrame",
       "type": "object"
     },
     "DoShake": {
@@ -1394,6 +1600,93 @@
         "y"
       ],
       "title": "EBigCoin",
+      "type": "object"
+    },
+    "EBody": {
+      "additionalProperties": false,
+      "description": "A physics body, top-left box in cells (BPhysics).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Origin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sprite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "type": {
+          "const": "body",
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "w": {
+          "type": "number"
+        },
+        "h": {
+          "type": "number"
+        },
+        "shape": {
+          "default": "box",
+          "enum": [
+            "box",
+            "ball"
+          ],
+          "type": "string"
+        },
+        "material": {
+          "$ref": "#/$defs/Material",
+          "default": "wood"
+        },
+        "fixed": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "title": "EBody",
       "type": "object"
     },
     "ECheckpoint": {
@@ -1939,6 +2232,131 @@
       "title": "EFirebar",
       "type": "object"
     },
+    "EFlipbook": {
+      "additionalProperties": false,
+      "description": "Top-left box in cells (BFlipbook); the sprite has one frame per drawn frame.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Origin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sprite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "type": {
+          "const": "flipbook",
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "w": {
+          "type": "number"
+        },
+        "h": {
+          "type": "number"
+        },
+        "frames": {
+          "maximum": 6,
+          "minimum": 2,
+          "type": "integer"
+        },
+        "frame_s": {
+          "exclusiveMinimum": 0,
+          "maximum": 600,
+          "type": "number"
+        },
+        "loop": {
+          "default": false,
+          "type": "boolean"
+        },
+        "solid_from": {
+          "anyOf": [
+            {
+              "maximum": 5,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "collect_at": {
+          "anyOf": [
+            {
+              "maximum": 5,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "item": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9 ]{0,15}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "x",
+        "y",
+        "w",
+        "h",
+        "frames",
+        "frame_s"
+      ],
+      "title": "EFlipbook",
+      "type": "object"
+    },
     "EGoal": {
       "additionalProperties": false,
       "patternProperties": {
@@ -2317,6 +2735,21 @@
             }
           ],
           "default": null
+        },
+        "choices": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/NpcChoice"
+              },
+              "maxItems": 4,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -2628,6 +3061,82 @@
         "r"
       ],
       "title": "ESaw",
+      "type": "object"
+    },
+    "EScripted": {
+      "additionalProperties": false,
+      "description": "Top-left box in cells; runs compiled.scripts[script].",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Origin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sprite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "type": {
+          "const": "scripted",
+          "type": "string"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "w": {
+          "type": "number"
+        },
+        "h": {
+          "type": "number"
+        },
+        "script": {
+          "pattern": "^[A-Za-z0-9_]{1,40}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "x",
+        "y",
+        "w",
+        "h",
+        "script"
+      ],
+      "title": "EScripted",
       "type": "object"
     },
     "ESpikes": {
@@ -3396,6 +3905,7 @@
       "discriminator": {
         "mapping": {
           "big_coin": "#/$defs/EBigCoin",
+          "body": "#/$defs/EBody",
           "checkpoint": "#/$defs/ECheckpoint",
           "coin": "#/$defs/ECoin",
           "crumble": "#/$defs/ECrumble",
@@ -3403,6 +3913,7 @@
           "enemy": "#/$defs/EEnemy",
           "falling_platform": "#/$defs/EFalling",
           "firebar": "#/$defs/EFirebar",
+          "flipbook": "#/$defs/EFlipbook",
           "goal": "#/$defs/EGoal",
           "hint_arrow": "#/$defs/EHintArrow",
           "key": "#/$defs/EKey",
@@ -3412,6 +3923,7 @@
           "player_start": "#/$defs/EPlayerStart",
           "portal": "#/$defs/EPortal",
           "saw": "#/$defs/ESaw",
+          "scripted": "#/$defs/EScripted",
           "spikes": "#/$defs/ESpikes",
           "spring": "#/$defs/ESpring",
           "zone": "#/$defs/EZone"
@@ -3478,6 +3990,15 @@
         },
         {
           "$ref": "#/$defs/ENpc"
+        },
+        {
+          "$ref": "#/$defs/EBody"
+        },
+        {
+          "$ref": "#/$defs/EFlipbook"
+        },
+        {
+          "$ref": "#/$defs/EScripted"
         }
       ]
     },
@@ -4501,6 +5022,32 @@
             }
           ],
           "default": null
+        },
+        "frames": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/LibraryArt"
+              },
+              "maxItems": 6,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "script": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Script"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -4518,6 +5065,16 @@
       ],
       "title": "LibraryType",
       "type": "object"
+    },
+    "Material": {
+      "enum": [
+        "wood",
+        "stone",
+        "rubber",
+        "ice",
+        "metal"
+      ],
+      "type": "string"
     },
     "MessageArgs": {
       "additionalProperties": {
@@ -4633,6 +5190,43 @@
         "count"
       ],
       "title": "NoiseInfo",
+      "type": "object"
+    },
+    "NpcChoice": {
+      "additionalProperties": false,
+      "description": "v5: one answer the player can pick; picking it fires `choice` rules and may set a counter.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "text": {
+          "maxLength": 40,
+          "minLength": 1,
+          "type": "string"
+        },
+        "counter": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9 ]{0,15}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "value": {
+          "default": 1,
+          "maximum": 1000,
+          "minimum": -1000,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "NpcChoice",
       "type": "object"
     },
     "OpAddBigCoin": {
@@ -5082,6 +5676,28 @@
       "title": "OpDetach",
       "type": "object"
     },
+    "OpDo": {
+      "additionalProperties": false,
+      "description": "Run one rule action (say, sound, add_counter, toggle, win…); `say` without a target speaks from this object.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "do",
+          "type": "string"
+        },
+        "action": {
+          "$ref": "#/$defs/RuleDo"
+        }
+      },
+      "required": [
+        "op",
+        "action"
+      ],
+      "title": "OpDo",
+      "type": "object"
+    },
     "OpExtend": {
       "additionalProperties": false,
       "patternProperties": {
@@ -5176,6 +5792,38 @@
       "title": "OpFixBehavior",
       "type": "object"
     },
+    "OpFollow": {
+      "additionalProperties": false,
+      "description": "Move toward the player at `speed` (along x only, or freely in x and y).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "follow",
+          "type": "string"
+        },
+        "speed": {
+          "default": 2,
+          "exclusiveMinimum": 0,
+          "maximum": 20,
+          "type": "number"
+        },
+        "axis": {
+          "default": "x",
+          "enum": [
+            "x",
+            "xy"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "OpFollow",
+      "type": "object"
+    },
     "OpFormGoal": {
       "additionalProperties": false,
       "patternProperties": {
@@ -5208,6 +5856,49 @@
       "title": "OpFormGoal",
       "type": "object"
     },
+    "OpGoto": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "goto",
+          "type": "string"
+        },
+        "state": {
+          "pattern": "^[a-z][a-z0-9_]{0,15}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "state"
+      ],
+      "title": "OpGoto",
+      "type": "object"
+    },
+    "OpGravity": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "gravity",
+          "type": "string"
+        },
+        "on": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "OpGravity",
+      "type": "object"
+    },
     "OpGroup": {
       "additionalProperties": false,
       "patternProperties": {
@@ -5236,6 +5927,50 @@
       "title": "OpGroup",
       "type": "object"
     },
+    "OpHazard": {
+      "additionalProperties": false,
+      "description": "Touching it hurts the player (on) or not (off).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "hazard",
+          "type": "string"
+        },
+        "on": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "OpHazard",
+      "type": "object"
+    },
+    "OpHide": {
+      "additionalProperties": false,
+      "description": "Hidden objects are not drawn and do nothing (their script keeps running).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "hide",
+          "type": "string"
+        },
+        "on": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "OpHide",
+      "type": "object"
+    },
     "OpJoinSeam": {
       "additionalProperties": false,
       "patternProperties": {
@@ -5259,6 +5994,30 @@
         "b"
       ],
       "title": "OpJoinSeam",
+      "type": "object"
+    },
+    "OpJump": {
+      "additionalProperties": false,
+      "description": "Jump (only when standing on something, if `gravity` is on).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "jump",
+          "type": "string"
+        },
+        "power": {
+          "default": 1.0,
+          "maximum": 2.5,
+          "minimum": 0.3,
+          "type": "number"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "OpJump",
       "type": "object"
     },
     "OpLink": {
@@ -5328,6 +6087,36 @@
       "title": "OpMakeMine",
       "type": "object"
     },
+    "OpMove": {
+      "additionalProperties": false,
+      "description": "Set the object's velocity (cells/s; +y is down).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "move",
+          "type": "string"
+        },
+        "vx": {
+          "default": 0,
+          "maximum": 20,
+          "minimum": -20,
+          "type": "number"
+        },
+        "vy": {
+          "default": 0,
+          "maximum": 20,
+          "minimum": -20,
+          "type": "number"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "OpMove",
+      "type": "object"
+    },
     "OpNudge": {
       "additionalProperties": false,
       "patternProperties": {
@@ -5384,6 +6173,36 @@
         "facing"
       ],
       "title": "OpOrient",
+      "type": "object"
+    },
+    "OpPatrol": {
+      "additionalProperties": false,
+      "description": "Walk back and forth `range` cells around where the state started.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "patrol",
+          "type": "string"
+        },
+        "speed": {
+          "default": 2,
+          "exclusiveMinimum": 0,
+          "maximum": 20,
+          "type": "number"
+        },
+        "range": {
+          "default": 4,
+          "exclusiveMinimum": 0,
+          "maximum": 40,
+          "type": "number"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "OpPatrol",
       "type": "object"
     },
     "OpPlaceStart": {
@@ -5671,6 +6490,28 @@
         "face"
       ],
       "title": "OpSnap",
+      "type": "object"
+    },
+    "OpSolid": {
+      "additionalProperties": false,
+      "description": "The player can stand on it (on) or passes through it (off).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "op": {
+          "const": "solid",
+          "type": "string"
+        },
+        "on": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "OpSolid",
       "type": "object"
     },
     "OpStraighten": {
@@ -6169,8 +7010,10 @@
           "jump_power": "#/$defs/DoJumpPower",
           "lose": "#/$defs/DoLose",
           "open": "#/$defs/DoOpen",
+          "push": "#/$defs/DoPush",
           "reverse_controls": "#/$defs/DoReverse",
           "say": "#/$defs/DoSay",
+          "set_frame": "#/$defs/DoSetFrame",
           "shake": "#/$defs/DoShake",
           "sound": "#/$defs/DoSound",
           "speed": "#/$defs/DoSpeed",
@@ -6234,8 +7077,58 @@
         },
         {
           "$ref": "#/$defs/DoShake"
+        },
+        {
+          "$ref": "#/$defs/DoSetFrame"
+        },
+        {
+          "$ref": "#/$defs/DoPush"
         }
       ]
+    },
+    "RuleIf": {
+      "additionalProperties": false,
+      "description": "v5: a condition on a counter (counters double as the inventory: \"keys\", \"red gems\").",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "name": {
+          "pattern": "^[a-z][a-z0-9 ]{0,15}$",
+          "type": "string"
+        },
+        "at_least": {
+          "anyOf": [
+            {
+              "maximum": 100000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "below": {
+          "anyOf": [
+            {
+              "maximum": 100000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "RuleIf",
+      "type": "object"
     },
     "RuleKey": {
       "enum": [
@@ -6279,6 +7172,21 @@
             }
           ],
           "default": null
+        },
+        "only_if": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/RuleIf"
+              },
+              "maxItems": 3,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -6293,8 +7201,10 @@
       "discriminator": {
         "mapping": {
           "all_coins": "#/$defs/WhenAllCoins",
+          "choice": "#/$defs/WhenChoice",
           "collect": "#/$defs/WhenCollect",
           "counter": "#/$defs/WhenCounter",
+          "frame": "#/$defs/WhenFrame",
           "key": "#/$defs/WhenKey",
           "score": "#/$defs/WhenScore",
           "start": "#/$defs/WhenStart",
@@ -6331,6 +7241,12 @@
         },
         {
           "$ref": "#/$defs/WhenCounter"
+        },
+        {
+          "$ref": "#/$defs/WhenFrame"
+        },
+        {
+          "$ref": "#/$defs/WhenChoice"
         }
       ]
     },
@@ -6466,6 +7382,170 @@
         "pinned"
       ],
       "title": "SceneObject",
+      "type": "object"
+    },
+    "Script": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9_]{1,40}$",
+          "type": "string"
+        },
+        "start": {
+          "pattern": "^[a-z][a-z0-9_]{0,15}$",
+          "type": "string"
+        },
+        "states": {
+          "items": {
+            "$ref": "#/$defs/ScriptState"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "type": "array"
+        },
+        "gravity": {
+          "default": false,
+          "type": "boolean"
+        },
+        "solid": {
+          "default": false,
+          "type": "boolean"
+        },
+        "hazard": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "start",
+        "states"
+      ],
+      "title": "Script",
+      "type": "object"
+    },
+    "ScriptAfter": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "seconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 600,
+          "type": "number"
+        },
+        "goto": {
+          "pattern": "^[a-z][a-z0-9_]{0,15}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "seconds",
+        "goto"
+      ],
+      "title": "ScriptAfter",
+      "type": "object"
+    },
+    "ScriptOp": {
+      "discriminator": {
+        "mapping": {
+          "do": "#/$defs/OpDo",
+          "follow": "#/$defs/OpFollow",
+          "goto": "#/$defs/OpGoto",
+          "gravity": "#/$defs/OpGravity",
+          "hazard": "#/$defs/OpHazard",
+          "hide": "#/$defs/OpHide",
+          "jump": "#/$defs/OpJump",
+          "move": "#/$defs/OpMove",
+          "patrol": "#/$defs/OpPatrol",
+          "solid": "#/$defs/OpSolid"
+        },
+        "propertyName": "op"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/OpMove"
+        },
+        {
+          "$ref": "#/$defs/OpFollow"
+        },
+        {
+          "$ref": "#/$defs/OpPatrol"
+        },
+        {
+          "$ref": "#/$defs/OpJump"
+        },
+        {
+          "$ref": "#/$defs/OpGravity"
+        },
+        {
+          "$ref": "#/$defs/OpSolid"
+        },
+        {
+          "$ref": "#/$defs/OpHazard"
+        },
+        {
+          "$ref": "#/$defs/OpHide"
+        },
+        {
+          "$ref": "#/$defs/OpGoto"
+        },
+        {
+          "$ref": "#/$defs/OpDo"
+        }
+      ]
+    },
+    "ScriptState": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "name": {
+          "pattern": "^[a-z][a-z0-9_]{0,15}$",
+          "type": "string"
+        },
+        "enter": {
+          "items": {
+            "$ref": "#/$defs/ScriptOp"
+          },
+          "maxItems": 8,
+          "type": "array"
+        },
+        "tick": {
+          "items": {
+            "$ref": "#/$defs/ScriptOp"
+          },
+          "maxItems": 8,
+          "type": "array"
+        },
+        "touch": {
+          "items": {
+            "$ref": "#/$defs/ScriptOp"
+          },
+          "maxItems": 8,
+          "type": "array"
+        },
+        "after": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ScriptAfter"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "ScriptState",
       "type": "object"
     },
     "Setpiece": {
@@ -7079,6 +8159,35 @@
       "title": "WhenAllCoins",
       "type": "object"
     },
+    "WhenChoice": {
+      "additionalProperties": false,
+      "description": "v5: the player picks choice `index` (0-based) in a talking character's choices.",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "choice",
+          "type": "string"
+        },
+        "target": {
+          "pattern": "^[A-Za-z0-9_]{1,40}$",
+          "type": "string"
+        },
+        "index": {
+          "maximum": 3,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "target",
+        "index"
+      ],
+      "title": "WhenChoice",
+      "type": "object"
+    },
     "WhenCollect": {
       "additionalProperties": false,
       "description": "A coin, big coin, key or pickup is collected: one entity (target), any pickup with this item name, or any\ncoin (item \"coin\"). Exactly one of target or item is set.",
@@ -7147,6 +8256,35 @@
         "at_least"
       ],
       "title": "WhenCounter",
+      "type": "object"
+    },
+    "WhenFrame": {
+      "additionalProperties": false,
+      "description": "v5: a flipbook entity reaches frame `frame` (0-based).",
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "kind": {
+          "const": "frame",
+          "type": "string"
+        },
+        "target": {
+          "pattern": "^[A-Za-z0-9_]{1,40}$",
+          "type": "string"
+        },
+        "frame": {
+          "maximum": 5,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "target",
+        "frame"
+      ],
+      "title": "WhenFrame",
       "type": "object"
     },
     "WhenKey": {
