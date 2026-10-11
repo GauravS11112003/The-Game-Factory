@@ -116,8 +116,42 @@ def test_endpoint_artifact_requires_ticket_and_socket_auth(game):
         artifact = client.get(f'/api/v2/play-rooms/{room_id}/game', headers={'Authorization': f"Bearer {created['token']}"})
         assert "connect-src 'none'" in artifact.headers['content-security-policy']
         assert client.get(created['card_url']).status_code == 200
+        assert 'surface=messages' in client.get(created['card_url']).text
         with client.websocket_connect(f'/api/v2/play-rooms/{room_id}/socket') as ws:
             ws.send_json({'type': 'auth', 'token': created['token']})
             assert ws.receive_json() == {'type': 'authenticated', 'seat': 0}
             ws.send_json({'type': 'ready', 'round': 1})
             assert ws.receive_json()['room']['players'][0]['ready']
+
+def test_safari_handoff_preserves_seat_world_and_revokes_old_session(game):
+    room_id, host, guest = seats(game)
+    play(room_id, host['token'], guest['token'])
+    rooms.stream(room_id, host['token'], 'host', {'type': 'world', 'round': 1, 'world': {'x': 8}})
+    code = rooms.handoff(room_id, host['token'])['handoff']
+    assert code not in json.dumps(rooms.snapshot(room_id, host['token']))
+    claim = secrets.token_urlsafe(32)
+    resumed = rooms.resume(room_id, code, claim)
+    assert resumed['seat'] == 0 and len(resumed['match']['players']) == 2
+    assert resumed['invite'] == host['invite']
+    assert resumed['match']['phase'] == 'paused'
+    assert rooms.join(room_id, host['invite'], 'Safari', claim)['token'] == resumed['token']
+    with pytest.raises(HTTPException) as replay:
+        rooms.resume(room_id, code, secrets.token_urlsafe(32))
+    assert replay.value.status_code == 403
+    with pytest.raises(HTTPException):
+        rooms.connect(room_id, host['token'], 'old-host')
+    rooms.connect(room_id, resumed['token'], 'safari')
+    assert rooms.stream(room_id, resumed['token'], 'safari')['world'] == {'x': 8}
+
+def test_safari_handoff_requires_membership_and_expires(game, monkeypatch):
+    app = FastAPI(); app.include_router(routes.router, prefix='/api/v2')
+    created = rooms.create(game['draft_id'])
+    room_id = created['match']['id']
+    with TestClient(app) as client:
+        assert client.post(f'/api/v2/play-rooms/{room_id}/handoff').status_code == 403
+        result = client.post(f'/api/v2/play-rooms/{room_id}/handoff', headers={'Authorization': f"Bearer {created['token']}"})
+        assert result.status_code == 200
+        future = time.time() + 121
+        monkeypatch.setattr(rooms.time, 'time', lambda: future)
+        expired = client.post(f'/api/v2/play-rooms/{room_id}/resume', json={'handoff': result.json()['handoff'], 'claim': secrets.token_urlsafe(32)})
+        assert expired.status_code == 403

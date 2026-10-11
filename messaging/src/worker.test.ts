@@ -125,7 +125,8 @@ test('generated-game cards route through play-rooms, pin the new game and leave 
   worker.enqueue('new-game', 'chat', 'line', 'play d_12345678');
   await worker.tick();
   assert.deepEqual(calls[0], { method: 'POST', path: '', body: { draft_id: 'd_12345678', reserve_host: false }, endpoint: 'play-rooms' });
-  assert.deepEqual(sent[0], { url: `https://draw.example/api/v2/play-rooms/${api.current.id}/card?invite=${invite}` });
+  assert.deepEqual(sent[0], { url: `https://draw.example/api/v2/play-rooms/${api.current.id}/card?invite=${invite}`, title: api.current.title,
+    browserUrl: `https://draw.example/#/room/${api.current.id}?invite=${invite}` });
   api.current = { ...api.current, phase: 'finished', winner: 1, result: { scores: [3, 9], text: 'Sam wins!' }, players: [
     { seat: 0, name: 'Maya', result: null, forfeit: false }, { seat: 1, name: 'Sam', result: null, forfeit: false },
   ] };

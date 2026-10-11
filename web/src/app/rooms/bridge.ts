@@ -6,12 +6,13 @@ export function roomDocument(html: string, nonce: string): string {
     const emit=(type,data={})=>parent.postMessage({channel:'draw-play-room',nonce,type,round,...data},'*');
     const api=()=>window.drawPlayMultiplayer;
     function ready(){ const a=api(); return window.drawPlayGame?.ready && a?.version===1 && ['start','input','snapshot','restore','pause','result'].every(k=>typeof a[k]==='function'); }
+    const dimensions=()=>{const c=document.querySelector('canvas');const ratio=c?.width/c?.height;return Number.isFinite(ratio)&&ratio>=0.25&&ratio<=4?{aspect:ratio}:{};};
     let attempts=0;
-    const poll=setInterval(()=>{ if(ready()){ adapter=api(); adapter.pause(true); clearInterval(poll); announced=true; emit('ready'); }else if(++attempts>=200){clearInterval(poll);emit('error',{message:'This game needs a multiplayer repair. Ask the builder to fix the two-player controls.'});}},100);
+    const poll=setInterval(()=>{ if(ready()){ adapter=api(); adapter.pause(true); clearInterval(poll); announced=true; emit('ready',dimensions()); }else if(++attempts>=200){clearInterval(poll);emit('error',{message:'This game needs a multiplayer repair. Ask the builder to fix the two-player controls.'});}},100);
     addEventListener('message',event=>{
       if(event.source!==parent || event.data?.channel!=='draw-play-room' || event.data?.nonce!==nonce)return;
       const m=event.data;
-      if(m.type==='hello' && announced){emit('ready');return;}
+      if(m.type==='hello' && announced){emit('ready',dimensions());return;}
       if(!adapter)return;
       try{
         if(m.type==='start'){
