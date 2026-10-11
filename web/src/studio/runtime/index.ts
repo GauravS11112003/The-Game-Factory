@@ -279,7 +279,9 @@ class Runner {
     this.emit({ type: 'ready', scene: sc.id });
     this.sound.duckMusic(false);
     // HUD and counter events follow the game's frames
-    s.events.on('postupdate', (_t: number, delta: number) => this.frame(delta));
+    const onFrame = (_t: number, delta: number): void => this.frame(delta);
+    s.events.on('postupdate', onFrame);
+    s.events.once('shutdown', () => s.events.off('postupdate', onFrame)); // restarts reuse the scene's emitter
   }
 
   private frame(delta: number): void {
