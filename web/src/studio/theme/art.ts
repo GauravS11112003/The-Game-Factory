@@ -609,7 +609,8 @@ function paintSurface(ctx: CanvasRenderingContext2D, pc: TerrainPiece, skin: Res
   const sw = skin.surfaceWidth;
   if (sw <= 0 && !skin.surfaceSvg) return;
   const strip = skin.surfaceSvg ? svgSize(skin.surfaceSvg) : null;
-  const stripH = strip ? Math.max(sw, Math.min(strip.h, 72)) : 0;
+  // lane A2's strip convention: viewBox 0 0 W 128 with the ground line at y = 32, drawn 4/3 x surface_width tall
+  const stripH = strip ? Math.max(8, (sw || 14) * (4 / 3)) : 0;
   const stripImg = strip && skin.surfaceSvg ? artCanvasSync({ svg: skin.surfaceSvg, w: (strip.w * stripH) / strip.h, h: stripH },
     Math.max(0.25, Math.min(3, Math.ceil(zoom * 4) / 4))) : null;
   for (const run0 of pc.runs) {
@@ -631,8 +632,8 @@ function paintSurface(ctx: CanvasRenderingContext2D, pc: TerrainPiece, skin: Res
             ctx.save();
             ctx.translate(x, y);
             ctx.rotate(ang);
-            pat.setTransform(new DOMMatrix().translate(-((s0 + s) % stripW), -stripH * 0.3).scale(1 / cs));
-            ctx.fillRect(-0.4, -stripH * 0.3, step + 0.8, stripH);
+            pat.setTransform(new DOMMatrix().translate(-((s0 + s) % stripW), -stripH * 0.25).scale(1 / cs));
+            ctx.fillRect(-0.4, -stripH * 0.25, step + 0.8, stripH);
             ctx.restore();
           });
           ctx.restore();

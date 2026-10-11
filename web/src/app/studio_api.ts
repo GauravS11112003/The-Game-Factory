@@ -100,7 +100,7 @@ export const studioApi = {
   chat: (body: StudioChatBody, signal?: AbortSignal): Promise<StudioChatResult> => req<StudioChatResult>('POST', '/chat', body, { timeoutMs: CHAT_TIMEOUT_MS, signal }),
   recognize: (body: RecognizeBody): Promise<RecognizeResult> => req<RecognizeResult>('POST', '/recognize', body, { timeoutMs: 40000 }),
   /** v7: the game-wide art direction (+ a matching theme) from the maker's words or the game itself. Slow on purpose. */
-  artDirection: (body: ArtDirectionBody, signal?: AbortSignal): Promise<ArtDirectionResult> => req<ArtDirectionResult>('POST', '/art/direction', body, { timeoutMs: 240000, signal }),
+  artDirection: (body: ArtDirectionBody, signal?: AbortSignal): Promise<ArtDirectionResult> => req<ArtDirectionResult>('POST', '/art/direction', body, { timeoutMs: 330000, signal }),
   /** v7: start drawing objects (and the backdrop); poll `artJob` for the results. */
   startArtJob: (body: ArtJobBody): Promise<{ id: string }> => req<{ id: string }>('POST', '/art/jobs', body, { timeoutMs: 90000 }),
   artJob: (id: string): Promise<ArtJobStatus> => req<ArtJobStatus>('GET', `/art/jobs/${enc(id)}`, undefined, { timeoutMs: 20000 }),
