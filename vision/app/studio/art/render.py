@@ -107,7 +107,16 @@ def sketch_svg(obj: dict[str, Any], *, neighbours: list[tuple[list[dict[str, Any
     w, h = box_of(obj)
     strokes = (obj.get("drawing") or {}).get("strokes") or []
     pad = max(w, h) * pad_frac if guides else 0.0
-    vx, vy, vw, vh = -w / 2 - pad, -h / 2 - pad, w + 2 * pad, h + 2 * pad
+    x0, y0, x1, y1 = -w / 2 - pad, -h / 2 - pad, w / 2 + pad, h / 2 + pad
+    if guides:  # show attached objects whole (within reason), so the wheels under a car are visible
+        for nstrokes, (dx, dy, _rot, sc) in neighbours or []:
+            pts = [(float(p[0]), float(p[1])) for s in nstrokes for p in s.get("points") or []]
+            if not pts:
+                continue
+            r = max(math.hypot(px, py) for px, py in pts) * sc + 6
+            x0, y0 = max(min(x0, dx - r - pad / 2), -w), max(min(y0, dy - r - pad / 2), -h)
+            x1, y1 = min(max(x1, dx + r + pad / 2), w), min(max(y1, dy + r + pad / 2), h)
+    vx, vy, vw, vh = x0, y0, x1 - x0, y1 - y0
     parts = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{_f(vx)} {_f(vy)} {_f(vw)} {_f(vh)}" '
              f'width="{_f(vw)}" height="{_f(vh)}">']
     if guides:
