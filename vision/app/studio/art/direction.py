@@ -167,7 +167,7 @@ def keyword_direction(doc: dict[str, Any], prompt: str, rev: int, kinds: list[st
         "9. AVOID: text and letters, logos, photo-realism, thin hairlines, clutter, pure black fills, a second "
         "light direction.",
     ])
-    summary = f"{name} look: {fam.mood.split(':')[0].split('.')[0].lower()}"[:SUMMARY_CHARS]
+    summary = sanitize.text(f"{name} look for {look}", 120)
     return {"direction": {"rev": rev, "prompt": prompt, "summary": summary, "guide": clean_guide(guide),
                           "palette": pal, "kinds": km}, "theme": theme, "source": "keywords"}
 
