@@ -7,12 +7,18 @@
 import Phaser from 'phaser';
 import type { Drawing } from '../../core/types.gen.ts';
 import { renderDrawing } from '../theme/render.ts';
-import { backgroundLayers, layerPlacement, REF_H, REF_W } from '../theme/background.ts';
-import { hexNum, mix, type FullTheme } from '../theme/color.ts';
+import { backgroundLayers, layerPlacement } from '../theme/background.ts';
+import { artBox, artCanvasSync, chosenVariant, hasBackdrop, objectLook, onArtReady, skyCanvas, terrainModel, terrainSkinFor,
+  type Look } from '../theme/art.ts';
+import { backdropPlacement } from '../theme/backdrop.ts';
+import { hexNum, isDark, mix, type FullTheme } from '../theme/color.ts';
 import { hashStr } from '../theme/rng.ts';
 import { Controls, launcherAim, stepBehaviors, wrapEnt, type InputState } from './behaviors.ts';
+import { baseZoom, clampCenter, followStep, speedZoomFactor, zoomStep, type FollowState, type Size } from './camera.ts';
+import { suspensionClamp, travelFor, wheelAnchor } from './car.ts';
 import type { NDoc, NObject, NScene } from './normalize.ts';
 import { shapeFor, type Pt } from './shapes.ts';
+import { TerrainTiles } from './terrain_tiles.ts';
 import { World, type BodyIO, type Ent, type FxName, type Host, type RuntimeEventOut } from './world.ts';
 import type { Sound } from './sound.ts';
 
@@ -35,6 +41,8 @@ export interface SceneLink {
   theme: FullTheme;
   recolor: Map<string, string> | null;
   texScale: number;
+  /** The look being played (the doc's, or the play page's local Sketch ↔ Game toggle). */
+  look(): 'game' | 'sketch';
   isPaused(): boolean;
   emit(e: RuntimeEventOut): void;
   counterChanged(subject: string, counter: string, value: number): void;
@@ -57,6 +65,12 @@ interface View {
   flip: boolean;
   bar: Phaser.GameObjects.Graphics | null;
   color: number;
+  /** v7: which look the images show, the terrain tiles of a ground line, the hub/spokes mark of a wheel. */
+  look: Look;
+  terrain: TerrainTiles | null;
+  hub: Phaser.GameObjects.Graphics | null;
+  /** AI art still loading: the cleaned-up sketch shows until it lands. */
+  artPending: boolean;
 }
 
 interface Joint {
@@ -67,6 +81,17 @@ interface Joint {
   length: number;
   motor: boolean;
   speed: number;
+  /** Wheels: anchor offsets from each body's centre of mass (Matter units, body frame) and the suspension travel. */
+  pA?: { x: number; y: number };
+  pB?: { x: number; y: number };
+  travel?: { lat: number; up: number; down: number };
+}
+
+/** A car's wheels for dust and landing effects. */
+interface CarFx {
+  car: Ent;
+  wheels: { e: Ent; r: number; acc: number }[];
+  air: number;
 }
 
 /** Matter body behind an entity, in the World's units (px, px/s, degrees, origin = the object's centre). */
@@ -208,6 +233,10 @@ export class PlayScene extends Phaser.Scene {
   bgLayer!: Phaser.GameObjects.Layer;
   worldLayer!: Phaser.GameObjects.Layer;
   bgSprites: { s: Phaser.GameObjects.TileSprite | Phaser.GameObjects.Image; layer: ReturnType<typeof backgroundLayers>[number] }[] = [];
+  /** v7 backdrop (when the game look has one): sky + parallax layers. */
+  backdropSprites: { s: Phaser.GameObjects.TileSprite | Phaser.GameObjects.Image; i: number; scale: number; key: string }[] = [];
+  sky: Phaser.GameObjects.Image | null = null;
+  ambient: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
   worldCam!: Phaser.Cameras.Scene2D.Camera;
   acc = 0;
   timeScale = 1;
@@ -218,6 +247,13 @@ export class PlayScene extends Phaser.Scene {
   camBaseZoom = 1;
   camX = 800;
   camY = 450;
+  follow: FollowState = { x: 800, y: 450, lookX: 0, lookY: 0 };
+  /** Size of the camera target (wheels included) in world px, for the comfortable zoom. */
+  camTargetSize: Size | null = null;
+  texScale = 1;
+  cars: CarFx[] = [];
+  artUnsub: (() => void) | null = null;
+  terrainBudget = { n: 2 };
   emitters: Record<string, Phaser.GameObjects.Particles.ParticleEmitter> = {};
   bubbles: { e: Ent | null; t: Phaser.GameObjects.Container; until: number }[] = [];
   aim!: Phaser.GameObjects.Graphics;
@@ -246,6 +282,25 @@ export class PlayScene extends Phaser.Scene {
     this.hitStop = 0;
     this.elapsed = 0;
     this.camTarget = null;
+    this.camTargetSize = null;
+    this.backdropSprites = [];
+    this.sky = null;
+    this.ambient = null;
+    this.cars = [];
+    this.artUnsub = null;
+  }
+
+  /** The canvas size in px (the view always has the screen's aspect: no letterbox bars). */
+  get viewW(): number {
+    return this.scale.width;
+  }
+
+  get viewH(): number {
+    return this.scale.height;
+  }
+
+  get gameLook(): boolean {
+    return this.link.look() === 'game';
   }
 
   create(): void {
@@ -259,8 +314,8 @@ export class PlayScene extends Phaser.Scene {
     this.worldLayer = this.add.layer();
     // camera 1 paints the background at zoom 1; camera 2 shows the world
     const bgCam = this.cameras.main;
-    bgCam.setBackgroundColor(L.theme.palette.bg);
-    this.worldCam = this.cameras.add(0, 0, REF_W, REF_H, false, 'world');
+    bgCam.setBackgroundColor(this.backdropBase());
+    this.worldCam = this.cameras.add(0, 0, this.viewW, this.viewH, false, 'world');
     bgCam.ignore(this.worldLayer);
     this.worldCam.ignore(this.bgLayer);
     this.buildBackground();
@@ -274,6 +329,8 @@ export class PlayScene extends Phaser.Scene {
     const world = new World(L.doc, this.scn, this.host(), { game: L.gameCounters });
     this.world = world;
     this.controls = new Controls(L.input, wd.players);
+    // the zoom is known before anything is drawn, so textures are rendered at the resolution they will show at
+    this.planCamera();
     for (const o of this.scn.objects) if (!o.template) this.createEnt(o, { vx: 0, vy: 0 });
     this.buildJoints();
     this.buildEdges();
@@ -283,9 +340,28 @@ export class PlayScene extends Phaser.Scene {
     this.matter.world.on('collisionstart', (ev: Any) => this.onPairs(ev.pairs, 'begin'));
     this.matter.world.on('collisionactive', (ev: Any) => this.onPairs(ev.pairs, 'active'));
     this.matter.world.on('collisionend', (ev: Any) => this.onPairs(ev.pairs, 'end'));
+    // AI art that was still loading swaps in when it lands
+    this.artUnsub = onArtReady(() => this.refreshPendingArt());
+    const onResize = (): void => this.onResize();
+    this.scale.on('resize', onResize);
+    this.events.once('shutdown', () => {
+      this.scale.off('resize', onResize);
+      this.artUnsub?.();
+      this.artUnsub = null;
+      for (const v of this.views.values()) v.terrain?.destroy();
+      this.clearBackdrop();
+    });
     world.start();
     L.onWorld(world, this);
+    this.updateTerrain(true);
     this.updateViews(0);
+  }
+
+  /** The colour behind everything (backdrop sky bottom in the game look, else the theme background). */
+  private backdropBase(): string {
+    const b = this.link.doc.backdrop;
+    if (this.gameLook && b && (b.sky?.length ?? 0) > 0) return b.sky![b.sky!.length - 1];
+    return this.link.theme.palette.bg;
   }
 
   // ---- host (what the World asks for) ------------------------------------------------------------
@@ -334,12 +410,13 @@ export class PlayScene extends Phaser.Scene {
       w: r * 2, h: r * 2, x: 0, y: 0, rotation: 0, scale: 1, layer: 3,
       physics: { body: 'dynamic', shape: 'circle', density: 0.2, friction: 0, bounce: 0, fixed_rotation: true, sensor: true, gravity_scale: 0 },
       behaviors: [], rules: [], counters: {}, tags: ['projectile'], joints: [], template: false, hidden: false, player: 0, order: 999,
+      art: null,
     };
   }
 
   // ---- building ----------------------------------------------------------------------------------
 
-  private textureFor(d: Drawing): { key: string; tiles: { key: string; x: number; y: number }[] } | null {
+  private textureFor(d: Drawing, polish = false): { key: string; tiles: { key: string; x: number; y: number }[]; scale: number } | null {
     if (!d?.strokes?.length) return null;
     let base = texKeys.get(d);
     if (!base) {
@@ -347,10 +424,11 @@ export class PlayScene extends Phaser.Scene {
       texKeys.set(d, base);
     }
     const L = this.link;
+    const texScale = this.texScale;
     const themeKey = hashStr(JSON.stringify([L.theme.palette, L.theme.stroke, L.theme.recolor])).toString(36);
-    const key = `${base}_${themeKey}_${L.texScale}`;
+    const key = `${base}_${themeKey}_${texScale}${polish ? 'p' : ''}`;
     const meta = this.registry.get(`tiles:${key}`) as { key: string; x: number; y: number }[] | undefined;
-    if (meta) return { key, tiles: meta };
+    if (meta) return { key, tiles: meta, scale: texScale };
     // bounding box of the ink
     let minX = Infinity;
     let minY = Infinity;
@@ -367,11 +445,11 @@ export class PlayScene extends Phaser.Scene {
       }
     }
     const margin = maxW * 2 + 30;
-    const big = (maxX - minX + margin * 2) * L.texScale > 4000 || (maxY - minY + margin * 2) * L.texScale > 4000;
+    const big = (maxX - minX + margin * 2) * texScale > 4000 || (maxY - minY + margin * 2) * texScale > 4000;
     const tiles: { key: string; x: number; y: number }[] = [];
     try {
       if (!big) {
-        const c = renderDrawing(d, L.theme as never, { scale: L.texScale, pad: 6, recolorMap: L.recolor });
+        const c = renderDrawing(d, L.theme as never, { scale: texScale, pad: 6, recolorMap: L.recolor, polish });
         if (!this.textures.exists(key)) this.textures.addCanvas(key, c);
         tiles.push({ key, x: 0, y: 0 });
       } else {
@@ -384,7 +462,7 @@ export class PlayScene extends Phaser.Scene {
             const h = Math.min(T, maxY + margin - ty);
             const w = Math.min(T, maxX + margin - tx);
             if (!inkIn(d, tx - maxW, ty - maxW, w + maxW * 2, h + maxW * 2)) continue;
-            const c = renderDrawing(d, L.theme as never, { scale, recolorMap: L.recolor, region: { x: tx, y: ty, w, h } });
+            const c = renderDrawing(d, L.theme as never, { scale, recolorMap: L.recolor, region: { x: tx, y: ty, w, h }, polish });
             const k = `${key}_${tiles.length}`;
             if (!this.textures.exists(k)) this.textures.addCanvas(k, c);
             tiles.push({ key: k, x: tx + w / 2, y: ty + h / 2 });
@@ -396,7 +474,21 @@ export class PlayScene extends Phaser.Scene {
     }
     if (L.theme.stroke.style === 'pixel') for (const t of tiles) this.textures.get(t.key)?.setFilter(Phaser.Textures.FilterMode.NEAREST);
     this.registry.set(`tiles:${key}`, tiles);
-    return { key, tiles };
+    return { key, tiles, scale: texScale };
+  }
+
+  /** The chosen AI variant as a texture at the scene's resolution (null while its SVG loads). */
+  private artTextureFor(def: NObject): { key: string; w: number; h: number; cx: number; cy: number; scale: number } | null {
+    const v = chosenVariant(def);
+    if (!v) return null;
+    const box = artBox(def, v);
+    const key = `art_${hashStr(v.svg).toString(36)}_${v.svg.length}_${box.w}x${box.h}_${this.texScale}`;
+    if (!this.textures.exists(key)) {
+      const c = artCanvasSync({ svg: v.svg, w: box.w, h: box.h }, this.texScale);
+      if (!c) return null;
+      this.textures.addCanvas(key, c);
+    }
+    return { key, w: box.w, h: box.h, cx: box.cx, cy: box.cy, scale: this.texScale };
   }
 
   private makeView(e: Ent): View {
@@ -404,17 +496,6 @@ export class PlayScene extends Phaser.Scene {
     const c = this.add.container(e.x, e.y);
     const inner = this.add.container(0, def.h / 2);
     c.add(inner);
-    const imgs: Phaser.GameObjects.Image[] = [];
-    const tex = this.textureFor(def.drawing);
-    if (tex) {
-      const big = tex.tiles.length > 1 || tex.tiles[0].key !== tex.key;
-      for (const t of tex.tiles) {
-        const img = this.add.image(t.x, t.y - def.h / 2, t.key);
-        img.setScale(big ? 1 : 1 / this.link.texScale);
-        inner.add(img);
-        imgs.push(img);
-      }
-    }
     c.setScale(def.scale);
     c.setRotation((def.rotation * Math.PI) / 180);
     c.setDepth(def.layer * 1000 + def.order);
@@ -426,7 +507,110 @@ export class PlayScene extends Phaser.Scene {
       bar.setDepth(1e6 - 1);
       this.worldLayer.add(bar);
     }
-    return { c, inner, imgs, sx: 1, sy: 1, flash: 0, swing: 0, flip, bar, color: hexNum(firstColor) };
+    const v: View = { c, inner, imgs: [], sx: 1, sy: 1, flash: 0, swing: 0, flip, bar, color: hexNum(firstColor), look: 'raw', terrain: null,
+      hub: null, artPending: false };
+    this.buildLook(e, v);
+    return v;
+  }
+
+  /** (Re)build what a view shows for the current look: AI art, the cleaned-up sketch, raw strokes or terrain. */
+  private buildLook(e: Ent, v: View): void {
+    const def = e.def;
+    for (const img of v.imgs) img.destroy();
+    v.imgs = [];
+    v.terrain?.destroy();
+    v.terrain = null;
+    v.artPending = false;
+    const look = objectLook(def, { look: this.link.look() });
+    v.look = look;
+    const isGround = def.physics.shape === 'line' && def.physics.body !== 'none';
+    if (look !== 'raw' && isGround && def.drawing?.strokes?.length) {
+      // solid land instead of a wire
+      const others = this.scn.objects.filter((o) => o !== def && o.physics.shape === 'line' && o.physics.body !== 'none' && !o.template);
+      const model = terrainModel(def, this.scn.world, others);
+      const skin = terrainSkinFor(def, { look: this.link.look() }, this.link.theme);
+      v.terrain = new TerrainTiles(this, model, skin, this.worldLayer, def.layer * 1000 + def.order);
+      return;
+    }
+    if (look === 'ai') {
+      const art = this.artTextureFor(def);
+      if (art) {
+        const img = this.add.image(art.cx, art.cy - def.h / 2, art.key);
+        img.setDisplaySize(art.w, art.h);
+        v.inner.add(img);
+        v.imgs.push(img);
+        this.addHub(e, v);
+        return;
+      }
+      v.artPending = true; // the cleaned-up sketch until the SVG lands
+    }
+    const tex = this.textureFor(def.drawing, look !== 'raw');
+    if (tex) {
+      const big = tex.tiles.length > 1 || tex.tiles[0].key !== tex.key;
+      for (const t of tex.tiles) {
+        const img = this.add.image(t.x, t.y - def.h / 2, t.key);
+        img.setScale(big ? 1 : 1 / tex.scale);
+        v.inner.add(img);
+        v.imgs.push(img);
+      }
+    }
+    this.addHub(e, v);
+  }
+
+  /** Wheels get a subtle hub and spokes on top so you can see them turn (also over AI wheel art). */
+  private addHub(e: Ent, v: View): void {
+    v.hub?.destroy();
+    v.hub = null;
+    if (!this.isWheel(e)) return;
+    const r = Math.max(4, Math.max(e.def.w, e.def.h) / 2);
+    const [cx, cy] = [0, -e.def.h / 2];
+    const g = this.add.graphics();
+    const dark = isDark(this.link.theme.palette.bg);
+    const ink = hexNum(this.link.theme.palette.ink);
+    const lw = Math.max(1.5, r * 0.07);
+    for (let k = 0; k < 5; k++) {
+      const a = (k / 5) * Math.PI * 2;
+      const x0 = cx + Math.cos(a) * r * 0.24;
+      const y0 = cy + Math.sin(a) * r * 0.24;
+      const x1 = cx + Math.cos(a) * r * 0.6;
+      const y1 = cy + Math.sin(a) * r * 0.6;
+      g.lineStyle(lw * 1.8, dark ? 0x000000 : ink, 0.22);
+      g.lineBetween(x0, y0, x1, y1);
+      g.lineStyle(lw, 0xffffff, 0.42);
+      g.lineBetween(x0, y0, x1, y1);
+    }
+    g.fillStyle(dark ? 0x000000 : ink, 0.45);
+    g.fillCircle(cx, cy, r * 0.2);
+    g.lineStyle(Math.max(1.2, r * 0.05), 0xffffff, 0.6);
+    g.strokeCircle(cx, cy, r * 0.2);
+    g.fillStyle(0xffffff, 0.7);
+    g.fillCircle(cx - r * 0.05, cy - r * 0.05, r * 0.06);
+    v.inner.add(g);
+    v.hub = g;
+  }
+
+  private wheelSet: Set<Ent> | null = null;
+
+  /** Is this entity a car's wheel (the B side of a wheel joint)? Known after buildJoints. */
+  private isWheel(e: Ent): boolean {
+    return !!this.wheelSet?.has(e);
+  }
+
+  /** AI art finished loading: swap it in for views still showing the stand-in sketch. */
+  private refreshPendingArt(): void {
+    if (!this.sys.isActive() && !this.sys.isPaused()) return;
+    for (const [e, v] of this.views) if (v.artPending && e.alive) this.buildLook(e, v);
+    if (this.gameLook && hasBackdrop({ look: 'game', backdrop: this.link.doc.backdrop }) && this.backdropSprites.length < (this.link.doc.backdrop?.layers?.length ?? 0)) {
+      this.buildBackground();
+    }
+  }
+
+  /** The Sketch ↔ Game toggle while playing: rebuild every view, the terrain and the background. */
+  applyLook(): void {
+    for (const [e, v] of this.views) if (e.alive) this.buildLook(e, v);
+    this.cameras.main.setBackgroundColor(this.backdropBase());
+    this.buildBackground();
+    this.updateTerrain(true);
   }
 
   /** Entity + view + body for an object (initial objects and copies). */
@@ -528,11 +712,28 @@ export class PlayScene extends Phaser.Scene {
       while (parent.get(r) && parent.get(r) !== r) r = parent.get(r)!;
       return r;
     };
+    const isCar = (x: Ent): boolean => x.behaviors.some((b) => b.def.type === 'car');
+    const pairs: { e: Ent; other: Ent; j: NObject['joints'][number] }[] = [];
     for (const e of this.world.ents) {
       if (!e.alive) continue;
       for (const j of e.def.joints) {
         const other = this.world.byId.get(j.to);
         if (!other || other === e || !other.alive) continue; // dangling joints are ignored
+        // a wheel joint written on the wheel (pointing at the car) is the same joint the other way round
+        if (j.type === 'wheel' && isCar(other) && !isCar(e)) pairs.push({ e: other, other: e, j: { ...j, at: j.to_at, to_at: j.at } });
+        else pairs.push({ e, other, j });
+      }
+    }
+    // a car whose wheels were drawn but never attached gets them attached (they would roll away on their own)
+    for (const car of this.world.ents) {
+      if (!car.alive || !isCar(car) || pairs.some((p) => p.j.type === 'wheel' && p.e === car)) continue;
+      for (const w of this.autoWheels(car, pairs.map((p) => p.other))) {
+        pairs.push({ e: car, other: w, j: { type: 'wheel', to: w.id, at: [0, 0], to_at: [0, 0], motor: true, speed: 0, length: null, stiffness: 0.5 } });
+      }
+    }
+    this.wheelSet = new Set();
+    for (const { e, other, j } of pairs) {
+      {
         const A = e.body as MatterIO;
         const B = other.body as MatterIO;
         if (!(A instanceof MatterIO) || !(B instanceof MatterIO)) continue;
@@ -545,8 +746,25 @@ export class PlayScene extends Phaser.Scene {
           const ly = p[1] * s - io.oy;
           return { x: Math.cos(a) * lx - Math.sin(a) * ly, y: Math.sin(a) * lx + Math.cos(a) * ly };
         };
-        const pA = anchor(A, j.at, s1);
-        const pB = anchor(B, j.to_at, s2);
+        let at = j.at;
+        let toAt = j.to_at;
+        let travel: Joint['travel'];
+        if (j.type === 'wheel') {
+          // wheels go where the maker drew them on the car (a joint that disagrees with the drawing is ignored)
+          const r = wheelRadius(other);
+          const wa = wheelAnchor({ x: A.x, y: A.y, rotation: A.angle, scale: s1, w: e.def.w, h: e.def.h }, { x: B.x, y: B.y, r }, j.at, j.to_at);
+          at = wa.at;
+          toAt = wa.to_at;
+          if (wa.source !== 'drawn') {
+            // start attached: move the wheel onto its anchor
+            const p = anchor(A, at, s1);
+            B.setPosition(A.b.position.x + p.x, A.b.position.y + p.y);
+          }
+          travel = travelFor(r);
+          this.wheelSet.add(other);
+        }
+        const pA = anchor(A, at, s1);
+        const pB = anchor(B, toAt, s2);
         const wA = { x: A.b.position.x + pA.x, y: A.b.position.y + pA.y };
         const wB = { x: B.b.position.x + pB.x, y: B.b.position.y + pB.y };
         const dist = Math.hypot(wA.x - wB.x, wA.y - wB.y);
@@ -559,8 +777,11 @@ export class PlayScene extends Phaser.Scene {
         let length = 0;
         switch (j.type) {
           case 'wheel':
+            // a soft spring is the suspension (the body bounces); clampWheels() is the hard travel limit
+            add({ pointA: pA, pointB: pB, length: 0, stiffness: 0.22, damping: 0.2 });
+            break;
           case 'hinge':
-            add({ pointA: pA, pointB: pB, length: 0, stiffness: j.type === 'wheel' ? 0.5 : 0.9, damping: 0.15 });
+            add({ pointA: pA, pointB: pB, length: 0, stiffness: 0.9, damping: 0.15 });
             break;
           case 'rope':
             length = j.length ?? dist;
@@ -580,15 +801,21 @@ export class PlayScene extends Phaser.Scene {
             break;
           }
         }
-        this.joints.push({ type: j.type, cons, a: e, b: other, length, motor: j.motor, speed: j.speed });
+        this.joints.push({ type: j.type, cons, a: e, b: other, length, motor: j.motor, speed: j.speed, travel });
         if (j.type === 'wheel') {
           A.wheelList.push({ body: B, radius: wheelRadius(other), motor: j.motor });
           if (!other.rules.length && !other.behaviors.length) other.root = e;
         } else if (j.type === 'weld' && !other.rules.length && !other.behaviors.length) other.root = e;
       }
     }
+    // every joined entity (both ends: the union's root is only a value in `parent`) shares one non-colliding group
+    const joined = new Set<Ent>();
+    for (const [k, v] of parent) {
+      joined.add(k);
+      joined.add(v);
+    }
     for (const e of this.world.ents) {
-      if (!parent.has(e)) continue;
+      if (!joined.has(e)) continue;
       const r = find(e);
       let g = (r as Ent & { __group?: number }).__group;
       if (!g) {
@@ -597,6 +824,88 @@ export class PlayScene extends Phaser.Scene {
       }
       const io = e.body as MatterIO;
       if (io instanceof MatterIO) io.b.collisionFilter.group = g;
+    }
+    // wheels show their spin; cars kick up dust
+    for (const w of this.wheelSet) {
+      const v = this.views.get(w);
+      if (v) this.addHub(w, v);
+    }
+    const byCar = new Map<Ent, CarFx>();
+    for (const j of this.joints) {
+      if (j.type !== 'wheel' || !isCar(j.a)) continue;
+      let c = byCar.get(j.a);
+      if (!c) {
+        c = { car: j.a, wheels: [], air: 0 };
+        byCar.set(j.a, c);
+      }
+      c.wheels.push({ e: j.b, r: wheelRadius(j.b), acc: 0 });
+    }
+    this.cars = [...byCar.values()];
+  }
+
+  /** Round dynamic things drawn at a car's underside (wheels the copilot never attached). */
+  private autoWheels(car: Ent, taken: Ent[]): Ent[] {
+    const A = car.body;
+    if (!A) return [];
+    const s = car.def.scale;
+    const out: { e: Ent; d: number }[] = [];
+    for (const w of this.world.ents) {
+      if (w === car || !w.alive || taken.includes(w) || w.def.template || w.def.physics.body !== 'dynamic') continue;
+      if (w.behaviors.some((b) => b.def.type === 'car') || w.player) continue;
+      const ww = w.def.w * w.def.scale;
+      const wh = w.def.h * w.def.scale;
+      const round = w.def.physics.shape === 'circle' || /wheel|tire|tyre/i.test(`${w.def.kind} ${w.def.name}`)
+        || (Math.abs(ww - wh) < 0.25 * Math.max(ww, wh));
+      if (!round || Math.max(ww, wh) > Math.max(car.def.w, car.def.h) * s * 0.8) continue;
+      // in the car's frame: under or at its bottom edge, within its length
+      const a = (-A.angle * Math.PI) / 180;
+      const dx = w.x - A.x;
+      const dy = w.y - A.y;
+      const lx = (dx * Math.cos(a) - dy * Math.sin(a)) / s;
+      const ly = (dx * Math.sin(a) + dy * Math.cos(a)) / s;
+      const r = Math.max(ww, wh) / 2 / s;
+      if (Math.abs(lx) > car.def.w / 2 + r * 0.5 || ly < 0 || ly > car.def.h / 2 + r * 1.6) continue;
+      out.push({ e: w, d: Math.hypot(lx, ly) });
+    }
+    return out.sort((p, q) => p.d - q.d).slice(0, 4).map((x) => x.e);
+  }
+
+  /**
+   * Suspension travel limit, after every physics step: a wheel that the spring let drift too far from its anchor (in
+   * the car's frame) is put back on the limit and loses the velocity that was carrying it away. Wheels never detach.
+   */
+  private clampWheels(): void {
+    for (const j of this.joints) {
+      if (j.type !== 'wheel' || !j.travel || !j.a.alive || !j.b.alive) continue;
+      const A = j.a.body as MatterIO;
+      const B = j.b.body as MatterIO;
+      if (!(A instanceof MatterIO) || !(B instanceof MatterIO) || A.b.isStatic || B.b.isStatic) continue;
+      const c = j.cons[0];
+      if (!c) continue;
+      const ab = A.b;
+      const wb = B.b;
+      const ax = ab.position.x + c.pointA.x;
+      const ay = ab.position.y + c.pointA.y;
+      const bx = wb.position.x + c.pointB.x;
+      const by = wb.position.y + c.pointB.y;
+      const t = j.travel;
+      const hit = suspensionClamp(bx - ax, by - ay, ab.angle, t.lat, t.up, t.down);
+      if (!hit) continue;
+      // velocity of the anchor point on the car (Matter units: px and radians per step)
+      const rax = c.pointA.x;
+      const ray = c.pointA.y;
+      const avx = ab.velocity.x - ab.angularVelocity * ray;
+      const avy = ab.velocity.y + ab.angularVelocity * rax;
+      const cs = Math.cos(ab.angle);
+      const sn = Math.sin(ab.angle);
+      const rvx = wb.velocity.x - avx;
+      const rvy = wb.velocity.y - avy;
+      let rlx = rvx * cs + rvy * sn;
+      let rly = -rvx * sn + rvy * cs;
+      if (hit.hitX * rlx > 0) rlx = 0;
+      if (hit.hitY * rly > 0) rly = 0;
+      M.Body.setPosition(wb, { x: ax + hit.dx - c.pointB.x, y: ay + hit.dy - c.pointB.y });
+      M.Body.setVelocity(wb, { x: avx + rlx * cs - rly * sn, y: avy + rlx * sn + rly * cs });
     }
   }
 
@@ -616,26 +925,92 @@ export class PlayScene extends Phaser.Scene {
     if (edges === 'walls' || edges === 'floor') wall(W / 2, H + T / 2, W + T * 2, T);
   }
 
+  private clearBackdrop(): void {
+    for (const b of this.backdropSprites) {
+      b.s.destroy();
+      if (this.textures.exists(b.key)) this.textures.remove(b.key);
+    }
+    this.backdropSprites = [];
+    if (this.sky) {
+      const k = this.sky.texture.key;
+      this.sky.destroy();
+      if (this.textures.exists(k)) this.textures.remove(k);
+      this.sky = null;
+    }
+  }
+
+  /** The theme's parallax background, or in the game look the AI backdrop (sky + layers) when the doc has one. */
   private buildBackground(): void {
+    for (const { s } of this.bgSprites) s.destroy();
+    this.bgSprites = [];
+    this.clearBackdrop();
+    const W = this.viewW;
+    const H = this.viewH;
+    const bd = this.link.doc.backdrop;
+    if (this.gameLook && hasBackdrop({ look: 'game', backdrop: bd })) {
+      const skyKey = `sky_${++texSeq}`;
+      this.textures.addCanvas(skyKey, skyCanvas(bd, this.link.theme as never, 256));
+      this.sky = this.add.image(0, 0, skyKey).setOrigin(0, 0).setDisplaySize(W, H);
+      this.bgLayer.add(this.sky);
+      (bd?.layers ?? []).forEach((layer, i) => {
+        const p = backdropPlacement(layer, this.scn.world, { x: 0, y: 0, zoom: 1 }, { w: W, h: H });
+        const c = artCanvasSync({ svg: layer.svg, w: layer.w, h: layer.h }, p.scale);
+        if (!c) return; // still loading: refreshPendingArt rebuilds when it lands
+        const key = `bd_${++texSeq}`;
+        this.textures.addCanvas(key, c);
+        const cs = (c as HTMLCanvasElement & { __scale?: number }).__scale ?? p.scale;
+        const s = p.repeat ? this.add.tileSprite(0, 0, W, c.height, key).setOrigin(0, 0) : this.add.image(0, 0, key).setOrigin(0, 0);
+        this.bgLayer.add(s);
+        this.backdropSprites.push({ s, i, scale: cs, key });
+      });
+      return;
+    }
     const layers = backgroundLayers(this.link.doc.theme);
     for (const layer of layers) {
       const key = `bg_${hashStr(String(layers.indexOf(layer)) + JSON.stringify(this.link.theme.background) + this.link.theme.id + JSON.stringify(this.link.theme.palette))}`;
       if (!this.textures.exists(key)) this.textures.addCanvas(key, layer.canvas);
       let s: Phaser.GameObjects.TileSprite | Phaser.GameObjects.Image;
-      if (!layer.tileX && !layer.tileY) s = this.add.image(0, 0, key).setOrigin(0, 0).setDisplaySize(REF_W, REF_H);
-      else s = this.add.tileSprite(0, 0, REF_W, layer.anchor === 'fill' ? REF_H : layer.canvas.height, key).setOrigin(0, 0);
+      if (!layer.tileX && !layer.tileY) s = this.add.image(0, 0, key).setOrigin(0, 0).setDisplaySize(W, H);
+      else s = this.add.tileSprite(0, 0, W, layer.anchor === 'fill' ? H : layer.canvas.height, key).setOrigin(0, 0);
       this.bgLayer.add(s);
       this.bgSprites.push({ s, layer });
     }
   }
 
+  /** The camera in the device-space convention shared with renderBackground / renderBackdrop. */
+  private deviceCamera(): { x: number; y: number; zoom: number } {
+    const z = this.worldCam.zoom;
+    return { x: this.worldCam.midPoint.x - this.viewW / z / 2, y: this.worldCam.midPoint.y - this.viewH / z / 2, zoom: z };
+  }
+
   private updateBackground(): void {
-    const cam = { x: this.worldCam.scrollX + (REF_W - REF_W / this.worldCam.zoom) / 2, y: this.worldCam.scrollY + (REF_H - REF_H / this.worldCam.zoom) / 2,
-      zoom: this.worldCam.zoom };
+    const cam = this.deviceCamera();
+    const view = { w: this.viewW, h: this.viewH };
+    if (this.sky) this.sky.setDisplaySize(view.w, view.h);
+    const layers = this.link.doc.backdrop?.layers ?? [];
+    for (const b of this.backdropSprites) {
+      const layer = layers[b.i];
+      if (!layer) continue;
+      const p = backdropPlacement(layer, this.scn.world, cam, view);
+      const k = p.scale / b.scale; // texture px → view px
+      if (b.s instanceof Phaser.GameObjects.TileSprite) {
+        b.s.setPosition(0, p.y);
+        b.s.setSize(view.w, p.h);
+        b.s.setTileScale(k, k);
+        b.s.tilePositionX = p.offset / k;
+        b.s.tilePositionY = 0;
+      } else {
+        b.s.setPosition(p.x, p.y);
+        b.s.setDisplaySize(p.w, p.h);
+      }
+    }
     const par = this.link.theme.background.parallax;
     for (const { s, layer } of this.bgSprites) {
-      if (!(s instanceof Phaser.GameObjects.TileSprite)) continue;
-      const p = layerPlacement(layer, this.scn.world, cam, { w: REF_W, h: REF_H }, par);
+      if (!(s instanceof Phaser.GameObjects.TileSprite)) {
+        s.setDisplaySize(view.w, view.h);
+        continue;
+      }
+      const p = layerPlacement(layer, this.scn.world, cam, view, par);
       s.setPosition(p.x, p.y);
       s.setSize(p.w, layer.anchor === 'fill' ? p.h : layer.canvas.height * p.tileScale);
       s.setTileScale(p.tileScale, p.tileScale);
@@ -644,22 +1019,75 @@ export class PlayScene extends Phaser.Scene {
     }
   }
 
+  /** The canvas changed size (window resize, rotate, fullscreen): cameras, zoom and backdrop follow. */
+  onResize(): void {
+    if (!this.worldCam) return;
+    const W = this.viewW;
+    const H = this.viewH;
+    this.cameras.main.setSize(W, H);
+    this.worldCam.setSize(W, H);
+    this.planCamera();
+    // backdrop layers are rasterized for the view height: redo them when it changed a lot
+    const bd = this.backdropSprites[0];
+    const layer = bd ? this.link.doc.backdrop?.layers?.[bd.i] : null;
+    if (layer) {
+      const want = backdropPlacement(layer, this.scn.world, { x: 0, y: 0, zoom: 1 }, { w: W, h: H }).scale;
+      if (Math.abs(want - bd.scale) / bd.scale > 0.2) this.buildBackground();
+    }
+    this.makeAmbient();
+    this.applyCamera(0, true);
+    this.updateBackground();
+  }
+
   // ---- camera --------------------------------------------------------------------------------------
+
+  /** Size (world px) of an object with everything jointed to it (a car with its wheels), for the comfortable zoom. */
+  private groupSize(def: NObject): Size {
+    let minX = def.x - (def.w * def.scale) / 2;
+    let maxX = def.x + (def.w * def.scale) / 2;
+    let minY = def.y - (def.h * def.scale) / 2;
+    let maxY = def.y + (def.h * def.scale) / 2;
+    for (const j of def.joints) {
+      const o = this.scn.objects.find((x) => x.id === j.to);
+      if (!o || o.template || Math.hypot(o.x - def.x, o.y - def.y) > Math.max(def.w, def.h) * def.scale * 1.5) continue;
+      minX = Math.min(minX, o.x - (o.w * o.scale) / 2);
+      maxX = Math.max(maxX, o.x + (o.w * o.scale) / 2);
+      minY = Math.min(minY, o.y - (o.h * o.scale) / 2);
+      maxY = Math.max(maxY, o.y + (o.h * o.scale) / 2);
+    }
+    return { w: Math.max(8, maxX - minX), h: Math.max(8, maxY - minY) };
+  }
+
+  private texScaleSet = false;
+
+  /** The base zoom for the current canvas size (and, the first time, the texture resolution to match it). */
+  private planCamera(): void {
+    const wd = this.scn.world;
+    const cam = wd.camera;
+    const tdef = (cam.target && this.scn.objects.find((o) => o.id === cam.target && !o.template))
+      || this.scn.objects.find((o) => o.player === 1 && !o.template) || null;
+    this.camTargetSize = tdef ? this.groupSize(tdef) : null;
+    this.camBaseZoom = baseZoom(cam.mode, { w: this.viewW, h: this.viewH }, wd, this.camTargetSize, cam.axis, cam.zoom);
+    if (!this.texScaleSet) {
+      this.texScaleSet = true;
+      this.texScale = Math.max(0.5, Math.min(3, Math.ceil(this.camBaseZoom * 1.1 * 2) / 2));
+    }
+  }
 
   private setupCamera(): void {
     const wd = this.scn.world;
     const cam = wd.camera;
-    if (cam.mode === 'fixed') this.camBaseZoom = Math.min(REF_W / wd.width, REF_H / wd.height);
-    else this.camBaseZoom = 1;
-    this.camZoom = cam.zoom;
+    this.camZoom = 1;
     const target = (cam.target && this.world.byId.get(cam.target)) || this.world.playerEnt(1);
     this.camTarget = cam.mode === 'follow' ? target ?? null : null;
+    this.planCamera();
+    const z = this.camBaseZoom;
+    const vw = this.viewW / z;
+    const vh = this.viewH / z;
     if (cam.mode === 'fixed') {
       this.camX = wd.width / 2;
       this.camY = wd.height / 2;
     } else if (cam.mode === 'auto_scroll') {
-      const vw = REF_W / (this.camBaseZoom * this.camZoom);
-      const vh = REF_H / (this.camBaseZoom * this.camZoom);
       this.camX = cam.axis === 'y' ? wd.width / 2 : vw / 2;
       this.camY = cam.axis === 'y' ? wd.height - vh / 2 : target ? target.y : wd.height - vh / 2;
       if (cam.axis !== 'y') this.camY = Math.min(wd.height - vh / 2, Math.max(vh / 2, this.camY));
@@ -667,49 +1095,68 @@ export class PlayScene extends Phaser.Scene {
       this.camX = target.x;
       this.camY = target.y;
     }
+    this.follow = { x: this.camX, y: this.camY, lookX: 0, lookY: 0 };
     this.applyCamera(0, true);
   }
 
+  /**
+   * The game camera (v7 §4.2): the view fills the canvas (no bars), the zoom keeps the player a comfortable size and
+   * eases out a little at speed, the follow leads ahead of the motion with damped vertical movement, clamped to the
+   * world (centred when the world is smaller than the view, over the backdrop colour).
+   */
   private applyCamera(dt: number, snap = false): void {
     const wd = this.scn.world;
     const cam = wd.camera;
-    const zoom = this.camBaseZoom * this.camZoom;
-    const z = snap ? zoom : this.worldCam.zoom + (zoom - this.worldCam.zoom) * Math.min(1, dt * 4);
+    const view = { w: this.viewW, h: this.viewH };
+    let want = this.camBaseZoom * this.camZoom;
+    const t = this.camTarget && this.camTarget.alive ? this.camTarget : null;
+    if (cam.mode === 'follow' && t) {
+      want *= speedZoomFactor(Math.hypot(t.body?.vx ?? 0, t.body?.vy ?? 0));
+      const fz = Math.max(view.w / wd.width, view.h / wd.height);
+      if (want < fz && fz <= want * 1.8) want = fz;
+    }
+    const z = snap ? want : zoomStep(this.worldCam.zoom, want, dt, cam.mode === 'follow' ? 1.2 : 4);
     this.worldCam.setZoom(z);
-    const vw = REF_W / z;
-    const vh = REF_H / z;
+    const vw = view.w / z;
+    const vh = view.h / z;
     if (cam.mode === 'auto_scroll' && !this.world.over) {
       if (cam.axis === 'y') this.camY -= cam.speed * dt * this.timeScale;
       else this.camX += cam.speed * dt * this.timeScale;
       const p = this.world.playerEnt(1);
       if (p && cam.axis === 'x') this.camY += (Math.min(wd.height - vh / 2, p.y) - this.camY) * Math.min(1, dt * 2);
       if (p && cam.axis === 'y') this.camX += (p.x - this.camX) * Math.min(1, dt * 2);
-    } else if (this.camTarget && this.camTarget.alive) {
-      const t = this.camTarget;
-      const look = Math.max(-220, Math.min(220, (t.body?.vx ?? 0) * 0.3));
-      const tx = t.x + look;
-      const ty = t.y - vh * 0.08;
-      const dzx = vw * 0.06;
-      const dzy = vh * 0.08;
-      const k = snap ? 1 : 1 - Math.exp(-dt * 5);
-      if (cam.axis !== 'y') {
-        const dx = tx - this.camX;
-        if (Math.abs(dx) > dzx) this.camX += (dx - Math.sign(dx) * dzx) * k;
-      }
-      if (cam.axis !== 'x') {
-        const dy = ty - this.camY;
-        if (Math.abs(dy) > dzy) this.camY += (dy - Math.sign(dy) * dzy) * k;
-      } else if (snap) this.camY = ty;
+    } else if (cam.mode !== 'auto_scroll' && t) {
+      this.follow = followStep(this.follow, { tx: t.x, ty: t.y, vx: t.body?.vx ?? 0, vy: t.body?.vy ?? 0, vw, vh, dt, axis: cam.axis, snap });
+      this.camX = this.follow.x;
+      this.camY = this.follow.y;
     }
-    // clamp to the world (centre it when it is smaller than the view)
-    const cx = wd.width <= vw ? wd.width / 2 : Math.max(vw / 2, Math.min(wd.width - vw / 2, this.camX));
-    const cy = wd.height <= vh ? wd.height / 2 : Math.max(vh / 2, Math.min(wd.height - vh / 2, this.camY));
+    const cx = clampCenter(this.camX, vw, wd.width);
+    const cy = clampCenter(this.camY, vh, wd.height);
     if (cam.mode !== 'auto_scroll' || cam.axis === 'y') this.camX = cx;
     else this.camX = Math.min(this.camX, Math.max(vw / 2, wd.width - vw / 2));
     if (cam.mode !== 'auto_scroll' || cam.axis === 'x') this.camY = cy;
     else this.camY = Math.max(this.camY, vh / 2);
+    if (cam.mode !== 'auto_scroll') {
+      this.follow.x = this.camX;
+      this.follow.y = this.camY;
+    }
     this.worldCam.centerOn(this.camX, this.camY);
     this.world.view = { x: this.camX - vw / 2, y: this.camY - vh / 2, w: vw, h: vh };
+  }
+
+  /** Stream terrain tiles for the current view (a couple per frame; everything visible at once when `all`). */
+  private updateTerrain(all = false): void {
+    const v = this.world?.view;
+    if (!v) return;
+    this.terrainBudget.n = all ? 1000 : 2;
+    for (const [e, view] of this.views) {
+      if (!view.terrain || !e.alive) continue;
+      const ox = e.x - e.def.x;
+      const oy = e.y - e.def.y;
+      view.terrain.container.setPosition(ox, oy);
+      view.terrain.container.setVisible(view.c.visible);
+      view.terrain.update({ minX: v.x - ox, minY: v.y - oy, maxX: v.x + v.w - ox, maxY: v.y + v.h - oy }, this.worldCam.zoom, this.terrainBudget);
+    }
   }
 
   shake(power: number): void {
@@ -785,8 +1232,50 @@ export class PlayScene extends Phaser.Scene {
     if (steps >= 4) this.acc = 0;
     this.applyCamera(dtFrame);
     this.updateBackground();
+    this.updateTerrain();
     this.updateViews(dtFrame);
+    this.updateCarFx(dtFrame);
     this.updateEngineSound();
+  }
+
+  /** Dust from wheels that grip the ground at speed, and a puff when a car lands after air time. */
+  private updateCarFx(dt: number): void {
+    if (this.link.theme.particles === 'none' || !this.cars.length) return;
+    const em = this.emitters.wheeldust;
+    if (!em) return;
+    const [gx, gy] = this.world.gravity;
+    const gl = Math.hypot(gx, gy) || 1;
+    const dx = gx / gl;
+    const dy = gy / gl;
+    for (const c of this.cars) {
+      if (!c.car.alive) continue;
+      const anyDown = c.wheels.some((w) => w.e.alive && w.e.body?.grounded);
+      if (anyDown && c.air > 0.35) {
+        const hard = Math.min(1.6, c.air);
+        for (const w of c.wheels) if (w.e.alive) {
+          em.setEmitterAngle({ min: 180, max: 360 });
+          em.emitParticleAt(w.e.x + dx * w.r, w.e.y + dy * w.r, Math.round(6 + hard * 6));
+        }
+        if (hard > 1) this.shake(0.4);
+      }
+      c.air = anyDown ? 0 : c.air + dt;
+      for (const w of c.wheels) {
+        const b = w.e.body;
+        if (!w.e.alive || !b || !b.grounded) continue;
+        const rim = Math.abs((b.av * Math.PI) / 180) * w.r; // px/s at the rim
+        const speed = Math.hypot(b.vx, b.vy);
+        const slip = Math.abs(rim - speed);
+        const rate = Math.min(40, (Math.max(0, speed - 160) / 40) + slip / 30);
+        w.acc += rate * dt;
+        if (w.acc < 1) continue;
+        const n = Math.floor(w.acc);
+        w.acc -= n;
+        // kicked backward, away from the direction of travel
+        const back = b.vx >= 0 ? { min: 195, max: 250 } : { min: 290, max: 345 };
+        em.setEmitterAngle(back);
+        em.emitParticleAt(w.e.x + dx * w.r * 0.9, w.e.y + dy * w.r * 0.9, n);
+      }
+    }
   }
 
   private fixedStep(dt: number): void {
@@ -828,6 +1317,7 @@ export class PlayScene extends Phaser.Scene {
       } else if (b instanceof FreeIO) b.integrate(dt);
     }
     this.matter.world.step(STEP_MS * this.timeScale);
+    this.clampWheels();
     // world edges
     const wd = this.scn.world;
     for (const e of w.ents) {
@@ -1010,18 +1500,30 @@ export class PlayScene extends Phaser.Scene {
     mk('flame', 'p_dot', { speed: { min: 60, max: 160 }, scale: { start: 0.7, end: 0 }, alpha: { start: 0.9, end: 0 }, lifespan: 300,
       tint: [0xffd166, 0xff7b00, hexNum(P.accent)], blendMode: 'ADD' });
     mk('ring', 'p_ring', { speed: 0, scale: { start: 0.5, end: 4 }, alpha: { start: 0.8, end: 0 }, lifespan: 380, tint: 0xffffff });
-    // ambient weather for some themes
+    // big dust for car wheels (tinted per ground)
+    mk('wheeldust', 'p_dot', { speed: { min: 40, max: 160 }, scale: { start: 0.55, end: 1.6 }, alpha: { start: 0.42, end: 0 },
+      lifespan: { min: 380, max: 700 }, gravityY: -60, tint: hexNum(dust) });
+    this.makeAmbient();
+  }
+
+  /** Ambient weather for some themes, spread over the whole (resizable) view. */
+  private makeAmbient(): void {
+    this.ambient?.destroy();
+    this.ambient = null;
     const amb = this.link.theme.particles;
-    if (amb === 'snow' || amb === 'embers' || amb === 'bubbles') {
-      const em = this.add.particles(0, 0, amb === 'bubbles' ? 'p_ring' : 'p_dot', {
-        x: { min: 0, max: REF_W }, y: amb === 'snow' ? -10 : REF_H + 10, lifespan: 7000, frequency: 160,
-        speedY: amb === 'snow' ? { min: 40, max: 90 } : { min: -90, max: -40 }, speedX: { min: -20, max: 20 },
-        scale: amb === 'bubbles' ? { min: 0.5, max: 1.4 } : { min: 0.15, max: 0.45 }, alpha: { start: 0.8, end: 0.1 },
-        tint: amb === 'embers' ? [0xff7b00, 0xffd166] : 0xffffff, blendMode: amb === 'embers' ? 'ADD' : 'NORMAL',
-      });
-      em.setScrollFactor(0);
-      this.bgLayer.add(em);
-    }
+    if (amb !== 'snow' && amb !== 'embers' && amb !== 'bubbles') return;
+    const W = this.viewW;
+    const H = this.viewH;
+    const em = this.add.particles(0, 0, amb === 'bubbles' ? 'p_ring' : 'p_dot', {
+      x: { min: 0, max: W }, y: amb === 'snow' ? -10 : H + 10, lifespan: 7000 * (H / 900), frequency: 160 * (1600 / Math.max(400, W)),
+      speedY: amb === 'snow' ? { min: 40, max: 90 } : { min: -90, max: -40 }, speedX: { min: -20, max: 20 },
+      scale: amb === 'bubbles' ? { min: 0.5, max: 1.4 } : { min: 0.15, max: 0.45 }, alpha: { start: 0.8, end: 0.1 },
+      tint: amb === 'embers' ? [0xff7b00, 0xffd166] : 0xffffff, blendMode: amb === 'embers' ? 'ADD' : 'NORMAL',
+    });
+    em.setScrollFactor(0);
+    em.setDepth(1e6);
+    this.bgLayer.add(em);
+    this.ambient = em;
   }
 
   burst(kind: string, x: number, y: number, n: number, tint?: number): void {
