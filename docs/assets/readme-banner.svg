@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="350" viewBox="0 0 1200 350" role="img" aria-labelledby="title desc">
+  <title id="title">Sketch. Build. Play.</title>
+  <desc id="desc">A pencil drawing becomes a colorful platformer, then a game shared between two players.</desc>
+  <defs>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#e5e9ee" stroke-width="1"/></pattern>
+  </defs>
+  <rect width="1200" height="350" rx="24" fill="#f7f8fc"/>
+  <g font-family="system-ui, sans-serif">
+    <text x="42" y="52" font-size="27" font-weight="800" fill="#192539">draw.play</text>
+    <text x="1156" y="50" text-anchor="end" font-size="14" fill="#526079">YOUR IDEAS, IN PLAY</text>
+    <rect x="40" y="78" width="330" height="204" rx="16" fill="white" stroke="#d7dfe9"/>
+    <rect x="52" y="90" width="306" height="180" rx="10" fill="url(#grid)"/>
+    <path d="M72 234L128 231L148 235L173 231M190 200L244 198M261 163L327 166" fill="none" stroke="#283448" stroke-width="5" stroke-linecap="round"/>
+    <path d="M266 161L266 116L297 129L266 139" fill="none" stroke="#36a573" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M128 214L135 201L142 214L149 201L156 214" fill="none" stroke="#e06b62" stroke-width="3"/>
+    <path d="M84 200Q76 179 91 176Q106 178 101 196M81 187L69 180M102 187L112 181M87 199L81 212M98 199L105 211" fill="none" stroke="#567ee5" stroke-width="3" stroke-linecap="round"/>
+    <path d="M320 103L298 125L294 139L308 135L330 113Z" fill="#ffc75a" stroke="#283448" stroke-width="2"/>
+    <path d="M390 177H418M410 169L418 177L410 185" fill="none" stroke="#8795aa" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="435" y="78" width="330" height="204" rx="16" fill="#e8f0ff" stroke="#cbd9f3"/>
+    <circle cx="706" cy="119" r="19" fill="#ffcc67"/>
+    <path d="M451 240L516 171L568 232L617 165L688 240" fill="#cbdcf4"/>
+    <rect x="455" y="226" width="112" height="20" rx="5" fill="#314660"/>
+    <rect x="583" y="190" width="64" height="18" rx="5" fill="#314660"/>
+    <rect x="666" y="155" width="76" height="18" rx="5" fill="#314660"/>
+    <path d="M455 227H567M583 191H647M666 156H742" stroke="#47b68b" stroke-width="5"/>
+    <path d="M698 153V112L724 122L698 134" fill="#47b68b" stroke="#268567" stroke-width="3"/>
+    <rect x="480" y="200" width="21" height="25" rx="7" fill="#567ee5"/>
+    <circle cx="494" cy="207" r="3" fill="white"/>
+    <path d="M516 190Q552 123 608 172" fill="none" stroke="#567ee5" stroke-width="3" stroke-dasharray="5 7"/>
+    <circle cx="615" cy="164" r="7" fill="#ffcc67" stroke="#dca336" stroke-width="2"/>
+    <path d="M785 177H813M805 169L813 177L805 185" fill="none" stroke="#8795aa" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="830" y="78" width="330" height="204" rx="16" fill="#eff8f3" stroke="#cde6d8"/>
+    <rect x="909" y="109" width="172" height="100" rx="12" fill="#fff" stroke="#314660" stroke-width="4"/>
+    <path d="M927 190H976V174H1016V156H1060" fill="none" stroke="#47b68b" stroke-width="7" stroke-linejoin="round"/>
+    <rect x="937" y="165" width="16" height="21" rx="5" fill="#567ee5"/>
+    <rect x="985" y="151" width="16" height="21" rx="5" fill="#ec9165"/>
+    <path d="M968 210V224M1022 210V224M953 225H1037" stroke="#314660" stroke-width="4" stroke-linecap="round"/>
+    <g fill="#fff" stroke="#314660" stroke-width="3">
+      <rect x="868" y="232" width="95" height="31" rx="15"/>
+      <rect x="1027" y="232" width="95" height="31" rx="15"/>
+    </g>
+    <path d="M887 240V254M880 247H894" stroke="#567ee5" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="944" cy="247" r="4" fill="#567ee5"/>
+    <path d="M1046 240V254M1039 247H1053" stroke="#ec9165" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="1103" cy="247" r="4" fill="#ec9165"/>
+    <g font-size="19" font-weight="700" fill="#192539" text-anchor="middle">
+      <text x="205" y="319">01 / Sketch</text><text x="600" y="319">02 / Build</text><text x="995" y="319">03 / Play together</text>
+    </g>
+  </g>
+</svg>
