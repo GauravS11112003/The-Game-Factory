@@ -3,7 +3,7 @@
  * event / action types are dropped with one error each (docs/v6/CONTRACTS_V6.md §4.1), params are resolved against the
  * catalog (params.ts). Pure (no DOM, no Phaser).
  */
-import type { Drawing, GameDoc, StudioTheme } from '../../core/types.gen.ts';
+import type { ArtVariant, Backdrop, BackdropLayer, Drawing, GameDoc, StudioTheme, TerrainSkin } from '../../core/types.gen.ts';
 import { ACTIONS, BEHAVIORS, EVENTS } from '../model/catalog.ts';
 import { resolveParams, type Params } from './params.ts';
 
@@ -82,6 +82,15 @@ export interface NObject {
   hidden: boolean;
   player: 0 | 1 | 2;
   order: number;
+  /** v7: the object's AI art (variants that look plays, terrain skin for ground lines). */
+  art: NArt | null;
+}
+
+export interface NArt {
+  use: 'sketch' | 'ai';
+  chosen: string | null;
+  variants: ArtVariant[];
+  terrain: TerrainSkin | null;
 }
 
 export interface NCamera {
@@ -126,6 +135,67 @@ export interface NDoc {
   rules: NRule[];
   counters: Record<string, number>;
   scenes: NScene[];
+  /** v7: `game` plays the finished look (AI art, cleaned-up sketches, terrain, backdrop), `sketch` the raw strokes. */
+  look: 'game' | 'sketch';
+  backdrop: Backdrop | null;
+}
+
+const isSvg = (v: unknown): v is string => typeof v === 'string' && v.includes('<svg');
+
+function variantOf(v: unknown): ArtVariant | null {
+  if (!v || typeof v !== 'object') return null;
+  const o = v as Record<string, unknown>;
+  const w = Number(o.w);
+  const h = Number(o.h);
+  if (!isSvg(o.svg) || !(w > 0) || !(h > 0)) return null;
+  return { id: typeof o.id === 'string' ? o.id : 'v', svg: o.svg, w, h, rev: Number(o.rev) || 0, note: typeof o.note === 'string' ? o.note : null };
+}
+
+/** The object's art, checked (bad variants dropped); null when there is none. */
+export function artOf(v: unknown): NArt | null {
+  if (!v || typeof v !== 'object') return null;
+  const a = v as Record<string, unknown>;
+  const variants = (Array.isArray(a.variants) ? a.variants : []).map(variantOf).filter((x): x is ArtVariant => !!x).slice(0, 6);
+  let terrain: TerrainSkin | null = null;
+  if (a.terrain && typeof a.terrain === 'object') {
+    const t = a.terrain as Record<string, unknown>;
+    terrain = {
+      fill: (Array.isArray(t.fill) ? t.fill.filter((c) => typeof c === 'string').slice(0, 4) : []) as TerrainSkin['fill'],
+      surface: typeof t.surface === 'string' ? t.surface : undefined,
+      surface_width: typeof t.surface_width === 'number' ? t.surface_width : undefined,
+      surface_svg: isSvg(t.surface_svg) ? t.surface_svg : null,
+      texture_svg: isSvg(t.texture_svg) ? t.texture_svg : null,
+      decor: (Array.isArray(t.decor) ? t.decor : []).map(variantOf).filter((x): x is ArtVariant => !!x).slice(0, 6) as TerrainSkin['decor'],
+      decor_every: typeof t.decor_every === 'number' ? t.decor_every : undefined,
+      rev: Number(t.rev) || 0,
+    };
+  }
+  return { use: a.use === 'ai' ? 'ai' : 'sketch', chosen: typeof a.chosen === 'string' ? a.chosen : null, variants, terrain };
+}
+
+/** The doc's backdrop, checked; null when there is none. */
+export function backdropOf(v: unknown): Backdrop | null {
+  if (!v || typeof v !== 'object') return null;
+  const b = v as Record<string, unknown>;
+  const sky = (Array.isArray(b.sky) ? b.sky : []).filter((c): c is string => typeof c === 'string' && /^#[0-9a-f]{3,8}$/i.test(c)).slice(0, 4);
+  const layers: BackdropLayer[] = [];
+  for (const l of Array.isArray(b.layers) ? b.layers : []) {
+    if (!l || typeof l !== 'object') continue;
+    const o = l as Record<string, unknown>;
+    const w = Number(o.w);
+    const h = Number(o.h);
+    if (!isSvg(o.svg) || !(w > 0) || !(h > 0)) continue;
+    layers.push({
+      svg: o.svg, w, h,
+      depth: n(o.depth, 0.5, 0, 1),
+      anchor: oneOf(o.anchor, ['top', 'bottom', 'fill'] as const, 'bottom'),
+      tile_x: o.tile_x !== false,
+      height: n(o.height, 0.5, 0.05, 1),
+    });
+    if (layers.length >= 4) break;
+  }
+  if (!sky.length && !layers.length) return null;
+  return { rev: Number(b.rev) || 0, sky: sky as Backdrop['sky'], layers: layers as Backdrop['layers'] };
 }
 
 type Obj = Record<string, unknown>;
@@ -288,6 +358,7 @@ export class Normalizer {
       hidden: v.hidden === true,
       player,
       order,
+      art: artOf(v.art),
     };
   }
 
@@ -351,6 +422,8 @@ export class Normalizer {
       rules: this.rules(d.rules),
       counters: counterMap(d.counters),
       scenes,
+      look: d.look === 'sketch' ? 'sketch' : 'game',
+      backdrop: backdropOf(d.backdrop),
     };
   }
 }

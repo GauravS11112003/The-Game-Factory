@@ -20,8 +20,10 @@
  * watercolor (soft translucent edges + bleed). Plus outline, glow, wobble (seeded per stroke), fill_closed, recolor.
  */
 import type { Drawing, Stroke, StudioTheme } from '../../core/types.gen.ts';
-import { brighten, buildRecolorMap, fillFor, fullTheme, mapColor, mix, parseHex, recolorFill, rgba, type FullTheme } from './color.ts';
+import { brighten, buildRecolorMap, fillFor, fullTheme, isAchromatic, isDark, luminance, mapColor, mix, parseHex, recolorFill, rgba,
+  type FullTheme } from './color.ts';
 import { hashNums, rng } from './rng.ts';
+import { medianWidth, polishStroke, polishWidth } from './polish.ts';
 
 export { buildRecolorMap, docDrawings, fullTheme } from './color.ts';
 export { renderBackground } from './background.ts';
@@ -33,6 +35,11 @@ export interface RenderOpts {
   recolorMap?: Map<string, string> | null;
   /** Only this window of the drawing (drawing-local px); the canvas top left is (x, y). */
   region?: { x: number; y: number; w: number; h: number };
+  /**
+   * The cleaned-up sketch (v7 §4.3, the `game` look of objects that keep the maker's drawing): smoothed strokes with
+   * corners kept, nearly-closed outlines closed and filled, even line weight, a soft inner highlight and a drop shadow.
+   */
+  polish?: boolean;
 }
 
 type Pt = [number, number];
@@ -175,31 +182,49 @@ function intrinsicWobble(ft: FullTheme): number {
   }
 }
 
-function buildGeo(d: Drawing, ft: FullTheme, map: Map<string, string> | null): Geo[] {
+/** Styles whose look is a toned outline around a shaded fill when polished (others keep their own outline colour). */
+const TONED_OUTLINE = new Set(['marker', 'crayon', 'watercolor', 'chalk']);
+
+function buildGeo(d: Drawing, ft: FullTheme, map: Map<string, string> | null, polish = false): Geo[] {
   const ws = ft.stroke.width_scale * styleWidth(ft);
-  const wob = Math.min(1, ft.stroke.wobble + intrinsicWobble(ft));
+  const wob = Math.min(1, ft.stroke.wobble + intrinsicWobble(ft)) * (polish ? 0.25 : 1);
   const out: Geo[] = [];
+  const strokes = (d?.strokes ?? []).filter((s) => s && typeof s === 'object');
+  const median = polish ? medianWidth(strokes.map((s) => Math.max(0.5, Math.min(80, Number(s.width) || 6)))) : 6;
+  const objSize = Math.max(Number(d?.w) || 0, Number(d?.h) || 0, 1);
   (d?.strokes ?? []).forEach((s, index) => {
     if (!s || typeof s !== 'object') return;
-    const raw = cleanPoints(s);
+    let raw = cleanPoints(s);
     if (!raw.length) return;
-    const width = Math.max(0.5, Math.min(80, Number(s.width) || 6)) * ws;
-    const closed = s.closed === true && raw.length > 2;
+    let width = Math.max(0.5, Math.min(80, Number(s.width) || 6));
+    let closed = s.closed === true && raw.length > 2;
     const seed = hashNums(index, raw[0][0], raw[0][1], raw.length);
+    if (polish) {
+      width = polishWidth(width, median, objSize, closed);
+      const p = polishStroke({ points: raw, width, closed }, width);
+      raw = p.points;
+      closed = p.closed;
+    }
+    width *= ws;
     const pts = ft.stroke.style === 'pixel' ? raw : wobblePoints(raw, closed, wob, width, seed);
-    const color = mapColor(s.color, map);
+    let color = mapColor(s.color, map);
     let fill: string | null = null;
     if (closed) {
       if (s.fill && parseHex(s.fill)) fill = map && ft.recolor ? recolorFill(s.fill, map, ft, color, seed) : mapColor(s.fill, null);
-      else if (ft.stroke.fill_closed) fill = fillFor(color, ft, seed);
+      else if (ft.stroke.fill_closed || polish) fill = fillFor(color, ft, seed);
+      // a black pen around a colour reads as a scribble: polished, the outline is a deep tone of the fill (cel look)
+      if (polish && fill && TONED_OUTLINE.has(ft.stroke.style) && isAchromatic(color) && luminance(color) < 0.2) {
+        color = mix(mix(fill, '#000000', 0.55), ft.palette.ink, 0.25);
+      }
     }
     out.push({ pts, width, closed, color, fill, seed, index });
   });
   return out;
 }
 
-function effectMargin(ft: FullTheme, maxW: number): number {
+function effectMargin(ft: FullTheme, maxW: number, polish = false): number {
   let m = 2;
+  if (polish) m += 9; // drop shadow
   if (ft.stroke.outline || ft.stroke.style === 'comic') m += Math.max(4, maxW * 0.6);
   if (ft.stroke.glow || ft.stroke.style === 'neon') m += maxW * 1.6 + 10;
   if (ft.stroke.style === 'watercolor') m += 6;
@@ -207,13 +232,13 @@ function effectMargin(ft: FullTheme, maxW: number): number {
 }
 
 /** Largest |x| / |y| reach of the drawing's ink (incl. widths and effects) under the theme. */
-export function drawingExtent(d: Drawing, theme: StudioTheme | null): { x: number; y: number } {
+export function drawingExtent(d: Drawing, theme: StudioTheme | null, o: { polish?: boolean } = {}): { x: number; y: number } {
   const ft = fullTheme(theme);
-  const geo = buildGeo(d, ft, null);
-  return extentOf(geo, ft);
+  const geo = buildGeo(d, ft, null, !!o.polish);
+  return extentOf(geo, ft, !!o.polish);
 }
 
-function extentOf(geo: Geo[], ft: FullTheme): { x: number; y: number } {
+function extentOf(geo: Geo[], ft: FullTheme, polish = false): { x: number; y: number } {
   let ex = 1;
   let ey = 1;
   let maxW = 0;
@@ -224,7 +249,7 @@ function extentOf(geo: Geo[], ft: FullTheme): { x: number; y: number } {
       ey = Math.max(ey, Math.abs(y) + g.width / 2);
     }
   }
-  const m = effectMargin(ft, maxW);
+  const m = effectMargin(ft, maxW, polish);
   return { x: ex + m, y: ey + m };
 }
 
@@ -661,7 +686,8 @@ export function renderDrawing(d: Drawing, theme: StudioTheme | null, o: RenderOp
   const pad = Number.isFinite(o.pad) ? Math.max(0, o.pad as number) : 8;
   const map = ft.recolor ? (o.recolorMap ?? null) : null;
   const reg = o.region;
-  const key = `${generation}|${themeKey(ft)}|${scale}|${pad}|${ft.recolor ? mapKey(o.recolorMap) : ''}|${reg ? `${reg.x},${reg.y},${reg.w},${reg.h}` : ''}`;
+  const polish = o.polish === true;
+  const key = `${generation}|${themeKey(ft)}|${scale}|${pad}|${ft.recolor ? mapKey(o.recolorMap) : ''}|${reg ? `${reg.x},${reg.y},${reg.w},${reg.h}` : ''}|${polish ? 'P' : ''}`;
   const holder = d && typeof d === 'object' ? d : null;
   if (holder) {
     const hit = cache.get(holder)?.get(key);
@@ -669,7 +695,7 @@ export function renderDrawing(d: Drawing, theme: StudioTheme | null, o: RenderOp
   }
   let c: HTMLCanvasElement;
   try {
-    c = paint(d, ft, scale, pad, map, reg);
+    c = paint(d, ft, scale, pad, map, reg, polish);
   } catch {
     c = newCanvas(2, 2);
   }
@@ -686,13 +712,13 @@ export function renderDrawing(d: Drawing, theme: StudioTheme | null, o: RenderOp
 }
 
 function paint(d: Drawing, ft: FullTheme, scale: number, pad: number, map0: Map<string, string> | null,
-  reg: RenderOpts['region']): HTMLCanvasElement {
+  reg: RenderOpts['region'], polish = false): HTMLCanvasElement {
   let map = map0;
   if (ft.recolor && !map) {
     // per-drawing mapping (callers with a whole game pass a game-wide one)
     map = buildRecolorMap([d], ft);
   }
-  const geo = buildGeo(d, ft, map);
+  const geo = buildGeo(d, ft, map, polish);
   let c: HTMLCanvasElement;
   let ox: number;
   let oy: number;
@@ -701,7 +727,7 @@ function paint(d: Drawing, ft: FullTheme, scale: number, pad: number, map0: Map<
     ox = -reg.x * scale;
     oy = -reg.y * scale;
   } else {
-    const ext = extentOf(geo, ft);
+    const ext = extentOf(geo, ft, polish);
     const maxHalf = (MAX_CANVAS / 2 - pad) / scale;
     const ex = Math.min(ext.x, maxHalf);
     const ey = Math.min(ext.y, maxHalf);
@@ -713,18 +739,98 @@ function paint(d: Drawing, ft: FullTheme, scale: number, pad: number, map0: Map<
   if (!geo.length) return c;
   const ctx = c.getContext('2d');
   if (!ctx) return c;
+  const style = ft.stroke.style;
+  if (polish && style !== 'pixel' && style !== 'neon') {
+    // paint off-screen, then lay it down once with a soft drop shadow (stable: nothing random per frame)
+    const art = newCanvas(c.width, c.height);
+    const actx = art.getContext('2d');
+    if (actx) {
+      actx.setTransform(scale, 0, 0, scale, ox, oy);
+      paintGeo(actx, geo, ft, scale, true);
+      ctx.save();
+      ctx.shadowColor = isDark(ft.palette.bg) ? 'rgba(0,0,0,0.5)' : 'rgba(20,14,8,0.26)';
+      ctx.shadowBlur = 5 * scale;
+      ctx.shadowOffsetY = 2.5 * scale;
+      ctx.drawImage(art, 0, 0);
+      ctx.restore();
+      return c;
+    }
+  }
   ctx.setTransform(scale, 0, 0, scale, ox, oy);
-  if (ft.stroke.style === 'pixel') {
+  if (style === 'pixel') {
     ctx.imageSmoothingEnabled = false;
     renderPixel(ctx, geo, ft, scale);
     return c;
   }
-  const outline = ft.stroke.outline ?? (ft.stroke.style === 'comic' ? mix(ft.palette.ink, '#000000', 0.5) : null);
-  const maxW = Math.max(...geo.map((g) => g.width));
-  if (outline) outlinePass(ctx, geo, outline, Math.max(4, maxW * 0.5));
-  for (const g of geo) {
-    if (g.closed) drawFill(ctx, g, ft);
-    drawStroke(ctx, g, ft, scale);
-  }
+  paintGeo(ctx, geo, ft, scale, polish);
   return c;
 }
+
+function paintGeo(ctx: CanvasRenderingContext2D, geo: Geo[], ft: FullTheme, scale: number, polish: boolean): void {
+  const outline = ft.stroke.outline ?? (ft.stroke.style === 'comic' ? mix(ft.palette.ink, '#000000', 0.5) : null);
+  const maxW = Math.max(...geo.map((g) => g.width));
+  if (outline) outlinePass(ctx, geo, outline, Math.max(polish ? 3 : 4, maxW * (polish ? 0.4 : 0.5)));
+  for (const g of geo) {
+    if (g.closed) {
+      if (polish) drawPolishedFill(ctx, g, ft);
+      else drawFill(ctx, g, ft);
+    }
+    drawStroke(ctx, g, ft, scale);
+  }
+}
+
+function bboxOf(pts: Pt[]): { minX: number; minY: number; maxX: number; maxY: number } {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const [x, y] of pts) {
+    minX = Math.min(minX, x);
+    minY = Math.min(minY, y);
+    maxX = Math.max(maxX, x);
+    maxY = Math.max(maxY, y);
+  }
+  return { minX, minY, maxX, maxY };
+}
+
+/**
+ * Polished fill: the style's own fill for textured styles (chalk, crayon, watercolor), else a soft top-lit gradient;
+ * then a light rim along the upper-left inside edge and a gentle shade on the lower right (clip + offset strokes).
+ */
+function drawPolishedFill(ctx: CanvasRenderingContext2D, g: Geo, ft: FullTheme): void {
+  if (!g.fill) return;
+  const style = ft.stroke.style;
+  const b = bboxOf(g.pts);
+  const size = Math.max(4, Math.min(b.maxX - b.minX, b.maxY - b.minY));
+  if (style === 'chalk' || style === 'crayon' || style === 'watercolor') drawFill(ctx, g, ft);
+  else {
+    ctx.save();
+    const grad = ctx.createLinearGradient(0, b.minY, 0, b.maxY);
+    grad.addColorStop(0, mix(g.fill, '#ffffff', 0.2));
+    grad.addColorStop(0.55, g.fill);
+    grad.addColorStop(1, mix(g.fill, '#000000', 0.16));
+    ctx.fillStyle = grad;
+    trace(ctx, g.pts, true);
+    ctx.fill();
+    if (ft.stroke.halftone) halftone(ctx, g, rgba(mix(g.fill, ft.palette.ink, 0.45), 0.3));
+    ctx.restore();
+  }
+  if (size < 7) return;
+  const r = Math.max(1.2, Math.min(4.5, size * 0.06));
+  ctx.save();
+  trace(ctx, g.pts, true);
+  ctx.clip();
+  ctx.lineJoin = 'round';
+  ctx.translate(r, r * 1.2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.38)';
+  ctx.lineWidth = r * 1.6;
+  trace(ctx, g.pts, true);
+  ctx.stroke();
+  ctx.translate(-r * 2, -r * 2.4);
+  ctx.strokeStyle = 'rgba(0,0,0,0.13)';
+  ctx.lineWidth = r * 2;
+  trace(ctx, g.pts, true);
+  ctx.stroke();
+  ctx.restore();
+}
+

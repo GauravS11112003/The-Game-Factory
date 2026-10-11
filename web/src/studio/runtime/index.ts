@@ -13,7 +13,9 @@ import type { GameDoc } from '../../core/types.gen.ts';
 import { t } from '../../app/messages.ts';
 import { buildRecolorMap, fullTheme, type FullTheme } from '../theme/color.ts';
 import { hashStr } from '../theme/rng.ts';
+import { preloadArt } from '../theme/art.ts';
 import { InputState } from './behaviors.ts';
+import { canvasSize } from './camera.ts';
 import { Hud } from './hud.ts';
 import { allGameCodes } from './keys.ts';
 import { normalizeDoc, type NDoc } from './normalize.ts';
@@ -43,6 +45,8 @@ export interface RuntimeHandle {
   setPaused(paused: boolean): void;
   /** Live counters: `game` plus one entry per object id that has counters (the Studio's watch panel). */
   counters(): Record<string, Record<string, number>>;
+  /** v7: switch the look while playing (the play page's local Sketch ↔ Game toggle; not saved). */
+  setLook(look: 'game' | 'sketch'): void;
 }
 
 const GAME_CODES = allGameCodes();
@@ -118,7 +122,57 @@ class Runner {
     this.setupInput();
     this.setupTouch();
     this.sound.music(this.theme.music, hashStr(doc.id));
-    this.boot();
+    this.look = doc.look;
+    // AI art loads first (Blob URLs decode fast; never wait more than a few seconds), then the game starts
+    void preloadArt(this.look === 'game' ? raw : null, 4000).catch(() => undefined).then(() => {
+      if (!this.stopped) this.boot();
+    });
+    this.watchSize();
+  }
+
+  look: 'game' | 'sketch' = 'game';
+
+  /** The canvas keeps the host's aspect (no letterbox bars) at the device's pixel density. */
+  private canvasSize(): { w: number; h: number } {
+    const rect = this.root.getBoundingClientRect();
+    const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+    return canvasSize(rect.width, rect.height, dpr);
+  }
+
+  private resizeObs: ResizeObserver | null = null;
+
+  private watchSize(): void {
+    if (typeof ResizeObserver === 'undefined') return;
+    let queued = false;
+    this.resizeObs = new ResizeObserver(() => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => {
+        queued = false;
+        if (this.stopped || !this.game) return;
+        const s = this.canvasSize();
+        const g = this.game.scale;
+        if (Math.abs(g.width - s.w) < 2 && Math.abs(g.height - s.h) < 2) return;
+        try {
+          g.setGameSize(s.w, s.h);
+          this.scene?.onResize();
+        } catch {
+          /* a resize mid-teardown */
+        }
+      });
+    });
+    this.resizeObs.observe(this.root);
+  }
+
+  /** The Sketch ↔ Game toggle (play page, local only). */
+  setLook(look: 'game' | 'sketch'): void {
+    if (look !== 'game' && look !== 'sketch') return;
+    if (look === this.look) return;
+    this.look = look;
+    const raw = { look, backdrop: this.doc.backdrop, scenes: this.doc.scenes } as unknown as GameDoc;
+    void preloadArt(raw, 4000).catch(() => undefined).then(() => {
+      if (!this.stopped) this.scene?.applyLook();
+    });
   }
 
   emit(e: RuntimeEvent): void {
@@ -225,6 +279,7 @@ class Runner {
       theme: this.theme,
       recolor: this.recolor,
       texScale: this.texScale,
+      look: () => this.look,
       isPaused: () => this.paused || this.stopped,
       emit: (e) => this.emit(e),
       counterChanged: (subject, counter, value) => {
@@ -241,11 +296,12 @@ class Runner {
 
   private boot(): void {
     try {
+      const size = this.canvasSize();
       this.game = new Phaser.Game({
         type: Phaser.AUTO,
         parent: this.stage,
-        width: 1600,
-        height: 900,
+        width: size.w,
+        height: size.h,
         backgroundColor: this.theme.palette.bg,
         scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
         physics: {
@@ -421,6 +477,8 @@ class Runner {
     for (const tm of this.timers) clearTimeout(tm);
     for (const [target, type, fn, opts] of this.listeners) target.removeEventListener(type, fn, opts);
     this.listeners = [];
+    this.resizeObs?.disconnect();
+    this.resizeObs = null;
     try {
       this.game?.destroy(true);
     } catch {
@@ -450,5 +508,6 @@ export function mountRuntime(parent: HTMLElement, doc: GameDoc, o: RuntimeOption
     restart: () => r?.restartGame(),
     setPaused: (p: boolean) => r?.setPaused(p),
     counters: () => r?.countersSnapshot() ?? { game: {} },
+    setLook: (look: 'game' | 'sketch') => r?.setLook(look),
   };
 }
