@@ -513,6 +513,10 @@
     "studio.blocks.added": "{name} by {author} is in your game.",
     "studio.blocks.none_objects": "No shared things yet. Select something you drew and press Save as block.",
     "studio.blocks.none_themes": "No shared themes yet.",
-    "studio.blocks.offline": "Blocks show up here when the server is on."
+    "studio.blocks.offline": "Blocks show up here when the server is on.",
+    "studio.play.credits": "Uses blocks by {list}.",
+    "studio.play.credit_one": "{author} ({name})",
+    "studio.play.remix_of": "Remixed from",
+    "studio.play.remix_of_link": "another game"
   }
 }

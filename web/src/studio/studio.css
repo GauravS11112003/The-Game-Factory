@@ -674,3 +674,9 @@ textarea.stn-input { flex: 1; min-height: 52px; padding: 8px 0; border: 0; outli
 .st-bd-text { display: flex; flex-direction: column; min-width: 0; }
 .st-bd-name { font-weight: 700; font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .st-bd-by { font-size: 0.76rem; opacity: 0.65; }
+
+.stn-thumb .stn-thumb-cv { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.stp-credits { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: center; padding: 8px 16px 12px; font-size: 0.86rem; opacity: 0.8; }
+.stp-credits.hidden { display: none; }
+.stp-credits a { color: inherit; text-decoration: underline; }

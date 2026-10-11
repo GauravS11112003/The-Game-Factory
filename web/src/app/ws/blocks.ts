@@ -15,6 +15,7 @@ import { v4, type BlockSort } from '../v4api.ts';
 import { ruleCard } from './logic.ts';
 import { pickGame, pickStudioGame, type MyGame } from './pick_game.ts';
 import { studioApi } from '../studio_api.ts';
+import { normalizeCredits, withCredit } from '../../studio/model/types.ts';
 import { BLOCK_KINDS, blockDoes, filterBlocks, sortBlocks } from './model.ts';
 import { btn, calm, chip, emptyState, enc, iconBtn, inkThumb, note, notReady, pickRow } from './ui.ts';
 import { renderDrawing } from '../../studio/theme/render.ts';
@@ -96,6 +97,8 @@ export async function addBlockToStudio(b: BlockCard, g: { id: string; title: str
       const obj = { ...b.object, id: `${base}${n}`, x: Math.round((w.width ?? 1600) / 2), y: Math.round((w.height ?? 900) / 2), joints: [] };
       scene.objects = [...(scene.objects ?? []), obj] as typeof scene.objects;
     } else return false;
+    const ext = doc as typeof doc & { x_credits?: unknown };
+    ext.x_credits = withCredit(normalizeCredits(ext.x_credits), { block_id: b.id, name: b.name, author: b.author || '', kind: b.kind === 'theme' ? 'theme' : 'object' });
     await studioApi.saveGame(doc);
     void studioApi.useBlock(g.id, b.id).catch(() => undefined);
     toast(t('blocks.added', { name: kidText(b.name), game: kidText(g.title || t('ui.untitled')) }), {

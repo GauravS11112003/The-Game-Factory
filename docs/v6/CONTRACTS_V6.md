@@ -404,3 +404,9 @@ working tree. Final report: what works, what does not, any spec/catalog change y
 ## 12. Changelog
 
 - 2026-10-10: v6 contracts, spec, catalog, stubs (orchestrator).
+- 2026-10-10: lanes A, E, R merged. Catalog additions (lane R): `platformer.auto_run`, `car.distance_counter`,
+  `launcher.out_of_shots`, `damage.min_speed`. Orchestrator: `POST /studio/games/{id}/blocks/{block_id}/use` (counts a
+  use, credits the block's author), doc extension `x_credits: [{block_id, name, author, kind}]` (kept by the editor and
+  shown on `#/g/:id` with `x_remix_of`), the Blocks drawer in the Studio rail, object/theme blocks into Studio games
+  from `#/blocks`, `#/styles` as the theme gallery, published Studio games on `#/explore`, template thumbnails drawn
+  in the browser. The editor hands `renderBackground` a device-space camera read off the canvas transform.

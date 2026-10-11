@@ -6,7 +6,9 @@ import { h, icon } from './dom.ts';
 import { authHeaders } from './identity.ts';
 import { kidText, t } from './messages.ts';
 import { timeAgo } from './collab/ui.ts';
-import type { StudioGameCard } from '../core/types.gen.ts';
+import type { GameDoc, StudioGameCard } from '../core/types.gen.ts';
+import { thumbnailCanvas } from '../studio/editor/snapshot.ts';
+import { normalizeDoc } from '../studio/model/types.ts';
 
 const BASE = '/api/v2/studio';
 
@@ -37,8 +39,42 @@ export async function studioTitle(id: string): Promise<string | null> {
   return r?.title ?? null;
 }
 
+const tplThumbs = new Map<string, Promise<HTMLCanvasElement | null>>();
+
+/** A template's picture, drawn in the browser from its own strokes and theme (templates ship no PNGs). */
+export function templateThumb(id: string): Promise<HTMLCanvasElement | null> {
+  let p = tplThumbs.get(id);
+  if (!p) {
+    p = getJson<GameDoc>(`/templates/${encodeURIComponent(id)}`).then((doc) => {
+      if (!doc) return null;
+      try {
+        return thumbnailCanvas(normalizeDoc(doc));
+      } catch {
+        return null;
+      }
+    });
+    tplThumbs.set(id, p);
+  }
+  return p.then((c) => {
+    if (!c) return null;
+    const copy = document.createElement('canvas'); // one card per canvas element
+    copy.width = c.width;
+    copy.height = c.height;
+    copy.getContext('2d')?.drawImage(c, 0, 0);
+    return copy;
+  });
+}
+
 function thumb(c: StudioGameCard): HTMLElement {
   const box = h('div', { class: 'ws-thumb ws-thumb-empty' }, icon('pencil'));
+  if (c.id.startsWith('tpl_') && !c.thumbnail_url) {
+    void templateThumb(c.id).then((cv) => {
+      if (!cv) return;
+      box.classList.remove('ws-thumb-empty');
+      box.replaceChildren(cv);
+    });
+    return box;
+  }
   const url = c.thumbnail_url ?? `${BASE}/games/${encodeURIComponent(c.id)}/thumbnail.png`;
   const img = h('img', { alt: '', loading: 'lazy', src: url });
   img.onload = () => {

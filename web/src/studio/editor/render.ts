@@ -5,11 +5,12 @@
  */
 import type { StudioTheme } from '../../core/types.gen.ts';
 import * as themeRender from '../theme/render.ts';
-import type { SDrawing, SObj, SWorld } from '../model/types.ts';
+import type { SDoc, SDrawing, SObj, SWorld } from '../model/types.ts';
 
 export interface Camera { x: number; y: number; zoom: number; width: number; height: number }
 
-type BgFn = (ctx: CanvasRenderingContext2D, theme: StudioTheme, world: SWorld, camera: Camera) => void;
+type BgFn = (ctx: CanvasRenderingContext2D, theme: StudioTheme, world: SWorld, camera: { x: number; y: number; zoom: number },
+  view: { w: number; h: number }) => void;
 
 function laneRBackground(): BgFn | null {
   const fn = (themeRender as Record<string, unknown>).renderBackground;
@@ -26,8 +27,12 @@ export function drawBackground(ctx: CanvasRenderingContext2D, theme: StudioTheme
   const lane = bgFailed ? null : laneRBackground();
   if (lane) {
     try {
+      // lane R paints in device pixels (it resets the transform; the world clip stays): hand it the device-space camera
+      // read off the current world → device transform, so every caller (canvas, snapshot, previews) lines up
+      const m = ctx.getTransform();
+      const zoom = m.a || cam.zoom || 1;
       ctx.save();
-      lane(ctx, theme, world, cam);
+      lane(ctx, theme, world, { x: -m.e / zoom, y: -m.f / (m.d || zoom), zoom }, { w: ctx.canvas.width, h: ctx.canvas.height });
       ctx.restore();
       return;
     } catch (e) {
@@ -81,26 +86,40 @@ function paperBackground(ctx: CanvasRenderingContext2D, theme: StudioTheme, worl
 
 // ---- object bitmaps ----------------------------------------------------------------------------------------------
 
-interface Cached { drawing: SDrawing; theme: StudioTheme; bucket: number; canvas: HTMLCanvasElement }
+interface Cached { drawing: SDrawing; theme: StudioTheme; bucket: number; canvas: HTMLCanvasElement; map: Map<string, string> | null }
 
 const MAX_TEX = 4096;
 
 export class BitmapCache {
   private map = new Map<string, Cached>();
+  private recolor: { doc: unknown; theme: StudioTheme; map: Map<string, string> | null } | null = null;
+
+  /** The game-wide stroke colour map when the theme recolours (the same one the runtime builds), memoised per doc. */
+  private recolorFor(doc: SDoc | undefined, theme: StudioTheme): Map<string, string> | null {
+    if (!doc || !theme.recolor) return null;
+    if (this.recolor && this.recolor.doc === doc && this.recolor.theme === theme) return this.recolor.map;
+    let map = themeRender.buildRecolorMap(themeRender.docDrawings(doc as never), themeRender.fullTheme(theme));
+    // keep the old map object when nothing changed, so an edit does not re-render every bitmap
+    const prev = this.recolor?.theme === theme ? this.recolor.map : null;
+    if (prev && prev.size === map.size && [...map].every(([k, v]) => prev.get(k) === v)) map = prev;
+    this.recolor = { doc, theme, map };
+    return map;
+  }
 
   /** The object's drawing at roughly `pxPerUnit` device px per local unit (bucketed so zooming re-renders rarely). */
-  get(o: SObj, theme: StudioTheme, pxPerUnit: number): { canvas: HTMLCanvasElement; bucket: number } | null {
+  get(o: SObj, theme: StudioTheme, pxPerUnit: number, doc?: SDoc): { canvas: HTMLCanvasElement; bucket: number } | null {
     if (!o.drawing.strokes.length) return null;
     const size = Math.max(o.drawing.w, o.drawing.h, 1);
     let bucket = 2 ** (Math.round(Math.log2(Math.max(0.05, pxPerUnit)) * 2) / 2);
     bucket = Math.min(bucket, MAX_TEX / (size + 80));
     const key = o.id;
     const c = this.map.get(key);
-    if (c && c.drawing === o.drawing && c.theme === theme && Math.abs(c.bucket - bucket) < 1e-6) return c;
+    const recolorMap = this.recolorFor(doc, theme);
+    if (c && c.drawing === o.drawing && c.theme === theme && c.map === recolorMap && Math.abs(c.bucket - bucket) < 1e-6) return c;
     const maxW = o.drawing.strokes.reduce((m, s) => Math.max(m, s.width ?? 6), 0);
     const ws = theme.stroke?.width_scale ?? 1;
-    const canvas = themeRender.renderDrawing(o.drawing, theme, { scale: bucket, pad: Math.ceil((maxW * ws * 0.75 + 14) * bucket) });
-    const next = { drawing: o.drawing, theme, bucket, canvas };
+    const canvas = themeRender.renderDrawing(o.drawing, theme, { scale: bucket, pad: Math.ceil((maxW * ws * 0.75 + 14) * bucket), recolorMap });
+    const next = { drawing: o.drawing, theme, bucket, canvas, map: recolorMap };
     this.map.set(key, next);
     return next;
   }

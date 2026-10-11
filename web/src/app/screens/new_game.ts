@@ -5,6 +5,7 @@
  * Query: ?text=<words> prefills the box, ?template=<id> or ?blank=1 create right away, ?tab=templates focuses the gallery.
  */
 import '../../studio/studio.css';
+import { templateThumb } from '../studio_cards.ts';
 import type { GameDoc, StudioGameCard } from '../../core/types.gen.ts';
 import { h, toast } from '../dom.ts';
 import { kidText, t } from '../messages.ts';
@@ -91,6 +92,7 @@ export function newGameScreen(root: HTMLElement, query: URLSearchParams, shell: 
     const list = [BLANK_CARD, ...cards.filter((c) => c.id !== BLANK_CARD.id)];
     gallery.replaceChildren(...list.map((c) => {
       const thumb = c.thumbnail_url ? h('img', { src: c.thumbnail_url, alt: '', loading: 'lazy' }) : h('span', { class: 'stn-emoji', 'aria-hidden': 'true' }, emojiFor(c));
+      if (!c.thumbnail_url && c.id.startsWith('tpl_') && c.id !== 'tpl_blank') void templateThumb(c.id).then((cv) => { if (cv) { cv.classList.add('stn-thumb-cv'); thumb.replaceWith(cv); } });
       return h('button', { type: 'button', class: `stn-card${c.id === BLANK_CARD.id ? ' blank' : ''}`, onclick: () => void create(c.id, input.value.trim()) },
         h('span', { class: 'stn-thumb' }, thumb),
         h('span', { class: 'stn-card-body' }, h('span', { class: 'stn-card-title' }, c.id === BLANK_CARD.id ? t('studio.new.blank') : kidText(c.title)),

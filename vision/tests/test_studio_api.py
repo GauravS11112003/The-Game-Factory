@@ -217,3 +217,19 @@ def test_blocks_object_and_theme_kinds(client: TestClient) -> None:
     bad = dict(obj, name="call 555-123-4567")
     r = client.post("/api/v2/blocks", json={"name": "Car 2", "kind": "object", "object": bad}, headers=fay["h"])
     assert r.status_code == 409
+
+
+def test_studio_block_use_counts_and_credits(client: TestClient) -> None:
+    """POST /studio/games/{id}/blocks/{bid}/use (v6 §9): counts one use per game and block; only object/theme blocks."""
+    ana, ben = profile(client, "Ana"), profile(client, "Ben")
+    obj = dict(F.BOX, kind="car")
+    block = client.post("/api/v2/blocks", json={"name": "Ana car", "kind": "object", "object": obj},
+                        headers=ana["h"]).json()
+    g = new_game(client, ben)
+    url = f"/api/v2/studio/games/{g['id']}/blocks/{block['id']}/use"
+    assert client.post(url).status_code == 401
+    assert client.post(url, headers=ben["h"]).json() == {"new": True}
+    assert client.post(url, headers=ben["h"]).json() == {"new": False}
+    assert client.get(f"/api/v2/blocks/{block['id']}").json()["uses"] == 1
+    assert client.post(f"/api/v2/studio/games/sg_000000000000/blocks/{block['id']}/use", headers=ben["h"]).status_code == 404
+    assert client.post(f"/api/v2/studio/games/{g['id']}/blocks/nope/use", headers=ben["h"]).status_code == 404

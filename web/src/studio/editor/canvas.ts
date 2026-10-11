@@ -264,7 +264,7 @@ export class StudioCanvas {
       const reach = (Math.max(o.drawing.w, o.drawing.h) * o.scale * z) / 2 + 60;
       if (sx < -reach || sy < -reach || sx > this.w + reach || sy > this.h + reach) continue;
       if (o.drawing.strokes.length) {
-        const bmp = this.cache.get(o, theme, z * o.scale * dpr);
+        const bmp = this.cache.get(o, theme, z * o.scale * dpr, this.studio.doc);
         if (!bmp) continue;
         ctx.save();
         ctx.globalAlpha = alpha;

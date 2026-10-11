@@ -8,7 +8,7 @@ import { kidText, t } from '../../app/messages.ts';
 import { isLocalId, studioApi } from '../../app/studio_api.ts';
 import { v4 } from '../../app/v4api.ts';
 import type { BlockCard, StudioEdit } from '../../core/types.gen.ts';
-import { normalizeObject } from '../model/types.ts';
+import { normalizeObject, withCredit } from '../model/types.ts';
 import type { StudioCanvas } from './canvas.ts';
 import { sicon } from './icons.ts';
 import type { Studio } from './studio.ts';
@@ -41,6 +41,9 @@ export function openBlocksDrawer(anchor: HTMLElement, studio: Studio, canvas: St
   let seq = 0;
 
   const use = (b: BlockCard): void => {
+    if (!(b.kind === 'object' && b.object) && !(b.kind === 'theme' && b.theme)) return;
+    // credit first (its own quiet step), so undoing the drop leaves the doc exactly as it was plus the credit line
+    studio.commit({ ...studio.doc, x_credits: withCredit(studio.doc.x_credits, { block_id: b.id, name: b.name, author: b.author || '', kind: b.kind }) }, { quiet: true, label: 'credit' });
     if (b.kind === 'object' && b.object) {
       const r = canvas.rect();
       const [x, y] = canvas.screenToWorld(r.width / 2, r.height / 2);

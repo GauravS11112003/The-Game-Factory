@@ -12,6 +12,8 @@ import { currentPlayer } from '../identity.ts';
 import { BLANK_DOC, isLocalId, isOffline, loadDraft, localGameFrom, saveDraft, studioApi } from '../studio_api.ts';
 import { sicon } from '../../studio/editor/icons.ts';
 import { mountRuntime, type RuntimeHandle } from '../../studio/runtime/index.ts';
+import { normalizeCredits } from '../../studio/model/types.ts';
+import { studioTitle } from '../studio_cards.ts';
 
 async function fetchDoc(id: string): Promise<GameDoc | null> {
   try {
@@ -30,7 +32,8 @@ export function studioPlayScreen(root: HTMLElement, gameId: string, _query: URLS
   const stage = h('div', { class: 'stp-stage' });
   const titleEl = h('div', { class: 'stp-title' }, t('studio.opening'));
   const bar = h('header', { class: 'stp-bar' });
-  const page = h('div', { class: 'stp-root' }, bar, stage);
+  const credits = h('footer', { class: 'stp-credits hidden' });
+  const page = h('div', { class: 'stp-root' }, bar, stage, credits);
   root.append(page);
   document.body.classList.add('st-on');
   const prevTitle = document.title;
@@ -47,6 +50,20 @@ export function studioPlayScreen(root: HTMLElement, gameId: string, _query: URLS
     }
     titleEl.replaceChildren(h('span', { class: 'stp-name' }, kidText(doc.title ?? '')), ...(doc.author ? [h('span', { class: 'stp-by' }, t('studio.play.by', { name: doc.author }))] : []));
     document.title = `${doc.title ?? 'draw.play'} · draw.play`;
+    // credit where it is due (v6 §9): the blocks other makers drew, and the game this one was remixed from
+    const ext = doc as typeof doc & { x_credits?: unknown; x_remix_of?: unknown };
+    const used = normalizeCredits(ext.x_credits);
+    const bits: (HTMLElement | string)[] = [];
+    if (used.length) bits.push(h('span', null, t('studio.play.credits', { list: used.map((c) => t('studio.play.credit_one', { name: kidText(c.name), author: c.author || t('ui.someone') })).join(', ') })));
+    if (typeof ext.x_remix_of === 'string' && ext.x_remix_of) {
+      const link = h('a', { href: `#/g/${encodeURIComponent(ext.x_remix_of)}` }, t('studio.play.remix_of_link'));
+      bits.push(h('span', null, t('studio.play.remix_of'), ' ', link));
+      void studioTitle(ext.x_remix_of).then((title) => { if (title) link.textContent = kidText(title); });
+    }
+    if (bits.length) {
+      credits.replaceChildren(...bits);
+      credits.classList.remove('hidden');
+    }
     const start = (): void => {
       try { runtime?.stop(); } catch { /* already gone */ }
       stage.replaceChildren();

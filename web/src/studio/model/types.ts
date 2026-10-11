@@ -52,7 +52,13 @@ export interface SWorld {
 }
 export interface SScene { id: string; name: string; world: SWorld; objects: SObj[]; rules: SRule[] }
 export interface SHud { items: HudItem[]; timer: boolean; title: string | null }
+/** Credit for a shared block used in this game (doc extension `x_credits`, v6 §9): shown on the play page. */
+export interface StudioCredit { block_id: string; name: string; author: string; kind: 'object' | 'theme' }
+
 export interface SDoc {
+  /** Extension keys the server keeps: who made the blocks this game uses, and the game this one was remixed from. */
+  x_credits?: StudioCredit[];
+  x_remix_of?: string;
   format: 'drawplay-studio';
   version: 1;
   id: string;
@@ -212,7 +218,25 @@ export function normalizeDoc(doc: unknown): SDoc {
     scenes,
     created_at: typeof x.created_at === 'string' ? x.created_at : null,
     updated_at: typeof x.updated_at === 'string' ? x.updated_at : null,
+    ...(Array.isArray(x.x_credits) ? { x_credits: normalizeCredits(x.x_credits) } : {}),
+    ...(typeof x.x_remix_of === 'string' ? { x_remix_of: x.x_remix_of } : {}),
   };
+}
+
+export function normalizeCredits(v: unknown): StudioCredit[] {
+  if (!Array.isArray(v)) return [];
+  const out: StudioCredit[] = [];
+  for (const c of v) {
+    if (!isObj(c) || typeof c.block_id !== 'string') continue;
+    if (out.some((o) => o.block_id === c.block_id)) continue;
+    out.push({ block_id: c.block_id, name: str(c.name, ''), author: str(c.author, ''), kind: c.kind === 'theme' ? 'theme' : 'object' });
+  }
+  return out.slice(0, 50);
+}
+
+/** The doc's credits with this block added (once per block). */
+export function withCredit(credits: StudioCredit[] | undefined, c: StudioCredit): StudioCredit[] {
+  return normalizeCredits([...(credits ?? []).filter((x) => x.block_id !== c.block_id), c]);
 }
 
 /** Is this already a complete SDoc (every object and scene filled in)? Cheap structural check. */
