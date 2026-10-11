@@ -293,6 +293,11 @@ def game_summary(doc: dict[str, Any], scene_id: str, selection: list[str] | None
              f"Theme: {theme.get('name', 'Sketchbook')}" + (f" (preset {theme['id']})" if theme.get("id") else "")
              + f", background {(theme.get('background') or {}).get('style', 'paper')}, strokes "
              f"{(theme.get('stroke') or {}).get('style', 'marker')}"]
+    ad = doc.get("art_direction") or None
+    if isinstance(ad, dict) and (ad.get("summary") or ad.get("prompt")):  # one line; never the guide or any art
+        lines.append(f"Art style: {str(ad.get('summary') or '')[:160]}" + (f" (asked: {str(ad.get('prompt'))[:120]})"
+                                                                          if ad.get("prompt") else ""))
+    lines.append(f"Look: {'finished art' if doc.get('look', 'game') == 'game' else 'raw sketch'}")
     items = hud.get("items") or []
     hud_s = ", ".join(f"{i.get('subject', 'game')}.{i.get('counter')} as {i.get('style', 'number')}" for i in items)
     lines.append("HUD: " + (hud_s or "nothing") + (" + timer" if hud.get("timer") else ""))

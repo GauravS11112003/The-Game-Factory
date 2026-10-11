@@ -316,7 +316,7 @@ def test_fake_llm_replies(monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> Non
 
 
 def test_calls_are_registered_with_prompts() -> None:
-    for kind, (effort, tokens, timeout) in {"studio_chat": ("medium", 8000, 40), "studio_recognize": ("low", 2500, 15),
+    for kind, (effort, tokens, timeout) in {"studio_chat": ("medium", 16000, 150), "studio_recognize": ("low", 2500, 30),
                                             "studio_theme": ("low", 2000, 12)}.items():
         spec = client.CALLS[kind]
         assert (spec.effort, spec.max_tokens, spec.timeout_s) == (effort, tokens, timeout)

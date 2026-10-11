@@ -153,14 +153,14 @@ def _viewbox(root: ET.Element) -> tuple[float, float, float, float] | None:
 
 def _parse(text: str) -> ET.Element | None:
     s = text.strip()
+    low = s.lower()
+    if "<!doctype" in low or "<!entity" in low or "<?xml-stylesheet" in low:
+        return None
     s = re.sub(r"^```[a-zA-Z]*\s*|\s*```$", "", s)
     start, end = s.find("<svg"), s.rfind("</svg>")
     if start < 0 or end < 0:
         return None
     s = s[start:end + len("</svg>")]
-    low = s.lower()
-    if "<!doctype" in low or "<!entity" in low or "<?xml-stylesheet" in low:
-        return None
     head = s[: s.find(">") + 1]
     if "xmlns=" not in head:
         s = s.replace("<svg", f'<svg xmlns="{SVG_NS}"', 1)
