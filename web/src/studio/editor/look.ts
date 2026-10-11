@@ -179,6 +179,26 @@ export function variantBitmap(v: ArtVariant, pxPerUnit: number, onReady: () => v
   let slot = rasters.get(v);
   if (!slot) { slot = { have: null, want: null }; rasters.set(v, slot); }
   if (slot.have && Math.abs(slot.have.bucket - bucket) < 1e-6) return slot.have;
+  // lane R2: a synchronous, cached raster plus a "some art finished loading" signal
+  const laneSync = lane<(v: ArtVariant, scale: number) => HTMLCanvasElement | null>('artCanvasSync');
+  const laneReady = lane<(fn: () => void) => () => void>('onArtReady');
+  if (laneSync && laneReady) {
+    try {
+      const c = laneSync(v, bucket);
+      if (c) {
+        slot.have = { bucket, canvas: c };
+        return slot.have;
+      }
+      if (!slot.want) {
+        slot.want = bucket;
+        const s0 = slot;
+        const off = laneReady(() => { off(); s0.want = null; onReady(); });
+      }
+      return slot.have;
+    } catch (e) {
+      laneFailed('artCanvasSync', e);
+    }
+  }
   const laneCanvas = lane<(v: ArtVariant, scale: number) => Promise<HTMLCanvasElement>>('artCanvas');
   if (laneCanvas) {
     if (slot.want !== null && Math.abs(slot.want - bucket) < 1e-6) return slot.have;
@@ -247,12 +267,13 @@ export function plainSkin(o: SObj, theme: StudioTheme): TerrainSkin {
  * it exists, else a gradient polygon from every stroke down to the world's bottom, a tiled texture, the surface band
  * and decorations along the top (seeded by the object id, so they never jump).
  */
-export function drawTerrain(ctx: CanvasRenderingContext2D, o: SObj, skin: TerrainSkin | null, theme: StudioTheme, world: SWorld, onReady: () => void): void {
-  const fn = lane<(ctx: CanvasRenderingContext2D, o: unknown, s: TerrainSkin | null, t: StudioTheme, w: SWorld, cam: unknown) => void>('renderTerrain');
+export function drawTerrain(ctx: CanvasRenderingContext2D, o: SObj, skin: TerrainSkin | null, theme: StudioTheme, world: SWorld, onReady: () => void, others: SObj[] = []): void {
+  const fn = lane<(ctx: CanvasRenderingContext2D, o: unknown, s: TerrainSkin | null, t: StudioTheme, w: SWorld, cam: unknown, opts: unknown) => void>('renderTerrain');
   if (fn) {
     ctx.save();
     try {
-      fn(ctx, o, skin, theme, world, deviceCam(ctx));
+      // `others`: the scene's other ground lines (a line above another ground becomes a floating island, not a pillar)
+      fn(ctx, o, skin, theme, world, deviceCam(ctx), { others: others.filter((x) => x.id !== o.id), look: skin ? 'ai' : 'sketch' });
       ctx.restore();
       return;
     } catch (e) {
@@ -337,11 +358,11 @@ const layerRasters = new WeakMap<BackdropLayer, Raster>();
  * tiled along the bottom (or top), with a little parallax as the editor pans.
  */
 export function drawBackdrop(ctx: CanvasRenderingContext2D, b: Backdrop, theme: StudioTheme, world: SWorld, onReady: () => void): void {
-  const fn = lane<(ctx: CanvasRenderingContext2D, b: Backdrop, w: SWorld, cam: unknown, view: unknown) => void>('renderBackdrop');
+  const fn = lane<(ctx: CanvasRenderingContext2D, b: Backdrop, w: SWorld, cam: unknown, view: unknown, theme: StudioTheme) => void>('renderBackdrop');
   if (fn) {
     ctx.save();
     try {
-      fn(ctx, b, world, deviceCam(ctx), { w: ctx.canvas.width, h: ctx.canvas.height });
+      fn(ctx, b, world, deviceCam(ctx), { w: ctx.canvas.width, h: ctx.canvas.height }, theme);
       ctx.restore();
       return;
     } catch (e) {
@@ -417,10 +438,10 @@ function sceneSvgs(doc: SDoc, scene: SScene): string[] {
 }
 
 /** Draw one object at its place; `ctx` is in world coordinates. */
-function drawObjectWorld(ctx: CanvasRenderingContext2D, o: SObj, doc: SDoc, world: SWorld, z: number, onReady: () => void, forceVariant?: string | null): void {
+function drawObjectWorld(ctx: CanvasRenderingContext2D, o: SObj, doc: SDoc, world: SWorld, z: number, onReady: () => void, grounds: SObj[], forceVariant?: string | null): void {
   const look = forceVariant !== undefined ? (forceVariant ? 'ai' : 'sketch') : objectLook(o, doc);
   if (look !== 'raw' && isGroundObj(o)) {
-    drawTerrain(ctx, o, look === 'ai' ? o.art?.terrain ?? null : null, doc.theme, world, onReady);
+    drawTerrain(ctx, o, look === 'ai' ? o.art?.terrain ?? null : null, doc.theme, world, onReady, grounds);
     return;
   }
   ctx.save();
@@ -445,7 +466,8 @@ function drawObjectWorld(ctx: CanvasRenderingContext2D, o: SObj, doc: SDoc, worl
  * every image it needs has loaded. For the restyle card, the compare card and thumbnails.
  */
 export async function sceneLookCanvas(doc: SDoc, scene: SScene, width: number, height: number, o: { region?: { x: number; y: number; w: number; h: number } } = {}): Promise<HTMLCanvasElement> {
-  await Promise.all(sceneSvgs(doc, scene).map(loadArt));
+  // wait for the art (but never forever: a picture with a missing image beats no picture)
+  await Promise.race([Promise.all(sceneSvgs(doc, scene).map(loadArt)), new Promise((r) => setTimeout(r, 6000))]);
   const c = document.createElement('canvas');
   c.width = width;
   c.height = height;
@@ -462,11 +484,12 @@ export async function sceneLookCanvas(doc: SDoc, scene: SScene, width: number, h
   ctx.rect(0, 0, world.width, world.height);
   ctx.clip();
   const noop = (): void => undefined;
+  const grounds = scene.objects.filter(isGroundObj);
   drawWorldBack(ctx, doc, world, { x: reg.x, y: reg.y, zoom: z, width, height }, noop);
   for (const ob of drawOrder(scene.objects)) {
     if (ob.template || ob.hidden) continue;
     if (!ob.drawing.strokes.length) continue;
-    drawObjectWorld(ctx, ob, doc, world, z, noop);
+    drawObjectWorld(ctx, ob, doc, world, z, noop, grounds);
   }
   return c;
 }

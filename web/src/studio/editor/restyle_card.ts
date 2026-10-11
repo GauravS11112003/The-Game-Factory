@@ -135,7 +135,7 @@ export function restyleCard(studio: Studio, director: ArtDirector, first: Restyl
     }
     actions.replaceChildren(...kids);
     actions.hidden = !kids.length;
-    if (sess.state !== 'planning') paintAfter();
+    if (sess.state === 'drawing' || sess.state === 'done' || sess.state === 'used') paintAfter();
   };
 
   let lastState = sess.state;

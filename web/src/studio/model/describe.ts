@@ -221,6 +221,10 @@ export function describeEdit(e: StudioEdit, after: SDoc, before: SDoc | null, sc
     case 'set_counters': return t('studio.edit.counters', { name: objName(e.target), list: countersText(data.counters) });
     case 'set_game_counters': return t('studio.edit.game_counters', { list: countersText(data.counters) });
     case 'ask_draw': return t('studio.edit.ask_draw', { prompt: String(data.prompt ?? '') });
+    case 'set_art': return t(data.use === 'sketch' ? 'studio.edit.art_sketch' : 'studio.edit.art', { name: objName(e.target) });
+    case 'set_art_direction': return t('studio.edit.art_direction', { prompt: String(data.prompt ?? data.summary ?? '') });
+    case 'set_backdrop': return t(Object.keys(data).length ? 'studio.edit.backdrop' : 'studio.edit.backdrop_off');
+    case 'set_look': return t(data.look === 'sketch' ? 'studio.edit.look_sketch' : 'studio.edit.look_game');
     default: return t('studio.edit.unknown');
   }
 }

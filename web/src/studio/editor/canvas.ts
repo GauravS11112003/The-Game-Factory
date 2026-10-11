@@ -277,7 +277,7 @@ export class StudioCanvas {
           ctx.clip();
           ctx.translate(-this.view.x * z, -this.view.y * z);
           ctx.scale(z, z);
-          drawTerrain(ctx, o, look === 'ai' ? o.art?.terrain ?? null : null, theme, world, this.ready);
+          drawTerrain(ctx, o, look === 'ai' ? o.art?.terrain ?? null : null, theme, world, this.ready, sc.objects.filter(isGroundObj));
           ctx.restore();
         } else {
           const v = look === 'ai' ? chosenVariant(o, variant) : null;
