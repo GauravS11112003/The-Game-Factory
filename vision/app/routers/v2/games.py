@@ -181,6 +181,10 @@ async def create_game(request: Request) -> Any:
         return err(400, "error.bad_request")
     title = sanitize.text(body.title, 40)
     author = sanitize.text(body.author, 16)
+    from app.auth import settings as auth_settings
+    player = identity.player_from_request(request)
+    if auth_settings().enabled and player:
+        author = player["name"]
     if not title or not author:
         return err(400, "error.bad_request", {"field": "title" if not title else "author"})
     brief = body.brief.model_dump() if body.brief else None
@@ -194,9 +198,11 @@ async def create_game(request: Request) -> Any:
     if moderate.blocklist_hit([title, author, *(brief.values() if brief else [])]):
         return err(409, "publish.safety_flag")
     game = db_v2.create_game(f"game_{secrets.token_hex(4)}", title, author, rules_from_brief(default_rules(), brief), brief, draft=body.draft)
-    player = identity.player_from_request(request)
     if player:
-        members.claim_if_ownerless(game["id"], player)
+        if auth_settings().enabled:
+            members.set_role(game["id"], player["id"], "owner", added_by=player["id"])
+        else:
+            members.claim_if_ownerless(game["id"], player)
     return JSONResponse({"game": game}, status_code=201)
 
 

@@ -3,7 +3,7 @@
  * list, mark read, deep links) and your face linking to #/me — or a "Who are you?" button before there is a profile.
  */
 import { h, icon } from '../dom.ts';
-import { currentPlayer, ensurePlayer, onPlayerChange } from '../identity.ts';
+import { currentPlayer, ensurePlayer, onPlayerChange, usesAuth0 } from '../identity.ts';
 import { t } from '../messages.ts';
 import { collab, type FeedItem } from './api.ts';
 import { avatar, errText, feedRow, note } from './ui.ts';
@@ -114,9 +114,9 @@ export function collabChrome(): HTMLElement {
       unread = 0;
       syncCount();
       me.replaceChildren(h('button', {
-        type: 'button', class: 'pill small collab-hello', title: t('collab.who.help'),
+        type: 'button', class: 'pill small collab-hello', title: t(usesAuth0() ? 'auth.sign_in' : 'collab.who.help'),
         onclick: () => void ensurePlayer().catch(() => undefined),
-      }, h('span', { class: 'emo' }, '👋'), h('span', { class: 'lbl' }, t('collab.who.short'))));
+      }, h('span', { class: 'emo' }, '👋'), h('span', { class: 'lbl' }, t(usesAuth0() ? 'auth.sign_in' : 'collab.who.short'))));
     }
   };
   onPlayerChange(() => {

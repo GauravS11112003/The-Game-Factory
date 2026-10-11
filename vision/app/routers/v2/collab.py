@@ -116,6 +116,9 @@ def _rate_limited(ip: str) -> bool:
 @router.post("/players")
 async def create_player(request: Request) -> Any:
     _boot()
+    from app.auth import settings
+    if settings().enabled:
+        return err(403, "auth.sign_in_required")
     ip = request.client.host if request.client else "?"
     if _rate_limited(ip):
         return err(429, "error.rate_limited")

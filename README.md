@@ -83,6 +83,35 @@ the saved canvas and details, and repeated retry requests follow the same active
 with network access blocked. They have their own controls and win/restart logic; the faithful builder's deterministic
 physics, bot proofs, leaderboards, and export formats apply to faithful levels only.
 
+## Auth0 accounts
+
+Set `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, and
+`AUTH0_SESSION_SECRET` in the root `.env` to enable ordinary accounts. The session
+secret must contain at least 32 random characters. Use a Regular Web Application
+in Auth0 with the `openid profile email` scopes; no custom API, agent identities,
+or special Auth0 add-ons are needed.
+
+For local development, set `AUTH0_BASE_URL=http://localhost:5173`, register
+`http://localhost:5173/api/auth/callback` as an Allowed Callback URL, and register
+`http://localhost:5173` as an Allowed Logout URL. Start the app with
+`scripts/dev.sh`. Auth0 login on a LAN IP requires an HTTPS origin registered in
+Auth0; localhost HTTP is supported for development.
+
+For deployment, put the four Auth0 values in `deploy/vultr/.env`. The API uses
+`DAL_PUBLIC_URL=https://APP_DOMAIN` automatically. Register that origin's
+`/api/auth/callback` URL and its logout origin before rebuilding/restarting the
+services. Keep the session secret stable across restarts.
+
+Playing is public. Creation, publishing, and account changes require sign-in.
+Auth0 verifies users; the backend stores a seven-day session in SQLite and gives
+the browser only an HttpOnly, SameSite cookie (Secure over HTTPS). Tokens and
+client secrets never enter the frontend bundle. Mutations verify their origin
+or a same-origin custom header. Sign-out revokes the session and ends the Auth0
+login. A device profile is migrated on the first login only when the browser
+proves possession of its existing secret; names and emails never link accounts.
+Existing collaboration permissions and draft capability tokens remain in place.
+With all Auth0 credentials empty, the previous device-profile mode still works.
+
 ## The main flows
 
 - **Race a friend**: open a faithful platformer and choose "Play with a friend". Share its two-seat lobby, ready up,

@@ -245,6 +245,10 @@ def _player_dict(p: Any) -> dict[str, Any] | None:
 
 async def _resolve_player(ws: WebSocket, token: str) -> dict[str, Any] | None:
     """The lane 4 profile behind an X-DP-Player token, or None (no collab module yet, or the token does not match)."""
+    from app import auth
+    if auth.settings().enabled:
+        # Browser WebSockets carry the same HttpOnly session cookie as HTTP.
+        return _player_dict(auth.session_player(ws))
     if not token or len(token) > 256:
         return None
     try:

@@ -67,9 +67,11 @@ def create_app() -> FastAPI:
     settings.ensure_dirs()
 
     app = FastAPI(title="draw-a-level vision", version="0.1.0", lifespan=lifespan)
+    from app import auth
+    auth_settings = auth.settings()
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=[auth_settings.base_url] if auth_settings.enabled else ["*"],
         allow_credentials=False,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -90,6 +92,7 @@ def create_app() -> FastAPI:
         except Exception:
             log.exception("v2 API disabled: mount failed")
 
+    auth.install(app)
     app.mount(settings.public_uploads, StaticFiles(directory=str(settings.uploads_dir)), name="uploads")
     return app
 

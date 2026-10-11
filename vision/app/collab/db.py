@@ -19,6 +19,10 @@ from typing import Any, Iterator
 from app import db_v2
 
 TABLES: dict[str, str] = {
+    "auth_identities": """CREATE TABLE IF NOT EXISTS auth_identities (
+        subject TEXT PRIMARY KEY, player_id TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL)""",
+    "auth_sessions": """CREATE TABLE IF NOT EXISTS auth_sessions (
+        token_hash TEXT PRIMARY KEY, player_id TEXT NOT NULL, expires_at REAL NOT NULL)""",
     "players": """CREATE TABLE IF NOT EXISTS players (
         id TEXT PRIMARY KEY, name TEXT NOT NULL, avatar_path TEXT, token_hash TEXT NOT NULL,
         created_at TEXT NOT NULL)""",

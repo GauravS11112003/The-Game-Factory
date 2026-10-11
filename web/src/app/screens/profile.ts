@@ -5,7 +5,7 @@
  * (PUT /players/me), plus your secret player code for another device.
  */
 import { card, h, icon, toast } from '../dom.ts';
-import { currentPlayer, editPlayer, ensurePlayer, forgetPlayer, secretCode, updatePlayer, type Player } from '../identity.ts';
+import { currentPlayer, editPlayer, ensurePlayer, forgetPlayer, secretCode, updatePlayer, usesAuth0, signOut, type Player } from '../identity.ts';
 import { hasMessage, kidText, t } from '../messages.ts';
 import { navigate } from '../router.ts';
 import { levelCardEl } from './home.ts';
@@ -169,6 +169,10 @@ function subRow(s: SubRow): HTMLElement {
 }
 
 function codeCard(): HTMLElement {
+  if (usesAuth0()) return card(null,
+    h('h3', null, t('auth.account')),
+    h('p', { class: 'small muted' }, t('auth.account_help')),
+    h('button', { type: 'button', class: 'pill', onclick: () => void signOut() }, t('auth.sign_out')));
   const code = secretCode();
   const box = h('div', { class: 'row wrap' });
   const show = (): void => {

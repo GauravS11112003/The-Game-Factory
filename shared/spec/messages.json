@@ -1520,6 +1520,17 @@
     "sketch.empty_help": "Draw freely. Use shapes. Tell us what they do.",
     "sketch.navigation_hint": "Space + drag to pan · Pinch to zoom",
     "builder.earlier": "Earlier conversation",
-    "builder.read_request": "Full request"
+    "builder.read_request": "Full request",
+    "auth.sign_in": "Sign in",
+    "auth.sign_out": "Sign out",
+    "auth.account": "Your account",
+    "auth.account_help": "Sign in on any device to use the same profile.",
+    "auth.create_title": "Sign in to create",
+    "auth.create_help": "Save your games and create with your account. You can play without signing in.",
+    "auth.sign_in_required": "Please sign in to continue.",
+    "auth.request_denied": "This request could not be verified. Refresh the page and try again.",
+    "auth.failed": "Sign-in did not finish. Please try again.",
+    "auth.unavailable": "Accounts are unavailable right now. Please try again in a moment.",
+    "auth.retry": "Try again"
   }
 }

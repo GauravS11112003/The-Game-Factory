@@ -46,13 +46,15 @@ function save(v: Saved | null): void {
 }
 
 let saved: Saved | null = load();
+let auth0Enabled = false;
+let accountPlayer: Player | null = null;
 if (saved?.player.name) store.setAuthor(saved.player.name);
 const listeners = new Set<(p: Player | null) => void>();
 
 function emit(): void {
   for (const fn of listeners) {
     try {
-      fn(saved?.player ?? null);
+      fn(currentPlayer());
     } catch (e) {
       console.warn('player listener failed', e);
     }
@@ -61,11 +63,53 @@ function emit(): void {
 
 /** The player on this device, or null before the "Who are you?" sheet was filled in. */
 export function currentPlayer(): Player | null {
-  return saved?.player ?? null;
+  return auth0Enabled ? accountPlayer : saved?.player ?? null;
+}
+
+export function usesAuth0(): boolean { return auth0Enabled; }
+
+/** Discover server authentication before rendering account-dependent screens. */
+export async function initializeIdentity(): Promise<void> {
+  const r = await fetch('/api/auth/session', { cache: 'no-store' });
+  if (!r.ok) throw new Error('auth.unavailable');
+  const session = await r.json() as { enabled: boolean; player: Player | null };
+  auth0Enabled = session.enabled;
+  accountPlayer = session.player;
+  if (auth0Enabled && accountPlayer) {
+    // Migration has succeeded; don't retain a reusable device credential.
+    saved = null;
+    save(null);
+    store.setAuthor(accountPlayer.name);
+  }
+  if (!auth0Enabled) await refreshPlayer();
+  emit();
+}
+
+export async function signIn(returnTo?: string): Promise<void> {
+  const legacy: Record<string, string> = saved ? { 'X-DP-Player': `${saved.player.id}.${saved.token}` } : {};
+  const r = await fetch('/api/auth/prepare', {
+    method: 'POST', headers: { 'content-type': 'application/json', 'X-DP-CSRF': '1', ...legacy },
+    body: JSON.stringify({ return_to: returnTo ?? `/${window.location.hash || '#/studio'}` }),
+  });
+  if (!r.ok) { toast(t('auth.failed')); throw new Error('auth.failed'); }
+  const { login_url } = await r.json() as { login_url: string };
+  window.location.assign(login_url);
+}
+
+export async function signOut(): Promise<void> {
+  const r = await fetch('/api/auth/logout', { method: 'POST', headers: { 'X-DP-CSRF': '1' } });
+  if (!r.ok) { toast(t('auth.failed')); return; }
+  const { logout_url } = await r.json() as { logout_url: string };
+  accountPlayer = null;
+  saved = null;
+  save(null);
+  emit();
+  window.location.assign(logout_url);
 }
 
 /** `{ 'X-DP-Player': '<id>.<token>' }`, or `{}` when there is no profile yet. */
 export function authHeaders(): Record<string, string> {
+  if (auth0Enabled) return { 'X-DP-CSRF': '1' };
   return saved ? { 'X-DP-Player': `${saved.player.id}.${saved.token}` } : {};
 }
 
@@ -77,6 +121,15 @@ export function onPlayerChange(fn: (p: Player | null) => void): () => void {
 
 /** Merge fresh fields from the server (name, avatar) into the saved profile. */
 export function updatePlayer(p: Partial<Player>): void {
+  if (auth0Enabled) {
+    if (!accountPlayer) return;
+    const next = { ...accountPlayer, ...p, id: accountPlayer.id };
+    if (next.name === accountPlayer.name && next.avatar_url === accountPlayer.avatar_url) return;
+    accountPlayer = next;
+    store.setAuthor(next.name);
+    emit();
+    return;
+  }
   if (!saved) return;
   const next: Player = {
     id: saved.player.id,
@@ -92,6 +145,7 @@ export function updatePlayer(p: Partial<Player>): void {
 
 /** Forget the profile on this device (the secret code brings it back). */
 export function forgetPlayer(): void {
+  accountPlayer = null;
   saved = null;
   save(null);
   emit();
@@ -99,6 +153,7 @@ export function forgetPlayer(): void {
 
 /** The secret player code (`<id>.<token>`): the same player on another device. */
 export function secretCode(): string | null {
+  if (auth0Enabled) return null;
   return saved ? `${saved.player.id}.${saved.token}` : null;
 }
 
@@ -124,6 +179,19 @@ async function readError(r: Response): Promise<string> {
 
 /** Check the saved profile against the server (on app start): a token the server no longer knows is forgotten. */
 export async function refreshPlayer(): Promise<void> {
+  if (auth0Enabled) {
+    try {
+      const r = await fetch('/api/auth/session', { cache: 'no-store' });
+      if (!r.ok) return;
+      const session = await r.json() as { player: Player | null };
+      if (JSON.stringify(accountPlayer) !== JSON.stringify(session.player)) {
+        accountPlayer = session.player;
+        if (accountPlayer) store.setAuthor(accountPlayer.name);
+        emit();
+      }
+    } catch { /* Keep the current UI while offline; the server still enforces session expiry. */ }
+    return;
+  }
   if (!saved) return;
   const checking = saved;
   try {
@@ -145,6 +213,7 @@ export async function refreshPlayer(): Promise<void> {
 
 /** Use a secret code from another device. Resolves with the player when the server knows it. */
 export async function useSecretCode(code: string): Promise<Player> {
+  if (auth0Enabled) throw new Error('auth.sign_in_required');
   const clean = code.trim();
   const dot = clean.indexOf('.');
   if (dot <= 0 || dot === clean.length - 1) throw new Error('collab.who.bad_code');
@@ -195,6 +264,7 @@ let pending: Promise<Player> | null = null;
 export function ensurePlayer(): Promise<Player> {
   const p = currentPlayer();
   if (p) return Promise.resolve(p);
+  if (auth0Enabled) return signIn().then(() => new Promise<Player>(() => { /* Page is navigating to Auth0. */ }));
   pending ??= openWhoSheet(null).finally(() => {
     pending = null;
   });
@@ -209,7 +279,7 @@ export function editPlayer(): Promise<Player | null> {
 }
 
 async function savePlayer(name: string, avatarPng: string | null): Promise<Player> {
-  if (!saved) throw new Error('collab.need_profile');
+  if (!currentPlayer()) throw new Error('collab.need_profile');
   let r: Response;
   try {
     r = await fetch(`${BASE}/players/me`, {
@@ -223,8 +293,8 @@ async function savePlayer(name: string, avatarPng: string | null): Promise<Playe
   if (!r.ok) throw new Error(await readError(r));
   const p = toPlayer(await r.json().catch(() => null));
   updatePlayer({ name: p?.name || name, avatar_url: p?.avatar_url ?? avatarPng ?? undefined });
-  store.setAuthor(saved.player.name);
-  return saved.player;
+  store.setAuthor(currentPlayer()!.name);
+  return currentPlayer()!;
 }
 
 // ---- the "Who are you?" sheet ------------------------------------------------------------------------------------

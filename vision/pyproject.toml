@@ -16,6 +16,9 @@ dependencies = [
     "jsonschema",
     "pydantic>=2",
     "pytest",
+    "authlib>=1.8.0",
+    "httpx>=0.28.1",
+    "itsdangerous>=2.2.0",
 ]
 
 [build-system]

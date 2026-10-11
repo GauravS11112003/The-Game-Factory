@@ -6,7 +6,7 @@ import { api, ApiError } from '../api.ts';
 import { collab } from '../collab/api.ts';
 import { card, h, icon } from '../dom.ts';
 import { creationInk, creationPrompt, GAME_CATEGORIES, type CreationDraft } from '../game-brief.ts';
-import { currentPlayer } from '../identity.ts';
+import { currentPlayer, signIn, usesAuth0 } from '../identity.ts';
 import { t } from '../messages.ts';
 import { navigate } from '../router.ts';
 import { store } from '../store.ts';
@@ -113,6 +113,16 @@ export function openCreateGameModal(onClose?: () => void, initial?: {
     prompt: initial.prompt,
     brief: { ...(saved?.brief ?? { custom_definition: '', theme: '', gameplay: '', details: '' }), category: initial.category },
   } : saved;
+  if (usesAuth0() && !currentPlayer()) {
+    if (draft) store.setCreationDraft(draft);
+    dialog.querySelector('#creation-modal-title')!.textContent = t('auth.create_title');
+    const login = h('button', { type: 'button', class: 'pill primary big',
+      onclick: () => void signIn('/#/create').catch(() => undefined) }, t('auth.sign_in'));
+    content.append(card('narrow', h('p', null, t('auth.create_help')), login));
+    document.addEventListener('keydown', keydown, true);
+    login.focus();
+    return close;
+  }
   cleanup = creationPage(content, draft, undefined, true, { kind: 'game' }, (draftId) => {
     cleanup?.();
     content.replaceChildren();

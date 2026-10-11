@@ -39,7 +39,7 @@ import { questsScreen } from './screens/quests.ts';
 import { reviewScreen } from './screens/review.ts';
 import { collabChrome } from './collab/bell.ts';
 import { captureContribution } from './collab/contribute.ts';
-import { refreshPlayer } from './identity.ts';
+import { currentPlayer, ensurePlayer, initializeIdentity, onPlayerChange, refreshPlayer, usesAuth0 } from './identity.ts';
 
 type Cleanup = (() => void) | void;
 
@@ -76,6 +76,13 @@ function header(): HTMLElement {
 }
 
 const app = document.getElementById('app')!;
+try {
+  await initializeIdentity();
+} catch {
+  app.replaceChildren(card(null, h('p', null, t('auth.unavailable')),
+    h('button', { type: 'button', class: 'pill', onclick: () => window.location.reload() }, t('auth.retry'))));
+  throw new Error('Account service unavailable');
+}
 const head = header();
 document.body.prepend(head);
 
@@ -94,6 +101,14 @@ function route(): void {
   const [first = '', second] = path;
   for (const a of head.querySelectorAll<HTMLAnchorElement>('nav a')) a.classList.toggle('on', a.dataset.nav === first);
   document.body.dataset.screen = first === 'arcade' ? 'arcade' : first || 'home';
+  if (usesAuth0() && !currentPlayer() && (['studio', 'create', 'draw', 'scan', 'prompt', 'preview', 'imagine', 'library', 'me'].includes(first) ||
+      (first === 'game' && ['rules', 'library'].includes(path[2] ?? '')))) {
+    app.append(card('narrow', h('h1', null, t('auth.create_title')),
+      h('p', { class: 'muted' }, t('auth.create_help')),
+      h('button', { type: 'button', class: 'pill primary big', onclick: () => void ensurePlayer().catch(() => undefined) }, t('auth.sign_in')),
+      h('a', { class: 'pill', href: '#/' }, t('ui.home'))));
+    return;
+  }
   if (first === 'draw' || first === 'scan' || first === 'prompt' || (first === 'game' && path[2] === 'library')) captureContribution(query);
   try {
     switch (first) {
@@ -187,4 +202,17 @@ function route(): void {
 
 window.addEventListener('hashchange', route);
 route();
-void refreshPlayer();
+let renderedPlayerId = currentPlayer()?.id;
+onPlayerChange(p => {
+  if (p?.id !== renderedPlayerId) { renderedPlayerId = p?.id; route(); }
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') void refreshPlayer();
+});
+const authQuery = new URLSearchParams(window.location.search);
+if (authQuery.has('auth_error')) {
+  authQuery.delete('auth_error');
+  window.history.replaceState(null, '', `${window.location.pathname}${authQuery.size ? `?${authQuery}` : ''}${window.location.hash}`);
+  // Keep the error visible without exposing provider details or authorization codes.
+  app.prepend(card(null, h('p', { role: 'alert' }, t('auth.failed'))));
+}

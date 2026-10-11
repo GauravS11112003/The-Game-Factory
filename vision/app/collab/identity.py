@@ -179,6 +179,9 @@ def parse_header(value: str | None) -> tuple[str, str] | None:
 
 def player_from_request(request: Any) -> dict[str, Any] | None:
     """The profile named by X-DP-Player when its token matches, else None."""
+    from app import auth
+    if auth.settings().enabled:
+        return auth.session_player(request)
     try:
         value = request.headers.get(HEADER)
     except Exception:  # noqa: BLE001 - anything without headers is anonymous
