@@ -1,131 +1,124 @@
 /**
- * #/new[?mode=] — New game (docs/v4/CONTRACTS_V4.md §7): name it, pick what kind of game it is (GameRules.mode) and
- * how to start (draw, scan, describe, or the empty workspace). Making a game needs a profile; the maker joins it as
- * owner, and a non-platformer mode is saved into the game's rules before the first level.
+ * #/new — New game (docs/v6/CONTRACTS_V6.md §6): "What are you making?" (sent to the copilot as the first message once
+ * the Studio opens), a template gallery (GET /studio/templates) and "Blank canvas". Creating = POST /studio/games →
+ * #/studio/<id>; offline, the game is made on this device and synced later.
+ * Query: ?text=<words> prefills the box, ?template=<id> or ?blank=1 create right away, ?tab=templates focuses the gallery.
  */
-import { api, ApiError } from '../api.ts';
-import { collab } from '../collab/api.ts';
-import { h, icon, toast } from '../dom.ts';
-import { ensurePlayer } from '../identity.ts';
-import { t } from '../messages.ts';
+import '../../studio/studio.css';
+import type { GameDoc, StudioGameCard } from '../../core/types.gen.ts';
+import { h, toast } from '../dom.ts';
+import { kidText, t } from '../messages.ts';
 import { navigate } from '../router.ts';
-import { DEFAULT_RULES } from '../rules.ts';
 import type { Shell } from '../shell.ts';
-import { MODES } from './workspace.ts';
-import type { GameMode } from '../../core/types.gen.ts';
+import { BLANK_CARD, BLANK_DOC, isOffline, loadTemplates, localGameFrom, localGames, saveDraft, studioApi } from '../studio_api.ts';
+import { sicon } from '../../studio/editor/icons.ts';
 
-type Start = 'draw' | 'scan' | 'describe' | 'workspace';
+const KIND_EMOJI: [RegExp, string][] = [
+  [/hill|rac|car|drive/, '🚙'], [/fight/, '🥊'], [/space|shoot/, '🚀'], [/platform/, '🍄'], [/puzzle|angry|launch/, '🧩'], [/catch/, '🧺'],
+  [/flap/, '🐦'], [/top|collect|zelda/, '🗝️'], [/run/, '🏃'],
+];
 
-const SVGNS = 'http://www.w3.org/2000/svg';
-
-/** A tiny ink sketch of each mode (stroke paths on a 64×40 card). */
-const SKETCH: Record<GameMode, { d: string; color: string }[]> = {
-  platformer: [
-    { d: 'M2 34h22M32 34h30M38 24h12', color: '#1f1b18' },
-    { d: 'M24 34l2-5 2 5 2-5 2 5', color: '#e0453a' },
-    { d: 'M8 30c6-12 14-14 20-12', color: '#6a5acd' },
-  ],
-  topdown: [
-    { d: 'M4 4h56v32H4zM24 4v18M40 18v18M4 24h12', color: '#1f1b18' },
-    { d: 'M48 10a2 2 0 100 .1', color: '#2c7be5' },
-    { d: 'M10 12h8M14 8v8', color: '#6a5acd' },
-  ],
-  runner: [
-    { d: 'M2 32h60M40 22h10', color: '#1f1b18' },
-    { d: 'M20 32l2-5 2 5M50 32l2-5 2 5', color: '#e0453a' },
-    { d: 'M6 20h10M8 16h8M10 24h8', color: '#6a5acd' },
-  ],
-  flappy: [
-    { d: 'M18 0v14M18 26v14M44 0v8M44 20v20', color: '#1f1b18' },
-    { d: 'M6 22c4-6 8-6 12-2M28 16c4-4 8-4 12 0', color: '#6a5acd' },
-  ],
+const emojiFor = (card: StudioGameCard): string => {
+  if (card.id === BLANK_CARD.id) return '✏️';
+  const s = `${card.kind} ${card.title}`.toLowerCase();
+  return KIND_EMOJI.find(([re]) => re.test(s))?.[1] ?? '🎮';
 };
 
-function sketch(mode: GameMode): SVGSVGElement {
-  const svg = document.createElementNS(SVGNS, 'svg');
-  svg.setAttribute('viewBox', '0 0 64 40');
-  svg.setAttribute('class', 'ws-mode-sketch');
-  svg.setAttribute('aria-hidden', 'true');
-  for (const s of SKETCH[mode]) {
-    const p = document.createElementNS(SVGNS, 'path');
-    p.setAttribute('d', s.d);
-    p.setAttribute('stroke', s.color);
-    svg.append(p);
-  }
-  return svg;
+const IDEAS = ['studio.new.idea_racer', 'studio.new.idea_fighter', 'studio.new.idea_space', 'studio.new.idea_platformer', 'studio.new.idea_puzzle', 'studio.new.idea_catch'];
+
+function titleFrom(text: string): string | undefined {
+  const s = text.trim().replace(/^(a|an|the|make|making|i'?m making|i want)\s+/i, '').replace(/[.!?]+$/, '');
+  if (!s || s.length > 40) return undefined;
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 export function newGameScreen(root: HTMLElement, query: URLSearchParams, shell: Shell): () => void {
   let disposed = false;
   let busy = false;
-  const q = query.get('mode');
-  let mode: GameMode = (MODES as string[]).includes(q ?? '') ? (q as GameMode) : 'platformer';
-  let start: Start = 'draw';
 
-  const name = h('input', { id: 'ng-name', type: 'text', class: 'text ws-name-in', maxLength: 40, placeholder: t('new.name_placeholder'), autocomplete: 'off' });
-  const err = h('p', { class: 'small bad', role: 'alert' });
-  name.oninput = () => { err.textContent = ''; };
-  const modes = h('div', { class: 'ws-mode-cards', role: 'radiogroup', 'aria-labelledby': 'ng-mode-h' });
-  const starts = h('div', { class: 'ws-start-cards', role: 'radiogroup', 'aria-labelledby': 'ng-start-h' });
-  const go = h('button', { type: 'submit', class: 'pill primary big' }, icon('plus'), t('new.create'));
+  const input = h('textarea', { class: 'stn-input', rows: 2, maxLength: 2000, placeholder: t('studio.new.placeholder'), 'aria-label': t('studio.new.question') });
+  input.value = query.get('text') ?? '';
+  const go = h('button', { type: 'submit', class: 'stn-go' }, sicon('sparkle'), h('span', null, t('studio.new.start')));
+  const form = h('form', { class: 'stn-ask' }, input, go);
+  const status = h('p', { class: 'stn-status', role: 'status' });
+  const gallery = h('div', { class: 'stn-gallery', id: 'stn-templates' });
+  const localBox = h('div', { class: 'stn-local' });
 
-  function render(): void {
-    modes.replaceChildren(...MODES.map((m) => h('button', {
-      type: 'button', role: 'radio', 'aria-checked': String(m === mode), class: `ws-mode-card${m === mode ? ' on' : ''}`,
-      onclick: () => { mode = m; render(); },
-    }, sketch(m), h('span', { class: 'ws-tile-title' }, t(`mode.${m}`)), h('span', { class: 'ws-tile-sub' }, t(`mode.${m}_sub`)))));
-    const opt = (s: Start, ico: string, title: string, sub: string): HTMLElement => h('button', {
-      type: 'button', role: 'radio', 'aria-checked': String(s === start), class: `ws-tile${s === start ? ' on' : ''}`,
-      onclick: () => { start = s; render(); },
-    }, icon(ico), h('span', { class: 'ws-tile-title' }, t(title)), h('span', { class: 'ws-tile-sub' }, t(sub)));
-    starts.replaceChildren(
-      opt('draw', 'marker', 'ws.start_draw', 'ws.start_draw_sub'),
-      opt('scan', 'camera', 'ws.start_scan', 'ws.start_scan_sub'),
-      opt('describe', 'pencil', 'ws.start_describe', 'ws.start_describe_sub'),
-      opt('workspace', 'rules', 'new.start_empty', 'new.start_empty_sub'));
-  }
-
-  const form = h('form', { class: 'ws-page ws-new-page' },
-    h('h1', { class: 'ws-hello' }, h('span', { class: 'marker-underline' }, t('new.title'))),
-    h('section', { class: 'ws-new-sec' }, h('label', { for: 'ng-name', class: 'ws-h2' }, t('new.name_label')), name, err),
-    h('section', { class: 'ws-new-sec' }, h('h2', { id: 'ng-mode-h', class: 'ws-h2' }, t('new.mode_label')), modes),
-    h('section', { class: 'ws-new-sec' }, h('h2', { id: 'ng-start-h', class: 'ws-h2' }, t('new.start_label')), starts),
-    h('div', { class: 'row' }, go));
-
-  form.onsubmit = async (e) => {
-    e.preventDefault();
-    const title = name.value.trim();
-    if (!title) {
-      err.textContent = t('new.need_name');
-      name.focus();
-      return;
-    }
+  async function create(template: string | null, say: string): Promise<void> {
     if (busy) return;
     busy = true;
     go.disabled = true;
+    status.textContent = t('studio.new.creating');
+    const title = say ? titleFrom(say) : undefined;
+    const sayQ = say ? `?say=${encodeURIComponent(say.slice(0, 2000))}` : '';
     try {
-      const p = await ensurePlayer();
-      const g = await api.createGame(title, p.name);
-      await collab.join(g.id).catch(() => null);
-      if (mode !== 'platformer') {
-        const rules = (await api.rules(g.id).catch(() => null)) ?? DEFAULT_RULES;
-        await api.putRules(g.id, { ...rules, mode }).catch(() => null);
-      }
+      const doc = await studioApi.createGame({ ...(template && template !== BLANK_CARD.id ? { template } : {}), ...(title ? { title } : {}) });
       if (disposed) return;
-      shell.noteGame(g.id, g.title);
-      const id = encodeURIComponent(g.id);
-      navigate(start === 'draw' ? `#/draw?new=1&game=${id}` : start === 'scan' ? `#/scan?game=${id}` : start === 'describe' ? `#/prompt?game=${id}` : `#/game/${id}`);
-    } catch (e2) {
-      toast(t(e2 instanceof ApiError ? e2.messageKey : 'collab.need_profile'));
+      shell.noteGame(doc.id, doc.title ?? null);
+      navigate(`#/studio/${encodeURIComponent(doc.id)}${sayQ}`);
+    } catch (e) {
+      if (!isOffline(e)) {
+        toast(t('studio.new.failed'));
+        status.textContent = '';
+        return;
+      }
+      // offline: make it on this device (the Studio syncs it when the server is back)
+      let tpl: GameDoc | null = null;
+      if (template && template !== BLANK_CARD.id) tpl = await studioApi.template(template).catch(() => null);
+      const local = localGameFrom(tpl ?? BLANK_DOC, title);
+      saveDraft(local, false);
+      if (disposed) return;
+      navigate(`#/studio/${encodeURIComponent(local.id)}${sayQ}`);
     } finally {
       busy = false;
       go.disabled = false;
     }
+  }
+
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) { input.focus(); return; }
+    void create(null, text);
+  };
+  input.onkeydown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
   };
 
-  render();
-  root.append(form);
-  name.focus();
+  const ideas = h('div', { class: 'stn-ideas' }, ...IDEAS.map((k) => h('button', { type: 'button', class: 'st-suggest', onclick: () => { input.value = t(k); input.focus(); } }, t(k))));
+
+  const renderGallery = (cards: StudioGameCard[], offline: boolean): void => {
+    const list = [BLANK_CARD, ...cards.filter((c) => c.id !== BLANK_CARD.id)];
+    gallery.replaceChildren(...list.map((c) => {
+      const thumb = c.thumbnail_url ? h('img', { src: c.thumbnail_url, alt: '', loading: 'lazy' }) : h('span', { class: 'stn-emoji', 'aria-hidden': 'true' }, emojiFor(c));
+      return h('button', { type: 'button', class: `stn-card${c.id === BLANK_CARD.id ? ' blank' : ''}`, onclick: () => void create(c.id, input.value.trim()) },
+        h('span', { class: 'stn-thumb' }, thumb),
+        h('span', { class: 'stn-card-body' }, h('span', { class: 'stn-card-title' }, c.id === BLANK_CARD.id ? t('studio.new.blank') : kidText(c.title)),
+          h('span', { class: 'stn-card-sub' }, c.id === BLANK_CARD.id ? t('studio.new.blank_sub') : t('studio.new.card_sub', { theme: c.theme_name, n: c.objects }))));
+    }), ...(offline ? [h('p', { class: 'stn-note' }, t('studio.new.templates_offline'))] : []));
+  };
+  renderGallery([], false);
+  void loadTemplates().then((r) => { if (!disposed) renderGallery(r.templates, r.offline); });
+
+  const locals = localGames();
+  if (locals.length) {
+    localBox.replaceChildren(h('h2', { class: 'stn-h2' }, t('studio.new.on_device')),
+      h('div', { class: 'stn-local-list' }, ...locals.slice(0, 6).map((g) => h('a', { class: 'stn-local-row', href: `#/studio/${encodeURIComponent(g.id)}` }, sicon('cloudoff'), h('span', null, g.title || t('ui.untitled'))))));
+  }
+
+  root.append(h('div', { class: 'stn-page' },
+    h('section', { class: 'stn-hero' },
+      h('h1', { class: 'stn-h1' }, t('studio.new.question')),
+      h('p', { class: 'stn-sub' }, t('studio.new.sub')),
+      form, ideas, status),
+    h('section', { class: 'stn-sec' }, h('div', { class: 'stn-sec-head' }, h('h2', { class: 'stn-h2' }, t('studio.new.templates')), h('span', { class: 'stn-sec-sub' }, t('studio.new.templates_sub'))), gallery),
+    localBox));
+
+  if (query.get('template')) void create(query.get('template'), input.value.trim());
+  else if (query.get('blank') === '1') void create(BLANK_CARD.id, input.value.trim());
+  else if (query.get('tab') === 'templates') window.setTimeout(() => gallery.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+  else input.focus();
+
   return () => {
     disposed = true;
   };
