@@ -344,13 +344,22 @@ export class PlayScene extends Phaser.Scene {
     this.artUnsub = onArtReady(() => this.refreshPendingArt());
     const onResize = (): void => this.onResize();
     this.scale.on('resize', onResize);
-    this.events.once('shutdown', () => {
+    let cleaned = false;
+    const cleanup = (): void => {
+      if (cleaned) return;
+      cleaned = true;
       this.scale.off('resize', onResize);
       this.artUnsub?.();
       this.artUnsub = null;
-      for (const v of this.views.values()) v.terrain?.destroy();
-      this.clearBackdrop();
-    });
+      try {
+        for (const v of this.views.values()) v.terrain?.destroy();
+        this.clearBackdrop();
+      } catch {
+        /* the game is being torn down */
+      }
+    };
+    this.events.once('shutdown', cleanup);
+    this.events.once('destroy', cleanup);
     world.start();
     L.onWorld(world, this);
     this.updateTerrain(true);
@@ -416,7 +425,7 @@ export class PlayScene extends Phaser.Scene {
 
   // ---- building ----------------------------------------------------------------------------------
 
-  private textureFor(d: Drawing, polish = false): { key: string; tiles: { key: string; x: number; y: number }[]; scale: number } | null {
+  private textureFor(d: Drawing, polish = false): { key: string; tiles: { key: string; x: number; y: number; s?: number }[]; scale: number } | null {
     if (!d?.strokes?.length) return null;
     let base = texKeys.get(d);
     if (!base) {
@@ -427,7 +436,7 @@ export class PlayScene extends Phaser.Scene {
     const texScale = this.texScale;
     const themeKey = hashStr(JSON.stringify([L.theme.palette, L.theme.stroke, L.theme.recolor])).toString(36);
     const key = `${base}_${themeKey}_${texScale}${polish ? 'p' : ''}`;
-    const meta = this.registry.get(`tiles:${key}`) as { key: string; x: number; y: number }[] | undefined;
+    const meta = this.registry.get(`tiles:${key}`) as { key: string; x: number; y: number; s?: number }[] | undefined;
     if (meta) return { key, tiles: meta, scale: texScale };
     // bounding box of the ink
     let minX = Infinity;
@@ -446,15 +455,17 @@ export class PlayScene extends Phaser.Scene {
     }
     const margin = maxW * 2 + 30;
     const big = (maxX - minX + margin * 2) * texScale > 4000 || (maxY - minY + margin * 2) * texScale > 4000;
-    const tiles: { key: string; x: number; y: number }[] = [];
+    const tiles: { key: string; x: number; y: number; s?: number }[] = [];
     try {
       if (!big) {
         const c = renderDrawing(d, L.theme as never, { scale: texScale, pad: 6, recolorMap: L.recolor, polish });
         if (!this.textures.exists(key)) this.textures.addCanvas(key, c);
         tiles.push({ key, x: 0, y: 0 });
       } else {
-        const scale = 1;
-        const T = 1800;
+        // huge drawings (a 12 000 px decoration): as sharp as a ~12 MP budget allows, never below v6's 1:1
+        const area = Math.max(1, (maxX - minX + margin * 2) * (maxY - minY + margin * 2));
+        const scale = Math.max(1, Math.min(texScale, 2, Math.sqrt(12e6 / area)));
+        const T = Math.floor(2000 / scale);
         const x0 = minX - margin;
         const y0 = minY - margin;
         for (let ty = y0; ty < maxY + margin; ty += T) {
@@ -465,7 +476,7 @@ export class PlayScene extends Phaser.Scene {
             const c = renderDrawing(d, L.theme as never, { scale, recolorMap: L.recolor, region: { x: tx, y: ty, w, h }, polish });
             const k = `${key}_${tiles.length}`;
             if (!this.textures.exists(k)) this.textures.addCanvas(k, c);
-            tiles.push({ key: k, x: tx + w / 2, y: ty + h / 2 });
+            tiles.push({ key: k, x: tx + w / 2, y: ty + h / 2, s: scale });
           }
         }
       }
@@ -549,7 +560,7 @@ export class PlayScene extends Phaser.Scene {
       const big = tex.tiles.length > 1 || tex.tiles[0].key !== tex.key;
       for (const t of tex.tiles) {
         const img = this.add.image(t.x, t.y - def.h / 2, t.key);
-        img.setScale(big ? 1 : 1 / tex.scale);
+        img.setScale(1 / (big ? t.s ?? 1 : tex.scale));
         v.inner.add(img);
         v.imgs.push(img);
       }
@@ -979,8 +990,9 @@ export class PlayScene extends Phaser.Scene {
 
   /** The camera in the device-space convention shared with renderBackground / renderBackdrop. */
   private deviceCamera(): { x: number; y: number; zoom: number } {
+    // from the values centerOn() was given this frame (the camera's midPoint only updates at render time)
     const z = this.worldCam.zoom;
-    return { x: this.worldCam.midPoint.x - this.viewW / z / 2, y: this.worldCam.midPoint.y - this.viewH / z / 2, zoom: z };
+    return { x: this.camX - this.viewW / z / 2, y: this.camY - this.viewH / z / 2, zoom: z };
   }
 
   private updateBackground(): void {

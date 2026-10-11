@@ -26,28 +26,51 @@ export function pathLength(pts: Pt[], closed = false): number {
   return L;
 }
 
-/** Evenly spaced points along the path (spacing `step`), keeping every original corner-ish vertex position close. */
+/**
+ * Points at most `step` apart along the path. Every original vertex is kept (long segments are split evenly), so
+ * corners stay exactly where they were drawn.
+ */
 export function resampleEven(pts: Pt[], closed: boolean, step: number): Pt[] {
   if (pts.length < 2) return pts.slice();
   const src = closed ? [...pts, pts[0]] : pts;
   const out: Pt[] = [src[0]];
-  let carry = 0;
   for (let i = 1; i < src.length; i++) {
     const a = src[i - 1];
     const b = src[i];
     const d = dist(a, b);
     if (d < 1e-9) continue;
-    let t = step - carry;
-    while (t <= d) {
-      out.push([a[0] + ((b[0] - a[0]) * t) / d, a[1] + ((b[1] - a[1]) * t) / d]);
-      t += step;
-    }
-    carry = d - (t - step);
+    const n = Math.max(1, Math.ceil(d / step));
+    for (let k = 1; k <= n; k++) out.push([a[0] + ((b[0] - a[0]) * k) / n, a[1] + ((b[1] - a[1]) * k) / n]);
   }
-  if (closed) {
-    if (out.length > 2 && dist(out[out.length - 1], out[0]) < step * 0.5) out.pop();
-  } else if (dist(out[out.length - 1], src[src.length - 1]) > 1e-6) out.push(src[src.length - 1]);
+  if (closed && out.length > 2 && dist(out[out.length - 1], out[0]) < 1e-6) out.pop();
   return out;
+}
+
+/**
+ * Round the corners of a polyline with a small radius only: points are added `radius` px either side of each vertex
+ * before corner cutting, so long straight segments stay put (the drawing keeps matching its physics).
+ */
+export function roundCorners(pts: Pt[], closed: boolean, radius = 6, iterations = 2): Pt[] {
+  if (pts.length < 3) return pts.slice();
+  const n = pts.length;
+  const out: Pt[] = [];
+  const along = (from: Pt, to: Pt, r: number): Pt => {
+    const d = dist(from, to) || 1;
+    return [from[0] + ((to[0] - from[0]) * r) / d, from[1] + ((to[1] - from[1]) * r) / d];
+  };
+  for (let i = 0; i < n; i++) {
+    const v = pts[i];
+    const isEnd = !closed && (i === 0 || i === n - 1);
+    if (isEnd) {
+      out.push(v);
+      continue;
+    }
+    const prev = pts[(i - 1 + n) % n];
+    const next = pts[(i + 1) % n];
+    // collinear helpers either side of the vertex: corner cutting then only changes the path within `radius`
+    out.push(along(v, prev, Math.min(radius, dist(v, prev) / 2.2)), v, along(v, next, Math.min(radius, dist(v, next) / 2.2)));
+  }
+  return chaikin(out, closed, iterations);
 }
 
 /**

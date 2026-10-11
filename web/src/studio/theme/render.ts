@@ -800,6 +800,15 @@ function bboxOf(pts: Pt[]): { minX: number; minY: number; maxX: number; maxY: nu
 function drawPolishedFill(ctx: CanvasRenderingContext2D, g: Geo, ft: FullTheme): void {
   if (!g.fill) return;
   const style = ft.stroke.style;
+  if (style === 'neon') {
+    // neon keeps its glowing translucent look, just a little richer
+    ctx.save();
+    ctx.fillStyle = rgba(g.color, 0.28);
+    trace(ctx, g.pts, true);
+    ctx.fill();
+    ctx.restore();
+    return;
+  }
   const b = bboxOf(g.pts);
   const size = Math.max(4, Math.min(b.maxX - b.minX, b.maxY - b.minY));
   if (style === 'chalk' || style === 'crayon' || style === 'watercolor') drawFill(ctx, g, ft);
