@@ -113,6 +113,7 @@
     "nav.copilot_off": "Copilot: offline words only",
     "nav.copilot_down": "Copilot: server is off",
     "ws.templates_sub_v6": "Ready-made games drawn by hand. Open one, then redraw anything and ask the copilot to change the rules.",
-    "ws.templates_none": "Templates show up here when the server is on. A blank canvas works any time."
+    "ws.templates_none": "Templates show up here when the server is on. A blank canvas works any time.",
+    "ws.studio_feed": "New games to play"
   }
 }

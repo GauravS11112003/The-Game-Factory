@@ -303,3 +303,18 @@ a.st-title:hover { text-decoration: underline; }
 .bk-theme-name { font-family: 'Patrick Hand', cursive; font-size: 1.25rem; }
 .bk-theme-dots { display: flex; gap: 6px; }
 .bk-theme-dots > span { width: 18px; height: 18px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5); }
+
+/* v6 themes gallery (#/styles) */
+.th-page { display: flex; flex-direction: column; gap: 22px; }
+.th-describe { display: flex; flex-direction: column; gap: 10px; }
+.th-form { display: flex; gap: 8px; max-width: 640px; }
+.th-in { flex: 1; min-width: 0; }
+.th-grid, .th-made { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.th-card { display: flex; flex-direction: column; border: 1px solid var(--ws-line, #e6dfd2); border-radius: 14px; overflow: hidden; background: var(--paper, #fffdf8); }
+.th-card.fresh { box-shadow: 0 0 0 3px rgba(46, 134, 171, 0.25); }
+.th-pic { aspect-ratio: 16 / 9; overflow: hidden; }
+.th-pic canvas { width: 100% !important; height: 100% !important; display: block; }
+.th-body { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 14px; }
+.th-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.th-name { font-weight: 700; }
+.th-tags { font-size: 0.8rem; opacity: 0.7; }

@@ -3,6 +3,7 @@
  * Most cleared. Level cards show the thumbnail, difficulty badge, measured clear rate and best time.
  */
 import { api, ApiError, type GameCard, type LevelCard, type Sort } from '../api.ts';
+import { studioCardEl, studioGames } from '../studio_cards.ts';
 import { card, h, icon, toast } from '../dom.ts';
 import { fmtTime, kidText, t } from '../messages.ts';
 import { navigate } from '../router.ts';
@@ -105,7 +106,14 @@ export function homeScreen(root: HTMLElement): () => void {
       h('button', { type: 'button', class: 'pill big', onclick: () => { newForm.classList.toggle('hidden'); newTitle.focus(); } }, icon('plus'), t('home.new_game')),
       h('button', { type: 'button', class: 'pill', title: t('export.import_help'), onclick: () => importIn.click() }, icon('plus'), t('export.import'))),
     newForm, h('div', { class: 'row between wrap' }, status, h('a', { class: 'small muted', href: '/v1.html' }, t('home.v1_link'))), importIn);
-  root.append(hero, joinStrip(), tabs, feed);
+  // v6: published Studio games first (docs/v6/CONTRACTS_V6.md §9); each plays full screen at #/g/:id
+  const studioBox = h('section', { class: 'ws-studio-feed hidden' }, h('h2', { class: 'ws-h2' }, t('ws.studio_feed')), h('div', { class: 'ws-games' }));
+  void studioGames('published').then((list) => {
+    if (disposed || !list.length) return;
+    studioBox.classList.remove('hidden');
+    studioBox.lastElementChild?.replaceChildren(...list.slice(0, 12).map((g) => studioCardEl(g, `#/g/${encodeURIComponent(g.id)}`)));
+  });
+  root.append(hero, joinStrip(), studioBox, tabs, feed);
 
   const load = async (sort: Sort): Promise<void> => {
     lastSort = sort;

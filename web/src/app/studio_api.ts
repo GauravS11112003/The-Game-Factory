@@ -78,6 +78,8 @@ export const studioApi = {
   putThumbnail: (id: string, png: Blob): Promise<void> => req<void>('PUT', `/games/${enc(id)}/thumbnail`, png),
   thumbnailUrl: (id: string): string => `${BASE}/games/${enc(id)}/thumbnail.png`,
   remix: (id: string): Promise<GameDoc> => req<GameDoc>('POST', `/games/${enc(id)}/remix`),
+  /** A shared object/theme block went into this game: count the use and credit its author (v6 §9). */
+  useBlock: (id: string, blockId: string): Promise<{ new: boolean }> => req('POST', `/games/${enc(id)}/blocks/${enc(blockId)}/use`),
   templates: (): Promise<{ templates: StudioGameCard[] }> => req('GET', '/templates', undefined, { timeoutMs: 8000 }),
   template: (id: string): Promise<GameDoc> => req<GameDoc>('GET', `/templates/${enc(id)}`),
   themes: (): Promise<{ themes: StudioTheme[] }> => req('GET', '/themes', undefined, { timeoutMs: 8000 }),

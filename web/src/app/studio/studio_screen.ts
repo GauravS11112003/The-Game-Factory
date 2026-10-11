@@ -19,6 +19,7 @@ import { gamePanel } from '../../studio/editor/game_panel.ts';
 import { sicon } from '../../studio/editor/icons.ts';
 import { multiInspector, objectInspector } from '../../studio/editor/inspector.ts';
 import { mountRail } from '../../studio/editor/rail.ts';
+import { openBlocksDrawer } from '../../studio/editor/blocks_drawer.ts';
 import { mountBanners, Recognizer } from '../../studio/editor/recognize.ts';
 import { thumbnailBlob } from '../../studio/editor/snapshot.ts';
 import { Studio, type Tool } from '../../studio/editor/studio.ts';
@@ -95,7 +96,9 @@ function buildStudio(rootEl: HTMLElement, initialId: string, loaded: Loaded, que
 
   // ---- canvas stage ----
   const canvas = new StudioCanvas(studio);
-  const rail = mountRail(studio);
+  const blocksBtn = h('button', { type: 'button', class: 'st-tool', title: t('studio.blocks.title'), 'aria-label': t('studio.blocks.title') }, sicon('stamp'));
+  blocksBtn.onclick = () => openBlocksDrawer(blocksBtn, studio, canvas, () => gameId);
+  const rail = mountRail(studio, [h('span', { class: 'st-rail-sep' }), blocksBtn]);
   const stage = h('div', { class: 'st-stage' }, canvas.el, rail.el);
   offs.push(mountBanners(studio, stage));
   const chat = new CopilotChat(studio, () => gameId);

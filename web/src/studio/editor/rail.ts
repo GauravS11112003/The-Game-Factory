@@ -29,7 +29,7 @@ export function inkColors(studio: Studio): string[] {
   return out;
 }
 
-export function mountRail(studio: Studio): { el: HTMLElement; dispose: () => void } {
+export function mountRail(studio: Studio, extra: HTMLElement[] = []): { el: HTMLElement; dispose: () => void } {
   const el = h('div', { class: 'st-rail', role: 'toolbar', 'aria-label': t('studio.tool.rail'), 'aria-orientation': 'vertical' });
   const render = (): void => {
     const buttons = TOOLS.map((x) => h('button', {
@@ -39,7 +39,7 @@ export function mountRail(studio: Studio): { el: HTMLElement; dispose: () => voi
     const ink = h('button', { type: 'button', class: 'st-ink-btn', title: t('studio.tool.ink'), 'aria-label': t('studio.tool.ink') },
       h('span', { class: 'st-ink-dot', style: `background:${studio.color};--w:${Math.min(20, 4 + studio.width * 0.8)}px` }));
     ink.onclick = () => openInk(ink, studio);
-    el.replaceChildren(...buttons.slice(0, 2), h('span', { class: 'st-rail-sep' }), ...buttons.slice(2), h('span', { class: 'st-rail-sep' }), ink);
+    el.replaceChildren(...buttons.slice(0, 2), h('span', { class: 'st-rail-sep' }), ...buttons.slice(2), h('span', { class: 'st-rail-sep' }), ink, ...extra);
   };
   render();
   const off = studio.on((c) => { if (c.kind === 'tool' || (c.kind === 'doc' && !c.quiet)) render(); });

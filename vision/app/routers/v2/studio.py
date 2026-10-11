@@ -8,6 +8,7 @@ POST /studio/games/{id}/publish       {published} → StudioGameCard (author onl
 PUT  /studio/games/{id}/thumbnail     PNG bytes (≤ 600 KB) → 204 (author only)
 GET  /studio/games/{id}/thumbnail.png → the PNG
 POST /studio/games/{id}/remix         → 201 GameDoc copy owned by the caller
+POST /studio/games/{id}/blocks/{bid}/use  → {new} records a block use and credits its author (v6 §9)
 GET  /studio/templates                → {templates: StudioGameCard[]}
 GET  /studio/templates/{id}           → GameDoc
 GET  /studio/themes                   → {themes: StudioTheme[]}
@@ -312,6 +313,32 @@ async def remix_game(game_id: str, request: Request) -> Any:
 
 
 # ---- templates and themes -----------------------------------------------------------------------------------------
+
+
+@router.post("/studio/games/{game_id}/blocks/{block_id}/use")
+async def use_block(game_id: str, block_id: str, request: Request) -> Any:
+    """The Studio dropped an object or theme block into this game (the doc change itself comes with the next save):
+    count the use (BlockCard.uses, the popular sort) and credit the block's author in this game."""
+    from app import db_v2
+
+    player = _player(request)
+    if player is None:
+        return err(401, "ai.err.need_profile")
+    if not GAME_ID.match(game_id) or store.get_row(game_id) is None:
+        return err(404, "ai.err.not_found", {"what": "game"})
+    b = db_v2.get_block(block_id, None) if TEMPLATE_ID.match(block_id) else None
+    if b is None or b.get("kind") not in ("object", "theme"):
+        return err(404, "ai.err.not_found", {"what": "block"})
+    new = db_v2.record_block_use(b["id"], int(b["version"]), game_id, type_id=None, kind=b["kind"],
+                                 player_id=player.get("id"))
+    if new and b.get("author_id") and b.get("author_id") != player.get("id"):
+        try:
+            from app.collab import activity
+
+            activity.credit(game_id, b.get("author_id"), "block", b["id"])
+        except Exception as e:  # noqa: BLE001 - a credit never fails the use
+            log.info("studio block credit skipped: %s", e)
+    return {"new": new}
 
 
 @router.get("/studio/templates")

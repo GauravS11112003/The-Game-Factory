@@ -502,6 +502,17 @@
     "studio.world.gravity": "Gravity",
     "studio.world.players": "Players",
     "studio.world.size": "World size",
-    "studio.yes": "yes"
+    "studio.yes": "yes",
+    "studio.blocks.title": "Blocks",
+    "studio.blocks.help": "Things other makers drew and shared. Tap one to drop it into your game.",
+    "studio.blocks.search": "Search blocks",
+    "studio.blocks.loading": "Looking for blocks…",
+    "studio.blocks.tab_object": "Things",
+    "studio.blocks.tab_theme": "Themes",
+    "studio.blocks.by": "by {author}",
+    "studio.blocks.added": "{name} by {author} is in your game.",
+    "studio.blocks.none_objects": "No shared things yet. Select something you drew and press Save as block.",
+    "studio.blocks.none_themes": "No shared themes yet.",
+    "studio.blocks.offline": "Blocks show up here when the server is on."
   }
 }

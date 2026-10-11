@@ -13,7 +13,8 @@ import { kidText, t } from '../messages.ts';
 import { navigate, parseHash } from '../router.ts';
 import { v4, type BlockSort } from '../v4api.ts';
 import { ruleCard } from './logic.ts';
-import { pickGame, type MyGame } from './pick_game.ts';
+import { pickGame, pickStudioGame, type MyGame } from './pick_game.ts';
+import { studioApi } from '../studio_api.ts';
 import { BLOCK_KINDS, blockDoes, filterBlocks, sortBlocks } from './model.ts';
 import { btn, calm, chip, emptyState, enc, iconBtn, inkThumb, note, notReady, pickRow } from './ui.ts';
 import { renderDrawing } from '../../studio/theme/render.ts';
@@ -76,6 +77,33 @@ export async function addBlockTo(b: BlockCard, g: { id: string; title: string })
     return true;
   } catch (e) {
     toast(calm(e, 'blocks.not_ready'));
+    return false;
+  }
+}
+
+/** v6: put an object or theme block into one of your Studio games (saved on the server) and credit its author. */
+export async function addBlockToStudio(b: BlockCard, g: { id: string; title: string }): Promise<boolean> {
+  try {
+    const doc = await studioApi.game(g.id);
+    if (b.kind === 'theme' && b.theme) doc.theme = b.theme;
+    else if (b.kind === 'object' && b.object) {
+      const scene = doc.scenes[0];
+      const taken = new Set(doc.scenes.flatMap((sc) => (sc.objects ?? []).map((o) => o.id)));
+      const base = (b.object.id || 'o').replace(/\d+$/, '') || 'o';
+      let n = 1;
+      while (taken.has(`${base}${n}`)) n++;
+      const w = scene.world ?? { width: 1600, height: 900 };
+      const obj = { ...b.object, id: `${base}${n}`, x: Math.round((w.width ?? 1600) / 2), y: Math.round((w.height ?? 900) / 2), joints: [] };
+      scene.objects = [...(scene.objects ?? []), obj] as typeof scene.objects;
+    } else return false;
+    await studioApi.saveGame(doc);
+    void studioApi.useBlock(g.id, b.id).catch(() => undefined);
+    toast(t('blocks.added', { name: kidText(b.name), game: kidText(g.title || t('ui.untitled')) }), {
+      ms: 7000, action: { label: t('blocks.open_game'), run: () => navigate(`#/studio/${enc(g.id)}`) },
+    });
+    return true;
+  } catch {
+    toast(t('blocks.not_ready'));
     return false;
   }
 }
@@ -214,10 +242,14 @@ export function blocksScreen(root: HTMLElement, query: URLSearchParams): () => v
       cls: 'primary', icon: 'plus',
       onclick: async (e) => {
         const el = e.currentTarget as HTMLButtonElement;
-        const g: MyGame | { id: string; title: string } | null = game ?? await pickGame(t('blocks.pick_game'), t('blocks.pick_game_help', { name: kidText(b.name) }));
+        const studioKind = b.kind === 'object' || b.kind === 'theme';
+        const g: MyGame | { id: string; title: string } | null = studioKind
+          ? await pickStudioGame(t('blocks.pick_game'), t('blocks.pick_game_help', { name: kidText(b.name) }))
+          : game ?? await pickGame(t('blocks.pick_game'), t('blocks.pick_game_help', { name: kidText(b.name) }));
         if (!g || disposed) return;
         el.disabled = true;
-        await addBlockTo(b, g);
+        if (studioKind) await addBlockToStudio(b, g);
+        else await addBlockTo(b, g);
         el.disabled = false;
       },
     });
