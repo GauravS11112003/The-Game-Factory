@@ -190,7 +190,11 @@ function hillClimb(): Obj {
   };
   const pts: P[] = [];
   for (let x = 0; x <= W; x += 40) pts.push([x, terrain(x)]);
-  const flat = (x: number): number => (x < 700 ? 980 : terrain(x));
+  // flat start, easing into the hills
+  const flat = (x: number): number => {
+    const t = Math.max(0, Math.min(1, (x - 500) / 700));
+    return 980 + (terrain(x) - 980) * t * t * (3 - 2 * t);
+  };
   const tpts = pts.map(([x]) => [x, r1(flat(x) + jit(1.2))] as P);
   const ground = drawn('ground', [S(tpts, '#5a3d1e', 14)], { name: 'Hills', kind: 'ground', tags: ['ground'],
     physics: { body: 'static', shape: 'line', friction: 1.2 } });

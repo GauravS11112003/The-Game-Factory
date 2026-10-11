@@ -6,6 +6,7 @@
 import type { Drawing, GameDoc, StudioTheme } from '../../core/types.gen.ts';
 import { mountRuntime, type RuntimeHandle } from '../runtime/index.ts';
 import { renderBackground, renderDrawing, THEMES } from '../theme/index.ts';
+import { playtest, type BotHost } from './bots.ts';
 
 const files = import.meta.glob('../../../../shared/studio/templates/*.json', { eager: true, import: 'default' }) as Record<string, GameDoc>;
 const templates = Object.entries(files).map(([path, doc]) => ({ name: path.split('/').pop()!.replace('.json', ''), doc }))
@@ -158,4 +159,5 @@ const dev = {
     }
   },
 };
-(window as unknown as { studioDev: typeof dev }).studioDev = dev;
+const studioDev = { ...dev, playtest: (only?: string): Promise<string> => playtest(dev as unknown as BotHost, only) };
+(window as unknown as { studioDev: typeof studioDev }).studioDev = studioDev;

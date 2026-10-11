@@ -154,7 +154,10 @@ class Runner {
         (this.root.querySelector('.rt-primary') as HTMLButtonElement | null)?.click();
         return;
       }
-      if (GAME_CODES.has(k.code)) k.preventDefault();
+      // keep arrows / space from scrolling the page, but leave the host's own buttons their Enter and Space
+      const tgt = k.target as Node | null;
+      const ours = !tgt || tgt === document.body || tgt === document.documentElement || (tgt instanceof Node && this.root.contains(tgt));
+      if (GAME_CODES.has(k.code) && (ours || !['Enter', 'Space', 'NumpadEnter'].includes(k.code))) k.preventDefault();
       if (k.repeat) return;
       this.input.keyDown(k.code);
       this.world?.key('key_down', k.code);
