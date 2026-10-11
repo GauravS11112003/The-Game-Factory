@@ -11,6 +11,7 @@ import { CATALOG } from '../model/catalog.ts';
 import { allCounters, displayName } from '../model/doc.ts';
 import { normalizeTheme } from '../model/types.ts';
 import { sicon } from './icons.ts';
+import { artStyleSection } from './look_panel.ts';
 import { addCounterButton, counterRow } from './inspector.ts';
 import { targetItems, type ParamCtx } from './params.ts';
 import { addRuleButton, rulesList } from './rules_ui.ts';
@@ -103,6 +104,7 @@ export function gamePanel(s: Studio): HTMLElement {
     h('div', { class: 'st-insp-head' }, h('div', { class: 'st-insp-avatar game', 'aria-hidden': 'true' }, sicon('game')),
       h('div', { class: 'st-insp-names' }, h('div', { class: 'st-insp-title' }, t('studio.game.title')), h('div', { class: 'st-insp-sub' }, t('studio.game.sub', { scene: sc.name })))),
     section('g-world', t('studio.sec.world'), 'globe', world, { open: true }),
+    section('g-art', t('studio.sec.art'), 'sparkle', artStyleSection(s), { open: true }),
     section('g-theme', t('studio.sec.theme'), 'palette', themeSection(s), { open: true, count: s.doc.theme.name ?? '' }),
     section('g-hud', t('studio.sec.hud'), 'hud', hudSection(s), { open: false, count: s.doc.hud.items.length }),
     section('g-counters', t('studio.sec.game_counters'), 'bag', gameCounters(s), { open: false, count: Object.keys(s.doc.counters).length }),

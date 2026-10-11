@@ -24,6 +24,14 @@ export interface Change {
 
 export interface PickRequest { prompt: string; onPick: (id: string) => void; filter?: (o: SObj) => boolean }
 
+/** v7 art actions the panels can call (wired by the Studio screen to the ArtDirector and the compare card). */
+export interface ArtHooks {
+  redraw(id: string): void;
+  restyle(prompt: string | null): void;
+  compare(id: string): void;
+  busy(id?: string): boolean;
+}
+
 export class Studio {
   doc: SDoc;
   sceneId: string;
@@ -41,6 +49,7 @@ export class Studio {
   backdropBusy = false;
   /** v7: a look shown on the canvas without changing the doc (hovering a tile in the compare card). */
   preview: { id: string; variant: string | null } | null = null;
+  artHooks: ArtHooks | null = null;
   readonly history = new History<SDoc>(200, 900);
   private listeners = new Set<(c: Change) => void>();
   private pendingTimer = 0;

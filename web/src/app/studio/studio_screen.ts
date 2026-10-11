@@ -4,6 +4,8 @@
  * beside the Copilot chat. Play swaps the canvas for the runtime in place; Esc or Stop returns to the exact editor
  * state. Autosave: PUT 1.2 s after the last change, a local draft always, thumbnails at most every 30 s.
  * `?say=<words>` is sent to the copilot once after opening (the New game screen uses it), then dropped from the URL.
+ * v7 (docs/v7/CONTRACTS_V7.md §5): ✨ Make it real and the Sketch ↔ Game toggle in the top bar, the art director
+ * (jobs, shimmer, progress pill), the compare card, recognize → art, and restyle cards in the chat.
  */
 import '../../studio/studio.css';
 import { h, toast } from '../dom.ts';
@@ -13,6 +15,10 @@ import { store } from '../store.ts';
 import {
   dropDraft, isLocalId, isOffline, loadDraft, loadThemes, localGameFrom, saveDraft, StudioApiError, studioApi,
 } from '../studio_api.ts';
+import { ArtDirector } from '../../studio/editor/art_director.ts';
+import { CompareCard } from '../../studio/editor/compare.ts';
+import { docLook } from '../../studio/editor/look.ts';
+import { restyleCard } from '../../studio/editor/restyle_card.ts';
 import { CopilotChat } from '../../studio/editor/chat.ts';
 import { StudioCanvas } from '../../studio/editor/canvas.ts';
 import { gamePanel } from '../../studio/editor/game_panel.ts';
@@ -105,6 +111,38 @@ function buildStudio(rootEl: HTMLElement, initialId: string, loaded: Loaded, que
   const recognizer = new Recognizer(studio, canvas, stage, (text, id) => { void chat.send(text, { selection: [id] }); showSheet('chat'); });
   if (loaded.offline) chat.setOffline(true);
 
+  // ---- v7 art: director (jobs, shimmer, pill), compare card, restyle cards ----
+  const director = new ArtDirector(studio, stage);
+  const compare = new CompareCard(studio, canvas, stage, director);
+  director.onVariants = (id, fresh) => {
+    if (playing) return;
+    recognizer.close();
+    compare.open(id, fresh);
+  };
+  recognizer.onKnown = (id) => { void director.drawOne(id, { quiet: true }); };
+  const cards = new Map<number, HTMLElement>();
+  chat.restyleCard = (id) => {
+    const have = cards.get(id);
+    if (have) return have;
+    const sess = director.session(id);
+    if (!sess) return null;
+    const el = restyleCard(studio, director, sess, compare);
+    cards.set(id, el);
+    return el;
+  };
+  chat.onArtPrompt = (prompt) => director.restyle(prompt).id;
+  const startRestyle = (prompt: string | null, how: 'make' | 'panel'): void => {
+    const sess = director.restyle(prompt);
+    chat.announce(t(how === 'make' ? 'studio.rs.make_msg' : 'studio.rs.panel_msg'), { id: sess.id, prompt: sess.prompt });
+    if (window.innerWidth <= 760) showSheet('chat');
+  };
+  studio.artHooks = {
+    redraw: (id) => { void director.drawOne(id); },
+    restyle: (prompt) => startRestyle(prompt, 'panel'),
+    compare: (id) => compare.open(id),
+    busy: (id) => director.busy(id),
+  };
+
   // ---- inspector column ----
   const inspBody = h('div', { class: 'st-insp-scroll' });
   const insp = h('aside', { class: 'st-panel st-insp-panel', 'aria-label': t('studio.insp.label') }, inspBody);
@@ -135,11 +173,26 @@ function buildStudio(rootEl: HTMLElement, initialId: string, loaded: Loaded, que
   const saveEl = h('span', { class: 'st-save', 'aria-live': 'polite' });
   const shareBtn = h('button', { type: 'button', class: 'st-btn ghost' }, sicon('share'), h('span', { class: 'st-hide-sm' }, t('studio.top.share')));
   const playBtn = h('button', { type: 'button', class: 'st-play-btn', title: `${t('studio.top.play')} (Ctrl+Enter)` });
+  const makeBtn = h('button', { type: 'button', class: 'st-make-btn', title: t('studio.top.make_real_help') }, h('span', { class: 'st-make-spark', 'aria-hidden': 'true' }, sicon('sparkle')), h('span', { class: 'st-hide-sm' }, t('studio.top.make_real')));
+  makeBtn.onclick = () => {
+    if (!studio.scene.objects.some((o) => o.drawing.strokes.length)) { toast(t('studio.art.nothing')); return; }
+    startRestyle(null, 'make');
+  };
+  const lookToggle = h('div', { class: 'st-look-toggle', role: 'radiogroup', 'aria-label': t('studio.look.title') });
+  const renderLookToggle = (): void => {
+    const cur = docLook(studio.doc);
+    lookToggle.dataset.look = cur;
+    lookToggle.replaceChildren(...(['sketch', 'game'] as const).map((v) => h('button', {
+      type: 'button', role: 'radio', 'aria-checked': String(cur === v), class: cur === v ? 'on' : '', title: t(`studio.look.${v}_help`),
+      onclick: () => { if (docLook(studio.doc) !== v) studio.apply([{ action: 'set_look', data: { look: v } }], { label: 'look' }); },
+    }, sicon(v === 'sketch' ? 'pen' : 'sparkle'), h('span', { class: 'st-hide-sm' }, t(`studio.look.${v}`)))), h('i', { class: 'st-look-thumb', 'aria-hidden': 'true' }));
+  };
+  renderLookToggle();
   const inspBtn = h('button', { type: 'button', class: 'st-ibtn st-insp-toggle', title: t('studio.top.inspector'), 'aria-label': t('studio.top.inspector') }, sicon('sliders'));
   inspBtn.onclick = () => { inspOpen = !inspOpen; if (!inspOpen) rootEl.dataset.userClosed = '1'; else delete rootEl.dataset.userClosed; layout(); };
   const home = h('a', { class: 'st-home', href: '#/', title: t('studio.top.home'), 'aria-label': t('studio.top.home') }, h('span', { class: 'st-home-mark', 'aria-hidden': 'true' }));
   const top = h('header', { class: 'st-top' }, home, h('div', { class: 'st-title-wrap' }, title), tabs, h('span', { class: 'st-grow' }),
-    h('div', { class: 'st-top-group' }, undoBtn, redoBtn), saveEl, inspBtn, shareBtn, playBtn);
+    h('div', { class: 'st-top-group' }, undoBtn, redoBtn), saveEl, inspBtn, lookToggle, makeBtn, shareBtn, playBtn);
 
   // ---- phones: bottom bar + sheets ----
   const sheetBar = h('nav', { class: 'st-sheetbar' });
@@ -298,6 +351,7 @@ function buildStudio(rootEl: HTMLElement, initialId: string, loaded: Loaded, que
     studio.finishPending(false);
     studio.cancelPick();
     recognizer.close();
+    compare.close(false);
     closePopover();
     playing = true;
     showSheet('none');
@@ -399,6 +453,13 @@ function buildStudio(rootEl: HTMLElement, initialId: string, loaded: Loaded, que
       draftTimer = window.setTimeout(flushDraft, 300);
       if (document.activeElement !== title) title.value = studio.doc.title;
       if (!c.quiet) { renderInspector(); renderTabs(); }
+      if (lookToggle.dataset.look !== docLook(studio.doc)) renderLookToggle();
+    }
+    if (c.kind === 'art') {
+      // art arrived or a drawing started: refresh the Look section unless the maker is typing in the panel
+      const typing = (document.activeElement as HTMLElement | null)?.closest('.st-insp-scroll') && typingIn({ target: document.activeElement } as unknown as Event);
+      if (!typing) renderInspector();
+      makeBtn.classList.toggle('busy', director.busy());
     }
     if (c.kind === 'selection') {
       renderInspector();
@@ -490,6 +551,9 @@ function buildStudio(rootEl: HTMLElement, initialId: string, loaded: Loaded, que
     window.removeEventListener('resize', onResize);
     for (const f of offs) f();
     rail.dispose();
+    studio.artHooks = null;
+    compare.dispose();
+    director.dispose();
     recognizer.dispose();
     chat.dispose();
     canvas.dispose();
