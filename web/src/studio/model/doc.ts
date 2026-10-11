@@ -345,6 +345,13 @@ export function withoutObjects(doc: SDoc, sceneId: string, ids: Iterable<string>
 
 // ---- merge / split ---------------------------------------------------------------------------------------------
 
+/** The object without its v7 AI art (its drawing became a different picture). */
+export function withoutArt(o: SObj): SObj {
+  if (o.art === undefined) return o;
+  const { art: _art, ...rest } = o;
+  return rest;
+}
+
 /**
  * Merge objects into the first one (its id and settings win); every stroke keeps its place on screen. Joints that
  * pointed at a merged-away object now point at the survivor (and joints to itself are dropped).
@@ -355,7 +362,8 @@ export function mergeObjects(doc: SDoc, sceneId: string, ids: string[]): { doc: 
   if (objs.length < 2) return { doc, id: objs[0]?.id ?? null };
   const [first, ...rest] = objs;
   const strokes = [...worldStrokes(first), ...rest.flatMap(worldStrokes)];
-  const survivor = recentre({ ...first, x: 0, y: 0, rotation: 0, scale: 1, drawing: { strokes, w: 0, h: 0 } });
+  // a merged drawing is a new picture: Claude's art for the first part no longer fits its box
+  const survivor = recentre({ ...withoutArt(first), x: 0, y: 0, rotation: 0, scale: 1, drawing: { strokes, w: 0, h: 0 } });
   const gone = new Set(rest.map((o) => o.id));
   const fix = (o: SObj): SObj => {
     if (!o.joints.some((j) => gone.has(j.to))) return o;
@@ -372,7 +380,7 @@ export function splitObject(doc: SDoc, sceneId: string, id: string): { doc: SDoc
   if (!o || o.drawing.strokes.length < 2) return { doc, ids: o ? [o.id] : [] };
   const taken = allObjectIds(doc);
   const ws = worldStrokes(o);
-  const head = recentre({ ...o, x: 0, y: 0, rotation: 0, scale: 1, drawing: { strokes: [ws[0]], w: 0, h: 0 } });
+  const head = recentre({ ...withoutArt(o), x: 0, y: 0, rotation: 0, scale: 1, drawing: { strokes: [ws[0]], w: 0, h: 0 } });
   const parts = ws.slice(1).map((s) => {
     const nid = freshId('o', taken);
     taken.add(nid);

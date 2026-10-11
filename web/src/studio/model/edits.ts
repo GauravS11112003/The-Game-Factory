@@ -7,8 +7,8 @@ import type { BehaviorDef, Condition, HudItem, JointDef, StudioEdit, StudioTheme
 import { ACTIONS, BEHAVIORS, CATALOG, EVENTS, withDefaults, type Archetype, type CatalogEntry, type ParamSpec } from './catalog.ts';
 import { allObjectIds, freshId, recentre, sceneOf, validId, withScene } from './doc.ts';
 import {
-  isSDoc, normalizeDoc, normalizeObject, normalizePhysics, normalizeRule, normalizeTheme, normalizeWorld,
-  type AskDraw, type SDoc, type SObj, type SRule, type SScene,
+  isSDoc, normalizeArt, normalizeBackdrop, normalizeDirection, normalizeDoc, normalizeObject, normalizePhysics, normalizeRule,
+  normalizeTheme, normalizeWorld, type AskDraw, type SArt, type SDoc, type SObj, type SRule, type SScene,
 } from './types.ts';
 
 export interface ApplyResult { doc: SDoc; warnings: string[]; created: string[]; asks: AskDraw[] }
@@ -289,6 +289,30 @@ function deepMerge<T extends Record<string, unknown>>(base: T, patch: Record<str
 
 type RuleOwner = { kind: 'object'; id: string } | { kind: 'scene' } | { kind: 'game' };
 
+/** Actions about the whole game: they work even when the edit names a scene that does not exist. */
+const GAME_LEVEL = new Set(['add_scene', 'set_title', 'set_theme', 'set_hud', 'set_game_counters', 'set_art_direction', 'set_backdrop', 'set_look']);
+
+const ART_EMPTY: SArt = { use: 'sketch', chosen: null, variants: [], terrain: null, asked: false };
+
+/**
+ * v7 `set_art` (docs/v7/CONTRACTS_V7.md §1): a partial ObjectArt merged into the object's art; `variants` are replaced
+ * when given, `terrain: null` clears the skin. `use: "ai"` needs a variant (or a terrain skin) to play.
+ */
+export function mergeArt(old: SArt | null | undefined, data: Record<string, unknown>, warn: (s: string) => void): SArt {
+  const base = old ?? ART_EMPTY;
+  const merged: Record<string, unknown> = { ...base };
+  if ('variants' in data) merged.variants = Array.isArray(data.variants) ? data.variants : [];
+  if ('terrain' in data) merged.terrain = data.terrain ?? null;
+  if (data.use === 'ai' || data.use === 'sketch') merged.use = data.use;
+  else if (data.use !== undefined) warn(`bad use ${String(data.use)}`);
+  if ('chosen' in data) merged.chosen = data.chosen;
+  if (typeof data.asked === 'boolean') merged.asked = data.asked;
+  const out = normalizeArt(merged);
+  if (merged.use === 'ai' && out.use !== 'ai') warn('no AI drawing to use; keeping the sketch');
+  if (typeof data.chosen === 'string' && out.chosen !== data.chosen) warn(`no variant ${data.chosen}`);
+  return out;
+}
+
 function ownerOf(target: string | null | undefined): RuleOwner {
   if (!target || target === '@game') return { kind: 'game' };
   if (target === '@scene') return { kind: 'scene' };
@@ -308,7 +332,7 @@ export function applyEdits(input: SDoc | unknown, sceneId: string, edits: Studio
     const data: Record<string, unknown> = isObj(e.data) ? e.data : {};
     const sid = typeof e.scene === 'string' && e.scene ? e.scene : sceneId;
     const scene: SScene | undefined = doc.scenes.find((s) => s.id === sid) ?? (e.scene ? undefined : doc.scenes[0]);
-    if (!scene && e.action !== 'add_scene' && e.action !== 'set_title' && e.action !== 'set_theme' && e.action !== 'set_hud' && e.action !== 'set_game_counters') {
+    if (!scene && !GAME_LEVEL.has(e.action)) {
       warn(`no scene ${sid}`);
       continue;
     }
@@ -533,6 +557,37 @@ export function applyEdits(input: SDoc | unknown, sceneId: string, edits: Studio
         const id = validId(data.id) && !taken.has(data.id) ? data.id : freshId(typeof obj.kind === 'string' ? obj.kind : 'o', new Set([...taken, ...allObjectIds(doc)]));
         const prompt = typeof data.prompt === 'string' && data.prompt.trim() ? data.prompt.trim().slice(0, 120) : 'Draw something';
         asks.push({ id, prompt, object: { ...obj }, scene: sc.id });
+        break;
+      }
+      case 'set_art': {
+        const o = needObject();
+        if (!o) break;
+        putObject({ ...o, art: mergeArt(o.art, data, warn) });
+        break;
+      }
+      case 'set_art_direction': {
+        const d = normalizeDirection(data);
+        if (!d && Object.keys(data).length) { warn('empty art direction'); break; }
+        if (d) doc = { ...doc, art_direction: d };
+        else {
+          const { art_direction: _gone, ...rest } = doc;
+          doc = rest as SDoc;
+        }
+        break;
+      }
+      case 'set_backdrop': {
+        const b = normalizeBackdrop(data);
+        if (!b && Object.keys(data).length) { warn('backdrop without sky or layers'); break; }
+        if (b) doc = { ...doc, backdrop: b };
+        else {
+          const { backdrop: _gone, ...rest } = doc;
+          doc = rest as SDoc;
+        }
+        break;
+      }
+      case 'set_look': {
+        if (data.look !== 'game' && data.look !== 'sketch') { warn(`bad look ${String(data.look)}`); break; }
+        doc = { ...doc, look: data.look };
         break;
       }
       default:
