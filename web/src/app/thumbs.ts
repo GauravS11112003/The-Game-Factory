@@ -7,7 +7,7 @@ import type { InkDoc, LevelV2, RectCells } from '../core/types.gen.ts';
 import { renderThumbnail } from '../engine/index.ts';
 import { paintFit } from '../editor/paint.ts';
 import { strokesBBox } from '../editor/geom.ts';
-import { api, type LevelCard } from './api.ts';
+import { api, type ImaginedGameStatus, type LevelCard } from './api.ts';
 import { h } from './dom.ts';
 import { inkFromLevel } from './ink.ts';
 import { thumbGet, thumbPut } from './store.ts';
@@ -106,4 +106,80 @@ export function levelThumb(card: LevelCard): HTMLElement {
   }
   lazy(box, () => void render());
   return box;
+}
+
+const CAPTURE_MESSAGE = 'draw-play:thumbnail';
+const CAPTURE_TIMEOUT_MS = 15000;
+const captures = new Map<string, Promise<string | null>>();
+let captureQueue: Promise<unknown> = Promise.resolve();
+
+/** A generated game's play URL that posts its first drawn frame back to this page. */
+export function captureUrl(playUrl: string): string {
+  return `${playUrl}${playUrl.includes('?') ? '&' : '?'}capture=1`;
+}
+
+/** Upload the first frame a capture-enabled game frame posts (once per draft). Resolves to its data URL. */
+export function watchFirstFrame(frame: HTMLIFrameElement, draftId: string, timeoutMs = CAPTURE_TIMEOUT_MS): Promise<string | null> {
+  const pending = captures.get(draftId);
+  if (pending) return pending;
+  const done = new Promise<string | null>((resolve) => {
+    const finish = (png: string | null): void => {
+      window.removeEventListener('message', onMessage);
+      clearTimeout(timer);
+      resolve(png);
+    };
+    const onMessage = (e: MessageEvent): void => {
+      if (e.source !== frame.contentWindow || e.data?.type !== CAPTURE_MESSAGE) return;
+      const png = e.data.png;
+      if (typeof png !== 'string' || !png.startsWith('data:image/png;base64,')) return finish(null);
+      finish(png);
+      void fetch(png).then((r) => r.blob()).then((blob) => api.imaginedThumbnail(draftId, blob)).catch(() => undefined);
+    };
+    const timer = setTimeout(() => finish(null), timeoutMs);
+    window.addEventListener('message', onMessage);
+  });
+  captures.set(draftId, done);
+  void done.then((png) => { if (!png) captures.delete(draftId); });
+  return done;
+}
+
+/** Play a game invisibly (one at a time) just long enough to keep its first frame. */
+function captureFirstFrame(game: ImaginedGameStatus): Promise<string | null> {
+  const pending = captures.get(game.draft_id);
+  if (pending) return pending;
+  const run = captureQueue.then(() => {
+    // Kept inside the viewport (transparent): browsers pause offscreen cross-origin frames.
+    const frame = h('iframe', { src: captureUrl(game.play_url!), sandbox: 'allow-scripts', referrerPolicy: 'no-referrer',
+      tabindex: -1, 'aria-hidden': 'true', title: '' });
+    Object.assign(frame.style, { position: 'fixed', left: '0', top: '0', width: '640px', height: '360px', border: '0',
+      opacity: '0', pointerEvents: 'none', zIndex: '-1' });
+    const result = watchFirstFrame(frame, game.draft_id);
+    document.body.append(frame);
+    return result.finally(() => frame.remove());
+  });
+  captureQueue = run.catch(() => null);
+  return run;
+}
+
+/** A generated game's cover: its stored first frame, or one captured now when the game has none yet. */
+export function generatedThumb(game: ImaginedGameStatus, fallback: HTMLElement): HTMLElement {
+  const box = h('div', { class: 'thumb' });
+  const show = (src: string): void => { box.replaceChildren(h('img', { src, alt: '', decoding: 'async' })); };
+  const capture = (): void => {
+    if (game.status !== 'ready' || !game.play_url) return;
+    void captureFirstFrame(game).then((png) => {
+      if (!png) return;
+      game.thumbnail_url = png;
+      show(png);
+      if (fallback.isConnected) fallback.replaceWith(box);
+    });
+  };
+  if (game.thumbnail_url) {
+    const img = h('img', { src: game.thumbnail_url, alt: '', loading: 'lazy', decoding: 'async' });
+    img.onerror = () => { box.replaceWith(fallback); lazy(fallback, capture); };
+    box.append(img);
+    return box;
+  }
+  lazy(fallback, capture);
+  return fallback;
 }

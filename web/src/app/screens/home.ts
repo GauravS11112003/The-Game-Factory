@@ -4,7 +4,7 @@ import { card, h, icon } from '../dom.ts';
 import { fmtTime, kidText, t } from '../messages.ts';
 import { drops } from '../readout.ts';
 import { store } from '../store.ts';
-import { levelThumb } from '../thumbs.ts';
+import { generatedThumb, levelThumb } from '../thumbs.ts';
 import { onPlayerChange } from '../identity.ts';
 import { openCreateGameModal } from './create-game.ts';
 import { GAMES } from '../../arcade/catalog.ts';
@@ -43,7 +43,9 @@ function gameEl(g: GameCard): HTMLElement {
   const gameUrl = `#/game/${encodeURIComponent(g.id)}`;
   const playUrl = g.generated ? `#/imagine/${encodeURIComponent(g.generated.draft_id)}` :
     g.levels[0] ? `#/play/${encodeURIComponent(g.levels[0].id)}` : null;
-  const cover = g.levels[0] ? levelThumb(g.levels[0]) : h('div', { class: 'studio-placeholder', 'aria-hidden': 'true' }, icon('marker'));
+  const placeholder = (): HTMLElement => h('div', { class: 'studio-placeholder', 'aria-hidden': 'true' }, icon('marker'));
+  const cover = g.generated ? generatedThumb(g.generated, g.levels[0] ? levelThumb(g.levels[0]) : placeholder()) :
+    g.levels[0] ? levelThumb(g.levels[0]) : placeholder();
   return h('article', { class: 'studio-game' },
     h('a', { class: 'studio-cover', href: gameUrl, 'aria-label': g.title || t('ui.untitled') }, cover),
     h('div', { class: 'studio-game-body' },

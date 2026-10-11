@@ -4,6 +4,7 @@ import './controls.css';
 import { openGameInputs } from './inputs.ts';
 import { h } from '../app/dom.ts';
 import { api, type GameCard } from '../app/api.ts';
+import { generatedThumb } from '../app/thumbs.ts';
 import { t } from '../app/messages.ts';
 import { gameInputTools } from '../app/game-inputs.ts';
 import { GAMES, readSave, writeSave, type ArcadeEntry } from './catalog.ts';
@@ -121,7 +122,8 @@ export function arcadeScreen(root: HTMLElement, _query = new URLSearchParams()):
       grid.append(h('article', { class: 'ar-game-card', data: { motionKey: game.id } },
         h('div', { class: 'ar-card-image ar-generated-cover' },
           h('a', { href: link, class: 'ar-image-link', 'aria-label': `Play ${game.title}` },
-            h('span', { class: 'ar-generated-spark', 'aria-hidden': 'true' }, '✦'), h('strong', null, game.title)),
+            generatedThumb(generated, h('span', { class: 'ar-generated-title' },
+              h('span', { class: 'ar-generated-spark', 'aria-hidden': 'true' }, '✦'), h('strong', null, game.title)))),
           h('span', { class: 'ar-card-tag' }, 'COMMUNITY'), h('span', { class: 'ar-image-play', 'aria-hidden': 'true' }, ico('play'))),
         h('div', { class: 'ar-card-body' }, h('span', { class: 'ar-card-category' }, genre(game)),
           h('h3', null, h('a', { href: link }, game.title)), h('p', null, generated.summary ?? ''), inputs.element,

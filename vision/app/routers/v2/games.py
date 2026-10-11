@@ -22,6 +22,7 @@ from pydantic import ValidationError
 from app import db_v2
 from app.collab import db as collab_db, identity, members
 from app.game_brief import rules_from_brief
+from app.build import imagine
 from app.build.orchestrator import default_rules
 from app.mind import moderate, sanitize
 from app.routers.v2.runs import thumbnail_url
@@ -152,8 +153,8 @@ def list_games(request: Request, sort: str = Query(default="new"), scope: str = 
             if r.get("author") and r["author"] not in authors:
                 authors.append(r["author"])
         out.append({
-            "id": g["id"], "title": g["title"], "author": g["author"], "created_at": g["created_at"], "brief": g.get("brief"), "generated": g.get("generated"),
-            "generated_levels": g.get("generated_levels", []), "level_count": len(seq) + len(g.get("generated_levels", [])), "authors": authors, "plays": int(act["plays"]), "clears": int(act["clears"]),
+            "id": g["id"], "title": g["title"], "author": g["author"], "created_at": g["created_at"], "brief": g.get("brief"), "generated": imagine.with_thumbnail(g.get("generated")),
+            "generated_levels": [imagine.with_thumbnail(x) for x in g.get("generated_levels", [])], "level_count": len(seq) + len(g.get("generated_levels", [])), "authors": authors, "plays": int(act["plays"]), "clears": int(act["clears"]),
             "draft": g.get("draft", False), "studio_relation": "created" if created else "modified" if contributed else None,
             "recent_plays": int(act["recent_plays"]),
             "clear_rate": round(act["clears"] / act["plays"], 4) if act["plays"] else None,
@@ -221,6 +222,8 @@ def get_game(game_id: str, published: bool = False) -> Any:
         full = db_v2.get_level_row(r["id"])
         lv = (full or {}).get("level")
         levels.append({**_with_unlock(_summary(r, stats=True), unlocks, lv), "level": lv})
+    g = {**g, "generated": imagine.with_thumbnail(g.get("generated")),
+         "generated_levels": [imagine.with_thumbnail(x) for x in g.get("generated_levels") or []]}
     return {"game": g, "levels": levels, "remixes": [_summary(r, stats=True) for r in remixes]}
 
 
