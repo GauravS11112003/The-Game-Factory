@@ -84,7 +84,7 @@ export function openCreateGameModal(onClose?: () => void, initial?: {
     h('div', { class: 'creation-modal-heading row between' },
       h('div', { class: 'creation-modal-title-group' },
         h('span', { class: 'creation-modal-emblem', 'aria-hidden': 'true' }, icon('pencil')),
-        h('div', null, h('span', { class: 'creation-eyebrow' }, 'draw.play / Idea desk'),
+        h('div', null, h('span', { class: 'creation-eyebrow' }, 'The Game Factory / Idea desk'),
           h('h2', { id: 'creation-modal-title' }, 'Your game idea'),
           h('p', { id: 'creation-modal-description' }, t('create.intro')))),
       h('button', { class: 'tool', type: 'button', 'aria-label': t('ui.close'), onclick: close }, icon('close'))), content);

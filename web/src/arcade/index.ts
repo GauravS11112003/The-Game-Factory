@@ -7,11 +7,14 @@ import { api, type GameCard } from '../app/api.ts';
 import { t } from '../app/messages.ts';
 import { gameInputTools } from '../app/game-inputs.ts';
 import { GAMES, readSave, writeSave, type ArcadeEntry } from './catalog.ts';
-import { W, H, type GameId, type Input } from './engine.ts';
+import { W, H, type Input } from './engine.ts';
 import { createGame } from './games.ts';
 import { newLevel, readLevels, type ArcadeLevel } from './levels.ts';
 import { openBuilder } from './builder.ts';
 import { ideaDesk } from './idea-desk.ts';
+import { arcadeMotion } from './motion.ts';
+import './motion.css';
+import './factory.css';
 
 const paths: Record<string, string> = {
   plus: '<path d="M12 5v14M5 12h14"/>',
@@ -40,7 +43,6 @@ const paths: Record<string, string> = {
 function ico(name: string): SVGSVGElement { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('class', 'ar-icon'); s.setAttribute('aria-hidden', 'true'); s.innerHTML = paths[name] ?? paths.spark; return s; }
 function button(text: string, icon: string, fn: () => void, cls = ''): HTMLButtonElement { return h('button', { class: `ar-btn ${cls}`, type: 'button', onclick: fn }, ico(icon), text); }
 function iconButton(label: string, glyph: string, fn: () => void, cls = ''): HTMLButtonElement { return h('button', {class:`ar-icon-button ${cls}`,type:'button',title:label,'aria-label':label,onclick:fn},ico(glyph)); }
-function go(id: GameId): void { location.hash = `#/arcade/${id}`; }
 function thumbnail(entry: ArcadeEntry): HTMLCanvasElement {
   const c = h('canvas', { width: W, height: H, class: `ar-thumbnail ar-thumb-${entry.id}`, 'aria-label': `${entry.title} game preview`, role: 'img' });
   const ctx = c.getContext('2d')!; const g = createGame(entry.id);
@@ -48,55 +50,65 @@ function thumbnail(entry: ArcadeEntry): HTMLCanvasElement {
   if(g instanceof ShooterGame)g.phase='active';
   g.draw(ctx, 1.4); return c;
 }
-function shell(active: string): { shell: HTMLElement; main: HTMLElement } {
+function shell(): { shell: HTMLElement; main: HTMLElement } {
   const main = h('div', { class: 'ar-main' });
-  const side = h('aside', { class: 'ar-side' },
-    h('a', { class: 'ar-brand', href: '#/', 'aria-label': 'draw.play home' }, h('span', { class: 'ar-brand-icon' }, ico('play')), 'draw', h('span', { class: 'ar-brand-dot' }, '.'), 'play'),
-    h('span', { class: 'ar-side-label' }, 'YOUR LITTLE ESCAPE'),
-    h('nav', { class: 'ar-nav', 'aria-label': 'Arcade navigation' },
-      h('a', { href: '#/', class: active === 'all' ? 'active' : '' }, ico('grid'), 'Discover', h('span', { class: 'ar-nav-count' }, String(GAMES.length))),
-      h('a', { href: '#/arcade?view=favorites', class: active === 'favorites' ? 'active' : '' }, ico('heart'), 'Favorites'),
-      h('a', { href: '#/arcade?view=recent', class: active === 'recent' ? 'active' : '' }, ico('clock'), 'Recently played')),
-    h('div', { class: 'ar-side-divider' }), h('span', { class: 'ar-side-label' }, 'A LITTLE MORE YOU'),
-    h('a', { class: 'ar-studio-link', href: '#/studio' }, ico('brush'), 'Creator studio', ico('arrow')),
-    h('div', { class: 'ar-side-bottom' }, h('div', { class: 'ar-side-note' }, h('span', { class: 'ar-note-stars' }, '✦'), h('strong', null, 'Made for play.'), h('p', null, 'No downloads. No waiting.\nJust one more round.')),
-      h('div', { class: 'ar-profile' }, h('span', { class: 'ar-avatar' }, 'P'), h('div', null, h('strong', null, 'Player one'), h('small', null, 'Make yourself at home')), h('span', { class: 'ar-online', title: 'Ready to play' }))));
-  return { shell: h('div', { class: 'arcade' }, side, main), main };
+  return { shell: h('div', { class: 'arcade' }, main), main };
 }
-export function arcadeScreen(root: HTMLElement, query = new URLSearchParams()): () => void {
-  const view = ['favorites', 'recent'].includes(query.get('view') ?? '') ? query.get('view')! : 'all';
-  const { shell: page, main } = shell(view); const save = readSave(); let category = 'All games', search = '';
+export function arcadeScreen(root: HTMLElement, _query = new URLSearchParams()): () => void {
+  const { shell: page, main } = shell();
+  page.classList.add('ar-factory');
+  const save = readSave();
+  let category = 'All games', search = '';
   let disposed = false;
+  const motion = arcadeMotion();
   let published: GameCard[] = [];
   const inputViews: ReturnType<typeof gameInputTools>[] = [];
-  let desk: ReturnType<typeof ideaDesk> | undefined;
-  const searchInput = h('input', { type: 'search', placeholder: 'Find your next favorite', 'aria-label': 'Search games', class: 'ar-search-input' });
-  main.append(h('header', { class: 'ar-topbar' }, h('div', { class: 'ar-breadcrumb' }, 'The arcade', h('span', null, '/'), h('strong', null, 'Discover')),
-    h('label', { class: 'ar-search' }, ico('search'), searchInput), h('span', { class: 'ar-top-status' }, h('i', null), 'Ready when you are')));
+  const searchInput = h('input', { type: 'search', placeholder: 'Search games', 'aria-label': 'Search games', class: 'ar-search-input' });
   const content = h('div', { class: 'ar-content' }); main.append(content); root.append(page);
-  if (view === 'all') {
-    content.append(h('section', { class: 'ar-heading' }, h('div', null, h('h1', null, 'draw.play')),
-      button('Surprise me', 'shuffle', () => go(GAMES[Math.floor(Math.random() * GAMES.length)].id), 'ar-surprise')));
-    desk = ideaDesk();
-    content.append(desk.element);
-  } else content.append(h('section', { class: 'ar-heading' }, h('div', null, h('div', { class: 'ar-eyebrow' }, 'YOUR PERSONAL COLLECTION'), h('h1', null, view === 'favorites' ? 'The ones you love.' : 'Back for another round.'), h('p', null, view === 'favorites' ? 'Your favorites, all in one happy place.' : 'Pick up a familiar adventure.'))));
-  const count = h('span', { class: 'ar-game-count' }); const tabs = h('div', { class: 'ar-tabs', role: 'group', 'aria-label': 'Filter by genre' });
+  content.append(h('section', { class: 'ar-heading' }, h('h1', null, 'The Game ', h('span', { class: 'factory-name' }, 'Factory')),
+    h('a', { class: 'factory-studio', href: '#/studio', 'aria-label': 'Creator Studio' },
+      ico('brush'), h('span', { class: 'factory-studio-text' }, 'Creator Studio'),
+      h('span', { class: 'factory-studio-arrow', 'aria-hidden': 'true' }, '↗'))));
+  const desk = ideaDesk();
+  content.append(desk.element);
+  const count = h('span', { class: 'ar-game-count', role: 'status', 'aria-live': 'polite' });
+  const tabs = h('div', { class: 'ar-tabs', role: 'group', 'aria-label': 'Filter by genre' });
   const grid = h('div', { class: 'ar-game-grid' });
-  content.append(h('section', { class: 'ar-games-section' }, h('div', { class: 'ar-section-heading' }, h('h2', null, view === 'all' ? 'Find your kind of fun' : 'Your games', count), h('span', { class: 'ar-curated' }, ico('spark'), 'Handpicked for a good time')), tabs, grid));
+  content.append(h('section', { class: 'ar-games-section', 'aria-label': 'Games to play' },
+    h('div', { class: 'ar-section-heading' }, h('h2', null, 'Find your kind of fun', count),
+      h('label', { class: 'ar-search' }, ico('search'), searchInput)), tabs, grid));
   const filters = ['All games', 'Action', 'Arcade', 'Adventure', 'Racing'];
+  const filterButtons = new Map<string, HTMLButtonElement>();
   function render(): void {
-    tabs.replaceChildren(...filters.map(cat => h('button', { type: 'button', class: `ar-tab${cat === category ? ' active' : ''}`, 'aria-pressed': cat === category ? 'true' : 'false', onclick: () => { category = cat; render(); } }, cat === 'All games' ? ico('grid') : null, cat)));
-    let entries = GAMES.filter(g => (category === 'All games' || category === g.category) && `${g.title} ${g.subtitle} ${g.category}`.toLowerCase().includes(search.toLowerCase()) && (view === 'all' || (view === 'favorites' ? save.favorites : save.recent).includes(g.id)));
-    if (view === 'recent') entries = entries.sort((a, b) => save.recent.indexOf(a.id) - save.recent.indexOf(b.id));
-    const community = view === 'all' ? published.filter((g) => (category === 'All games' || category === genre(g)) &&
-      `${g.title} ${g.generated?.summary ?? ''} ${genre(g)}`.toLowerCase().includes(search.toLowerCase())) : [];
+    for (const cat of filters) {
+      let filter = filterButtons.get(cat);
+      if (!filter) {
+        filter = h('button', { type: 'button', class: 'ar-tab', onclick: () => { category = cat; render(); } }, cat === 'All games' ? ico('grid') : null, cat);
+        filterButtons.set(cat, filter); tabs.append(filter);
+      }
+      filter.classList.toggle('active', cat === category);
+      filter.setAttribute('aria-pressed', String(cat === category));
+    }
+    const entries = GAMES.filter(g => (category === 'All games' || category === g.category) && `${g.title} ${g.subtitle} ${g.category}`.toLowerCase().includes(search.toLowerCase()));
+    const community = published.filter((g) => (category === 'All games' || category === genre(g)) &&
+      `${g.title} ${g.generated?.summary ?? ''} ${genre(g)}`.toLowerCase().includes(search.toLowerCase()));
     count.textContent = String(entries.length + community.length).padStart(2, '0');
     inputViews.splice(0).forEach((input) => input.dispose());
     grid.replaceChildren();
     for (const entry of entries) {
       const favorite = save.favorites.includes(entry.id);
-      const fav = h('button', { type: 'button', class: `ar-favorite${favorite ? ' saved' : ''}`, title: favorite ? 'Remove from favorites' : 'Add to favorites', 'aria-label': `${favorite ? 'Unfavorite' : 'Favorite'} ${entry.title}`, 'aria-pressed': String(favorite), onclick: () => { save.favorites = favorite ? save.favorites.filter(id => id !== entry.id) : [...save.favorites, entry.id]; writeSave(save); render(); } }, ico('heart'));
-      grid.append(h('article', { class: 'ar-game-card' }, h('div', { class: 'ar-card-image', style: { backgroundColor: entry.color } },
+      const fav = h('button', { type: 'button', class: `ar-favorite${favorite ? ' saved' : ''}`,
+        title: favorite ? 'Remove from favorites' : 'Add to favorites',
+        'aria-label': `${favorite ? 'Unfavorite' : 'Favorite'} ${entry.title}`, 'aria-pressed': String(favorite), onclick: () => {
+          const wasSaved = save.favorites.includes(entry.id);
+          save.favorites = wasSaved ? save.favorites.filter(id => id !== entry.id) : [...save.favorites, entry.id];
+          writeSave(save);
+          fav.classList.toggle('saved', !wasSaved);
+          fav.title = wasSaved ? 'Add to favorites' : 'Remove from favorites';
+          fav.setAttribute('aria-label', `${wasSaved ? 'Favorite' : 'Unfavorite'} ${entry.title}`);
+          fav.setAttribute('aria-pressed', String(!wasSaved));
+        } }, ico('heart'));
+      grid.append(h('article', { class: 'ar-game-card', data: { motionKey: entry.id } }, h('div', { class: 'ar-card-image', style: { backgroundColor: entry.color } },
         h('a', { href: `#/arcade/${entry.id}`, class: 'ar-image-link', 'aria-label': `Play ${entry.title}` }, thumbnail(entry)), h('span', { class: 'ar-card-tag' }, entry.tag), fav,
         h('span', { class: 'ar-image-play', 'aria-hidden': 'true' }, ico('play'))),
         h('div', { class: 'ar-card-body' }, h('span', { class: 'ar-card-category' }, entry.category), h('h3', null, h('a', { href: `#/arcade/${entry.id}` }, entry.title)), h('p', null, entry.subtitle),
@@ -106,7 +118,7 @@ export function arcadeScreen(root: HTMLElement, query = new URLSearchParams()): 
       const generated = game.generated!;
       const link = `#/game/${encodeURIComponent(game.id)}?published=1`;
       const inputs = gameInputTools(generated.draft_id, game.title); inputViews.push(inputs);
-      grid.append(h('article', { class: 'ar-game-card' },
+      grid.append(h('article', { class: 'ar-game-card', data: { motionKey: game.id } },
         h('div', { class: 'ar-card-image ar-generated-cover' },
           h('a', { href: link, class: 'ar-image-link', 'aria-label': `Play ${game.title}` },
             h('span', { class: 'ar-generated-spark', 'aria-hidden': 'true' }, '✦'), h('strong', null, game.title)),
@@ -116,26 +128,25 @@ export function arcadeScreen(root: HTMLElement, query = new URLSearchParams()): 
           h('div', { class: 'ar-card-bottom' }, h('span', null, `By ${game.author}`),
             h('a', { class: 'ar-card-go', href: link, 'aria-label': `Play ${game.title}` }, ico('arrow'))))));
     }
-    if (!entries.length && !community.length) grid.append(h('div', { class: 'ar-empty' }, ico(view === 'favorites' ? 'heart' : 'search'), h('h3', null, search || category !== 'All games' ? 'No games found' : view === 'favorites' ? 'Keep your favorites close.' : 'Your next adventure starts here.'), h('p', null, search ? 'Try a different name or genre.' : view === 'favorites' ? 'Tap the heart on a game to save it here.' : 'Play a game and it will appear here.'), h('a', { href: '#/', class: 'ar-btn' }, 'Explore all games', ico('arrow'))));
+    if (!entries.length && !community.length) grid.append(h('div', { class: 'ar-empty' },
+      ico('search'), h('h3', null, 'No games found'), h('p', null, 'Try a different name or genre.')));
+    motion.watch(grid);
   }
   searchInput.oninput = () => { search = searchInput.value; render(); }; render();
-  content.append(h('footer', { class: 'ar-footer' }, h('span', null, h('span', { class: 'ar-footer-spark' }, '✦'), 'A little joy, right in your browser.'), h('span', null, 'Built to play. Made to come back to.')));
   function genre(game: GameCard): string { return t(`create.category.${game.generated?.category ?? game.brief?.category ?? 'custom'}`); }
   void api.games('new').then(({ games }) => {
     if (disposed) return;
     published = games.filter((game) => game.generated?.status === 'ready' && game.generated.publication === 'published');
-    const total = page.querySelector('.ar-nav-count');
-    if (total) total.textContent = String(GAMES.length + published.length);
     for (const game of published) { const name = genre(game); if (!filters.includes(name)) filters.push(name); }
     render();
   }).catch(() => { /* The starting collection remains playable offline. */ });
-  return () => { disposed = true; desk?.dispose(); inputViews.forEach((input) => input.dispose()); };
+  return () => { disposed = true; motion.dispose(); desk?.dispose(); inputViews.forEach((input) => input.dispose()); };
 }
 
 export function arcadePlayScreen(root: HTMLElement, id: string): () => void {
   const entry = GAMES.find(g => g.id === id);
   if (!entry) { root.append(h('div', { class: 'arcade ar-empty' }, h('h1', null, 'Game not found'), h('a', { href: '#/' }, 'Back to the arcade'))); return () => {}; }
-  const save = readSave(); const { shell: page, main } = shell('play'); let selectedLevel: ArcadeLevel | null = null; let game = createGame(entry.id), started = false, paused = false, twoPlayer = false, disposed = false, raf = 0, elapsed = 0, accumulator = 0, last = 0, lastScore = 0, resultSaved = false;
+  const save = readSave(); const { shell: page, main } = shell(); let selectedLevel: ArcadeLevel | null = null; let game = createGame(entry.id), started = false, paused = false, twoPlayer = false, disposed = false, raf = 0, elapsed = 0, accumulator = 0, last = 0, lastScore = 0, resultSaved = false;
   page.classList.add('ar-focused');
   if(entry.id==='shooter')page.classList.add('ar-shooter');
   let dialogOpen = false, closeBuilder: (() => void) | null = null, closeInputs: (() => void) | null = null;
@@ -179,7 +190,7 @@ export function arcadePlayScreen(root: HTMLElement, id: string): () => void {
   const inputTools = iconButton('Prompt & canvas','canvas',openInputs);
   const rail=h('nav',{class:'ar-game-rail','aria-label':'Game tools'},
     iconButton('Add a level','plus',addLevel,'ar-add-level'),latest,iconButton('Edit level','brush',editLevel),iconButton('Game rules','rules',()=>{suspend();goal.textContent=goalText();rules.showModal();}),inputTools);
-  main.append(h('header',{class:'ar-minimal-head'},h('a',{class:'ar-icon-button',href:'#/','aria-label':'Back to arcade',title:'Back to arcade'},ico('back')),h('h1',null,entry.title),h('a',{href:'#/',class:'ar-minimal-brand'},'draw.play')));
+  main.append(h('header',{class:'ar-minimal-head'},h('a',{class:'ar-icon-button',href:'#/','aria-label':'Back to arcade',title:'Back to arcade'},ico('back')),h('h1',null,entry.title),h('a',{href:'#/',class:'ar-minimal-brand'},'The Game Factory')));
   const content=h('div',{class:'ar-content ar-player-content'},h('div',{class:'ar-game-layout'},stage,rail),
     h('div',{class:'ar-play-toolbar'},h('div',{class:'ar-play-actions'},pause,iconButton('Restart','restart',()=>reset()),sound,iconButton('Fullscreen','expand',()=>{
       if(document.fullscreenElement)void document.exitFullscreen();else if(stage.requestFullscreen)void stage.requestFullscreen().then(()=>canvas.focus({preventScroll:true})).catch(()=>{stage.classList.toggle('ar-expanded');syncFullscreen();});else {stage.classList.toggle('ar-expanded');syncFullscreen();}

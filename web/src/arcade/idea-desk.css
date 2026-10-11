@@ -1,17 +1,17 @@
 .idea-desk {
   position: relative; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-  gap: 36px; padding: 34px 38px; margin-bottom: 36px; background: var(--card);
+  gap: 32px; padding: 26px 32px; margin-bottom: 28px; background: var(--card);
   border: 2.5px solid var(--ink); border-radius: 20px 16px 22px 17px; box-shadow: 4px 5px 0 #211b1810;
 }
 .idea-desk::before { content: ''; position: absolute; top: -11px; left: 32px; width: 72px; height: 23px; background: #edda9e9e; border: 1px solid #b99e6050; transform: rotate(-5deg); }
 .idea-caption { display: block; font: 11px var(--body); font-weight: 600; letter-spacing: 1.6px; color: var(--graphite); }
 .arcade .idea-desk h2 { font-size: clamp(32px, 3.2vw, 46px); line-height: 1.15; margin: 10px 0 8px; color: var(--ink); }
 .idea-desk h2 > span { background: linear-gradient(transparent 62%, var(--hi) 62%, var(--hi) 91%, transparent 91%); }
-.idea-intro { font-size: 14px; color: var(--ink-soft); margin: 0 0 22px; line-height: 1.6; }
+.arcade .idea-intro { font-size: 14px; color: var(--ink-soft); margin: 0 0 16px; line-height: 1.6; }
 .idea-composer { border: 1.5px solid #b9b0a0; border-radius: 13px; padding: 16px; background: #fffdf8; transition: border-color .2s, box-shadow .2s; }
 .idea-composer:focus-within { border-color: var(--ink); box-shadow: 0 0 0 3px #ffe57555; }
 .idea-input-label { display: block; font: 12px var(--body); color: var(--graphite); margin-bottom: 6px; }
-.idea-composer textarea { display: block; width: 100%; resize: vertical; min-height: 80px; max-height: 180px; border: 0; outline: none; padding: 4px 0; background: transparent; color: var(--ink); font: 23px/1.4 var(--hand); box-shadow: none; }
+.idea-composer textarea { display: block; width: 100%; resize: vertical; height: 74px; min-height: 74px; max-height: 180px; border: 0; outline: none; padding: 4px 0; background: transparent; color: var(--ink); font: 23px/1.4 var(--hand); box-shadow: none; }
 .idea-composer textarea:focus { outline: none; box-shadow: none; }
 .idea-composer textarea::placeholder { color: #aaa08e; opacity: 1; }
 .idea-composer-tools { display: flex; align-items: center; gap: 14px; padding-top: 12px; }
@@ -43,7 +43,8 @@
 .idea-spark-note { display: block; padding: 7px 11px 0; font: 10px/1.5 var(--body); color: var(--ink-soft); min-height: 42px; }
 .idea-spark-arrow { position: absolute; right: 7px; bottom: 7px; font-size: 16px; opacity: 0; transition: opacity .2s; }
 .idea-spark:hover .idea-spark-arrow,.idea-spark:focus-visible .idea-spark-arrow { opacity: 1; }
-.idea-picked { display: block; min-height: 16px; text-align: center; margin-top: 18px; color: var(--graphite); font: 11px var(--body); }
+.idea-picked { display: block; min-height: 16px; text-align: center; margin-top: 14px; color: var(--graphite); font: 11px var(--body); }
+.idea-picked:empty { display: none; }
 .idea-picker { width: min(560px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); overflow-y: auto; margin: auto; padding: 26px; border: 2px solid var(--ink); border-radius: 20px; background: var(--card); color: var(--ink); box-shadow: 0 20px 70px #211b182e; animation: idea-arrive .18s ease-out; }
 .idea-picker::backdrop { background: #211b1850; backdrop-filter: blur(4px); }
 .idea-picker-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
@@ -80,7 +81,7 @@
   .idea-desk { padding: 24px 18px; margin-bottom: 26px; gap: 20px; }
   .arcade .idea-desk h2 { font-size: 34px; }
   .idea-caption { font-size: 9px; letter-spacing: 1.3px; }
-  .idea-intro { font-size: 12px; margin-bottom: 16px; }
+  .arcade .idea-intro { font-size: 12px; margin-bottom: 14px; }
   .idea-composer { padding: 12px; }
   .idea-composer textarea { font-size: 21px; }
   .idea-composer-tools { gap: 12px; }
@@ -88,7 +89,7 @@
   .idea-spark-stack { gap: 8px; }
   .arcade .idea-spark { flex-direction: column; padding: 5px 5px 10px; align-items: stretch; }
   .idea-spark-art { width: 100%; margin-bottom: 8px; }
-  .idea-spark-art svg { max-height: 72px; }
+  .idea-spark-art svg { max-height: 56px; }
   .idea-spark-title { font-size: 16px; padding: 0 2px; }
   .idea-enter { display: none; }
   .idea-picker { padding: 20px; }

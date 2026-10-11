@@ -82,6 +82,7 @@ export function ideaDesk(): { element: HTMLElement; dispose: () => void } {
       h('div', { class: 'idea-spark-stack' }, ...sparkButtons), selected));
   function sync(): void {
     next.disabled = !prompt.value.trim();
+    form.classList.toggle('has-idea', !next.disabled);
     const option = GAME_CATEGORIES.find((option) => option.id === category)!;
     genre.replaceChildren(h('span', { 'aria-hidden': 'true' }, option.symbol), t(`create.category.${category}`), h('span', { 'aria-hidden': 'true' }, '⌄'));
     options.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.category === category)));
@@ -110,9 +111,9 @@ export function ideaDesk(): { element: HTMLElement; dispose: () => void } {
 function sparkArt(world: string): HTMLElement {
   const art = h('span', { class: 'idea-spark-art', 'aria-hidden': 'true' });
   const drawings: Record<string, string> = {
-    moon: '<circle cx="130" cy="34" r="17" fill="#ffe574"/><path d="M0 105Q45 70 84 95T180 93V140H0" fill="#a99dde"/><ellipse cx="42" cy="114" rx="19" ry="6" fill="#8474bc"/><path d="m62 93 7-22h37l12 22z" fill="#f6ac83"/><path d="m77 75-4 14h34l-7-14" fill="#fff5d8"/><rect x="54" y="91" width="72" height="20" rx="7" fill="#f6ac83"/><circle cx="70" cy="111" r="10"/><circle cx="112" cy="111" r="10"/><path d="m10 27 5-7 5 7-5 7zM44 44l4-5 4 5-4 5" fill="#fff9db"/>',
-    jungle: '<path d="M22 129V36m119 98V29" stroke="#446e4f" stroke-width="5"/><path d="M22 70Q-4 12 43 28Q57 53 22 70m0 26Q-8 44 58 65Q57 88 22 96M141 57q-49-39-44-10q12 25 44 10m0 24q43-60 37-14q-7 23-37 14" fill="#73a979"/><path d="M49 110h74v14H49" fill="#ffe574"/><path d="M66 104v-20q0-14 14-14t14 14v20" fill="#ed9c77"/><circle cx="75" cy="83" r="2"/><circle cx="86" cy="83" r="2"/><path d="M0 135q45-21 88-4t92-1v10H0" fill="#73a979"/>',
-    cloud: '<path d="M45 117q44-91 89 0" fill="none" stroke="#edacb3" stroke-width="13"/><path d="M45 117q44-70 89 0" fill="none" stroke="#ffe574" stroke-width="10"/><path d="M45 117q44-52 89 0" fill="none" stroke="#a3cfa2" stroke-width="8"/><path d="M7 56q0-15 15-15q9-24 26-6q27-6 25 21zM105 39q0-14 15-13q9-23 25-6q23-4 24 19z" fill="#fffdf6"/><path d="M27 128q-3-20 12-20q8-20 25-7q21-4 20 27zM115 128q-3-17 10-19q10-22 26-7q20-1 22 26z" fill="#fffdf6"/>',
+    moon: '<circle cx="130" cy="34" r="17" fill="#ffe574"/><path d="M0 105Q45 70 84 95T180 93V140H0" fill="#a99dde"/><ellipse cx="42" cy="114" rx="19" ry="6" fill="#8474bc"/><g class="idea-art-rover"><path d="m62 93 7-22h37l12 22z" fill="#f6ac83"/><path d="m77 75-4 14h34l-7-14" fill="#fff5d8"/><rect x="54" y="91" width="72" height="20" rx="7" fill="#f6ac83"/><circle cx="70" cy="111" r="10"/><circle cx="112" cy="111" r="10"/></g><path class="idea-art-stars" d="m10 27 5-7 5 7-5 7zM44 44l4-5 4 5-4 5" fill="#fff9db"/>',
+    jungle: '<path d="M22 129V36m119 98V29" stroke="#446e4f" stroke-width="5"/><path class="idea-art-leaves" d="M22 70Q-4 12 43 28Q57 53 22 70m0 26Q-8 44 58 65Q57 88 22 96M141 57q-49-39-44-10q12 25 44 10m0 24q43-60 37-14q-7 23-37 14" fill="#73a979"/><path d="M49 110h74v14H49" fill="#ffe574"/><g class="idea-art-explorer"><path d="M66 104v-20q0-14 14-14t14 14v20" fill="#ed9c77"/><circle cx="75" cy="83" r="2"/><circle cx="86" cy="83" r="2"/></g><path d="M0 135q45-21 88-4t92-1v10H0" fill="#73a979"/>',
+    cloud: '<g class="idea-art-rainbow"><path d="M45 117q44-91 89 0" fill="none" stroke="#edacb3" stroke-width="13"/><path d="M45 117q44-70 89 0" fill="none" stroke="#ffe574" stroke-width="10"/><path d="M45 117q44-52 89 0" fill="none" stroke="#a3cfa2" stroke-width="8"/></g><path class="idea-art-clouds" d="M7 56q0-15 15-15q9-24 26-6q27-6 25 21zM105 39q0-14 15-13q9-23 25-6q23-4 24 19z" fill="#fffdf6"/><path d="M27 128q-3-20 12-20q8-20 25-7q21-4 20 27zM115 128q-3-17 10-19q10-22 26-7q20-1 22 26z" fill="#fffdf6"/>',
   };
   art.innerHTML = `<svg viewBox="0 0 180 140" xmlns="http://www.w3.org/2000/svg">${drawings[world]}</svg>`;
   return art;

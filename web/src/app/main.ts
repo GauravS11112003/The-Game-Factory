@@ -7,7 +7,9 @@
  * Chrome is paper and ink (§7.9); every sentence comes from shared/spec/messages.json.
  */
 import './style.css';
+import './motion.css';
 import { arcadeScreen, arcadePlayScreen } from '../arcade/index.ts';
+import './surfaces.css';
 import { card, h, icon } from './dom.ts';
 import { t } from './messages.ts';
 import { parseHash } from './router.ts';
@@ -60,7 +62,7 @@ function header(): HTMLElement {
   };
   sync();
   const el = h('header', { class: 'app-head' },
-    h('a', { class: 'logo', href: '#/' }, h('span', { class: 'logo-mark' }, '✎'), ' draw-a-level'),
+    h('a', { class: 'logo', href: '#/' }, h('span', { class: 'logo-mark' }, '✎'), ' The Game Factory'),
     h('nav', null,
       h('a', { href: '#/', data: { nav: '' } }, icon('home'), h('span', null, t('ui.home'))),
       h('a', { href: '#/studio', data: { nav: 'studio' } }, icon('marker'), h('span', null, t('creator_studio.title')))),

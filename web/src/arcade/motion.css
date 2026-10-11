@@ -1,0 +1,102 @@
+/* Give the collection room to breathe without hiding it below the idea desk. */
+.arcade:not(.ar-focused) .ar-content { padding-top: 26px; }
+.arcade .ar-topbar { height: 60px; }
+.arcade .ar-heading { margin-bottom: 22px; }
+.arcade .ar-heading h1 { font-size: clamp(30px, 3vw, 38px); }
+.arcade .ar-games-section { margin-top: 24px; }
+.arcade .ar-section-heading { margin-bottom: 15px; }
+.arcade .ar-tabs { margin-bottom: 18px; }
+.arcade .ar-search { padding: 0 10px; border-radius: 10px; transition: background 180ms, box-shadow 180ms; }
+.arcade .ar-search:focus-within { background: var(--card); box-shadow: 0 0 0 2px var(--hi); }
+.arcade .ar-search-input { font-size: 13px!important; }
+.arcade .ar-game-card { display: flex; flex-direction: column; min-width: 0; }
+.arcade .ar-card-body { display: flex; flex: 1; flex-direction: column; }
+.arcade .ar-card-body > p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; line-height: 1.6; min-height: 38px; margin-top: 5px; }
+.arcade .ar-card-bottom { margin-top: auto; padding-top: 12px; }
+
+/* Motion belongs to the paper, the ink, and the tiny worlds inside the postcards. */
+.arcade .ar-heading { animation: ar-paper-arrive 400ms cubic-bezier(.2,.8,.2,1); }
+.idea-desk { animation: ar-paper-arrive 500ms cubic-bezier(.16,1,.3,1); }
+.idea-desk h2 > span { background-size: 100% 100%; animation: ar-marker-in 650ms ease-out; background-repeat: no-repeat; }
+.idea-spark { animation: ar-postcard-arrive 580ms cubic-bezier(.16,1,.3,1); }
+.idea-spark:nth-child(2) { animation-duration: 680ms; }
+.idea-spark:nth-child(3) { animation-duration: 780ms; }
+.ar-card-arrive { animation: ar-paper-arrive 440ms var(--card-delay, 0ms) cubic-bezier(.2,.8,.2,1) backwards; }
+.arcade .ar-nav a, .arcade .ar-studio-link { transition: background 180ms, color 180ms; border-radius: 999px; }
+.arcade .ar-nav a .ar-icon, .arcade .ar-studio-link .ar-icon { transition: transform 220ms cubic-bezier(.2,.8,.2,1); }
+.arcade .ar-tab { transition: background 180ms, color 180ms, translate 180ms, box-shadow 180ms; }
+.arcade .ar-tab:active { translate: 0 1px; }
+.arcade .ar-tab.active { box-shadow: 0 2px 0 #1f1b181a; }
+.arcade .ar-game-card { transition: transform 240ms cubic-bezier(.2,.8,.2,1), box-shadow 240ms; }
+.arcade .ar-game-card:focus-within { box-shadow: 3px 6px 0 #1f1b1824; }
+.arcade .ar-card-go .ar-icon { transition: transform 180ms; }
+.arcade .ar-favorite { transition: background 180ms, color 180ms, transform 180ms; }
+.arcade .ar-favorite.saved { background: #ffe8df; color: var(--red); }
+.arcade .ar-favorite.saved .ar-icon { fill: var(--red); animation: ar-heart-pop 420ms cubic-bezier(.2,.8,.2,1); }
+.arcade .idea-composer.has-idea .idea-next { animation: ar-ready-pop 350ms cubic-bezier(.2,.8,.2,1); }
+.idea-next .ico { transition: transform 180ms; }
+.idea-art-rover, .idea-art-explorer, .idea-art-leaves, .idea-art-stars, .idea-art-clouds, .idea-art-rainbow { transform-box: fill-box; transform-origin: center; }
+.idea-art-rover { animation: ar-rover-hop 2.8s 3 ease-in-out; }
+.idea-art-stars { animation: ar-star-glimmer 3s 3 ease-in-out; }
+.idea-art-leaves { transform-origin: center bottom; animation: ar-leaf-sway 4s 2 ease-in-out; }
+.idea-art-clouds { animation: ar-cloud-drift 4s 2 ease-in-out; }
+@media (hover: hover) {
+  .arcade .ar-nav a:hover .ar-icon, .arcade .ar-studio-link:hover .ar-icon { transform: rotate(-10deg) scale(1.08); }
+  .arcade .ar-tab:hover:not(.active) { translate: 0 -2px; }
+  .arcade .ar-surprise:hover .ar-icon { animation: ar-shuffle-wiggle 450ms ease-in-out; }
+  .arcade .ar-brand:hover .ar-brand-icon { animation: ar-brand-wiggle 500ms ease-in-out; }
+  .arcade .ar-card-go:hover .ar-icon { transform: translateX(3px); }
+  .arcade .idea-next:not(:disabled):hover .ico { transform: translateX(2px); }
+  .idea-spark:hover .idea-art-rover { animation: ar-rover-hop 1.2s infinite ease-in-out; }
+  .idea-spark:hover .idea-art-explorer { animation: ar-explorer-hop 1.4s infinite ease-in-out; }
+  .idea-spark:hover .idea-art-rainbow { animation: ar-rainbow-bloom 1.8s infinite ease-in-out; }
+}
+.idea-spark:focus-visible .idea-art-rover { animation: ar-rover-hop 1.2s 2 ease-in-out; }
+.idea-spark:focus-visible .idea-art-explorer { animation: ar-explorer-hop 1.4s 2 ease-in-out; }
+.idea-spark:focus-visible .idea-art-rainbow { animation: ar-rainbow-bloom 1.8s 2 ease-in-out; }
+@keyframes ar-paper-arrive { from { opacity: 0; translate: 0 18px; } to { opacity: 1; translate: 0 0; } }
+@keyframes ar-postcard-arrive { from { opacity: 0; translate: 12px 18px; } to { opacity: 1; translate: 0 0; } }
+@keyframes ar-marker-in { from { background-size: 0% 100%; } to { background-size: 100% 100%; } }
+@keyframes ar-heart-pop { 0% { transform: scale(.65); } 45% { transform: scale(1.28) rotate(-12deg); } 75% { transform: scale(.95); } 100% { transform: scale(1); } }
+@keyframes ar-ready-pop { 0% { scale: .9; } 55% { scale: 1.08; } 100% { scale: 1; } }
+@keyframes ar-shuffle-wiggle { 25% { transform: rotate(-18deg); } 65% { transform: rotate(14deg); } }
+@keyframes ar-brand-wiggle { 25% { transform: rotate(-18deg); } 65% { transform: rotate(8deg); } 100% { transform: rotate(-8deg); } }
+@keyframes ar-rover-hop { 0%, 100% { transform: translate(0,0) rotate(0); } 45% { transform: translate(4px,-5px) rotate(-4deg); } 65% { transform: translate(5px,-1px) rotate(2deg); } }
+@keyframes ar-explorer-hop { 0%, 100% { transform: translateY(0); } 45%, 55% { transform: translateY(-9px) rotate(-4deg); } }
+@keyframes ar-leaf-sway { 0%, 100% { transform: rotate(-1deg); } 50% { transform: rotate(2deg); } }
+@keyframes ar-star-glimmer { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+@keyframes ar-cloud-drift { 0%, 100% { transform: translateX(-3px); } 50% { transform: translateX(4px); } }
+@keyframes ar-rainbow-bloom { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04) translateY(-2px); } }
+@media (max-width: 850px) {
+  .arcade .ar-search-input { width: 170px; }
+}
+@media (max-width: 600px) {
+  .arcade .ar-side { gap: 6px; }
+  .arcade .ar-nav { gap: 0; }
+  .arcade .ar-nav a { padding: 8px; }
+  .arcade .ar-studio-link { display: flex; font-size: 0; padding: 8px; color: var(--ink)!important; }
+  .arcade .ar-studio-link > .ar-icon:last-child { display: none; }
+  .arcade .ar-topbar { height: 48px; padding-inline: 16px; gap: 10px; }
+  .arcade .ar-search { padding-inline: 5px; gap: 5px; }
+  .arcade .ar-search-input { width: 135px; font-size: 11px!important; }
+  .arcade:not(.ar-focused) .ar-content { padding-top: 20px; }
+  .arcade .ar-heading { gap: 12px; margin-bottom: 20px; }
+  .arcade .ar-heading h1 { font-size: 30px; }
+  .idea-desk { padding: 20px 16px; gap: 12px; }
+  .arcade .idea-desk h2 { font-size: 30px; margin-top: 8px; }
+  .idea-composer textarea { height: 60px; min-height: 60px; font-size: 20px; }
+  .idea-composer-tools { padding-top: 6px; }
+  .idea-sparks-label { margin-bottom: 8px; }
+  .idea-spark-art svg { max-height: 44px; }
+  .idea-spark-title { font-size: 14px; }
+  .arcade .ar-tabs { flex-wrap: nowrap; overflow-x: auto; padding: 3px 3px 6px; scrollbar-width: thin; }
+  .arcade .ar-tab { flex-shrink: 0; }
+  .arcade .ar-section-heading h2 { font-size: 25px; }
+  .arcade .ar-card-body h3 { font-size: 21px; }
+  .arcade .ar-favorite { width: 32px; height: 32px; }
+  .arcade .ar-favorite .ar-icon { width: 15px; height: 15px; }
+  .arcade .ar-card-tag { max-width: calc(100% - 50px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .arcade *, .arcade *::before, .arcade *::after { animation: none!important; transition: none!important; }
+}

@@ -1,0 +1,32 @@
+/* Dotted drafting paper, with gentle pools of color under the working sheets. */
+:root {
+  --canvas-texture:
+    radial-gradient(ellipse at 50% 0%, #fff7d8a6, transparent 48%),
+    radial-gradient(ellipse at 0% 32%, #d8d0ed59, transparent 52%),
+    radial-gradient(ellipse at 100% 78%, #cbdcc75c, transparent 55%),
+    radial-gradient(circle at 1px 1px, #74664e30 .9px, transparent 1.2px),
+    linear-gradient(#8171570a 1px, transparent 1px),
+    linear-gradient(90deg, #8171570a 1px, transparent 1px),
+    linear-gradient(145deg, #fbf7ee, #f1e9d9);
+  --canvas-texture-size: 100% 900px, 100% 1100px, 100% 1200px, 22px 22px, 88px 88px, 88px 88px, 100% 100%;
+  --shadow: 2px 4px 0 #51422c1c, 0 10px 24px #51422c0d;
+  --sheet-shadow: 3px 5px 0 #51422c24, 0 14px 34px #51422c12;
+}
+body, body[data-screen='home'], body[data-screen='arcade'] {
+  background-color: var(--paper);
+  background-image: var(--canvas-texture);
+  background-size: var(--canvas-texture-size);
+  background-repeat: no-repeat, no-repeat, no-repeat, repeat, repeat, repeat, no-repeat;
+}
+.studio-game, .stage, .builder-workspace, .sketch-editor { box-shadow: var(--sheet-shadow); }
+.studio-game { background: linear-gradient(160deg, #fffefb, var(--card)); }
+.studio-game:focus-within { box-shadow: 3px 7px 0 #51422c28, 0 20px 36px #51422c1a; }
+.creation-modal-panel, .generated-input-dialog {
+  box-shadow: 4px 7px 0 #51422c36, 0 28px 90px #211b183b, inset 0 1px 0 #fff;
+}
+.builder-composer {
+  box-shadow: inset 0 2px 5px #51422c0a, 0 4px 12px #51422c0a;
+}
+@media (hover: hover) {
+  .studio-game:hover { box-shadow: 3px 7px 0 #51422c28, 0 20px 36px #51422c1a; }
+}
