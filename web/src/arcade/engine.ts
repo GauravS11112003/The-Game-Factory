@@ -1,4 +1,4 @@
-export type GameId = 'fighter' | 'pacman' | 'platformer' | 'racing' | 'neon' | 'shooter';
+export type GameId = 'fighter' | 'pacman' | 'platformer' | 'racing' | 'neon' | 'shooter' | 'kart';
 export interface Input { down: Set<string>; pressed: Set<string>; look?: { x: number; y: number } }
 export interface GameState { score: number; info: string; over: boolean; won: boolean }
 export interface Game extends GameState {

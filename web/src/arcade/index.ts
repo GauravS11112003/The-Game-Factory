@@ -1,4 +1,5 @@
 import { ShooterGame } from './shooter.ts';
+import { KartGame, KART_THEMES, type KartTheme } from './kart.ts';
 import './style.css';
 import './controls.css';
 import { openGameInputs } from './inputs.ts';
@@ -16,6 +17,7 @@ import { ideaDesk } from './idea-desk.ts';
 import { arcadeMotion } from './motion.ts';
 import './motion.css';
 import './factory.css';
+import './kart.css';
 
 const paths: Record<string, string> = {
   plus: '<path d="M12 5v14M5 12h14"/>',
@@ -150,6 +152,7 @@ export function arcadePlayScreen(root: HTMLElement, id: string): () => void {
   if (!entry) { root.append(h('div', { class: 'arcade ar-empty' }, h('h1', null, 'Game not found'), h('a', { href: '#/' }, 'Back to the arcade'))); return () => {}; }
   const save = readSave(); const { shell: page, main } = shell(); let selectedLevel: ArcadeLevel | null = null; let game = createGame(entry.id), started = false, paused = false, twoPlayer = false, disposed = false, raf = 0, elapsed = 0, accumulator = 0, last = 0, lastScore = 0, resultSaved = false;
   page.classList.add('ar-focused');
+  if(entry.id==='kart')page.classList.add('ar-kart');
   if(entry.id==='shooter')page.classList.add('ar-shooter');
   let dialogOpen = false, closeBuilder: (() => void) | null = null, closeInputs: (() => void) | null = null;
   let audio: AudioContext | null = null;
@@ -161,7 +164,7 @@ export function arcadePlayScreen(root: HTMLElement, id: string): () => void {
     save.muted = !save.muted; writeSave(save); sound.replaceChildren(ico(save.muted ? 'mute' : 'volume'));
     sound.title = sound.getAttribute('aria-label') === 'Sound on' ? 'Sound off' : 'Sound on'; sound.setAttribute('aria-label', sound.title); if (!save.muted) beep(440);
   });
-  const goalText = (): string => entry!.id === 'fighter' ? `Win ${selectedLevel?.rounds ?? 2} rounds. Punch, kick, jump, and block.` : entry!.id === 'racing' ? `Drive ${Math.round(((selectedLevel?.finish ?? 4500) - 100) / 10)} meters to the finish. Collect fuel and balance your car in the air.` : entry!.id === 'shooter' ? `Win ${selectedLevel?.rounds ?? 3} rounds against bots. Eliminate the defenders, or hold E at site A or B for three seconds to plant. Defend the device for 25 seconds; guards can defuse in six. Stop moving for accurate shots.` : entry!.goal;
+  const goalText = (): string => entry!.id === 'fighter' ? `Win ${selectedLevel?.rounds ?? 2} rounds. Punch, kick, jump, and block.` : entry!.id === 'racing' ? `Drive ${Math.round(((selectedLevel?.finish ?? 4500) - 100) / 10)} meters to the finish. Collect fuel and balance your car in the air.` : entry!.id === 'shooter' ? `Win ${selectedLevel?.rounds ?? 3} rounds against bots. Eliminate the defenders, or hold E at site A or B for three seconds to plant. Defend the device for 25 seconds; guards can defuse in six. Stop moving for accurate shots.` : entry!.id === 'kart' ? entry!.goal.replace('three-lap', `${selectedLevel?.kartLaps ?? 3}-lap`) : entry!.goal;
   const goal = h('p', null, goalText());
   const rules = h('dialog', {class:'arcade ar-rules-dialog'});
   rules.append(h('div', {class:'ar-rules-top'}, h('h2',null,'Game rules'), iconButton('Close rules','close',()=>rules.close())),
@@ -180,7 +183,9 @@ export function arcadePlayScreen(root: HTMLElement, id: string): () => void {
   });
   const editLevel = (): void => {
     suspend();
-    closeBuilder = openBuilder(selectedLevel ?? newLevel(entry!.id, readLevels(entry!.id).length+1), level=>{selectedLevel=level;reset();renderLevels();},()=>{dialogOpen=false;closeBuilder=null;});
+    const source = selectedLevel ?? newLevel(entry!.id, readLevels(entry!.id).length+1);
+    const editable = source.game === 'kart' && /^kart-(alpine|sunset)$/.test(source.id) ? { ...source, id: crypto.randomUUID() } : source;
+    closeBuilder = openBuilder(editable, level=>{selectedLevel=level;reset();renderLevels();},()=>{dialogOpen=false;closeBuilder=null;});
   };
   const addLevel = (): void => {
     suspend();
@@ -200,10 +205,12 @@ export function arcadePlayScreen(root: HTMLElement, id: string): () => void {
   main.append(content);root.append(page);
   function renderLevels(): void {
     const saved=readLevels(entry!.id); latest.disabled=!saved.length;
-    const items: (ArcadeLevel|null)[]=[null,...saved];
+    const circuits: ArcadeLevel[] = entry!.id === 'kart' ? (['alpine', 'sunset'] as KartTheme[]).map(theme => ({ id: `kart-${theme}`, game: 'kart', name: KART_THEMES[theme].name, kartTheme: theme, kartLaps: 3, source: { prompt: 'As one of the stock games can you add game exactly like mario cart with great graphics.' } })) : [];
+    const items: (ArcadeLevel|null)[]=[null,...circuits,...saved];
     levels.replaceChildren(...items.map((level,index)=>{
       const thumb=h('canvas',{width:W,height:H,'aria-hidden':'true'});createGame(entry!.id,false,level).draw(thumb.getContext('2d')!,1.4);
-      return h('button',{type:'button',class:`ar-level-preview${selectedLevel?.id===level?.id?' active':''}`,'aria-label':level?.name??'Original level','aria-pressed':String(selectedLevel?.id===level?.id),title:level?.name??'Original level',onclick:()=>{selectedLevel=level;reset();renderLevels();}},thumb,h('span',null,String(index+1)));
+      const name = level?.name ?? (entry!.id === 'kart' ? KART_THEMES.coast.name : 'Original level');
+      return h('button',{type:'button',class:`ar-level-preview${selectedLevel?.id===level?.id?' active':''}`,'aria-label':name,'aria-pressed':String(selectedLevel?.id===level?.id),title:name,onclick:()=>{selectedLevel=level;reset();renderLevels();}},thumb,h('span',null,String(index+1)),entry!.id === 'kart' ? h('small', null, name) : null);
     }),iconButton('Add a level','plus',addLevel,'ar-level-new'));
   }
   renderLevels();
@@ -259,6 +266,10 @@ export function arcadePlayScreen(root: HTMLElement, id: string): () => void {
     pause.replaceChildren(ico(paused ? 'play' : 'pause')); pause.title=paused?'Resume':'Pause';pause.setAttribute('aria-label',pause.title);pause.disabled=!started||game.over;
     if (!visible) return;
     const box=h('div',{class:'ar-simple-overlay'},game.over?h('div',{class:'ar-simple-result'},h('span',{'aria-label':game.won?'Level cleared':'Game over'},game.won?'✦':'↻'),h('strong',null,String(game.score))):'');
+    if (game instanceof KartGame) {
+      if (game.over) box.append(h('p', { class: 'ar-kart-result', role: 'status' }, game.info));
+      else if (!started) box.append(h('p', { class: 'ar-kart-help' }, '↑ Gas · ← → Steer · Shift Drift · Space Item'));
+    }
     box.append(button(game.over?'Play again':paused?'Resume':'Play','play',()=>{if(game.over){reset();start();}else if(paused)togglePause();else start();},'ar-start-btn'));
     overlay.replaceChildren(box);
   }
@@ -278,7 +289,8 @@ export function arcadePlayScreen(root: HTMLElement, id: string): () => void {
     if (started && !paused && !game.over && !dialogOpen) {
       accumulator += dt; while (accumulator >= 1 / 120 && !game.over) { game.update(1 / 120, input); input.pressed.clear(); accumulator -= 1 / 120; elapsed += 1 / 120; }
       if (game instanceof ShooterGame) { for(const event of game.soundEvents.splice(0))shooterSound(event); }
-      if (!(game instanceof ShooterGame) && game.score > lastScore) { beep(520 + (game.score % 4) * 70); lastScore = game.score; }
+      if (game instanceof KartGame) { for (const event of game.soundEvents.splice(0)) beep(event === 'count' ? 300 : event === 'go' ? 880 : event === 'hit' ? 120 : event === 'boost' ? 620 : event === 'finish' ? 1040 : 760); }
+      if (!(game instanceof ShooterGame) && !(game instanceof KartGame) && game.score > lastScore) { beep(520 + (game.score % 4) * 70); lastScore = game.score; }
       if (game.over && !resultSaved) { resultSaved = true; releaseAim(); remember(); clearInput(); showOverlay(); }
     }
     game.draw(ctx, started ? elapsed : now / 1000);

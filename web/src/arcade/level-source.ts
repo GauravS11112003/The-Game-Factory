@@ -19,7 +19,7 @@ export function levelSource(id: GameId, selected: ArcadeLevel | null): LevelSour
   const canvases = Array.isArray(source?.inputCanvases) ? source.inputCanvases.filter(s => typeof s === 'string' && /^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(s)).slice(0, 12) : [];
   return {
     level, builtIn: !custom, canvases,
-    prompt: custom ? typeof source?.prompt === 'string' && source.prompt.trim() ? source.prompt : null : id === 'shooter' ? SHOOTER_REQUEST : COLLECTION_REQUEST,
+    prompt: custom ? typeof source?.prompt === 'string' && source.prompt.trim() ? source.prompt : null : id === 'kart' ? 'As one of the stock games can you add game exactly like mario cart with great graphics.' : id === 'shooter' ? SHOOTER_REQUEST : COLLECTION_REQUEST,
   };
 }
 export function sourceSectionCount(level: ArcadeLevel): number {
@@ -33,6 +33,7 @@ export function drawLevelInput(ctx: CanvasRenderingContext2D, level: ArcadeLevel
   if (game instanceof PlatformGame || game instanceof RacingGame) game.camera = section * W;
   if (game instanceof ShooterGame) { game.drawBlueprint(ctx); return; }
   game.draw(ctx, 1.4);
+  if (level.game === 'kart') return;
   if (!grid) return;
   ctx.save(); ctx.strokeStyle = '#ffffff24'; ctx.lineWidth = 1;
   const step = level.maze ? 30 : 40, ox = level.maze ? 165 : 0, oy = level.maze ? 58 : 0;

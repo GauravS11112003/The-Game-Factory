@@ -1,4 +1,5 @@
 import { ShooterGame } from './shooter.ts';
+import { KartGame } from './kart.ts';
 import type { ArcadeLevel } from './levels.ts';
 import { W, H, rect, circle, line, label, gradient, star, cloud, held, tapped, Particles, type Game, type Input, type GameId } from './engine.ts';
 
@@ -288,7 +289,7 @@ export class RacingGame implements Game {
 }
 export function createGame(id: GameId, twoPlayer = false, level?: ArcadeLevel | null): Game {
   let game: Game;
-  switch (id) { case 'fighter': game = new FighterGame(twoPlayer); break; case 'pacman': game = new MazeGame(); break; case 'neon': game = new MazeGame(true); break; case 'platformer': game = new PlatformGame(); break; case 'racing': game = new RacingGame(); break; case 'shooter': game = new ShooterGame(); break; }
+  switch (id) { case 'fighter': game = new FighterGame(twoPlayer); break; case 'pacman': game = new MazeGame(); break; case 'neon': game = new MazeGame(true); break; case 'platformer': game = new PlatformGame(); break; case 'racing': game = new RacingGame(); break; case 'shooter': game = new ShooterGame(); break; case 'kart': game = new KartGame(level?.game === id ? level.kartTheme : undefined, level?.game === id ? level.kartLaps : undefined); break; }
   if (!level || level.game !== id) return game;
   if (game instanceof MazeGame && level.maze) {
     game.maze = level.maze.slice(); game.pellets.clear();

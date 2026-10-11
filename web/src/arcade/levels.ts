@@ -1,4 +1,5 @@
 import { ShooterGame, ARENA_COLS, ARENA_ROWS } from './shooter.ts';
+import { KartGame, KART_THEMES, type KartTheme } from './kart.ts';
 import type { GameId } from './engine.ts';
 import { createGame, FighterGame, MazeGame, PlatformGame, RacingGame, terrain } from './games.ts';
 export interface ArcadeLevel {
@@ -14,6 +15,8 @@ export interface ArcadeLevel {
   spawns?: number[];
   duration?: number;
   rounds?: number;
+  kartTheme?: KartTheme;
+  kartLaps?: number;
   source?: { prompt?: string; inputCanvases?: string[] };
 }
 export function newLevel(id: GameId, n: number): ArcadeLevel {
@@ -24,6 +27,7 @@ export function newLevel(id: GameId, n: number): ArcadeLevel {
   if (g instanceof RacingGame) { level.hills = Array.from({length: 61}, (_,i) => ({x: i * 80, y: terrain(i * 80)})); level.pickups = g.pickups.map(({x,fuel}) => ({x,fuel})); level.finish = g.finish; }
   if (g instanceof FighterGame) { level.spawns = g.starts.slice(); level.duration = 60; level.rounds = 2; }
   if (g instanceof ShooterGame) { level.arena = g.map.slice(); level.duration = 90; level.rounds = 3; }
+  if (g instanceof KartGame) { level.kartTheme = g.theme; level.kartLaps = g.laps; }
   return level;
 }
 const storageKey = (id: GameId): string => `draw.play.levels.${id}`;
@@ -40,6 +44,7 @@ function validLevel(value: unknown, id: GameId): value is ArcadeLevel {
   const finite = (n: unknown): boolean => typeof n === 'number' && Number.isFinite(n);
   const points = (a: unknown): boolean => Array.isArray(a) && a.every(p => p && finite(p.x) && finite(p.y));
   if (l.game !== id || typeof l.id !== 'string' || typeof l.name !== 'string') return false;
+  if (id === 'kart') return typeof l.kartTheme === 'string' && Object.hasOwn(KART_THEMES, l.kartTheme) && Number.isInteger(l.kartLaps) && l.kartLaps! >= 1 && l.kartLaps! <= 5;
   if (id === 'pacman' || id === 'neon') return Array.isArray(l.maze) && l.maze.length === 15 && l.maze.every(r => typeof r === 'string' && r.length === 21 && /^[#.o ]+$/.test(r));
   if (id === 'shooter') {
     if (!Array.isArray(l.arena) || l.arena.length !== ARENA_ROWS || !l.arena.every(r => typeof r === 'string' && r.length === ARENA_COLS && /^[123#.ABPD]+$/.test(r))) return false;

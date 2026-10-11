@@ -1,4 +1,5 @@
 import { ShooterGame, BLUEPRINT, ARENA_COLS, ARENA_ROWS, solid } from './shooter.ts';
+import { KART_THEMES, type KartTheme } from './kart.ts';
 import { h } from '../app/dom.ts';
 import { drawLevelInput, captureLevelInputs } from './level-source.ts';
 import { W, H } from './engine.ts';
@@ -20,7 +21,7 @@ export function openBuilder(source: ArcadeLevel, onSave: (level: ArcadeLevel) =>
   const undo = command('Undo','↶',()=>{if(!history.length)return;future.push(structuredClone(draft));draft=history.pop()!;title.value=draft.name;draw();});
   const redo = command('Redo','↷',()=>{if(!future.length)return;history.push(structuredClone(draft));draft=future.pop()!;title.value=draft.name;draw();});
   function checkpoint(): void { draft.name=title.value.trim()||draft.name; history.push(structuredClone(draft)); if(history.length>100)history.shift(); future.length=0; }
-  const toolset: Tool[] = draft.arena ? ['wall','cover','entry','guard','siteA','siteB','erase'] : draft.maze ? ['wall','dot','power','erase'] : draft.platforms ? ['platform','coin','enemy','flag','erase'] : draft.hills ? ['hill','fuel','coin','flag','erase'] : ['blue','coral'];
+  const toolset: Tool[] = draft.game === 'kart' ? [] : draft.arena ? ['wall','cover','entry','guard','siteA','siteB','erase'] : draft.maze ? ['wall','dot','power','erase'] : draft.platforms ? ['platform','coin','enemy','flag','erase'] : draft.hills ? ['hill','fuel','coin','flag','erase'] : ['blue','coral'];
   const tools = h('div',{class:'ar-builder-tools',role:'group','aria-label':'Building tools'});
   function renderTools(): void { tools.replaceChildren(...toolset.map(t=>h('button',{type:'button',class:`ar-icon-button${tool===t?' active':''}`,title:names[t],'aria-label':names[t],'aria-pressed':String(tool===t),onclick:()=>{tool=t;renderTools();}},symbols[t]))); }
   renderTools();
@@ -29,6 +30,18 @@ export function openBuilder(source: ArcadeLevel, onSave: (level: ArcadeLevel) =>
   function renderPages(): void { pages.replaceChildren(...Array.from({length:pageCount},(_,n)=>h('button',{type:'button',class:`ar-icon-button${screen===n?' active':''}`,'aria-label':`Section ${n+1}`,'aria-pressed':String(screen===n),onclick:()=>{screen=n;renderPages();draw();}},String(n+1)))); }
   if(pageCount>1)renderPages();
   const settings = h('div',{class:'ar-builder-settings'});
+  let syncKartSettings = (): void => {};
+  if (draft.game === 'kart') {
+    canvas.setAttribute('aria-label', 'Circuit preview. Choose a circuit and lap count below.');
+    const theme = h('select', { 'aria-label': 'Kart circuit' }, ...Object.entries(KART_THEMES).map(([value, p]) => h('option', { value }, p.name)));
+    const laps = h('input', { type: 'range', min: 1, max: 5, step: 1, value: draft.kartLaps, 'aria-label': 'Race laps' });
+    const output = h('output', null, `${draft.kartLaps} laps`);
+    syncKartSettings = () => { theme.value = draft.kartTheme ?? 'coast'; laps.value = String(draft.kartLaps ?? 3); output.textContent = `${draft.kartLaps} laps`; };
+    syncKartSettings();
+    theme.onchange = () => { checkpoint(); draft.kartTheme = theme.value as KartTheme; draw(); };
+    laps.onchange = () => { checkpoint(); draft.kartLaps = Number(laps.value); draw(); };
+    settings.append(h('label', null, 'Circuit ', theme), h('label', null, 'Laps ', laps, output));
+  }
   if(draft.game==='fighter'||draft.game==='shooter') {
     const duration = h('input',{type:'range',min:15,max:180,step:15,value:draft.duration,'aria-label':'Round duration in seconds'});
     const rounds = h('input',{type:'range',min:1,max:5,step:1,value:draft.rounds,'aria-label':'Rounds to win'});
@@ -48,9 +61,10 @@ export function openBuilder(source: ArcadeLevel, onSave: (level: ArcadeLevel) =>
   document.body.append(dialog); dialog.showModal(); draw();
   dialog.addEventListener('close',()=>{dialog.remove();onClose();});
   function draw(): void {
-    drawLevelInput(ctx,draft,screen);undo.disabled=!history.length;redo.disabled=!future.length;
+    syncKartSettings();drawLevelInput(ctx,draft,screen);undo.disabled=!history.length;redo.disabled=!future.length;
   }
   canvas.addEventListener('pointerdown',e=>{
+    if (draft.game === 'kart') return;
     const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H,wx=Math.round((x+screen*W)/40)*40,wy=Math.max(120,Math.min(500,Math.round(y/20)*20));
     status.textContent='';
     if(draft.arena){

@@ -1,0 +1,12 @@
+.ar-kart .ar-level-preview { width: 152px; flex-basis: 152px; }
+.ar-kart .ar-level-preview small { display: block; padding: 6px 2px 3px; font: 600 12px/1.3 var(--sans, Arial, sans-serif); color: var(--ink); }
+.ar-kart .ar-simple-overlay { max-width: 92%; }
+.ar-kart .ar-kart-help { margin: 0 0 9px; padding: 8px 14px; border-radius: 12px; background: #192e49ee; color: #f1f7ff; font: 600 12px/1.4 Arial, sans-serif; }
+.ar-kart .ar-kart-result { margin: 8px 0; padding: 10px 16px; border-radius: 12px; background: #192e49f2; color: #fff1c4; font: 700 15px/1.5 Arial, sans-serif; }
+.ar-builder-settings select { max-width: 210px; border: 1.5px solid var(--ink); border-radius: 9px; padding: 8px 12px; background: var(--card); color: var(--ink); font: 600 14px Arial, sans-serif; }
+@media (max-width: 600px) {
+  .ar-kart .ar-kart-help { font-size: 9px; padding: 5px 9px; margin-bottom: 4px; }
+  .ar-kart .ar-play-overlay { padding-bottom: 8px; }
+  .ar-kart .ar-level-preview { width: 116px; flex-basis: 116px; }
+  .ar-kart .ar-level-preview small { font-size: 10px; }
+}
