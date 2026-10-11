@@ -95,7 +95,7 @@ export class BitmapCache {
   private recolor: { doc: unknown; theme: StudioTheme; map: Map<string, string> | null } | null = null;
 
   /** The game-wide stroke colour map when the theme recolours (the same one the runtime builds), memoised per doc. */
-  private recolorFor(doc: SDoc | undefined, theme: StudioTheme): Map<string, string> | null {
+  recolorFor(doc: SDoc | undefined, theme: StudioTheme): Map<string, string> | null {
     if (!doc || !theme.recolor) return null;
     if (this.recolor && this.recolor.doc === doc && this.recolor.theme === theme) return this.recolor.map;
     let map = themeRender.buildRecolorMap(themeRender.docDrawings(doc as never), themeRender.fullTheme(theme));

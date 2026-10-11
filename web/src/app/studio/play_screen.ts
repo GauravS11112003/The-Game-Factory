@@ -1,7 +1,7 @@
 /**
  * #/g/:id — play a Studio game full screen (docs/v6/CONTRACTS_V6.md §6): title, restart, fullscreen, copy the share
  * link, and Remix (a copy owned by the player, opened in the Studio). Works offline from a local draft.
- * v7: a Sketch ↔ Game toggle (local to this page, never saved) restarts the game in the other look.
+ * v7: a Sketch ↔ Game toggle (local to this page, never saved) flips the running game's look (RuntimeHandle.setLook).
  */
 import '../../studio/studio.css';
 import type { GameDoc } from '../../core/types.gen.ts';
@@ -100,7 +100,7 @@ export function studioPlayScreen(root: HTMLElement, gameId: string, _query: URLS
       toggle.dataset.look = look;
       toggle.replaceChildren(...(['sketch', 'game'] as const).map((v) => h('button', {
         type: 'button', role: 'radio', 'aria-checked': String(look === v), class: look === v ? 'on' : '', title: t(`studio.look.${v}_help`),
-        onclick: () => { if (look !== v) { look = v; renderToggle(); start(); } },
+        onclick: () => { if (look !== v) { look = v; renderToggle(); if (runtime) runtime.setLook(v); else start(); } },
       }, sicon(v === 'sketch' ? 'pen' : 'sparkle'), h('span', { class: 'st-hide-sm' }, t(`studio.look.${v}`)))), h('i', { class: 'st-look-thumb', 'aria-hidden': 'true' }));
     };
     renderToggle();

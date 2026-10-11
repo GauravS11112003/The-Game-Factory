@@ -12,7 +12,7 @@ import {
 } from '../model/doc.ts';
 import type { SObj, Vec } from '../model/types.ts';
 import { BitmapCache, isDark } from './render.ts';
-import { chosenVariant, drawTerrain, drawWorldBack, isGroundObj, objectLook, variantBitmap, type ObjLook } from './look.ts';
+import { drawLookBitmap, drawTerrain, drawWorldBack, isGroundObj, lookBitmap, objectLook, onArtReady, type ObjLook } from './look.ts';
 import { sicon } from './icons.ts';
 import type { Studio } from './studio.ts';
 import { menu, type MenuItem } from './ui.ts';
@@ -93,6 +93,8 @@ export class StudioCanvas {
     window.addEventListener('keydown', kd);
     window.addEventListener('keyup', ku);
     this.offs.push(() => window.removeEventListener('keydown', kd), () => window.removeEventListener('keyup', ku));
+    // AI art finished loading somewhere: draw again
+    this.offs.push(onArtReady(this.ready));
     this.ro = new ResizeObserver(() => this.resize());
     this.ro.observe(this.el);
     this.offs.push(studio.on((c) => {
@@ -251,7 +253,7 @@ export class StudioCanvas {
     ctx.clip();
     ctx.translate(-this.view.x * z, -this.view.y * z);
     ctx.scale(z, z);
-    drawWorldBack(ctx, this.studio.doc, world, { x: this.view.x, y: this.view.y, zoom: z, width: this.w, height: this.h }, this.ready);
+    drawWorldBack(ctx, this.studio.doc, world);
     ctx.restore();
     ctx.strokeStyle = deskDark ? 'rgba(255,255,255,0.12)' : 'rgba(31,27,24,0.12)';
     ctx.lineWidth = 1;
@@ -265,9 +267,10 @@ export class StudioCanvas {
       const alpha = o.hidden ? 0.35 : o.template ? 0.6 : 1;
       const [sx, sy] = this.worldToScreen([o.x, o.y]);
       const reach = (Math.max(o.drawing.w, o.drawing.h) * o.scale * z) / 2 + 60;
-      if (sx < -reach || sy < -reach || sx > this.w + reach || sy > this.h + reach) continue;
+      // ground fills down to the world's bottom: never cull it by its line's box
+      if (!isGroundObj(o) && (sx < -reach || sy < -reach || sx > this.w + reach || sy > this.h + reach)) continue;
       if (o.drawing.strokes.length) {
-        const { look, variant } = this.lookOf(o);
+        const { look, preview } = this.lookOf(o);
         if (look !== 'raw' && isGroundObj(o)) {
           // ground in the game look: solid land down to the world's bottom (world coordinates, clipped to the world)
           ctx.save();
@@ -277,29 +280,21 @@ export class StudioCanvas {
           ctx.clip();
           ctx.translate(-this.view.x * z, -this.view.y * z);
           ctx.scale(z, z);
-          drawTerrain(ctx, o, look === 'ai' ? o.art?.terrain ?? null : null, theme, world, this.ready, sc.objects.filter(isGroundObj));
+          drawTerrain(ctx, o, look === 'ai' ? o.art?.terrain ?? null : null, theme, world, sc.objects.filter(isGroundObj));
           ctx.restore();
         } else {
-          const v = look === 'ai' ? chosenVariant(o, variant) : null;
-          const vb = v ? variantBitmap(v, z * o.scale * dpr * Math.max(o.drawing.w / v.w, o.drawing.h / v.h), this.ready) : null;
-          ctx.save();
-          ctx.globalAlpha = alpha;
-          ctx.translate(sx, sy);
-          ctx.rotate((o.rotation * Math.PI) / 180);
-          if (vb) {
-            const hw = (o.drawing.w * o.scale * z) / 2;
-            const hh = (o.drawing.h * o.scale * z) / 2;
+          // lane R2's objectBitmap: the AI variant, the cleaned-up sketch or the raw strokes, exactly as the runtime draws it
+          const b = lookBitmap(o, this.studio.doc, z * o.scale * dpr, this.cache.recolorFor(this.studio.doc, theme), preview);
+          if (b) {
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.translate(sx, sy);
+            ctx.rotate((o.rotation * Math.PI) / 180);
+            ctx.scale(z * o.scale, z * o.scale);
             ctx.imageSmoothingQuality = 'high';
-            ctx.drawImage(vb.canvas, -hw, -hh, hw * 2, hh * 2);
-          } else {
-            const bmp = this.cache.get(o, theme, z * o.scale * dpr, this.studio.doc, look !== 'raw');
-            if (bmp) {
-              const k = (z * o.scale) / bmp.bucket;
-              ctx.scale(k, k);
-              ctx.drawImage(bmp.canvas, -bmp.canvas.width / 2, -bmp.canvas.height / 2);
-            }
+            drawLookBitmap(ctx, b);
+            ctx.restore();
           }
-          ctx.restore();
         }
       } else if (o.drawing.w > 0 || o.drawing.h > 0) {
         this.drawBoxObject(o, deskDark || isDark(theme.palette?.bg) ? '#ffffff' : ink);
@@ -388,10 +383,10 @@ export class StudioCanvas {
   }
 
   /** Which look an object shows on the canvas (a compare-card hover previews a variant without changing the doc). */
-  private lookOf(o: SObj): { look: ObjLook; variant?: string | null } {
+  private lookOf(o: SObj): { look: ObjLook; preview: { variant: string | null } | null } {
     const p = this.studio.preview;
-    if (p && p.id === o.id) return p.variant ? { look: 'ai', variant: p.variant } : { look: 'sketch' };
-    return { look: objectLook(o, this.studio.doc) };
+    if (p && p.id === o.id) return { look: p.variant ? 'ai' : 'sketch', preview: { variant: p.variant } };
+    return { look: objectLook(o, this.studio.doc), preview: null };
   }
 
   /** Objects Claude is drawing: a soft light sweeps across them and their box glows. */

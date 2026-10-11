@@ -453,7 +453,10 @@ function buildStudio(rootEl: HTMLElement, initialId: string, loaded: Loaded, que
       draftTimer = window.setTimeout(flushDraft, 300);
       if (document.activeElement !== title) title.value = studio.doc.title;
       if (!c.quiet) { renderInspector(); renderTabs(); }
-      if (lookToggle.dataset.look !== docLook(studio.doc)) renderLookToggle();
+      if (lookToggle.dataset.look !== docLook(studio.doc)) {
+        renderLookToggle();
+        try { runtime?.setLook(docLook(studio.doc)); } catch { /* an older runtime */ }
+      }
     }
     if (c.kind === 'art') {
       // art arrived or a drawing started: refresh the Look section unless the maker is typing in the panel
