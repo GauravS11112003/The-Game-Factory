@@ -38,7 +38,6 @@
     "gw.not_ready": "This part is not switched on yet. Try again soon.",
     "gw.pick_none": "You have no games yet. Make one first.",
     "gw.pick_new": "New game",
-
     "gw.mode.platformer": "Platformer",
     "gw.mode.topdown": "Top-down",
     "gw.mode.runner": "Runner",
@@ -50,7 +49,6 @@
     "gw.mode_title": "Game mode",
     "gw.mode_note": "New builds use this mode. Published levels keep the mode they were made with.",
     "gw.mode_saved": "This game is now a {mode} game.",
-
     "gw.rules_title": "Rules for the whole game",
     "gw.rules_help": "These work in every level. Blocks can bring rules too.",
     "gw.rules_empty": "No game-wide rules yet. Write one below.",
@@ -79,7 +77,6 @@
     "gw.rule_from_block": "From the block {name}",
     "gw.rules_sheet": "Open the full rules sheet",
     "gw.rules_sheet_help": "The rules sheet has physics, abilities, lives, theme and music, and can apply changes to every level.",
-
     "gw.rule.when_start": "When a life starts",
     "gw.rule.when_key_space": "When you press space",
     "gw.rule.when_key_action": "When you press E or Enter",
@@ -119,7 +116,6 @@
     "gw.rule.do_sound": "play the {name} sound",
     "gw.rule.do_shake": "shake the screen",
     "gw.rule.once": "Once per life",
-
     "gw.blocks_help": "Blocks are the things in your levels: creatures, ledges, dangers, pickups and rule packs.",
     "gw.blocks_add": "Add from the blocks library",
     "gw.blocks_make": "Make a block",
@@ -132,7 +128,6 @@
     "gw.style_paper": "Paper",
     "gw.style_paper_help": "The paper every level of this game is drawn on.",
     "gw.style_theme_saved": "The game uses {theme} now.",
-
     "gw.st.templates_title": "Templates",
     "gw.st.templates_sub": "Start from an idea. Every template opens with words you can change.",
     "gw.st.blank": "Start from a blank page",
@@ -184,7 +179,6 @@
     "gw.st.use_on_game": "Use on a game",
     "gw.st.theme_pick_help": "That game will use {theme}.",
     "gw.st.theme_done": "{game} uses {theme} now.",
-
     "legend.colors": "Marker colours",
     "legend.symbols": "Paper symbols",
     "legend.help": "Draw a symbol on paper and the scanner places that block there.",
@@ -197,7 +191,6 @@
     "legend.saved": "{name} has a paper symbol now.",
     "legend.symbol_of": "Symbol for {name}",
     "legend.empty": "This game has no blocks or creatures yet.",
-
     "send.download": "Download",
     "send.download_what": "Download {what}",
     "send.tiled": "Tiled maps",
@@ -219,7 +212,6 @@
     "send.mc_ok": "Done! Sent {n} commands to Minecraft.",
     "send.mc_failed": "Minecraft did not answer. Check the server, port and password.",
     "send.mc_untranslated": "These parts have no Minecraft version yet:",
-
     "blocks.title": "Blocks",
     "blocks.sub": "Creatures, ledges, dangers and rule packs anyone can put in their game.",
     "blocks.make": "Make a block",
@@ -287,7 +279,6 @@
     "blocks.change": "Change it",
     "blocks.for_game": "Picking blocks for {game}.",
     "blocks.back_to_game": "Back to the game",
-
     "studio4.title": "Make a block",
     "studio4.title_version": "Change {name}",
     "studio4.title_remix": "Remix {name}",
@@ -380,6 +371,10 @@
     "studio4.rules_reading": "Reading your rules…",
     "studio4.rules_cards": "What the game will do",
     "studio4.rules_offline": "Rule cards appear when the rule reader is switched on.",
-    "studio4.rule_other": "The builder reads “{text}” with your drawing."
+    "studio4.rule_other": "The builder reads “{text}” with your drawing.",
+    "blocks.kind_object": "Drawn object",
+    "blocks.kind_theme": "Theme",
+    "blocks.does_theme": "A look for your whole game: {name}",
+    "blocks.parts_n": "{n} behaviours and rules"
   }
 }

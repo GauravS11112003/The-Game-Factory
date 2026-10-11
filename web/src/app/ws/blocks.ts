@@ -16,17 +16,45 @@ import { ruleCard } from './logic.ts';
 import { pickGame, type MyGame } from './pick_game.ts';
 import { BLOCK_KINDS, blockDoes, filterBlocks, sortBlocks } from './model.ts';
 import { btn, calm, chip, emptyState, enc, iconBtn, inkThumb, note, notReady, pickRow } from './ui.ts';
+import { renderDrawing } from '../../studio/theme/render.ts';
+import type { StudioTheme } from '../../core/types.gen.ts';
 
 const PAGE = 24;
 
 /** A block's art (its own ink), or its first letter on paper when it has none (a rules-only block). */
-export function blockArt(b: Pick<BlockCard, 'name' | 'art'>, w = 180, hgt = 128): HTMLElement {
+export function blockArt(b: Pick<BlockCard, 'name' | 'art' | 'object' | 'theme'>, w = 180, hgt = 128): HTMLElement {
+  if (b.object?.drawing?.strokes?.length) return h('div', { class: 'bk-art bk-art-studio' }, fitCanvas(renderDrawing(b.object.drawing, null), w, hgt, kidText(b.name)));
+  if (b.theme) return h('div', { class: 'bk-art bk-art-studio' }, themeSwatch(b.theme, w, hgt));
   if (b.art?.strokes.length) {
     const c = inkThumb(b.art.strokes, w, hgt);
     c.setAttribute('aria-label', kidText(b.name));
     return h('div', { class: 'bk-art' }, c);
   }
   return h('div', { class: 'bk-art', 'aria-hidden': 'true' }, h('span', { class: 'bk-art-empty' }, (b.name.trim()[0] ?? '?').toUpperCase()));
+}
+
+/** A Studio drawing scaled to fit a w × h card (v6 object blocks). */
+function fitCanvas(src: HTMLCanvasElement, w: number, hgt: number, label: string): HTMLCanvasElement {
+  const c = h('canvas', { class: 'w-ink-thumb', width: w * 2, height: hgt * 2, role: 'img', 'aria-label': label });
+  c.style.width = `${w}px`;
+  c.style.height = `${hgt}px`;
+  const ctx = c.getContext('2d');
+  if (ctx) {
+    ctx.fillStyle = '#FBF6EA';
+    ctx.fillRect(0, 0, c.width, c.height);
+    const k = Math.min((c.width * 0.8) / src.width, (c.height * 0.8) / src.height, 3);
+    ctx.drawImage(src, (c.width - src.width * k) / 2, (c.height - src.height * k) / 2, src.width * k, src.height * k);
+  }
+  return c;
+}
+
+/** A theme block's card: its background colour with the palette as dots and its name in the theme's ink. */
+function themeSwatch(th: StudioTheme, w: number, hgt: number): HTMLElement {
+  const p = th.palette ?? {};
+  const dots = ['ink', 'accent', 'accent2', 'good', 'danger'].map((k) => p[k]).filter(Boolean) as string[];
+  return h('div', { class: 'bk-theme', style: `width:${w}px;height:${hgt}px;background:${p.bg ?? th.background?.colors?.[0] ?? '#f6f1e7'};color:${p.ink ?? '#1f1b18'}` },
+    h('span', { class: 'bk-theme-name' }, kidText(th.name ?? '')),
+    h('span', { class: 'bk-theme-dots' }, ...dots.map((c) => h('span', { style: `background:${c}` }))));
 }
 
 export function usesText(n: number | undefined): string {

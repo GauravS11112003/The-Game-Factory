@@ -297,3 +297,9 @@ a.st-title:hover { text-decoration: underline; }
 /* the draw screen's game mode chooser (screens/draw.ts) */
 .draw-mode-wrap { gap: 6px; }
 .draw-mode { font: inherit; min-height: 32px; padding: 3px 8px; border: 2px solid var(--ink, #1f1b18); border-radius: 10px; background: #fff; color: var(--ink, #1f1b18); }
+
+/* v6 Studio blocks: drawn objects and themes (docs/v6/CONTRACTS_V6.md §9) */
+.bk-theme { display: flex; flex-direction: column; justify-content: space-between; padding: 12px 14px; border-radius: 10px; box-sizing: border-box; }
+.bk-theme-name { font-family: 'Patrick Hand', cursive; font-size: 1.25rem; }
+.bk-theme-dots { display: flex; gap: 6px; }
+.bk-theme-dots > span { width: 18px; height: 18px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5); }

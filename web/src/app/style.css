@@ -989,3 +989,12 @@ body.ws[data-screen='draw'] .ws-ask, body.ws[data-screen='preview'] .ws-ask, bod
 .ws-name-in { max-width: 460px; font-size: 1.15rem; padding: 10px 14px; }
 .ws-mode-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
 .ws-mode-sketch { width: 100%; height: 64px; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; background: var(--paper-2); border-radius: 8px; }
+
+/* v6 home: the "what do you want to make?" box (docs/v6/CONTRACTS_V6.md §9) */
+.ws-make-wrap { display: flex; flex-direction: column; gap: 14px; }
+.ws-make { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 16px; border: 1.5px solid var(--ws-line-2, #d8d0c2);
+  border-radius: 16px; background: var(--paper, #fffdf8); box-shadow: 0 6px 24px rgba(31, 27, 24, 0.06); }
+.ws-make:focus-within { border-color: var(--blue, #2e86ab); box-shadow: 0 0 0 4px rgba(46, 134, 171, 0.14); }
+.ws-make .ico { width: 22px; height: 22px; color: var(--blue, #2e86ab); flex: none; }
+.ws-make .ws-make-in { flex: 1; min-width: 0; border: 0; outline: 0; box-shadow: none; background: transparent; font: inherit; font-size: 1.08rem; padding: 10px 0; border-radius: 0; }
+.ws-tiles.two { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }

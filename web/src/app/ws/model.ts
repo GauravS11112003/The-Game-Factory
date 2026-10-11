@@ -9,10 +9,10 @@ import type {
 import { DIFFICULTY } from '../../core/params.ts';
 import type { LevelCard } from '../api.ts';
 import { bindingTag, chipBinding, DEFAULT_CHIP_OPTIONS } from '../../editor/chips.ts';
-import { fmtClock, t } from '../messages.ts';
+import { fmtClock, kidText, t } from '../messages.ts';
 
 export const MODES: readonly GameMode[] = ['platformer', 'topdown', 'runner', 'flappy'];
-export const BLOCK_KINDS: readonly BlockKind[] = ['creature', 'platform', 'hazard', 'pickup', 'prop', 'player', 'rules'];
+export const BLOCK_KINDS: readonly BlockKind[] = ['object', 'theme', 'creature', 'platform', 'hazard', 'pickup', 'prop', 'player', 'rules'];
 
 export function isMode(v: unknown): v is GameMode {
   return typeof v === 'string' && (MODES as readonly string[]).includes(v);
@@ -162,7 +162,13 @@ export function behaviourText(b: Behavior | null | undefined): string | null {
 }
 
 /** "walks · spiky · 2 rules" for a block card. */
-export function blockDoes(b: Pick<BlockCard, 'kind' | 'behavior' | 'spiky' | 'logic'>): string {
+export function blockDoes(b: Pick<BlockCard, 'kind' | 'behavior' | 'spiky' | 'logic' | 'object' | 'theme'>): string {
+  if (b.kind === 'theme') return t('blocks.does_theme', { name: b.theme?.name ?? '' });
+  if (b.kind === 'object') {
+    const o = b.object;
+    const n = (o?.behaviors?.length ?? 0) + (o?.rules?.length ?? 0);
+    return [o?.kind ? kidText(o.kind) : t('blocks.kind_object'), n ? t('blocks.parts_n', { n }) : ''].filter(Boolean).join(' · ');
+  }
   const bits: string[] = [];
   const does = behaviourText(b.behavior);
   if (does) bits.push(does);

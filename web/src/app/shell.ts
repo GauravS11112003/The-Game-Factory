@@ -5,7 +5,7 @@
  * Editor screens (draw, preview, play) shrink the sidebar to an icon rail; phones get a menu button.
  */
 import { api } from './api.ts';
-import { creativeApi } from './creative/api.ts';
+import { isStudioId, studioHref, studioTitle } from './studio_cards.ts';
 import { collabChrome } from './collab/bell.ts';
 import { h, icon } from './dom.ts';
 import { kidText, t } from './messages.ts';
@@ -97,7 +97,7 @@ export function mountShell(): Shell {
     e.preventDefault();
     const text = ask.value.trim();
     ask.value = '';
-    navigate(text ? `#/prompt?text=${encodeURIComponent(text)}` : '#/prompt');
+    navigate(text ? `#/new?text=${encodeURIComponent(text)}` : '#/new');
   };
   const menuBtn = h('button', { type: 'button', class: 'tool ws-menu', 'aria-label': t('nav.menu'), 'aria-expanded': 'false' }, pathIcon('menu'));
   const setOpen = (open: boolean): void => {
@@ -123,7 +123,6 @@ export function mountShell(): Shell {
 
   const top = h('header', { class: 'app-head ws-top' },
     menuBtn, askForm,
-    h('a', { class: 'pill small ws-scan', href: '#/scan' }, icon('camera'), h('span', null, t('home.scan'))),
     collabChrome(),
     mute);
 
@@ -140,12 +139,13 @@ export function mountShell(): Shell {
       return;
     }
     recentBox.replaceChildren(h('span', { class: 'ws-sec-label' }, t('nav.recent')),
-      ...list.map((r) => h('a', { class: 'ws-recent-row', href: `#/game/${encodeURIComponent(r.id)}`, title: r.title ?? '' },
+      ...list.map((r) => h('a', { class: 'ws-recent-row', href: isStudioId(r.id) ? studioHref(r.id) : `#/game/${encodeURIComponent(r.id)}`, title: r.title ?? '' },
         h('span', { class: 'ws-recent-dot', 'aria-hidden': 'true' }), h('span', { class: 'ws-label' }, kidText(r.title || titles.get(r.id) || t('ui.untitled'))))));
     for (const r of list) {
       if (r.title || titles.has(r.id) || asked.has(r.id)) continue;
       asked.add(r.id);
-      api.game(r.id).then((g) => shell.rememberTitles([{ id: g.id, title: g.title }]), () => null);
+      if (isStudioId(r.id)) void studioTitle(r.id).then((title) => title && shell.rememberTitles([{ id: r.id, title }]));
+      else api.game(r.id).then((g) => shell.rememberTitles([{ id: g.id, title: g.title }]), () => null);
     }
   }
 
@@ -182,16 +182,10 @@ export function mountShell(): Shell {
       }
     },
     refreshStatus() {
-      Promise.allSettled([api.health(), creativeApi.status()]).then(([hl, art]) => {
-        const rows: HTMLElement[] = [];
-        if (hl.status === 'fulfilled') {
-          rows.push(dot(hl.value.worker === 'ok' ? 'ok' : 'warn', t(hl.value.worker === 'ok' ? 'nav.builder_ok' : 'nav.builder_down')));
-          rows.push(dot(hl.value.llm === 'live' ? 'ok' : 'warn', t(hl.value.llm === 'live' ? 'nav.claude_live' : 'nav.claude_off')));
-        } else rows.push(dot('bad', t('nav.builder_down')));
-        const p = art.status === 'fulfilled' ? art.value.provider : 'none';
-        rows.push(dot(p === 'firefly' ? 'ok' : 'warn', t('nav.art', { provider: t(p === 'firefly' ? 'nav.art_firefly' : p === 'claude-svg' ? 'nav.art_claude' : 'nav.art_none') })));
-        status.replaceChildren(...rows);
-      }, () => null);
+      // v6: the copilot is what matters (no AI art, no tile builder for Studio games)
+      api.health().then((hl) => {
+        status.replaceChildren(dot(hl.llm === 'live' ? 'ok' : 'warn', t(hl.llm === 'live' ? 'nav.copilot_live' : 'nav.copilot_off')));
+      }, () => status.replaceChildren(dot('bad', t('nav.copilot_down'))));
     },
   };
 

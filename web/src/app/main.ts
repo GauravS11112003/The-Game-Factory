@@ -17,14 +17,11 @@ import { t } from './messages.ts';
 import { parseHash } from './router.ts';
 import { mountShell } from './shell.ts';
 import { devScreen } from './screens/dev.ts';
-import { drawScreen } from './screens/draw.ts';
 import { homeScreen } from './screens/home.ts';
 import { libraryScreen } from './screens/library.ts';
 import { playScreen } from './screens/play.ts';
 import { previewScreen } from './screens/preview.ts';
-import { promptScreen } from './screens/prompt.ts';
 import { rulesScreen } from './screens/rules.ts';
-import { scanScreen } from './screens/scan.ts';
 import { treeScreen } from './screens/tree.ts';
 // v3 lane 5: collaboration screens, the bell and identity
 import { activityScreen } from './screens/activity.ts';
@@ -75,8 +72,8 @@ function route(): void {
   const [first = '', second] = path;
   shell.setActive(path);
   document.body.dataset.screen = first || 'home';
-  if (first === 'game' && second) shell.noteGame(second);
-  if (first === 'draw' || first === 'scan' || first === 'prompt' || (first === 'game' && path[2] === 'library')) captureContribution(query);
+  if ((first === 'game' || first === 'studio') && second) shell.noteGame(second);
+  if (first === 'game' && path[2] === 'library') captureContribution(query);
   try {
     switch (first) {
       case '':
@@ -107,12 +104,13 @@ function route(): void {
       case 'g':
         if (second) cleanup = studioPlayScreen(app, second, query);
         break;
+      // v6 (docs/v6/CONTRACTS_V6.md §9): paper scanning, computer vision and the colour-role level drawing are gone;
+      // old links land in the Studio's new game screen (a described game goes to the copilot).
       case 'draw':
-        cleanup = drawScreen(app, query);
-        break;
       case 'scan':
-        cleanup = scanScreen(app, query);
-        break;
+      case 'prompt':
+        location.replace(query.get('text') ? `#/new?text=${encodeURIComponent(query.get('text') ?? '')}` : '#/new');
+        return;
       case 'preview':
         if (second) cleanup = previewScreen(app, second, query);
         else app.append(card(null, h('p', null, t('error.not_found'))));
@@ -130,9 +128,6 @@ function route(): void {
         break;
       case 'library':
         cleanup = libraryScreen(app, second ?? query.get('game'));
-        break;
-      case 'prompt':
-        cleanup = promptScreen(app, query);
         break;
       case 'golden':
         cleanup = soon('ui.golden')(app);
