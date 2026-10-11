@@ -217,7 +217,7 @@ export function normalizeArt(a: unknown): SArt {
   const x = isObj(a) ? a : {};
   const variants = normalizeVariants(x.variants);
   const terrain = normalizeTerrain(x.terrain);
-  let chosen = typeof x.chosen === 'string' && variants.some((v) => v.id === x.chosen) ? x.chosen : variants[0]?.id ?? null;
+  let chosen: string | null = typeof x.chosen === 'string' && variants.some((v) => v.id === x.chosen) ? x.chosen : variants[0]?.id ?? null;
   if (!variants.length) chosen = null;
   const use = x.use === 'ai' && (variants.length > 0 || !!terrain) ? 'ai' : 'sketch';
   return { use, chosen, variants, terrain, asked: x.asked === true };

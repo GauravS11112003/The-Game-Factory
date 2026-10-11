@@ -6,6 +6,7 @@ import { renderDrawing } from '../theme/render.ts';
 import { drawOrder } from '../model/doc.ts';
 import type { SDoc, SObj, SScene } from '../model/types.ts';
 import { drawBackground } from './render.ts';
+import { sceneLookCanvas, startRegion } from './look.ts';
 
 /** base64 (no data: prefix) of a canvas as PNG. */
 export function pngBase64(c: HTMLCanvasElement): string {
@@ -76,10 +77,18 @@ export function thumbnailCanvas(doc: SDoc): HTMLCanvasElement {
   return sceneCanvas(doc, sc, 480, 270, { region });
 }
 
-export function thumbnailBlob(doc: SDoc): Promise<Blob | null> {
+/** The thumbnail as a PNG, in the game's current look (v7: AI art and the backdrop once their images have loaded). */
+export async function thumbnailBlob(doc: SDoc): Promise<Blob | null> {
+  let c: HTMLCanvasElement;
+  try {
+    const sc = doc.scenes[0];
+    c = await sceneLookCanvas(doc, sc, 480, 270, { region: startRegion(sc.world) });
+  } catch {
+    try { c = thumbnailCanvas(doc); } catch { return null; }
+  }
   return new Promise((resolve) => {
     try {
-      thumbnailCanvas(doc).toBlob((b) => resolve(b), 'image/png');
+      c.toBlob((b) => resolve(b), 'image/png');
     } catch {
       resolve(null);
     }

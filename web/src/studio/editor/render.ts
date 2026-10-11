@@ -86,7 +86,7 @@ function paperBackground(ctx: CanvasRenderingContext2D, theme: StudioTheme, worl
 
 // ---- object bitmaps ----------------------------------------------------------------------------------------------
 
-interface Cached { drawing: SDrawing; theme: StudioTheme; bucket: number; canvas: HTMLCanvasElement; map: Map<string, string> | null }
+interface Cached { drawing: SDrawing; theme: StudioTheme; bucket: number; canvas: HTMLCanvasElement; map: Map<string, string> | null; polish: boolean }
 
 const MAX_TEX = 4096;
 
@@ -106,8 +106,11 @@ export class BitmapCache {
     return map;
   }
 
-  /** The object's drawing at roughly `pxPerUnit` device px per local unit (bucketed so zooming re-renders rarely). */
-  get(o: SObj, theme: StudioTheme, pxPerUnit: number, doc?: SDoc): { canvas: HTMLCanvasElement; bucket: number } | null {
+  /**
+   * The object's drawing at roughly `pxPerUnit` device px per local unit (bucketed so zooming re-renders rarely).
+   * `polish`: the v7 cleaned-up sketch of the game look (lane R2's renderDrawing option; ignored before it lands).
+   */
+  get(o: SObj, theme: StudioTheme, pxPerUnit: number, doc?: SDoc, polish = false): { canvas: HTMLCanvasElement; bucket: number } | null {
     if (!o.drawing.strokes.length) return null;
     const size = Math.max(o.drawing.w, o.drawing.h, 1);
     let bucket = 2 ** (Math.round(Math.log2(Math.max(0.05, pxPerUnit)) * 2) / 2);
@@ -115,11 +118,12 @@ export class BitmapCache {
     const key = o.id;
     const c = this.map.get(key);
     const recolorMap = this.recolorFor(doc, theme);
-    if (c && c.drawing === o.drawing && c.theme === theme && c.map === recolorMap && Math.abs(c.bucket - bucket) < 1e-6) return c;
+    if (c && c.drawing === o.drawing && c.theme === theme && c.map === recolorMap && c.polish === polish && Math.abs(c.bucket - bucket) < 1e-6) return c;
     const maxW = o.drawing.strokes.reduce((m, s) => Math.max(m, s.width ?? 6), 0);
     const ws = theme.stroke?.width_scale ?? 1;
-    const canvas = themeRender.renderDrawing(o.drawing, theme, { scale: bucket, pad: Math.ceil((maxW * ws * 0.75 + 14) * bucket), recolorMap });
-    const next = { drawing: o.drawing, theme, bucket, canvas, map: recolorMap };
+    const opts = { scale: bucket, pad: Math.ceil((maxW * ws * 0.75 + 14 + (polish ? 10 : 0)) * bucket), recolorMap, ...(polish ? { polish: true } : {}) };
+    const canvas = themeRender.renderDrawing(o.drawing, theme, opts as themeRender.RenderOpts);
+    const next = { drawing: o.drawing, theme, bucket, canvas, map: recolorMap, polish };
     this.map.set(key, next);
     return next;
   }

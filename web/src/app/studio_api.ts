@@ -6,7 +6,8 @@
  */
 import blankTemplate from '../../../shared/studio/templates/blank.json';
 import type {
-  GameDoc, RecognizeBody, RecognizeResult, StudioChatBody, StudioChatResult, StudioGameCard, StudioTheme, ThemeBody, ThemeResult,
+  ArtDirectionBody, ArtDirectionResult, ArtJobBody, ArtJobStatus, GameDoc, RecognizeBody, RecognizeResult, StudioChatBody, StudioChatResult,
+  StudioGameCard, StudioTheme, ThemeBody, ThemeResult,
 } from '../core/types.gen.ts';
 import { authHeaders, currentPlayer } from './identity.ts';
 import { hasMessage } from './messages.ts';
@@ -20,21 +21,31 @@ export class StudioApiError extends Error {
   readonly args: Record<string, unknown>;
   /** The server could not be reached, or does not have the Studio yet: work locally. */
   readonly offline: boolean;
-  constructor(status: number, key: string, args: Record<string, unknown> = {}, offline = false) {
+  /** Our own clock ran out waiting for the answer (the server may still be working on it). */
+  readonly timeout: boolean;
+  constructor(status: number, key: string, args: Record<string, unknown> = {}, offline = false, timeout = false) {
     super(`studio ${status} ${key}`);
     this.name = 'StudioApiError';
     this.status = status;
     this.key = key;
     this.args = args;
     this.offline = offline;
+    this.timeout = timeout;
   }
 }
 
+/** Could not reach the server (timeouts count: callers that care ask `isTimeout` first). */
 export const isOffline = (e: unknown): boolean => e instanceof StudioApiError && e.offline;
+export const isTimeout = (e: unknown): boolean => e instanceof StudioApiError && e.timeout;
+export const isAborted = (e: unknown): boolean => e instanceof StudioApiError && e.key === 'studio.aborted';
+
+/** Copilot answers can take a while with big asks (the server allows 150 s): wait a little longer than that. */
+export const CHAT_TIMEOUT_MS = 170_000;
 
 async function req<T>(method: string, path: string, body?: unknown, o: { timeoutMs?: number; signal?: AbortSignal } = {}): Promise<T> {
   const ctl = new AbortController();
-  const timer = window.setTimeout(() => ctl.abort(), o.timeoutMs ?? 20000);
+  let timedOut = false;
+  const timer = window.setTimeout(() => { timedOut = true; ctl.abort(); }, o.timeoutMs ?? 20000);
   o.signal?.addEventListener('abort', () => ctl.abort());
   let r: Response;
   try {
@@ -49,6 +60,8 @@ async function req<T>(method: string, path: string, body?: unknown, o: { timeout
     }
     r = await fetch(`${BASE}${path}`, { method, headers, body: payload, signal: ctl.signal });
   } catch {
+    if (timedOut) throw new StudioApiError(0, 'studio.timeout', {}, true, true);
+    if (o.signal?.aborted) throw new StudioApiError(0, 'studio.aborted', {}, false);
     throw new StudioApiError(0, 'studio.offline', {}, true);
   } finally {
     window.clearTimeout(timer);
@@ -70,9 +83,10 @@ async function req<T>(method: string, path: string, body?: unknown, o: { timeout
 }
 
 export const studioApi = {
-  createGame: (body: { template?: string; title?: string; doc?: GameDoc }): Promise<GameDoc> => req<GameDoc>('POST', '/games', body),
-  game: (id: string): Promise<GameDoc> => req<GameDoc>('GET', `/games/${enc(id)}`),
-  saveGame: (doc: GameDoc): Promise<GameDoc> => req<GameDoc>('PUT', `/games/${enc(doc.id)}`, doc),
+  createGame: (body: { template?: string; title?: string; doc?: GameDoc }): Promise<GameDoc> => req<GameDoc>('POST', '/games', body, { timeoutMs: 60000 }),
+  game: (id: string): Promise<GameDoc> => req<GameDoc>('GET', `/games/${enc(id)}`, undefined, { timeoutMs: 45000 }),
+  // docs carry AI art (SVGs) since v7: give big saves time
+  saveGame: (doc: GameDoc): Promise<GameDoc> => req<GameDoc>('PUT', `/games/${enc(doc.id)}`, doc, { timeoutMs: 60000 }),
   games: (which: 'mine' | 'published'): Promise<{ games: StudioGameCard[] }> => req('GET', `/games?${which}=1`),
   publish: (id: string, published: boolean): Promise<StudioGameCard> => req<StudioGameCard>('POST', `/games/${enc(id)}/publish`, { published }),
   putThumbnail: (id: string, png: Blob): Promise<void> => req<void>('PUT', `/games/${enc(id)}/thumbnail`, png),
@@ -83,8 +97,13 @@ export const studioApi = {
   templates: (): Promise<{ templates: StudioGameCard[] }> => req('GET', '/templates', undefined, { timeoutMs: 8000 }),
   template: (id: string): Promise<GameDoc> => req<GameDoc>('GET', `/templates/${enc(id)}`),
   themes: (): Promise<{ themes: StudioTheme[] }> => req('GET', '/themes', undefined, { timeoutMs: 8000 }),
-  chat: (body: StudioChatBody, signal?: AbortSignal): Promise<StudioChatResult> => req<StudioChatResult>('POST', '/chat', body, { timeoutMs: 60000, signal }),
-  recognize: (body: RecognizeBody): Promise<RecognizeResult> => req<RecognizeResult>('POST', '/recognize', body, { timeoutMs: 20000 }),
+  chat: (body: StudioChatBody, signal?: AbortSignal): Promise<StudioChatResult> => req<StudioChatResult>('POST', '/chat', body, { timeoutMs: CHAT_TIMEOUT_MS, signal }),
+  recognize: (body: RecognizeBody): Promise<RecognizeResult> => req<RecognizeResult>('POST', '/recognize', body, { timeoutMs: 40000 }),
+  /** v7: the game-wide art direction (+ a matching theme) from the maker's words or the game itself. Slow on purpose. */
+  artDirection: (body: ArtDirectionBody, signal?: AbortSignal): Promise<ArtDirectionResult> => req<ArtDirectionResult>('POST', '/art/direction', body, { timeoutMs: 240000, signal }),
+  /** v7: start drawing objects (and the backdrop); poll `artJob` for the results. */
+  startArtJob: (body: ArtJobBody): Promise<{ id: string }> => req<{ id: string }>('POST', '/art/jobs', body, { timeoutMs: 90000 }),
+  artJob: (id: string): Promise<ArtJobStatus> => req<ArtJobStatus>('GET', `/art/jobs/${enc(id)}`, undefined, { timeoutMs: 20000 }),
   theme: (body: ThemeBody): Promise<ThemeResult> => req<ThemeResult>('POST', '/theme', body, { timeoutMs: 15000 }),
 };
 
@@ -131,9 +150,20 @@ export function newLocalId(): string {
 
 export interface Draft { doc: GameDoc; savedAt: number; synced: boolean }
 
+/** The doc without its AI art (SVGs), for when a full draft does not fit in this device's storage. */
+function draftWithoutArt(doc: GameDoc): GameDoc {
+  const { backdrop: _b, ...rest } = doc;
+  return { ...rest, scenes: doc.scenes.map((sc) => ({ ...sc, objects: (sc.objects ?? []).map((o) => { const { art: _a, ...ob } = o; return ob; }) })) as GameDoc['scenes'] };
+}
+
 export function saveDraft(doc: GameDoc, synced: boolean): boolean {
   try {
-    localStorage.setItem(DRAFT + doc.id, JSON.stringify({ doc, savedAt: Date.now(), synced } satisfies Draft));
+    try {
+      localStorage.setItem(DRAFT + doc.id, JSON.stringify({ doc, savedAt: Date.now(), synced } satisfies Draft));
+    } catch {
+      // AI art can be several MB: keep the drawing and the rules on this device at least (the server has the art)
+      localStorage.setItem(DRAFT + doc.id, JSON.stringify({ doc: draftWithoutArt(doc), savedAt: Date.now(), synced } satisfies Draft));
+    }
     if (isLocalId(doc.id)) {
       const list = localGames().filter((g) => g.id !== doc.id);
       localStorage.setItem(LOCAL_INDEX, JSON.stringify([{ id: doc.id, title: doc.title ?? '' }, ...list].slice(0, 30)));

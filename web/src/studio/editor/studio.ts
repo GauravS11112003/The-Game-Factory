@@ -12,7 +12,7 @@ import { GROUP_GAP_MS, joinsGroup, type PendingGroup } from './grouping.ts';
 
 export type Tool = 'select' | 'pen' | 'line' | 'rect' | 'circle' | 'eraser' | 'hand';
 
-export type ChangeKind = 'doc' | 'selection' | 'scene' | 'tool' | 'asks' | 'history' | 'pending' | 'finished' | 'pick';
+export type ChangeKind = 'doc' | 'selection' | 'scene' | 'tool' | 'asks' | 'history' | 'pending' | 'finished' | 'pick' | 'art' | 'preview';
 
 export interface Change {
   kind: ChangeKind;
@@ -36,6 +36,11 @@ export class Studio {
   pending: PendingGroup | null = null;
   /** The canvas is waiting for the maker to click an object (attach a joint, pick a target). */
   pick: PickRequest | null = null;
+  /** v7: objects Claude is drawing right now (they shimmer on the canvas), and whether the backdrop is being painted. */
+  artBusy = new Set<string>();
+  backdropBusy = false;
+  /** v7: a look shown on the canvas without changing the doc (hovering a tile in the compare card). */
+  preview: { id: string; variant: string | null } | null = null;
   readonly history = new History<SDoc>(200, 900);
   private listeners = new Set<(c: Change) => void>();
   private pendingTimer = 0;
@@ -274,6 +279,22 @@ export class Studio {
 
   removeObjects(ids: string[]): void {
     this.commit(withoutObjects(this.doc, this.sceneId, ids), { label: 'delete' });
+  }
+
+  // ---- v7 art state ----
+
+  setArtBusy(ids: Iterable<string>, backdrop: boolean): void {
+    const next = new Set(ids);
+    if (next.size === this.artBusy.size && [...next].every((id) => this.artBusy.has(id)) && backdrop === this.backdropBusy) return;
+    this.artBusy = next;
+    this.backdropBusy = backdrop;
+    this.emit({ kind: 'art' });
+  }
+
+  setPreview(p: { id: string; variant: string | null } | null): void {
+    if (p?.id === this.preview?.id && p?.variant === this.preview?.variant) return;
+    this.preview = p;
+    this.emit({ kind: 'preview' });
   }
 
   // ---- picking an object on the canvas ----
