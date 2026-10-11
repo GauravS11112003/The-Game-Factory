@@ -3,7 +3,7 @@
  * In the preview (not playing) swaps are immediate with morphs; while playing they wait for the next respawn, pause
  * or goal ("never yank the level mid-jump", §3.11). Mode changes (preview ↔ test, ghosts) remount.
  */
-import type { CellXY, GameRules, InkDoc, LevelSkin, LevelV2, Morph, RectCells } from '../core/types.gen.ts';
+import type { CellXY, GameRules, InkDoc, LevelSkin, LevelV2, Morph, RectCells, Replay } from '../core/types.gen.ts';
 import { mountGame, type GameHandle, type GhostOption, type OverlaySpec } from '../engine/index.ts';
 import type { GameEvent, ScreenRect } from '../engine/types.ts';
 import { h, prefersReducedMotion } from './dom.ts';
@@ -34,7 +34,7 @@ export class Stage {
   private underlay = false;
   failed = false;
 
-  constructor(cls = 'stage') {
+  constructor(cls = 'stage', private raceOptions?: { resume?: Replay }) {
     this.host = h('div', { class: 'stage-host' });
     this.el = h('div', { class: cls }, this.host);
   }
@@ -169,6 +169,7 @@ export class Stage {
         mode: this.mode, rules: s.rules ?? s.level.rules, startAt: this.startAt, ghosts: this.ghosts.length ? this.ghosts : undefined,
         overlays: this.overlays, audio: this.mode !== 'preview' && !store.flag('muted'), reducedMotion: prefersReducedMotion(),
         record: this.mode === 'play', underlay: this.underlay,
+        race: !!this.raceOptions, startPaused: !!this.raceOptions, raceResume: this.raceOptions?.resume,
       });
       for (const l of this.listeners) this.handle.on(l.ev, l.fn);
     } catch (e) {

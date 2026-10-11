@@ -17,7 +17,7 @@ from app import db_v2
 from app.build.bridge import CorePool, set_pool
 from app.config import get_settings_v2
 from app.routers.v2 import (
-    builds, drafts, games, health, levels, library, packs, prompts, rules, runs, stubs, transfer,
+    builds, drafts, games, health, imagine, levels, library, packs, prompts, rules, runs, stubs, transfer,
 )
 
 log = logging.getLogger("dal.v2")
@@ -26,13 +26,13 @@ BOOT_DELAY_S = 1.5  # let uvicorn finish starting (and the first requests throug
 
 
 # v3 routers (docs/v3/CONTRACTS_V3.md); each is optional so a half-built module never takes the API down.
-V3_MODULES = ("creative", "collab", "live", "export_phaser")
+V3_MODULES = ("creative", "collab", "live", "export_phaser", "matches")
 
 
 def mount(app: FastAPI) -> None:
     import importlib
 
-    modules = [health, builds, drafts, levels, runs, games, library, rules, prompts, packs, transfer]
+    modules = [health, builds, drafts, imagine, levels, runs, games, library, rules, prompts, packs, transfer]
     for name in V3_MODULES:
         try:
             modules.append(importlib.import_module(f"app.routers.v2.{name}"))

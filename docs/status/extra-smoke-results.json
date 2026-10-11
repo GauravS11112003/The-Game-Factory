@@ -1,0 +1,481 @@
+[
+  {
+    "method": "POST",
+    "path": "/api/v2/builds",
+    "status": 202,
+    "ms": 42,
+    "summary": [
+      "build_id",
+      "draft_id",
+      "events_url"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/builds/b_104dd918/events",
+    "status": 200,
+    "ms": 3763,
+    "summary": {
+      "bytes": 247324,
+      "content_type": "text/event-stream; charset=utf-8"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/drafts/d_77dc7d3d",
+    "status": 200,
+    "ms": 17,
+    "summary": [
+      "state",
+      "events"
+    ]
+  },
+  {
+    "check": "Canvas build with valid InkWorld",
+    "state": "done",
+    "tiers": [
+      {
+        "stage": "ink",
+        "tier": "faithful",
+        "reach": true,
+        "solvable": true,
+        "C": 0,
+        "flags": [
+          {
+            "id": "trivial.0",
+            "code": "trivial",
+            "severity": "info",
+            "frame": null,
+            "at": null,
+            "object_ids": [],
+            "fix_cids": [],
+            "message_key": "flag.trivial",
+            "args": {
+              "C": 0
+            }
+          },
+          {
+            "id": "unreachable_drawn.1",
+            "code": "unreachable_drawn",
+            "severity": "warn",
+            "frame": null,
+            "at": [
+              43.5,
+              17
+            ],
+            "object_ids": [
+              "o3"
+            ],
+            "fix_cids": [],
+            "message_key": "flag.unreachable_drawn",
+            "args": {
+              "what": "platform"
+            }
+          }
+        ]
+      },
+      {
+        "stage": "ink",
+        "tier": "polished",
+        "reach": true,
+        "solvable": true,
+        "C": 0,
+        "flags": [
+          {
+            "id": "trivial.0",
+            "code": "trivial",
+            "severity": "info",
+            "frame": null,
+            "at": null,
+            "object_ids": [],
+            "fix_cids": [],
+            "message_key": "flag.trivial",
+            "args": {
+              "C": 0
+            }
+          },
+          {
+            "id": "unreachable_drawn.1",
+            "code": "unreachable_drawn",
+            "severity": "warn",
+            "frame": null,
+            "at": [
+              43.5,
+              17
+            ],
+            "object_ids": [
+              "o3"
+            ],
+            "fix_cids": [],
+            "message_key": "flag.unreachable_drawn",
+            "args": {
+              "what": "platform"
+            }
+          }
+        ]
+      },
+      {
+        "stage": "ink",
+        "tier": "normal",
+        "reach": true,
+        "solvable": true,
+        "C": 0.0013,
+        "flags": [
+          {
+            "id": "trivial.0",
+            "code": "trivial",
+            "severity": "info",
+            "frame": null,
+            "at": null,
+            "object_ids": [],
+            "fix_cids": [],
+            "message_key": "flag.trivial",
+            "args": {
+              "C": 0
+            }
+          }
+        ]
+      },
+      {
+        "stage": "ink",
+        "tier": "hard",
+        "reach": false,
+        "solvable": true,
+        "C": 0.0013,
+        "flags": [
+          {
+            "id": "trivial.0",
+            "code": "trivial",
+            "severity": "info",
+            "frame": null,
+            "at": null,
+            "object_ids": [],
+            "fix_cids": [],
+            "message_key": "flag.trivial",
+            "args": {
+              "C": 0
+            }
+          }
+        ]
+      },
+      {
+        "stage": "designed",
+        "tier": "faithful",
+        "reach": true,
+        "solvable": true,
+        "C": 0,
+        "flags": [
+          {
+            "id": "trivial.0",
+            "code": "trivial",
+            "severity": "info",
+            "frame": null,
+            "at": null,
+            "object_ids": [],
+            "fix_cids": [],
+            "message_key": "flag.trivial",
+            "args": {
+              "C": 0
+            }
+          },
+          {
+            "id": "unreachable_drawn.1",
+            "code": "unreachable_drawn",
+            "severity": "warn",
+            "frame": null,
+            "at": [
+              43.5,
+              17
+            ],
+            "object_ids": [
+              "o3"
+            ],
+            "fix_cids": [],
+            "message_key": "flag.unreachable_drawn",
+            "args": {
+              "what": "platform"
+            }
+          }
+        ]
+      },
+      {
+        "stage": "designed",
+        "tier": "polished",
+        "reach": true,
+        "solvable": true,
+        "C": 0,
+        "flags": [
+          {
+            "id": "trivial.0",
+            "code": "trivial",
+            "severity": "info",
+            "frame": null,
+            "at": null,
+            "object_ids": [],
+            "fix_cids": [],
+            "message_key": "flag.trivial",
+            "args": {
+              "C": 0
+            }
+          },
+          {
+            "id": "unreachable_drawn.1",
+            "code": "unreachable_drawn",
+            "severity": "warn",
+            "frame": null,
+            "at": [
+              43.5,
+              17
+            ],
+            "object_ids": [
+              "o3"
+            ],
+            "fix_cids": [],
+            "message_key": "flag.unreachable_drawn",
+            "args": {
+              "what": "platform"
+            }
+          }
+        ]
+      },
+      {
+        "stage": "designed",
+        "tier": "normal",
+        "reach": true,
+        "solvable": true,
+        "C": 0.0013,
+        "flags": [
+          {
+            "id": "trivial.0",
+            "code": "trivial",
+            "severity": "info",
+            "frame": null,
+            "at": null,
+            "object_ids": [],
+            "fix_cids": [],
+            "message_key": "flag.trivial",
+            "args": {
+              "C": 0
+            }
+          }
+        ]
+      },
+      {
+        "stage": "designed",
+        "tier": "hard",
+        "reach": false,
+        "solvable": true,
+        "C": 0.0013,
+        "flags": [
+          {
+            "id": "trivial.0",
+            "code": "trivial",
+            "severity": "info",
+            "frame": null,
+            "at": null,
+            "object_ids": [],
+            "fix_cids": [],
+            "message_key": "flag.trivial",
+            "args": {
+              "C": 0
+            }
+          }
+        ]
+      }
+    ],
+    "errors": []
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/builds/b_104dd918/events?last=23",
+    "status": 200,
+    "ms": 7,
+    "summary": {
+      "bytes": 69,
+      "content_type": "text/event-stream; charset=utf-8"
+    }
+  },
+  {
+    "check": "Canvas build with valid InkWorld SSE resume",
+    "only_done": true
+  },
+  {
+    "method": "POST",
+    "path": "/api/v2/drafts/d_77dc7d3d/dial",
+    "status": 200,
+    "ms": 5,
+    "summary": [
+      "tier"
+    ]
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v2/drafts/d_77dc7d3d/edits",
+    "status": 200,
+    "ms": 3650,
+    "summary": [
+      "tiers",
+      "rejected"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v2/levels",
+    "status": 200,
+    "ms": 527,
+    "summary": [
+      "level"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/levels/lvl_53fa476c",
+    "status": 200,
+    "ms": 5,
+    "summary": [
+      "level",
+      "stats",
+      "children"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/levels/lvl_53fa476c/export",
+    "status": 200,
+    "ms": 7,
+    "summary": {
+      "bytes": 4631,
+      "content_type": "application/zip"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/api/v2/import",
+    "status": 201,
+    "ms": 43,
+    "summary": [
+      "ids",
+      "game_id",
+      "levels",
+      "types",
+      "rejected"
+    ]
+  },
+  {
+    "check": "Import response",
+    "result": {
+      "ids": {
+        "lvl_53fa476c": "lvl_970dee49"
+      },
+      "game_id": null,
+      "levels": [
+        "lvl_970dee49"
+      ],
+      "types": [],
+      "rejected": []
+    }
+  },
+  {
+    "check": "Bot trace re-simulation",
+    "verdict": {
+      "finished": true,
+      "frames": 625,
+      "time_ms": 10417,
+      "deaths": 0,
+      "coins": 13,
+      "big_coins": 2,
+      "stamps": [
+        "clear",
+        "collector",
+        "speedy",
+        "flawless"
+      ],
+      "reason": "ok",
+      "accepted": true,
+      "mismatch": [],
+      "win_frame": 625,
+      "input_frames": 625
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/api/v2/levels/lvl_53fa476c/runs",
+    "status": 200,
+    "ms": 14,
+    "summary": [
+      "run_id",
+      "verified",
+      "rank",
+      "pb",
+      "stamps",
+      "vs",
+      "time_ms",
+      "deaths",
+      "coins",
+      "big_coins",
+      "board",
+      "older"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/runs/run_ecf3ff51f7",
+    "status": 200,
+    "ms": 5,
+    "summary": [
+      "run",
+      "replay",
+      "level_id",
+      "sprite_url"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v2/levels/lvl_53fa476c/runs",
+    "status": 200,
+    "ms": 10,
+    "summary": [
+      "run_id",
+      "verified",
+      "rank",
+      "pb",
+      "stamps",
+      "vs",
+      "time_ms",
+      "deaths",
+      "coins",
+      "big_coins",
+      "board",
+      "older"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/levels/lvl_53fa476c/runs",
+    "status": 200,
+    "ms": 5,
+    "summary": [
+      "runs",
+      "board",
+      "creator",
+      "level_version"
+    ]
+  },
+  {
+    "check": "Two-client WebSocket drawing",
+    "hello": true,
+    "sync": true,
+    "ack": {
+      "type": "ack",
+      "n": 1,
+      "seq": 1
+    },
+    "broadcast_stroke_ids": [
+      "audit_s1"
+    ]
+  },
+  {
+    "check": "WebSocket reconnect",
+    "stroke_present": true
+  }
+]

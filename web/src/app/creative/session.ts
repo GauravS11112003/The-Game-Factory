@@ -79,7 +79,7 @@ export function budgetResting(s: CreativeStatus | null): boolean {
 // ---- the game-level toggle ------------------------------------------------------------------------------------------
 
 export function gameLife(gameId: string | null): boolean {
-  return get<boolean>(`life.${gameId ?? '_'}`) !== false;
+  return get<boolean>(`life.${gameId ?? '_'}`) === true;
 }
 
 export function setGameLife(gameId: string | null, on: boolean): void {

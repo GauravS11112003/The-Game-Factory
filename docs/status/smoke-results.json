@@ -1,0 +1,1140 @@
+[
+  {
+    "method": "GET",
+    "path": "/api/health",
+    "status": 200,
+    "ms": 22,
+    "summary": [
+      "ok",
+      "llm"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/health",
+    "status": 200,
+    "ms": 12,
+    "summary": [
+      "ok",
+      "llm",
+      "worker",
+      "core_version",
+      "budget_left_usd"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/creative/status",
+    "status": 200,
+    "ms": 25,
+    "summary": [
+      "provider",
+      "budget_left_usd",
+      "x_budget_usd",
+      "x_background_removal"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/games",
+    "status": 200,
+    "ms": 13,
+    "summary": [
+      "games",
+      "levels",
+      "sort"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/games?sort=hot",
+    "status": 200,
+    "ms": 16,
+    "summary": [
+      "games",
+      "levels",
+      "sort"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/games?sort=hard",
+    "status": 200,
+    "ms": 11,
+    "summary": [
+      "games",
+      "levels",
+      "sort"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/games?sort=cleared",
+    "status": 200,
+    "ms": 9,
+    "summary": [
+      "games",
+      "levels",
+      "sort"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/collab/activity",
+    "status": 200,
+    "ms": 29,
+    "summary": [
+      "items"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/collab/jams",
+    "status": 200,
+    "ms": 6,
+    "summary": [
+      "jams"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/live/setup_audit/info",
+    "status": 200,
+    "ms": 6,
+    "summary": [
+      "room",
+      "exists",
+      "players",
+      "strokes",
+      "title",
+      "lan_hosts"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/games/game_world",
+    "status": 200,
+    "ms": 124,
+    "summary": [
+      "game",
+      "levels",
+      "remixes"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/games/game_world/rules",
+    "status": 200,
+    "ms": 8,
+    "summary": [
+      "version",
+      "physics_profile",
+      "profile_hash",
+      "abilities",
+      "lives",
+      "hearts",
+      "theme",
+      "music",
+      "timer_pressure",
+      "camera",
+      "default_dial",
+      "default_band",
+      "player_type"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/games/game_world/library",
+    "status": 200,
+    "ms": 6,
+    "summary": [
+      "types"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/games/game_world/export",
+    "status": 200,
+    "ms": 115,
+    "summary": {
+      "bytes": 77513,
+      "content_type": "application/zip"
+    }
+  },
+  {
+    "check": "game_world ZIP export",
+    "entries": 9
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/collab/games/game_world/bible",
+    "status": 200,
+    "ms": 11,
+    "summary": [
+      "game_id",
+      "pitch",
+      "mechanics_text",
+      "style_id",
+      "style_prompt",
+      "style_image_path",
+      "style_image_url",
+      "starter_type_ids",
+      "open_for",
+      "updated_at",
+      "updated_by",
+      "owner_id",
+      "viewer"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/collab/games/game_world/members",
+    "status": 200,
+    "ms": 6,
+    "summary": [
+      "members",
+      "author",
+      "viewer"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/collab/games/game_world/submissions",
+    "status": 200,
+    "ms": 16,
+    "summary": [
+      "submissions",
+      "viewer"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/collab/games/game_world/quests",
+    "status": 200,
+    "ms": 30,
+    "summary": [
+      "quests",
+      "viewer"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/collab/games/game_world/credits",
+    "status": 200,
+    "ms": 7,
+    "summary": [
+      "game_id",
+      "contributors",
+      "authors"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/games/game_classic",
+    "status": 200,
+    "ms": 9,
+    "summary": [
+      "game",
+      "levels",
+      "remixes"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/games/game_classic/rules",
+    "status": 200,
+    "ms": 4,
+    "summary": [
+      "version",
+      "physics_profile",
+      "profile_hash",
+      "abilities",
+      "lives",
+      "hearts",
+      "theme",
+      "music",
+      "timer_pressure",
+      "camera",
+      "default_dial",
+      "default_band",
+      "player_type"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/games/game_classic/library",
+    "status": 200,
+    "ms": 4,
+    "summary": [
+      "types"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/games/game_classic/export",
+    "status": 200,
+    "ms": 18,
+    "summary": {
+      "bytes": 15658,
+      "content_type": "application/zip"
+    }
+  },
+  {
+    "check": "game_classic ZIP export",
+    "entries": 12
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/collab/games/game_classic/bible",
+    "status": 200,
+    "ms": 6,
+    "summary": [
+      "game_id",
+      "pitch",
+      "mechanics_text",
+      "style_id",
+      "style_prompt",
+      "style_image_path",
+      "style_image_url",
+      "starter_type_ids",
+      "open_for",
+      "updated_at",
+      "updated_by",
+      "owner_id",
+      "viewer"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/collab/games/game_classic/members",
+    "status": 200,
+    "ms": 6,
+    "summary": [
+      "members",
+      "author",
+      "viewer"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/collab/games/game_classic/submissions",
+    "status": 200,
+    "ms": 11,
+    "summary": [
+      "submissions",
+      "viewer"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/collab/games/game_classic/quests",
+    "status": 200,
+    "ms": 7,
+    "summary": [
+      "quests",
+      "viewer"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/collab/games/game_classic/credits",
+    "status": 200,
+    "ms": 8,
+    "summary": [
+      "game_id",
+      "contributors",
+      "authors"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/levels/lvl_world_l1",
+    "status": 200,
+    "ms": 7,
+    "summary": [
+      "level",
+      "stats",
+      "children"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/levels/lvl_world_l2",
+    "status": 200,
+    "ms": 10,
+    "summary": [
+      "level",
+      "stats",
+      "children"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/levels/lvl_world_l3",
+    "status": 200,
+    "ms": 7,
+    "summary": [
+      "level",
+      "stats",
+      "children"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/levels/lvl_world_l4",
+    "status": 200,
+    "ms": 7,
+    "summary": [
+      "level",
+      "stats",
+      "children"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/levels/lvl_world_l5",
+    "status": 200,
+    "ms": 7,
+    "summary": [
+      "level",
+      "stats",
+      "children"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/levels/lvl_starter1",
+    "status": 200,
+    "ms": 24,
+    "summary": [
+      "level",
+      "stats",
+      "children"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/levels/lvl_starter2",
+    "status": 200,
+    "ms": 25,
+    "summary": [
+      "level",
+      "stats",
+      "children"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/levels/lvl_starter3",
+    "status": 200,
+    "ms": 8,
+    "summary": [
+      "level",
+      "stats",
+      "children"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/levels/lvl_remix_maya",
+    "status": 200,
+    "ms": 8,
+    "summary": [
+      "level",
+      "stats",
+      "children"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/levels/lvl_remix_sam",
+    "status": 200,
+    "ms": 8,
+    "summary": [
+      "level",
+      "stats",
+      "children"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/levels/lvl_world_l1/tree",
+    "status": 200,
+    "ms": 18,
+    "summary": [
+      "root",
+      "current",
+      "truncated"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/levels/lvl_world_l1/runs",
+    "status": 200,
+    "ms": 8,
+    "summary": [
+      "runs",
+      "board",
+      "creator",
+      "level_version"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v2/packs",
+    "status": 201,
+    "ms": 10,
+    "summary": [
+      "pack_id",
+      "pdf_url",
+      "k",
+      "kind"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/templates/pack/p4a2cc4c3.pdf",
+    "status": 200,
+    "ms": 156,
+    "summary": {
+      "bytes": 205750,
+      "content_type": "application/pdf"
+    }
+  },
+  {
+    "check": "new PDF",
+    "pdf_magic": true
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/packs/p4a2cc4c3",
+    "status": 200,
+    "ms": 11,
+    "summary": [
+      "pack_id",
+      "kind",
+      "k",
+      "game_id",
+      "parent_id",
+      "pdf_url",
+      "created_at",
+      "sheets",
+      "scanned",
+      "playable",
+      "complete"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v2/packs",
+    "status": 201,
+    "ms": 9,
+    "summary": [
+      "pack_id",
+      "pdf_url",
+      "k",
+      "kind"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/templates/pack/pcd0dfcf5.pdf",
+    "status": 200,
+    "ms": 203,
+    "summary": {
+      "bytes": 696755,
+      "content_type": "application/pdf"
+    }
+  },
+  {
+    "check": "remix PDF",
+    "pdf_magic": true
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/packs/pcd0dfcf5",
+    "status": 200,
+    "ms": 6,
+    "summary": [
+      "pack_id",
+      "kind",
+      "k",
+      "game_id",
+      "parent_id",
+      "pdf_url",
+      "created_at",
+      "sheets",
+      "scanned",
+      "playable",
+      "complete"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v2/packs",
+    "status": 201,
+    "ms": 5,
+    "summary": [
+      "pack_id",
+      "pdf_url",
+      "k",
+      "kind"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/templates/pack/p4b8d311b.pdf",
+    "status": 200,
+    "ms": 60,
+    "summary": {
+      "bytes": 229184,
+      "content_type": "application/pdf"
+    }
+  },
+  {
+    "check": "extend PDF",
+    "pdf_magic": true
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/packs/p4b8d311b",
+    "status": 200,
+    "ms": 4,
+    "summary": [
+      "pack_id",
+      "kind",
+      "k",
+      "game_id",
+      "parent_id",
+      "pdf_url",
+      "created_at",
+      "sheets",
+      "scanned",
+      "playable",
+      "complete"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/templates/rules.pdf?game=game_world",
+    "status": 200,
+    "ms": 65,
+    "summary": {
+      "bytes": 262105,
+      "content_type": "application/pdf"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/templates/library.pdf?game=game_world",
+    "status": 200,
+    "ms": 61,
+    "summary": {
+      "bytes": 315243,
+      "content_type": "application/pdf"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/api/v2/library/interpret",
+    "status": 200,
+    "ms": 6,
+    "summary": [
+      "spec",
+      "behavior",
+      "source"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v2/builds",
+    "status": 400,
+    "ms": 10,
+    "summary": [
+      "message_key",
+      "args"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v2/builds",
+    "status": 202,
+    "ms": 6,
+    "summary": [
+      "build_id",
+      "draft_id",
+      "events_url"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/builds/b_4de5d94d/events",
+    "status": 200,
+    "ms": 2974,
+    "summary": {
+      "bytes": 231257,
+      "content_type": "text/event-stream; charset=utf-8"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/drafts/d_4296b4c3",
+    "status": 200,
+    "ms": 22,
+    "summary": [
+      "state",
+      "events"
+    ]
+  },
+  {
+    "check": "Paper build synthetic fixture",
+    "state": "done",
+    "tiers": [
+      {
+        "stage": "ink",
+        "tier": "faithful",
+        "reach": true,
+        "solvable": true,
+        "C": 0,
+        "flags": [
+          {
+            "id": "trivial.0",
+            "code": "trivial",
+            "severity": "info",
+            "frame": null,
+            "at": null,
+            "object_ids": [],
+            "fix_cids": [],
+            "message_key": "flag.trivial",
+            "args": {
+              "C": 0
+            }
+          }
+        ]
+      },
+      {
+        "stage": "ink",
+        "tier": "polished",
+        "reach": true,
+        "solvable": true,
+        "C": 0,
+        "flags": [
+          {
+            "id": "trivial.0",
+            "code": "trivial",
+            "severity": "info",
+            "frame": null,
+            "at": null,
+            "object_ids": [],
+            "fix_cids": [],
+            "message_key": "flag.trivial",
+            "args": {
+              "C": 0
+            }
+          }
+        ]
+      },
+      {
+        "stage": "ink",
+        "tier": "normal",
+        "reach": false,
+        "solvable": true,
+        "C": 0,
+        "flags": [
+          {
+            "id": "trivial.0",
+            "code": "trivial",
+            "severity": "info",
+            "frame": null,
+            "at": null,
+            "object_ids": [],
+            "fix_cids": [],
+            "message_key": "flag.trivial",
+            "args": {
+              "C": 0
+            }
+          }
+        ]
+      },
+      {
+        "stage": "ink",
+        "tier": "hard",
+        "reach": false,
+        "solvable": true,
+        "C": 0,
+        "flags": [
+          {
+            "id": "trivial.0",
+            "code": "trivial",
+            "severity": "info",
+            "frame": null,
+            "at": null,
+            "object_ids": [],
+            "fix_cids": [],
+            "message_key": "flag.trivial",
+            "args": {
+              "C": 0
+            }
+          }
+        ]
+      },
+      {
+        "stage": "designed",
+        "tier": "faithful",
+        "reach": true,
+        "solvable": true,
+        "C": 0,
+        "flags": [
+          {
+            "id": "trivial.0",
+            "code": "trivial",
+            "severity": "info",
+            "frame": null,
+            "at": null,
+            "object_ids": [],
+            "fix_cids": [],
+            "message_key": "flag.trivial",
+            "args": {
+              "C": 0
+            }
+          }
+        ]
+      },
+      {
+        "stage": "designed",
+        "tier": "polished",
+        "reach": true,
+        "solvable": true,
+        "C": 0,
+        "flags": [
+          {
+            "id": "trivial.0",
+            "code": "trivial",
+            "severity": "info",
+            "frame": null,
+            "at": null,
+            "object_ids": [],
+            "fix_cids": [],
+            "message_key": "flag.trivial",
+            "args": {
+              "C": 0
+            }
+          }
+        ]
+      },
+      {
+        "stage": "designed",
+        "tier": "normal",
+        "reach": false,
+        "solvable": true,
+        "C": 0,
+        "flags": [
+          {
+            "id": "trivial.0",
+            "code": "trivial",
+            "severity": "info",
+            "frame": null,
+            "at": null,
+            "object_ids": [],
+            "fix_cids": [],
+            "message_key": "flag.trivial",
+            "args": {
+              "C": 0
+            }
+          }
+        ]
+      },
+      {
+        "stage": "designed",
+        "tier": "hard",
+        "reach": false,
+        "solvable": true,
+        "C": 0,
+        "flags": [
+          {
+            "id": "trivial.0",
+            "code": "trivial",
+            "severity": "info",
+            "frame": null,
+            "at": null,
+            "object_ids": [],
+            "fix_cids": [],
+            "message_key": "flag.trivial",
+            "args": {
+              "C": 0
+            }
+          }
+        ]
+      }
+    ],
+    "errors": []
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/builds/b_4de5d94d/events?last=25",
+    "status": 200,
+    "ms": 97,
+    "summary": {
+      "bytes": 69,
+      "content_type": "text/event-stream; charset=utf-8"
+    }
+  },
+  {
+    "check": "Paper build synthetic fixture SSE resume",
+    "only_done": true
+  },
+  {
+    "method": "POST",
+    "path": "/api/v2/prompt-levels",
+    "status": 202,
+    "ms": 6,
+    "summary": [
+      "build_id",
+      "draft_id",
+      "events_url"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/builds/b_9776d44d/events",
+    "status": 200,
+    "ms": 2237,
+    "summary": {
+      "bytes": 147475,
+      "content_type": "text/event-stream; charset=utf-8"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/drafts/d_7b42354e",
+    "status": 200,
+    "ms": 24,
+    "summary": [
+      "state",
+      "events"
+    ]
+  },
+  {
+    "check": "Offline prompt build",
+    "state": "done",
+    "tiers": [
+      {
+        "stage": "ink",
+        "tier": "faithful",
+        "reach": true,
+        "solvable": true,
+        "C": 0,
+        "flags": [
+          {
+            "id": "trivial.0",
+            "code": "trivial",
+            "severity": "info",
+            "frame": null,
+            "at": null,
+            "object_ids": [],
+            "fix_cids": [],
+            "message_key": "flag.trivial",
+            "args": {
+              "C": 0
+            }
+          }
+        ]
+      },
+      {
+        "stage": "ink",
+        "tier": "polished",
+        "reach": true,
+        "solvable": true,
+        "C": 0,
+        "flags": [
+          {
+            "id": "trivial.0",
+            "code": "trivial",
+            "severity": "info",
+            "frame": null,
+            "at": null,
+            "object_ids": [],
+            "fix_cids": [],
+            "message_key": "flag.trivial",
+            "args": {
+              "C": 0
+            }
+          }
+        ]
+      },
+      {
+        "stage": "ink",
+        "tier": "normal",
+        "reach": true,
+        "solvable": true,
+        "C": 0.0107,
+        "flags": [
+          {
+            "id": "trivial.0",
+            "code": "trivial",
+            "severity": "info",
+            "frame": null,
+            "at": null,
+            "object_ids": [],
+            "fix_cids": [],
+            "message_key": "flag.trivial",
+            "args": {
+              "C": 0.01
+            }
+          }
+        ]
+      },
+      {
+        "stage": "ink",
+        "tier": "hard",
+        "reach": false,
+        "solvable": true,
+        "C": 0.0107,
+        "flags": [
+          {
+            "id": "trivial.0",
+            "code": "trivial",
+            "severity": "info",
+            "frame": null,
+            "at": null,
+            "object_ids": [],
+            "fix_cids": [],
+            "message_key": "flag.trivial",
+            "args": {
+              "C": 0.01
+            }
+          }
+        ]
+      },
+      {
+        "stage": "designed",
+        "tier": "faithful",
+        "reach": true,
+        "solvable": true,
+        "C": 0,
+        "flags": [
+          {
+            "id": "trivial.0",
+            "code": "trivial",
+            "severity": "info",
+            "frame": null,
+            "at": null,
+            "object_ids": [],
+            "fix_cids": [],
+            "message_key": "flag.trivial",
+            "args": {
+              "C": 0
+            }
+          }
+        ]
+      },
+      {
+        "stage": "designed",
+        "tier": "polished",
+        "reach": true,
+        "solvable": true,
+        "C": 0,
+        "flags": [
+          {
+            "id": "trivial.0",
+            "code": "trivial",
+            "severity": "info",
+            "frame": null,
+            "at": null,
+            "object_ids": [],
+            "fix_cids": [],
+            "message_key": "flag.trivial",
+            "args": {
+              "C": 0
+            }
+          }
+        ]
+      },
+      {
+        "stage": "designed",
+        "tier": "normal",
+        "reach": true,
+        "solvable": true,
+        "C": 0.0107,
+        "flags": [
+          {
+            "id": "trivial.0",
+            "code": "trivial",
+            "severity": "info",
+            "frame": null,
+            "at": null,
+            "object_ids": [],
+            "fix_cids": [],
+            "message_key": "flag.trivial",
+            "args": {
+              "C": 0.01
+            }
+          }
+        ]
+      },
+      {
+        "stage": "designed",
+        "tier": "hard",
+        "reach": false,
+        "solvable": true,
+        "C": 0.0107,
+        "flags": [
+          {
+            "id": "trivial.0",
+            "code": "trivial",
+            "severity": "info",
+            "frame": null,
+            "at": null,
+            "object_ids": [],
+            "fix_cids": [],
+            "message_key": "flag.trivial",
+            "args": {
+              "C": 0.01
+            }
+          }
+        ]
+      }
+    ],
+    "errors": []
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/builds/b_9776d44d/events?last=25",
+    "status": 200,
+    "ms": 16,
+    "summary": {
+      "bytes": 69,
+      "content_type": "text/event-stream; charset=utf-8"
+    }
+  },
+  {
+    "check": "Offline prompt build SSE resume",
+    "only_done": true
+  },
+  {
+    "method": "POST",
+    "path": "/api/v2/games/game_world/rules/check",
+    "status": 200,
+    "ms": 37853,
+    "summary": [
+      "affected",
+      "checked",
+      "rules"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/games/game_world/export/phaser",
+    "status": 200,
+    "ms": 5011,
+    "summary": {
+      "bytes": 1093318,
+      "content_type": "application/zip"
+    }
+  },
+  {
+    "check": "Phaser export",
+    "entries": 149,
+    "contains_prebuilt": true
+  }
+]

@@ -217,8 +217,8 @@ export function mountGame(el: HTMLElement, level: LevelV2, ink: InkDoc | LevelIn
     input,
     muted: mixer?.muted ?? true,
     onMute: () => scene?.toggleMute(),
-    onRestart: () => scene?.restart('checkpoint'),
-    onPause: () => (scene?.isPaused ? scene.resumeGame() : scene?.pauseGame()),
+    onRestart: () => { if (!o.race) scene?.restart('checkpoint'); },
+    onPause: () => { if (!o.race) scene?.isPaused ? scene.resumeGame() : scene?.pauseGame(); },
     music: mixer ? { available: music0, on: mixer.musicEnabled, onToggle: () => scene?.toggleMusicSetting() } : undefined,
     credits: o.credits !== false,
   });

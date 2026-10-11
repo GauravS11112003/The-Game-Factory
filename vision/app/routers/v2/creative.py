@@ -160,7 +160,7 @@ async def post_job(request: Request) -> Any:
         job, cached = jobs.create_object_job(
             data, doc_id=doc_id, stroke_ids=_json_field(form.get("stroke_ids"), []),
             bbox_cells=_json_field(form.get("bbox_cells"), None), game_id=game_id,
-            hint=_str_field(form.get("hint")), by=_player_name(request))
+            hint=_str_field(form.get("hint")), by=_player_name(request), provider=_str_field(form.get("provider")))
     except CreativeError as e:
         return _cerr(e)
     return JSONResponse({"job_id": job["job_id"], "cached": cached, "job": jobs.public(job)}, status_code=202)
@@ -298,7 +298,7 @@ async def post_backdrop(request: Request) -> Any:
         theme = sanitize.text((cstyle.bible_of(game_id) or {}).get("pitch"), 200)
     try:
         job, cached = jobs.create_backdrop_job(doc_id=doc_id, game_id=game_id, theme=theme or None,
-                                               screens=body.get("screens"), by=_player_name(request))
+                                               screens=body.get("screens"), by=_player_name(request), provider=body.get("provider"))
     except CreativeError as e:
         return _cerr(e)
     return JSONResponse({"job_id": job["job_id"], "cached": cached}, status_code=202)

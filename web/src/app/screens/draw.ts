@@ -9,6 +9,7 @@ import type { GameRules, InkDoc, InkStroke, LevelV2, LibraryType, Rig } from '..
 import { setHandoff } from '../handoff.ts';
 import { api, ApiError } from '../api.ts';
 import { h, icon, toast } from '../dom.ts';
+import { briefCard } from '../game-brief.ts';
 import { kidText, t } from '../messages.ts';
 import { navigate } from '../router.ts';
 import { DEFAULT_RULES } from '../rules.ts';
@@ -16,15 +17,19 @@ import { store } from '../store.ts';
 import { createEditor, emptyDoc, isDoc, type EditorDocData, type EditorHandle } from '../../editor/index.ts';
 import { liveDoc, liveRoom, mountLive } from '../live/index.ts';
 import { mountCreativeDraw } from '../creative/index.ts';
+import { imagineSketch, sketchApproach } from '../sketch-approach.ts';
+import { graphicsOption } from '../graphics-option.ts';
+import { gameLife, setGameLife } from '../creative/session.ts';
 
-async function loadRemix(levelId: string): Promise<{ doc: EditorDocData; level: LevelV2 }> {
+async function loadRemix(levelId: string, editable = false): Promise<{ doc: EditorDocData; level: LevelV2 }> {
   const { level } = await api.level(levelId);
   let t0 = 1;
   const strokes: InkStroke[] = (level.ink?.strokes ?? []).map((s) => ({ ...s, origin: 'parent', t: t0++ }));
   const doc = emptyDoc({
     screens: level.world.screens, strokes, gameId: level.game_id ?? null,
     parent: { level_id: level.id, version: level.version, level_hash: level.meta.level_hash },
-    title: kidText(level.title ? `${level.title} (remix)` : ''), character: level.ink?.character?.strokes ?? [],
+    parentUnlocked: editable,
+    title: kidText(level.title ? editable ? level.title : `${level.title} (remix)` : ''), character: level.ink?.character?.strokes ?? [],
     nextId: t0 + 1, parentStrokes: strokes.map((s) => ({ ...s, pts: s.pts.map((p) => [p[0], p[1]] as [number, number]), w: s.w.slice() })),
   });
   return { doc, level };
@@ -53,7 +58,8 @@ export function drawScreen(root: HTMLElement, query: URLSearchParams): () => voi
 
   void (async () => {
     const gameId = query.get('game');
-    const remix = query.get('remix');
+    const edit = query.get('edit');
+    const remix = edit ?? query.get('remix');
     const from = query.get('from');
     let doc: EditorDocData;
     let parentLevel: LevelV2 | null = null;
@@ -61,8 +67,8 @@ export function drawScreen(root: HTMLElement, query: URLSearchParams): () => voi
     const live = liveAt ? liveDoc(liveAt, gameId) : null; // live drawing: #/draw?live=<room>
     try {
       if (live) doc = live.doc;
-      else if (remix) ({ doc, level: parentLevel } = await loadRemix(remix));
-      else if (from) doc = store.editorDoc() ?? (from === 'prompt' ? null : store.draftDoc(from)) ?? emptyDoc({ gameId });
+      else if (remix) ({ doc, level: parentLevel } = await loadRemix(remix, !!edit));
+      else if (from) doc = (from === 'prompt' ? null : store.draftDoc(from)) ?? store.editorDoc() ?? emptyDoc({ gameId });
       else if (query.get('new')) doc = emptyDoc({ gameId });
       else {
         const cur = store.editorDoc();
@@ -85,22 +91,48 @@ export function drawScreen(root: HTMLElement, query: URLSearchParams): () => voi
         navigate(`#/draw?new=1${doc.gameId ? `&game=${encodeURIComponent(doc.gameId)}` : ''}`);
       },
     }, icon('plus'), t('editor.new_drawing'));
-    const head = h('div', { class: 'draw-head row wrap' }, h('h2', { class: 'marker-underline' }, t(remix ? 'editor.remix_title' : 'editor.title')), title, fresh);
+    const head = h('div', { class: 'draw-head row wrap' }, h('h2', { class: 'marker-underline' }, t(edit ? 'game.edit_level' : remix ? 'editor.remix_title' : 'editor.title')), title, fresh);
     const host = h('div', { class: 'editor-host' });
     const isDraft = doc.strokes.some((s) => s.origin === 'draft');
     const note = isDraft ? h('p', { class: 'draft-note small' }, icon('pencil'), ' ', t('prompt.draft_note'))
-      : doc.parent ? h('p', { class: 'draft-note small' }, icon('remix'), ' ', t('remix.editor_note')) : '';
-    wrap.append(head, note, host);
+      : doc.parent && !edit ? h('p', { class: 'draft-note small' }, icon('remix'), ' ', t('remix.editor_note')) : '';
+    const context = h('textarea', { class: 'text', rows: 3, maxLength: 4000,
+      placeholder: t('imagine.context_placeholder'), value: doc.imaginationContext ?? '', id: 'sketch-context' });
+    const contextField = h('div', { class: 'sketch-context' }, h('label', { htmlFor: context.id }, t('imagine.context')), context);
+    const graphics = graphicsOption(doc.betterGraphics ?? gameLife(doc.gameId), selected => {
+      setGameLife(doc.gameId, selected);
+      if (editor) { editor.doc.data.betterGraphics = selected; store.setEditorDoc(editor.doc.snapshot(), live?.slot); }
+      if (!imagineSketch() && editor) { offCreative?.(); offCreative = mountCreativeDraw({ editor, root: host, rules }); }
+    });
+    doc.betterGraphics = graphics.input.checked;
+    setGameLife(doc.gameId, graphics.input.checked);
+    const approach = sketchApproach((enabled) => {
+      editor?.setFreeSketch(enabled);
+      offCreative?.();
+      offCreative = !enabled && editor ? mountCreativeDraw({ editor, root: host, rules }) : null;
+    });
+    wrap.append(head, note, approach, graphics.element, contextField, host);
+    if (doc.gameId) {
+      api.game(doc.gameId).then((game) => {
+        if (!disposed && game.brief) host.before(briefCard(game.brief));
+      }).catch(() => undefined);
+    }
 
     editor = createEditor(host, {
-      doc, rules, canSaveToLibrary: !!doc.gameId, parentLevel,
+      doc, rules, canSaveToLibrary: !!doc.gameId, parentLevel, freeSketch: imagineSketch(),
       onChange: (d) => store.setEditorDoc(d, live?.slot),
-      onSubmit: async (d: EditorDocData, ink: InkDoc) => submit({ ...d, title: title.value.trim() }, ink, rules, editor?.lastBuild() ?? null),
+      onSubmit: async (d: EditorDocData, ink: InkDoc) => submitDrawing({ ...d, title: title.value.trim() }, ink, rules, editor?.lastBuild() ?? null),
       onSaveCharacter: doc.gameId ? (strokes, rig) => saveCharacter(doc.gameId!, strokes, rig) : undefined,
     });
     title.oninput = () => editor?.doc.setMeta({ title: title.value });
+    context.oninput = () => {
+      if (editor) {
+        editor.doc.data.imaginationContext = context.value;
+        store.setEditorDoc(editor.doc.snapshot(), live?.slot);
+      }
+    };
     offLive = mountLive({ head, editor, join: live && liveAt ? { room: liveAt, role: live.role } : null });
-    offCreative = mountCreativeDraw({ editor, root: host, rules });
+    if (!imagineSketch()) offCreative = mountCreativeDraw({ editor, root: host, rules });
     const stampId = query.get('stamp');
     if (doc.gameId) {
       api.library(doc.gameId).then((lib) => {
@@ -123,7 +155,19 @@ export function drawScreen(root: HTMLElement, query: URLSearchParams): () => voi
   };
 }
 
-async function submit(doc: EditorDocData, ink: InkDoc, rules: GameRules, local: { level: LevelV2; ink: InkDoc } | null): Promise<void> {
+export async function submitDrawing(doc: EditorDocData, ink: InkDoc, rules: GameRules, local: { level: LevelV2; ink: InkDoc } | null): Promise<void> {
+  if (imagineSketch()) {
+    try {
+      const draft = await api.imagineGame({ ink, game_id: doc.gameId, context: doc.imaginationContext ?? '', title: doc.title,
+        better_graphics: doc.betterGraphics ?? false });
+      store.setDraftDoc(draft.draft_id, doc);
+      navigate(`#/imagine/${encodeURIComponent(draft.draft_id)}`);
+    } catch (e) {
+      toast(t(e instanceof ApiError ? e.messageKey : 'imagine.failed'));
+      throw e;
+    }
+    return;
+  }
   const form = new FormData();
   form.append('ink', new Blob([JSON.stringify(ink)], { type: 'application/json' }), 'ink.json');
   if (ink.typed_rules.length) form.append('typed_rules', JSON.stringify(ink.typed_rules));

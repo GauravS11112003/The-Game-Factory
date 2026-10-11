@@ -145,6 +145,14 @@ def resolve(game_id: str | None) -> dict[str, Any] | None:
     rec = current(game_id, bible)
     text = sanitize.text(bible.get("style_prompt"), DESCRIPTION_CHARS) or sanitize.text(
         (rec or {}).get("description"), DESCRIPTION_CHARS)
+    if game_id and not text:
+        from app import db_v2
+        from app.game_brief import resolve_guidance
+
+        game = db_v2.get_game(game_id)
+        guidance = ((game or {}).get("rules") or {}).get("guidance") or resolve_guidance((game or {}).get("brief"))
+        if guidance:
+            text = sanitize.text(guidance["style_prompt"], DESCRIPTION_CHARS)
     path: Path | None = Path(rec["image_path"]) if rec and rec.get("image_path") else None
     if path is None and isinstance(bible.get("style_image_path"), str):  # a bible style this store doesn't hold
         bp = Path(bible["style_image_path"])

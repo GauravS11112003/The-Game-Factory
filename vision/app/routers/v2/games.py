@@ -20,6 +20,8 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
 from app import db_v2
+from app.collab import db as collab_db, identity, members
+from app.game_brief import rules_from_brief
 from app.build.orchestrator import default_rules
 from app.mind import moderate, sanitize
 from app.routers.v2.runs import thumbnail_url
@@ -105,12 +107,41 @@ def _sequence(rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[di
 
 
 @router.get("/games")
-def list_games(sort: str = Query(default="new")) -> Any:
+def list_games(request: Request, sort: str = Query(default="new"), scope: str = Query(default="all"),
+               author: str = Query(default="", max_length=16), ids: str = Query(default="", max_length=6000)) -> Any:
     if sort not in SORTS:
         return err(400, "error.bad_request", {"field": "sort"})
+    if scope not in ("all", "mine"):
+        return err(400, "error.bad_request", {"field": "scope"})
+    player = identity.player_from_request(request) if scope == "mine" else None
+    name = (player["name"] if player else author).strip().casefold()
+    remembered = set(ids.split(",")) - {""} if scope == "mine" else set()
+    owned: set[str] = set()
+    modified: set[str] = set()
+    if player:
+        owned = {r["game_id"] for r in collab_db.rows(
+            "SELECT game_id FROM members WHERE player_id = ? AND role = 'owner'", (player["id"],))}
+        modified = {r["game_id"] for r in collab_db.rows(
+            "SELECT game_id FROM player_levels WHERE player_id = ? UNION "
+            "SELECT game_id FROM credits WHERE player_id = ? AND kind IN ('level', 'creature', 'art', 'fix') UNION "
+            "SELECT game_id FROM activity WHERE player_id = ? AND kind IN ('updated', 'published', 'remixed')",
+            (player["id"], player["id"], player["id"]))}
     out = []
     for g in db_v2.list_games_v2():
+        if scope == "all":
+            if g.get("draft"):
+                continue
+            if g.get("published_generated"):
+                g = {**g, "generated": g["published_generated"], "generated_levels": g["published_generated_levels"], "title": g["published_generated"]["title"]}
         rows = db_v2.latest_level_summaries(game_id=g["id"])
+        # Names recover older anonymous work; authenticated ownership takes precedence.
+        legacy = bool(name) and not members.owner_of(g["id"])
+        created = g["id"] in owned or (legacy and g["id"] not in members.SEEDED_GAMES
+                                       and (g.get("author") or "").casefold() == name)
+        contributed = g["id"] in modified or g["id"] in remembered or (
+            legacy and any((r.get("author") or "").casefold() == name for r in rows))
+        if scope == "mine" and not (created or contributed):
+            continue
         seq, _ = _sequence(rows)
         act = db_v2.game_activity(g["id"])
         unlocks = _unlocks(g["id"])
@@ -121,8 +152,9 @@ def list_games(sort: str = Query(default="new")) -> Any:
             if r.get("author") and r["author"] not in authors:
                 authors.append(r["author"])
         out.append({
-            "id": g["id"], "title": g["title"], "author": g["author"], "created_at": g["created_at"],
-            "level_count": len(seq), "authors": authors, "plays": int(act["plays"]), "clears": int(act["clears"]),
+            "id": g["id"], "title": g["title"], "author": g["author"], "created_at": g["created_at"], "brief": g.get("brief"), "generated": g.get("generated"),
+            "generated_levels": g.get("generated_levels", []), "level_count": len(seq) + len(g.get("generated_levels", [])), "authors": authors, "plays": int(act["plays"]), "clears": int(act["clears"]),
+            "draft": g.get("draft", False), "studio_relation": "created" if created else "modified" if contributed else None,
             "recent_plays": int(act["recent_plays"]),
             "clear_rate": round(act["clears"] / act["plays"], 4) if act["plays"] else None,
             "mean_C": mean_c, "band": _band_of(mean_c), "cover": _summary(seq[0]) if seq else None,
@@ -135,7 +167,7 @@ def list_games(sort: str = Query(default="new")) -> Any:
     elif sort == "cleared":
         out.sort(key=lambda g: (-g["clears"], -(g["clear_rate"] or 0.0)))
     # levels drawn outside any game (#/draw without a game) are listed after the games
-    loose = [_summary(r, stats=True) for r in db_v2.latest_level_summaries(no_game=True)]
+    loose = [] if scope == "mine" else [_summary(r, stats=True) for r in db_v2.latest_level_summaries(no_game=True)]
     return {"games": out, "levels": _sort_levels(loose, sort)[:FEED_LOOSE_LEVELS], "sort": sort}
 
 
@@ -151,17 +183,30 @@ async def create_game(request: Request) -> Any:
     author = sanitize.text(body.author, 16)
     if not title or not author:
         return err(400, "error.bad_request", {"field": "title" if not title else "author"})
-    if moderate.blocklist_hit([title, author]):
+    brief = body.brief.model_dump() if body.brief else None
+    if brief:
+        for field, limit in (("custom_definition", 500), ("theme", 300), ("gameplay", 500), ("details", 500)):
+            brief[field] = sanitize.text(brief[field], limit)
+        if brief["category"] == "custom" and not brief["custom_definition"]:
+            return err(400, "error.bad_request", {"field": "custom_definition"})
+        if brief["category"] != "custom":
+            brief["custom_definition"] = ""
+    if moderate.blocklist_hit([title, author, *(brief.values() if brief else [])]):
         return err(409, "publish.safety_flag")
-    game = db_v2.create_game(f"game_{secrets.token_hex(4)}", title, author, default_rules())
+    game = db_v2.create_game(f"game_{secrets.token_hex(4)}", title, author, rules_from_brief(default_rules(), brief), brief, draft=body.draft)
+    player = identity.player_from_request(request)
+    if player:
+        members.claim_if_ownerless(game["id"], player)
     return JSONResponse({"game": game}, status_code=201)
 
 
 @router.get("/games/{game_id}")
-def get_game(game_id: str) -> Any:
+def get_game(game_id: str, published: bool = False) -> Any:
     g = db_v2.get_game(game_id)
     if g is None or g.get("format") != 2:
         return err(404, "error.not_found", {"what": "game"})
+    if published and g.get("published_generated"):
+        g = {**g, "generated": g["published_generated"], "generated_levels": g["published_generated_levels"], "title": g["published_generated"]["title"]}
     rows = db_v2.latest_level_summaries(game_id=game_id)
     seq, remixes = _sequence(rows)
     levels = []

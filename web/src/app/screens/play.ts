@@ -24,6 +24,7 @@ import { navigate } from '../router.ts';
 import { Stage } from '../stage.ts';
 import { store, type GhostPrefs } from '../store.ts';
 import { creditsAfterWin } from './credits.ts'; // v3 lane 5: "See who made this" after a game's last level
+import { raceButton } from '../races/share.ts';
 
 type Ghost = GhostOption;
 type Board = 'any' | 'collector';
@@ -173,6 +174,7 @@ export function playScreen(root: HTMLElement, id: string, query: URLSearchParams
         h('div', { class: 'row wrap' },
           h('button', { type: 'button', class: 'tool', title: 'R', onclick: () => { attempts++; stage?.restart('start'); closeResults(); } }, icon('retry'), h('span', { class: 'lbl' }, t('results.retry'))),
           muteBtn,
+          raceButton(level),
           remixMenu,
           h('button', { type: 'button', class: 'tool', onclick: () => navigate(`#/tree/${encodeURIComponent(level.id)}`) }, icon('tree'), h('span', { class: 'lbl' }, t('ui.tree'))),
           h('button', {

@@ -11,6 +11,7 @@ How to plan
 - Match the band: easy uses walk-gaps, low steps and single walkers; normal adds run-gaps, hoppers and moving bridges; hard uses wider run-gaps, enemy gauntlets, saws and crumbling runs. Stay inside the envelope; never design a jump that is impossible on purpose.
 - A key always comes before its door, and the door stands between the key and the goal. Put a checkpoint after every hard section. End with exactly one goal.
 - Pick the theme that fits the words (sketchbook by default).
+- Game guidance describes a separate world theme, its components and mechanics. Translate references such as Harry Potter, spooky, Minecraft, Mario or Celeste into a coherent setting and beats from this catalogue. Prefer the author's stated actions and constraints over reference defaults. Do not invent unsupported mechanics: represent enchanted doors as key/door puzzles, floating stairs as moving bridges, breakable blocks as crumbling platforms, and magical leaps as the enabled double jump. Keep the paper theme separate from this world guidance.
 
 Writing
 - title: short and fun, in the child's spirit. kid_summary: one sentence a 7-year-old can read, describing what they will play.

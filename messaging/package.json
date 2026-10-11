@@ -1,0 +1,14 @@
+{
+  "name": "draw-play-imessage",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "start": "node --env-file-if-exists=../.env src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test src/*.test.ts"
+  },
+  "dependencies": { "spectrum-ts": "12.10.1" },
+  "overrides": { "@opentelemetry/core": "2.12.0" },
+  "devDependencies": { "@types/node": "24.19.2", "typescript": "^5.9.0" }
+}

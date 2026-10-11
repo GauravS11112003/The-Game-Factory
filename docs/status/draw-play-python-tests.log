@@ -1,0 +1,171 @@
+.................F.FFFFFF............................................... [ 49%]
+.....F.................................................................. [ 99%]
+.                                                                        [100%]
+=================================== FAILURES ===================================
+__________________ test_build_streams_the_sample_and_resumes ___________________
+
+client = <starlette.testclient.TestClient object at 0x11a783bd0>
+
+    def test_build_streams_the_sample_and_resumes(client: TestClient) -> None:
+        r = client.post("/api/v2/builds", files={"ink": ("ink.json", b"{}", "application/json")})
+>       assert r.status_code == 202
+E       assert 400 == 202
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests/test_api_v2.py:49: AssertionError
+_ test_not_yet_routes_answer_501_with_a_message_key[PUT-/api/v2/drafts/d_12345678/edits] _
+
+client = <starlette.testclient.TestClient object at 0x11a783bd0>, method = 'PUT'
+path = '/api/v2/drafts/d_12345678/edits'
+
+    @pytest.mark.parametrize("method,path", [("PUT", "/api/v2/drafts/d_12345678/edits"), ("POST", "/api/v2/levels"),
+                                             ("GET", "/api/v2/games"), ("GET", "/api/v2/templates/pack/p1.pdf"),
+                                             ("POST", "/api/v2/import")])
+    def test_not_yet_routes_answer_501_with_a_message_key(client: TestClient, method: str, path: str) -> None:
+        r = client.request(method, path)
+>       assert r.status_code == 501
+E       assert 404 == 501
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests/test_api_v2.py:82: AssertionError
+____ test_not_yet_routes_answer_501_with_a_message_key[POST-/api/v2/levels] ____
+
+client = <starlette.testclient.TestClient object at 0x11a783bd0>
+method = 'POST', path = '/api/v2/levels'
+
+    @pytest.mark.parametrize("method,path", [("PUT", "/api/v2/drafts/d_12345678/edits"), ("POST", "/api/v2/levels"),
+                                             ("GET", "/api/v2/games"), ("GET", "/api/v2/templates/pack/p1.pdf"),
+                                             ("POST", "/api/v2/import")])
+    def test_not_yet_routes_answer_501_with_a_message_key(client: TestClient, method: str, path: str) -> None:
+        r = client.request(method, path)
+>       assert r.status_code == 501
+E       assert 400 == 501
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests/test_api_v2.py:82: AssertionError
+_____ test_not_yet_routes_answer_501_with_a_message_key[GET-/api/v2/games] _____
+
+client = <starlette.testclient.TestClient object at 0x11a783bd0>, method = 'GET'
+path = '/api/v2/games'
+
+    @pytest.mark.parametrize("method,path", [("PUT", "/api/v2/drafts/d_12345678/edits"), ("POST", "/api/v2/levels"),
+                                             ("GET", "/api/v2/games"), ("GET", "/api/v2/templates/pack/p1.pdf"),
+                                             ("POST", "/api/v2/import")])
+    def test_not_yet_routes_answer_501_with_a_message_key(client: TestClient, method: str, path: str) -> None:
+        r = client.request(method, path)
+>       assert r.status_code == 501
+E       assert 200 == 501
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests/test_api_v2.py:82: AssertionError
+_ test_not_yet_routes_answer_501_with_a_message_key[GET-/api/v2/templates/pack/p1.pdf] _
+
+client = <starlette.testclient.TestClient object at 0x11a783bd0>, method = 'GET'
+path = '/api/v2/templates/pack/p1.pdf'
+
+    @pytest.mark.parametrize("method,path", [("PUT", "/api/v2/drafts/d_12345678/edits"), ("POST", "/api/v2/levels"),
+                                             ("GET", "/api/v2/games"), ("GET", "/api/v2/templates/pack/p1.pdf"),
+                                             ("POST", "/api/v2/import")])
+    def test_not_yet_routes_answer_501_with_a_message_key(client: TestClient, method: str, path: str) -> None:
+        r = client.request(method, path)
+>       assert r.status_code == 501
+E       assert 404 == 501
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests/test_api_v2.py:82: AssertionError
+____ test_not_yet_routes_answer_501_with_a_message_key[POST-/api/v2/import] ____
+
+client = <starlette.testclient.TestClient object at 0x11a783bd0>
+method = 'POST', path = '/api/v2/import'
+
+    @pytest.mark.parametrize("method,path", [("PUT", "/api/v2/drafts/d_12345678/edits"), ("POST", "/api/v2/levels"),
+                                             ("GET", "/api/v2/games"), ("GET", "/api/v2/templates/pack/p1.pdf"),
+                                             ("POST", "/api/v2/import")])
+    def test_not_yet_routes_answer_501_with_a_message_key(client: TestClient, method: str, path: str) -> None:
+        r = client.request(method, path)
+>       assert r.status_code == 501
+E       assert 400 == 501
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests/test_api_v2.py:82: AssertionError
+__________________________ test_pool_pings_and_hashes __________________________
+
+    def test_pool_pings_and_hashes() -> None:
+        async def go() -> None:
+            pool = CorePool(n=2)
+            await pool.start()
+            try:
+                assert pool.state() == "ok" and pool.core_version == "2.0.0"
+                h1 = await pool.call("level_hash", {"level": LEVEL})
+                h2 = await pool.call("level_hash", {"level": LEVEL})
+                assert h1 == h2 == {"hash": LEVEL["meta"]["level_hash"]}
+                with pytest.raises(CoreError) as e:
+                    await pool.call("build", {"ink": {}, "graph0": {}, "edits": [], "rules": {}, "tier": "faithful"})
+                assert e.value.code == "internal" and "NotImplemented" in e.value.message
+                with pytest.raises(CoreError) as e:
+                    await pool.call("teleport", {})
+                assert e.value.code == "invalid"
+            finally:
+                await pool.stop()
+            assert pool.state() == "down"
+    
+>       run(go())
+
+tests/test_bridge.py:39: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_bridge.py:17: in run
+    return asyncio.run(coro)
+           ^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/runners.py:190: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/base_events.py:654: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    async def go() -> None:
+        pool = CorePool(n=2)
+        await pool.start()
+        try:
+            assert pool.state() == "ok" and pool.core_version == "2.0.0"
+            h1 = await pool.call("level_hash", {"level": LEVEL})
+            h2 = await pool.call("level_hash", {"level": LEVEL})
+            assert h1 == h2 == {"hash": LEVEL["meta"]["level_hash"]}
+            with pytest.raises(CoreError) as e:
+                await pool.call("build", {"ink": {}, "graph0": {}, "edits": [], "rules": {}, "tier": "faithful"})
+>           assert e.value.code == "internal" and "NotImplemented" in e.value.message
+E           assert ('internal' == 'internal'
+E             
+E               internal and 'NotImplemented' in "TypeError: Cannot read properties of undefined (reading 'screens')")
+E            +  where "TypeError: Cannot read properties of undefined (reading 'screens')" = CoreError("internal: TypeError: Cannot read properties of undefined (reading 'screens')").message
+E            +    where CoreError("internal: TypeError: Cannot read properties of undefined (reading 'screens')") = <ExceptionInfo CoreError("internal: TypeError: Cannot read properties of undefined (reading 'screens')") tblen=3>.value
+
+tests/test_bridge.py:31: AssertionError
+______________________ test_prompts_exist_for_every_call _______________________
+
+    def test_prompts_exist_for_every_call() -> None:
+        for kind in mind.CALLS:
+>           assert len(mind.system_prompt(kind).split()) >= 380, kind
+E           AssertionError: handwriting
+E           assert 282 >= 380
+E            +  where 282 = len(['You', 'read', "children's", 'handwriting', 'for', '"draw-a-level",', ...])
+E            +    where ['You', 'read', "children's", 'handwriting', 'for', '"draw-a-level",', ...] = <built-in method split of str object at 0xc840ece00>()
+E            +      where <built-in method split of str object at 0xc840ece00> = 'You read children\'s handwriting for "draw-a-level", a game where children draw platformer levels and creatures on pr...hat you read and lets them change it with one tap, so a short, faithful reading is best.\n\nKeep the output concise.\n'.split
+E            +        where 'You read children\'s handwriting for "draw-a-level", a game where children draw platformer levels and creatures on pr...hat you read and lets them change it with one tap, so a short, faithful reading is best.\n\nKeep the output concise.\n' = <functools._lru_cache_wrapper object at 0x10a271a60>('handwriting')
+E            +          where <functools._lru_cache_wrapper object at 0x10a271a60> = mind.system_prompt
+
+tests/test_mind_client.py:110: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_api_v2.py::test_build_streams_the_sample_and_resumes - asse...
+FAILED tests/test_api_v2.py::test_not_yet_routes_answer_501_with_a_message_key[PUT-/api/v2/drafts/d_12345678/edits]
+FAILED tests/test_api_v2.py::test_not_yet_routes_answer_501_with_a_message_key[POST-/api/v2/levels]
+FAILED tests/test_api_v2.py::test_not_yet_routes_answer_501_with_a_message_key[GET-/api/v2/games]
+FAILED tests/test_api_v2.py::test_not_yet_routes_answer_501_with_a_message_key[GET-/api/v2/templates/pack/p1.pdf]
+FAILED tests/test_api_v2.py::test_not_yet_routes_answer_501_with_a_message_key[POST-/api/v2/import]
+FAILED tests/test_bridge.py::test_pool_pings_and_hashes - assert ('internal' ...
+FAILED tests/test_mind_client.py::test_prompts_exist_for_every_call - Asserti...
+8 failed, 137 passed in 57.60s

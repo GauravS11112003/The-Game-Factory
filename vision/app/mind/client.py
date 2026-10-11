@@ -18,7 +18,7 @@ import time
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Generic, Literal, TypeVar
+from typing import Any, Awaitable, Callable, Generic, Literal, TypeVar
 
 import anthropic
 import pydantic
@@ -38,7 +38,7 @@ FALLBACK_BETA = "server-side-fallback-2026-07-01"
 FAST_BETA = "fast-mode-2026-02-01"
 PROMPTS = Path(__file__).resolve().parent / "prompts"
 
-CallKind = Literal["perceive", "design", "refine", "critic", "plan", "creature", "moderate", "look", "handwriting"]
+CallKind = Literal["perceive", "design", "refine", "critic", "plan", "creature", "moderate", "look", "handwriting", "imagine"]
 Thinking = Literal["adaptive", "disabled"] | None
 Status = Literal["ok", "failed", "refused", "truncated", "skipped"]
 T = TypeVar("T", bound=BaseModel)
@@ -122,12 +122,14 @@ def available() -> bool:
     return mode() != "off"
 
 
-def cost_of(usage: Any, fast: bool = False) -> float:
+def cost_of(usage: Any, fast: bool = False, model: str = MODEL) -> float:
     def n(attr: str) -> int:
         return int(getattr(usage, attr, 0) or 0)
 
-    usd = (n("input_tokens") * PRICE_IN + n("cache_creation_input_tokens") * PRICE_CACHE_WRITE
-           + n("cache_read_input_tokens") * PRICE_CACHE_READ + n("output_tokens") * PRICE_OUT) / 1e6
+    prices = (2.0, 10.0, 2.5, 0.1) if model == "claude-sonnet-5-5" else (PRICE_IN, PRICE_OUT, PRICE_CACHE_WRITE, PRICE_CACHE_READ)
+    pin, pout, pwrite, pread = prices
+    usd = (n("input_tokens") * pin + n("cache_creation_input_tokens") * pwrite
+           + n("cache_read_input_tokens") * pread + n("output_tokens") * pout) / 1e6
     return usd * (FAST_MULTIPLIER if fast else 1.0)
 
 
@@ -145,6 +147,8 @@ async def call(
     effort: str | None = None,
     fast: bool | None = None,
     timeout_s: float | None = None,
+    model: str | None = None,
+    on_progress: Callable[[int], Awaitable[None]] | None = None,
 ) -> MindResult[T]:
     """One structured call. `deadline` is a time.monotonic() instant. Overrides exist for the P0 bakeoff."""
     spec = CALLS[kind]
@@ -163,8 +167,12 @@ async def call(
     if not budget.allow(kind, draft_id):
         return MindResult[schema](kind=kind, status="skipped", error="budget")  # type: ignore[valid-type]
 
+    chosen_model = model or MODEL
+    sonnet = chosen_model.startswith("claude-sonnet")
+    if sonnet:
+        use_fast = False
     kwargs: dict[str, Any] = dict(
-        model=MODEL,
+        model=chosen_model,
         max_tokens=spec.max_tokens,
         system=[{"type": "text", "text": system_prompt(kind), "cache_control": {"type": "ephemeral"}}],
         output_config={"effort": eff},
@@ -173,6 +181,9 @@ async def call(
         messages=[{"role": "user", "content": content}],
         output_format=schema,
     )
+    if sonnet:
+        kwargs.pop("betas")
+        kwargs.pop("fallbacks")
     if think is not None:
         kwargs["thinking"] = {"type": think}
     if use_fast:
@@ -188,7 +199,18 @@ async def call(
         c = _get_client().with_options(timeout=left, max_retries=0)
         try:
             # the SDK timeout is the real limit; wait_for is a backstop so a stuck socket can never hold a build
-            resp = await asyncio.wait_for(c.beta.messages.parse(**kwargs), left + 2)
+            if sonnet and on_progress is not None:
+                async def streamed() -> Any:
+                    characters = 0
+                    async with c.messages.stream(**kwargs) as stream:
+                        async for chunk in stream.text_stream:
+                            characters += len(chunk)
+                            await on_progress(characters)
+                        return await stream.get_final_message()
+                resp = await asyncio.wait_for(streamed(), left + 2)
+            else:
+                parse = c.messages.parse if sonnet else c.beta.messages.parse
+                resp = await asyncio.wait_for(parse(**kwargs), left + 2)
             break
         except asyncio.TimeoutError:
             return _finish(kind, schema, draft_id, eff, t0, status="failed", error=f"timeout after {left:.1f} s")
@@ -250,7 +272,7 @@ def _finish(
     fallback = any(getattr(i, "type", None) == "fallback_message" for i in iterations)
     r: MindResult[T] = MindResult[schema](  # type: ignore[valid-type]
         kind=kind, status=status, value=value, latency_s=round(latency, 3),
-        cost_usd=round(cost_of(usage, fast), 5) if usage is not None else 0.0, fallback_used=fallback,
+        cost_usd=round(cost_of(usage, fast, getattr(resp, "model", MODEL)), 5) if usage is not None else 0.0, fallback_used=fallback,
         stop_reason=getattr(resp, "stop_reason", None), error=error,
         in_tok=int(getattr(usage, "input_tokens", 0) or 0) + int(getattr(usage, "cache_creation_input_tokens", 0) or 0),
         out_tok=int(getattr(usage, "output_tokens", 0) or 0),

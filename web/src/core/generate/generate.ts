@@ -14,6 +14,7 @@ import { PROMPT_LEVEL } from '../params.ts';
 import type { Beat, EditOp, EditRecord, GameRules, InkColor, InkDoc, InkStroke, LevelPlan, LibraryType, PlaytestReport, Role, SceneGraph, SceneObject, Tier } from '../types.gen.ts';
 import { build, finish, prepare } from '../build/build.ts';
 import { resolveRules } from '../build/level.ts';
+import { applyGuidance, applyLayoutGuidance } from './guidance.ts';
 import { hardFlags } from '../edits/invariants.ts';
 import { OP_CLASS, explain } from '../edits/vocabulary.ts';
 import { profileOf } from '../edits/work.ts';
@@ -219,8 +220,8 @@ export function layoutDetailed(plan: LevelPlan, rules: GameRules, seed: number, 
   const r = resolveRules(rules);
   const p = profileOf(r);
   const canRun = r.abilities?.run !== false;
-  const clamped = normalizePlan(plan, p, canRun, o.clamp ?? 'band');
-  const layout = layoutPrims(clamped, p, canRun, o.overrides);
+  const clamped = normalizePlan(applyGuidance(plan, r.guidance), p, canRun, o.clamp ?? 'band');
+  const layout = applyLayoutGuidance(layoutPrims(clamped, p, canRun, o.overrides), r.guidance);
   const draft = layoutToInk(layout, seed);
   return { plan: clamped, layout, ink: o.ink === 'marker' ? inkIt(draft) : draft };
 }
@@ -232,13 +233,13 @@ export function generateLevel(plan: LevelPlan, rules: GameRules, seed: number, o
   const p = profileOf(r);
   const canRun = r.abilities?.run !== false;
   const library = o.library ?? [];
-  let cur = normalizePlan(plan, p, canRun, o.clamp ?? 'band');
+  let cur = normalizePlan(applyGuidance(plan, r.guidance), p, canRun, o.clamp ?? 'band');
   const fixes: PlanFix[] = [];
   const max = o.fixer === false ? 0 : PROMPT_LEVEL.fixer_max;
   let last: { lay: Layout; ink: InkDoc; graph0: SceneGraph; input: BuildInput; f: ReturnType<typeof prepare>; addr: string | null } | null = null;
   let solvable = false;
   for (let attempt = 0; attempt <= max; attempt++) {
-    const lay = layoutPrims(cur, p, canRun, o.overrides);
+    const lay = applyLayoutGuidance(layoutPrims(cur, p, canRun, o.overrides), r.guidance);
     const draft = layoutToInk(lay, seed);
     const ink = o.ink === 'marker' ? inkIt(draft) : draft;
     const graph0 = perceiveHeuristic(ink, { library, parent: null });

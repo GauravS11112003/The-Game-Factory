@@ -46,6 +46,7 @@ function save(v: Saved | null): void {
 }
 
 let saved: Saved | null = load();
+if (saved?.player.name) store.setAuthor(saved.player.name);
 const listeners = new Set<(p: Player | null) => void>();
 
 function emit(): void {
@@ -85,6 +86,7 @@ export function updatePlayer(p: Partial<Player>): void {
   if (next.name === saved.player.name && next.avatar_url === saved.player.avatar_url) return;
   saved = { ...saved, player: next };
   save(saved);
+  store.setAuthor(next.name);
   emit();
 }
 
@@ -123,15 +125,19 @@ async function readError(r: Response): Promise<string> {
 /** Check the saved profile against the server (on app start): a token the server no longer knows is forgotten. */
 export async function refreshPlayer(): Promise<void> {
   if (!saved) return;
+  const checking = saved;
   try {
     const r = await fetch(`${BASE}/players/me`, { headers: authHeaders() });
+    // A response for an older login must not sign out or overwrite the current one.
+    if (saved !== checking) return;
     if (r.status === 401 || r.status === 403) {
       forgetPlayer();
       return;
     }
     if (!r.ok) return;
     const p = toPlayer(await r.json());
-    if (p && p.id === saved?.player.id) updatePlayer({ name: p.name, avatar_url: p.avatar_url ?? saved.player.avatar_url });
+    if (saved !== checking) return;
+    if (p && p.id === saved.player.id) updatePlayer({ name: p.name, avatar_url: p.avatar_url ?? saved.player.avatar_url });
   } catch {
     /* offline: keep the profile */
   }

@@ -4,13 +4,14 @@
  * FastAPI's `{detail: …}`), so the UI always shows a sentence from messages.json and never a raw code.
  */
 import type {
-  AffectedLevel, AttemptsBody, Behavior, BuildAccepted, BuildEvent, ChallengeBand, CreatureSpecJson, Dial, EditOp, GameRules,
-  Health, InkStroke, LevelResponse, LevelV2, LibraryType, PackCreate, PublishBody, Replay, RunResult, RunSubmit, Telemetry,
+  AffectedLevel, AttemptsBody, Behavior, BuildAccepted, BuildEvent, ChallengeBand, CreatureSpecJson, Dial, EditOp, GameBrief, GameRules,
+  Health, InkDoc, InkStroke, LevelResponse, LevelV2, LibraryType, PackCreate, PublishBody, Replay, RunResult, RunSubmit, Telemetry,
   Tier, TierSetSummary,
 } from '../core/types.gen.ts';
 import { hasMessage } from './messages.ts';
 import { authHeaders } from './identity.ts';
 import { afterPublish, withContribution } from './collab/contribute.ts';
+import { store } from './store.ts';
 
 const BASE = '/api/v2';
 
@@ -40,16 +41,17 @@ function defaultKey(status: number): string {
   return 'error.build_failed';
 }
 
-async function request<T>(method: string, path: string, body?: unknown, o: { raw?: boolean; keepalive?: boolean } = {}): Promise<T> {
+async function request<T>(method: string, path: string, body?: unknown, o: { raw?: boolean; keepalive?: boolean; timeoutMs?: number; headers?: Record<string, string> } = {}): Promise<T> {
   let r: Response;
   try {
     const init: RequestInit = { method, keepalive: o.keepalive };
+    if (o.timeoutMs) init.signal = AbortSignal.timeout(o.timeoutMs);
     if (body instanceof FormData || body instanceof Blob) init.body = body;
     else if (body !== undefined) {
       init.body = JSON.stringify(body);
       init.headers = { 'content-type': 'application/json' };
     }
-    init.headers = { ...authHeaders(), ...(init.headers as Record<string, string> | undefined) }; // v3 identity (lane 5): X-DP-Player
+    init.headers = { ...authHeaders(), ...o.headers, ...(init.headers as Record<string, string> | undefined) }; // v3 identity (lane 5): X-DP-Player
     r = await fetch(`${BASE}${path}`, init);
   } catch {
     throw new ApiError(0, 'error.network');
@@ -99,6 +101,47 @@ export interface GameCard {
   /** Remixes of this game's levels (listed apart from the playable sequence). */
   remixes: LevelCard[];
   rules: GameRules | null;
+  brief: import('../core/types.gen.ts').GameBrief | null;
+  generated: ImaginedGameStatus | null;
+  generated_levels?: ImaginedGameStatus[];
+  draft?: boolean;
+  level_count?: number;
+  studio_relation?: 'created' | 'modified' | null;
+}
+
+export interface ImaginedGameStatus {
+  better_graphics?: boolean;
+  level_id?: string;
+  level_number?: number;
+  can_publish?: boolean;
+  publication?: 'draft' | 'published';
+  publish_token?: string;
+  category?: GameBrief['category'];
+  draft_id: string;
+  game_id: string | null;
+  status: 'building' | 'ready' | 'failed';
+  title: string;
+  summary?: string;
+  changes?: string[];
+  suggestions?: import('./builder-ideas.ts').GameSuggestion[];
+  controls?: string[];
+  play_url?: string;
+  message_key?: string;
+  model?: string;
+  started_at?: number;
+  timeout_s?: number;
+  phase?: 'designing' | 'painting' | 'writing';
+  assets_done?: number;
+  assets_total?: number;
+  art?: { provider: string; asset_count: number };
+  output_chars?: number;
+  retried_as?: string;
+  revised_as?: string;
+  revision_of?: string;
+  context?: string;
+  conversation?: { role: 'user' | 'assistant'; content: string; canvas_updated?: boolean;
+    changes?: string[]; suggestions?: import('./builder-ideas.ts').GameSuggestion[] }[];
+  canvas_updated?: boolean;
 }
 
 export interface ChangedObject {
@@ -218,6 +261,11 @@ export function toGameCard(x: Any): GameCard {
   return {
     id: str(x?.id ?? x?.game_id), title: str(x?.title), author: str(x?.author), created_at: (x?.created_at ?? null) as string | null, levels,
     remixes: (Array.isArray(x?.remixes) ? x.remixes : []).map(toLevelCard), rules: toRules(x?.rules ?? x?.rules_json),
+    brief: x?.brief && typeof x.brief === 'object' ? x.brief : null,
+    generated: x?.generated && typeof x.generated === 'object' ? x.generated : null,
+    generated_levels: Array.isArray(x?.generated_levels) ? x.generated_levels : [],
+    level_count: num(x?.level_count) ?? levels.length + (x?.generated_levels?.length ?? (x?.generated ? 1 : 0)),
+    studio_relation: x?.studio_relation ?? null, draft: !!x?.draft,
   };
 }
 
@@ -304,10 +352,43 @@ function toDraft(x: Any): LibraryDraft {
 export type Sort = 'new' | 'hot' | 'hard' | 'cleared';
 
 export const api = {
+  imagineGame: async (body: { better_graphics?: boolean; append_level?: boolean; level_id?: string; ink?: InkDoc; category?: GameBrief['category']; game_id: string | null; context: string; title: string }): Promise<ImaginedGameStatus> => {
+    const result = await request<ImaginedGameStatus>('POST', '/imagined-games', body);
+    store.rememberGame(body.game_id);
+    if (result.publish_token) store.setDraftToken(result.draft_id, result.publish_token);
+    return result;
+  },
+  imaginedGame: (draftId: string): Promise<ImaginedGameStatus> =>
+    request<ImaginedGameStatus>('GET', `/imagined-games/${encodeURIComponent(draftId)}`, undefined,
+      { timeoutMs: 10000, headers: store.draftToken(draftId) ? { 'X-DP-Draft': store.draftToken(draftId)! } : {} }),
+  refineImaginedGame: async (draftId: string, message: string, ink?: InkDoc, betterGraphics?: boolean): Promise<ImaginedGameStatus> => {
+    const result = await request<ImaginedGameStatus>('POST', `/imagined-games/${encodeURIComponent(draftId)}/refine`,
+      { message, token: store.draftToken(draftId) ?? '', ...(ink ? { ink } : {}),
+        ...(betterGraphics === undefined ? {} : { better_graphics: betterGraphics }) }, { timeoutMs: 10000 });
+    const token = result.publish_token ?? store.draftToken(draftId);
+    if (token) store.setDraftToken(result.draft_id, token);
+    store.rememberGame(result.game_id);
+    return result;
+  },
+  retryImaginedGame: async (draftId: string): Promise<ImaginedGameStatus> => {
+    const result = await request<ImaginedGameStatus>('POST', `/imagined-games/${encodeURIComponent(draftId)}/retry`, undefined, { timeoutMs: 10000, headers: store.draftToken(draftId) ? { 'X-DP-Draft': store.draftToken(draftId)! } : {} });
+    const token = result.publish_token ?? store.draftToken(draftId);
+    if (token) store.setDraftToken(result.draft_id, token);
+    return result;
+  },
+  publishImaginedGame: (draftId: string): Promise<ImaginedGameStatus> =>
+    request('POST', `/imagined-games/${encodeURIComponent(draftId)}/publish`, { token: store.draftToken(draftId) ?? '' }),
+  imaginedInputs: (draftId: string): Promise<{ prompt: string; category: GameBrief['category']; ink: InkDoc; canvases: string[]; better_graphics?: boolean }> =>
+    request('GET', `/imagined-games/${encodeURIComponent(draftId)}/inputs`),
   health: (): Promise<Health> => request<Health>('GET', '/health'),
 
   // ---- builds and drafts (§3.11) ----
-  createBuild: (body: FormData): Promise<BuildAccepted> => request<BuildAccepted>('POST', '/builds', body),
+  createBuild: async (body: FormData): Promise<BuildAccepted> => {
+    const result = await request<BuildAccepted>('POST', '/builds', body);
+    const gameId = body.get('game_id');
+    if (typeof gameId === 'string') store.rememberGame(gameId);
+    return result;
+  },
   draft: (id: string, since?: number): Promise<{ state: 'running' | 'done' | 'failed'; events: BuildEvent[] }> =>
     request('GET', `/drafts/${encodeURIComponent(id)}${since === undefined ? '' : `?since=${since}`}`),
   putEdits: (id: string, statuses: Record<string, 'applied' | 'undone'>, kidEdits: EditOp[]): Promise<{ tiers?: TierSetSummary; rejected?: string[] } & Record<string, unknown>> =>
@@ -320,7 +401,11 @@ export const api = {
     request('POST', `/drafts/${encodeURIComponent(id)}/critic`, { telemetry }),
 
   // ---- levels ----
-  publish: async (body: PublishBody): Promise<{ level: LevelV2 }> => afterPublish(await request<{ level: LevelV2 }>('POST', '/levels', await withContribution(body))), // v3 lane 5: quest_id / jam_id, submissions
+  publish: async (body: PublishBody): Promise<{ level: LevelV2 }> => {
+    const result = await afterPublish(await request<{ level: LevelV2 }>('POST', '/levels', await withContribution(body)));
+    store.rememberGame(result.level.game_id);
+    return result;
+  },
   level: (id: string, version?: number): Promise<LevelResponse> =>
     request('GET', `/levels/${encodeURIComponent(id)}${version ? `?version=${version}` : ''}`),
   async tree(id: string): Promise<TreeNode> {
@@ -349,18 +434,26 @@ export const api = {
   thumbnail: (id: string, png: Blob): Promise<void> => request('PUT', `/levels/${encodeURIComponent(id)}/thumbnail`, png, { raw: true }),
 
   // ---- games ----
-  async games(sort: Sort): Promise<{ games: GameCard[]; levels: LevelCard[] }> {
-    const r = await request<Any>('GET', `/games?sort=${sort}`);
+  async games(sort: Sort, personal = false): Promise<{ games: GameCard[]; levels: LevelCard[] }> {
+    const query = new URLSearchParams({ sort });
+    if (personal) {
+      query.set('scope', 'mine');
+      query.set('author', store.author());
+      query.set('ids', store.studioGames().join(','));
+    }
+    const r = await request<Any>('GET', `/games?${query}`);
     const games = (Array.isArray(r) ? r : Array.isArray(r?.games) ? r.games : []).map(toGameCard);
     const levels = (Array.isArray(r?.levels) ? r.levels : Array.isArray(r?.items) ? r.items : []).map(toLevelCard);
     return { games, levels };
   },
-  async createGame(title: string, author: string): Promise<GameCard> {
-    const r = await request<Any>('POST', '/games', { title, author });
-    return toGameCard(r?.game ?? r);
+  async createGame(title: string, author: string, brief?: GameBrief, draft = false): Promise<GameCard> {
+    const r = await request<Any>('POST', '/games', { title, author, draft, ...(brief ? { brief } : {}) });
+    const game = toGameCard(r?.game ?? r);
+    store.rememberGame(game.id);
+    return game;
   },
-  async game(id: string): Promise<GameCard> {
-    const r = await request<Any>('GET', `/games/${encodeURIComponent(id)}`);
+  async game(id: string, published = false): Promise<GameCard> {
+    const r = await request<Any>('GET', `/games/${encodeURIComponent(id)}${published ? '?published=true' : ''}`);
     const g = toGameCard(r?.game ?? r);
     if (!g.levels.length && Array.isArray(r?.levels)) g.levels = r.levels.map(toLevelCard).sort((a: LevelCard, b: LevelCard) => a.order_index - b.order_index);
     if (!g.remixes.length && Array.isArray(r?.remixes)) g.remixes = r.remixes.map(toLevelCard);
@@ -370,17 +463,23 @@ export const api = {
     const r = await request<Any>('GET', `/games/${encodeURIComponent(gameId)}/library`);
     return Array.isArray(r) ? r : Array.isArray(r?.types) ? r.types : [];
   },
-  addLibrary: (gameId: string, type: LibraryType): Promise<LibraryType> => request('POST', `/games/${encodeURIComponent(gameId)}/library`, type),
+  addLibrary: async (gameId: string, type: LibraryType): Promise<LibraryType> => {
+    const result = await request<LibraryType>('POST', `/games/${encodeURIComponent(gameId)}/library`, type);
+    store.rememberGame(gameId);
+    return result;
+  },
   /**
    * A new immutable version of an existing type (§8.1 "Editing a type creates version n + 1"). The dedicated route
    * is tried first; while it is not live, posting the same id to the game's library makes the next version too.
    */
   async newLibraryVersion(gameId: string, type: LibraryType): Promise<LibraryType> {
     try {
-      return await request<LibraryType>('POST', `/library/${encodeURIComponent(type.id)}/versions`, type);
+      const result = await request<LibraryType>('POST', `/library/${encodeURIComponent(type.id)}/versions`, type);
+      store.rememberGame(gameId);
+      return result;
     } catch (e) {
       if (e instanceof ApiError && (e.status === 501 || e.status === 404 || e.status === 405)) {
-        return request<LibraryType>('POST', `/games/${encodeURIComponent(gameId)}/library`, type);
+        return api.addLibrary(gameId, type);
       }
       throw e;
     }
@@ -420,6 +519,7 @@ export const api = {
   async putRules(gameId: string, rules: GameRules, o: { apply?: 'none' | 'all'; repair?: boolean } = {}): Promise<{ rules: GameRules | null; applied: number; failed: number }> {
     const q = o.apply === 'all' ? `?apply=all${o.repair ? '&repair=1' : ''}` : '';
     const r = await request<Any>('PUT', `/games/${encodeURIComponent(gameId)}/rules${q}`, rules);
+    store.rememberGame(gameId);
     return { rules: toRules(r), applied: Array.isArray(r?.applied) ? r.applied.length : 0, failed: Array.isArray(r?.failed) ? r.failed.length : 0 };
   },
   /** Read a photographed Rules Sheet (`dal2|rules|<game>`): the ticked boxes as a rules patch, plus questions. */
@@ -446,6 +546,7 @@ export const api = {
   // ---- prompt-to-level (§8.3) ----
   async promptLevel(body: { prompt: string; game_id: string | null; screens: number; dial: Dial; band: ChallengeBand | null }): Promise<BuildAccepted> {
     const r = await request<Any>('POST', '/prompt-levels', body);
+    store.rememberGame(body.game_id);
     return { build_id: str(r?.build_id), draft_id: str(r?.draft_id), events_url: str(r?.events_url, r?.build_id ? `/api/v2/builds/${r.build_id}/events` : '') };
   },
 
@@ -463,6 +564,7 @@ export const api = {
     const form = new FormData();
     form.append('file', file, 'level.zip');
     const r = await request<Any>('POST', '/import', form);
+    store.rememberGame(r?.game_id);
     const levels = (Array.isArray(r?.levels) ? r.levels : []).map((l: Any) => (typeof l === 'string' ? l : str(l?.id ?? l?.level_id))).filter(Boolean);
     return { game_id: typeof r?.game_id === 'string' ? r.game_id : null, levels, types: Array.isArray(r?.types) ? r.types.length : num(r?.types) ?? 0 };
   },

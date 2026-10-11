@@ -1,0 +1,88 @@
+name: draw-play
+
+services:
+  api:
+    build:
+      context: ../..
+      dockerfile: deploy/vultr/Dockerfile
+      target: api
+      args: &source
+        DEPLOY_BRANCH: ${DEPLOY_BRANCH:-unknown}
+        DEPLOY_REVISION: ${DEPLOY_REVISION:-unknown}
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 30s
+    environment:
+      DAL_PUBLIC_URL: https://${APP_DOMAIN:?Set APP_DOMAIN in deploy/vultr/.env}
+      DAL_CORE_WORKERS: ${DAL_CORE_WORKERS:-2}
+      DAL_SPECTRUM_SERVICE_SECRET: ${DAL_SPECTRUM_SERVICE_SECRET:-}
+      DAL_SPECTRUM_NUMBER: ${DAL_SPECTRUM_NUMBER:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      DAL_SONNET_MODEL: ${DAL_SONNET_MODEL:-claude-sonnet-5-5}
+      DAL_DAILY_BUDGET_USD: ${DAL_DAILY_BUDGET_USD:-10}
+      DAL_DRAFT_BUDGET_USD: ${DAL_DRAFT_BUDGET_USD:-0.40}
+      DAL_ART_PROVIDER: ${DAL_ART_PROVIDER:-auto}
+      DAL_ART_BUDGET_USD: ${DAL_ART_BUDGET_USD:-5}
+      FIREFLY_CLIENT_ID: ${FIREFLY_CLIENT_ID:-}
+      FIREFLY_CLIENT_SECRET: ${FIREFLY_CLIENT_SECRET:-}
+    volumes:
+      - api-data:/data
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import json,urllib.request; h=json.load(urllib.request.urlopen('http://127.0.0.1:8000/api/v2/health',timeout=5)); assert h['ok'] and h['worker']=='ok'"
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  web:
+    build:
+      context: ../..
+      dockerfile: deploy/vultr/Dockerfile
+      target: web
+      args: *source
+    restart: unless-stopped
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?Set APP_DOMAIN in deploy/vultr/.env}
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+
+  messaging:
+    profiles: [imessage]
+    build:
+      context: ../..
+      dockerfile: deploy/vultr/Dockerfile
+      target: messaging
+      args: *source
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 30s
+    environment:
+      DAL_PUBLIC_URL: https://${APP_DOMAIN:?Set APP_DOMAIN in deploy/vultr/.env}
+      DAL_API_URL: http://api:8000
+      DAL_SPECTRUM_SERVICE_SECRET: ${DAL_SPECTRUM_SERVICE_SECRET:-}
+      DAL_SPECTRUM_DELIVERY: ${DAL_SPECTRUM_DELIVERY:-card}
+      SPECTRUM_PROJECT_ID: ${SPECTRUM_PROJECT_ID:-}
+      SPECTRUM_PROJECT_SECRET: ${SPECTRUM_PROJECT_SECRET:-}
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - messaging-data:/data
+
+volumes:
+  api-data:
+  messaging-data:
+  caddy-data:
+  caddy-config:

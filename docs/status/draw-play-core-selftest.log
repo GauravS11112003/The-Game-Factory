@@ -1,0 +1,13 @@
+ok    node >= 24  (v24.19.0)
+ok    core lint (.ts suffixes, no npm/DOM/Phaser/JSON imports, determinism bans)  (120 files)
+ok    every core module imports natively (catches value imports of types)  (106 modules)
+ok    API exports every §11.3(b) function  (26 functions, 0 stubs)
+ok    sha256 + canonical JSON vectors
+ok    conformance levels: validateLevel + level_hash  (23 files)
+ok    replay codec round trip
+ok    physics profiles  (sha256:216f9a191193de4b978e3d5cd002ce1ea8b2e3da896e2bf5886866d8a4429d1d)
+ok    shared/spec params.json + physics-profiles.json are fresh
+ok    build pipeline runs on the §2.2 example ink (perceive → build → tiers → validateLevel)  (10 objects, 9 edits, solvable true, menu 25, asks 1)
+ok    worker round trip (real mode)  (node v24.19.0, stub=false)
+ok    worker round trip (DAL_CORE_STUB=1)  (node v24.19.0, stub=true)
+selftest passed (real mode)

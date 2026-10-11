@@ -343,6 +343,9 @@ class Run:
         return mdigest.build_digest(rpc, ts, base_tier=base_tier, undone=undone, band=self.state.get("band"), menu=m)
 
     def design_ctx(self, deadline: float, note: str = "") -> mdesign.DesignCtx:
+        guidance = self.rules().get("guidance")
+        if guidance:
+            note += "\nAUTHOR'S GAME GUIDANCE (preserve the drawing; prefer these mechanics): " + json.dumps(guidance)
         return mdesign.DesignCtx(draft_id=self.id, deadline=deadline, dial=dial_params(), design=design_params(), note=note)
 
     async def design_call(self, ts: dict[str, Any], deadline: float, note: str = "") -> mdesign.PlanOut:
@@ -618,6 +621,10 @@ class Run:
         if req.game_id:
             game = db_v2.get_game(req.game_id)
             rules = (game or {}).get("rules")
+            if game and game.get("brief") and not (rules or {}).get("guidance"):
+                from app.game_brief import rules_from_brief
+
+                rules = rules_from_brief(rules or default_rules(), game["brief"])
             library = load_library(req.game_id)
         if req.parent_id:
             row = db_v2.get_level_row(req.parent_id)

@@ -34,6 +34,7 @@ export function resolveRules(r: GameRules | null | undefined): GameRules {
     default_dial: x.default_dial ?? 'polished',
     default_band: x.default_band ?? 'normal',
     player_type: x.player_type ?? null,
+    ...(x.guidance ? { guidance: x.guidance } : {}),
   };
 }
 

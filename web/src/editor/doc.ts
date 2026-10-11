@@ -23,6 +23,8 @@ export interface EditorDocData {
   parent: ParentRef | null; // remix: parent strokes arrive with origin 'parent' and stay locked until unlocked
   parentUnlocked: boolean;
   title: string;
+  imaginationContext?: string;
+  betterGraphics?: boolean;
   nextId: number;
   /** Edit statuses kept from the preview when going back to the drawing (edits are kept by stable id, §7.10). */
   keptStatuses: Record<string, 'applied' | 'undone'>;
@@ -107,7 +109,7 @@ export class EditorDoc {
     return { screens: this.data.screens, w: WORLD.screen_w * this.data.screens, h: 27 };
   }
 
-  newId(prefix: 's' | 'c' = 's'): string {
+  newId(prefix: 's' | 'c' | 'note' = 's'): string {
     return `${prefix}${this.data.nextId++}`;
   }
 

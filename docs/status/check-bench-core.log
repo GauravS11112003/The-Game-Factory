@@ -1,0 +1,5 @@
+
+> draw-a-level-web@0.1.0 bench:core
+> node src/core/cli.ts bench
+
+cli.ts bench: test / eval tooling, not part of the product build (the owner runs verification)

@@ -23,6 +23,7 @@ from app.config import PROJECT_ROOT, get_settings
 
 Provider = Literal["firefly", "claude-svg", "none"]
 ENV_KEYS = (
+    "DAL_IMAGINE_ART",
     "FIREFLY_CLIENT_ID", "FIREFLY_CLIENT_SECRET", "DAL_ART_PROVIDER", "DAL_ART_BUDGET_USD", "DAL_FIREFLY_REMOVE_BG",
     "DAL_FIREFLY_SYNC", "DAL_FIREFLY_MODEL", "DAL_FIREFLY_USD_PER_IMAGE",
 )

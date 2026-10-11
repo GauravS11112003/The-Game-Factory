@@ -35,6 +35,8 @@ export interface RenderState {
   changes?: { added: ReadonlySet<string>; moved: ReadonlySet<string>; removed: readonly InkStroke[] } | null;
   now: number;
   font: string;
+  modern?: boolean;
+  gridOn?: boolean;
 }
 
 const PAPER = ART.themes.sketchbook.base;
@@ -108,25 +110,27 @@ export function render(ctx: CanvasRenderingContext2D, st: RenderState): void {
   const W = WORLD.screen_w * st.doc.screens;
   const H = WORLD.h;
   ctx.save();
-  ctx.fillStyle = OUTSIDE;
+  ctx.fillStyle = st.modern ? '#eee7d7' : OUTSIDE;
   ctx.fillRect(0, 0, v.w, v.h);
 
   // ---- paper, grid, screen boundaries -----------------------------------------------------------------------
   const [wx0, wy0] = P(0, 0);
   const [wx1, wy1] = P(W, H);
-  ctx.fillStyle = PAPER;
+  ctx.fillStyle = st.modern ? '#fffdf6' : PAPER;
+  if (st.modern) { ctx.shadowColor = '#1f1b1812'; ctx.shadowBlur = 20; }
   ctx.fillRect(wx0, wy0, wx1 - wx0, wy1 - wy0);
-  ctx.strokeStyle = 'rgba(31,27,24,0.35)';
-  ctx.lineWidth = 1.5;
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = st.modern ? '#ddd4c3' : 'rgba(31,27,24,0.35)';
+  ctx.lineWidth = st.modern ? 1 : 1.5;
   ctx.strokeRect(wx0, wy0, wx1 - wx0, wy1 - wy0);
 
   const cx0 = Math.max(0, Math.floor(v.x));
   const cx1 = Math.min(W, Math.ceil(v.x + v.cellsW));
   const cy0 = Math.max(0, Math.floor(v.y));
   const cy1 = Math.min(H, Math.ceil(v.y + v.cellsH));
-  if (S >= 7) {
-    ctx.fillStyle = GRID;
-    const r = S >= 14 ? 1.1 : 0.8;
+  if (S >= 7 && st.gridOn !== false) {
+    ctx.fillStyle = st.modern ? '#ddd4c3' : GRID;
+    const r = st.modern ? .65 : S >= 14 ? 1.1 : 0.8;
     for (let y = Math.max(1, cy0); y <= cy1 && y < H; y++) {
       for (let x = Math.max(1, cx0); x <= cx1 && x < W; x++) {
         const [px, py] = P(x, y);
@@ -137,6 +141,7 @@ export function render(ctx: CanvasRenderingContext2D, st: RenderState): void {
   ctx.save();
   ctx.font = st.font.replace(/\d+px/, `${Math.round(Math.max(12, Math.min(22, S * 1.1)))}px`);
   for (let k = 0; k < st.doc.screens; k++) {
+    if (st.modern && st.doc.screens === 1) continue;
     const [sx] = P(k * WORLD.screen_w, 0);
     if (k > 0) dashedLine(ctx, [sx, wy0], [sx, wy1], 'rgba(31,27,24,0.38)', 1.5, [3, 6]);
     ctx.fillStyle = 'rgba(31,27,24,0.42)';

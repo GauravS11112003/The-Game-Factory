@@ -11,6 +11,7 @@ import type { CleanStroke } from './clean.ts';
 import { CELL, circlePts, flat, hash32, rng, wobble } from './geom.ts';
 import type { V } from './geom.ts';
 import { buildParallax } from './parallax.ts';
+import { guidanceArt } from './guidance.ts';
 import { buildPlayerArt } from './player.ts';
 import { buildSprite, emitStroke } from './sprites.ts';
 import type { SpriteSource } from './sprites.ts';
@@ -333,6 +334,8 @@ export function buildArt(level: LevelV2, ink: InkDoc | LevelInk | null | undefin
 
   // ---- player and static entity layers (thumbnails, SVG); the engine animates the sprites instead ----
   const player = buildPlayerArt(characterOf(ink, level), b, seed);
+  const themedParallax = guidanceArt(level.rules?.guidance, b, level.world, g, terrainPaths, sprites, player,
+    new Set(objects.filter((object) => object.origin === 'draft').map((object) => object.id)));
   const entPaths: ArtPath[] = [];
   for (const s of sprites) entPaths.push(...moveSpritePaths(s));
   const start = entities.find((e) => e.type === 'player_start') as Extract<Entity, { type: 'player_start' }> | undefined;
@@ -340,7 +343,7 @@ export function buildArt(level: LevelV2, ink: InkDoc | LevelInk | null | undefin
   const sy = start?.y ?? 22;
   const playerPaths = moveSpritePaths({ id: 'player', type: 'player', source: player.source, designer: false, anchor: [sx, sy], bbox: player.bbox, paths: player.paths, eyes: [], object_ids: [] });
 
-  const par = buildParallax(level.id ?? 'level', theme, level.world, g, entities);
+  const par = themedParallax ?? buildParallax(level.id ?? 'level', theme, level.world, g, entities);
   const boilFrame = o.boilFrame ?? 0;
   if (boilFrame) {
     jitter(decoPaths, boilFrame, 1);

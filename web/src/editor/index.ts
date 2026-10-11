@@ -35,6 +35,7 @@ import { openStudio } from './studio.ts';
 import { View } from './view.ts';
 
 import { isTap } from './tools.ts';
+import { sketchShape } from './sketch-shapes.ts';
 
 export { MARKER_COLORS, STAMPS, isTap } from './tools.ts';
 export type { EditorDocData } from './doc.ts';
@@ -48,11 +49,16 @@ export interface EditorOptions {
   onSaveCharacter?(strokes: InkStroke[], rig: Rig | null): Promise<void>;
   canSaveToLibrary: boolean;
   submitLabel?: string;
+  freeSketch?: boolean;
+  showSubmit?: boolean;
+  /** A small drawing toolbar for the game idea canvas. */
+  simpleToolbar?: boolean;
   /** Remix: the published parent (perception matches remixed objects to it; the remix diff outlines what changed). */
   parentLevel?: LevelV2 | null;
 }
 
 export interface EditorHandle {
+  setFreeSketch(enabled: boolean): void;
   readonly doc: EditorDoc;
   /** The local Faithful build of the current drawing, when the hints are up to date. */
   lastBuild(): { level: LevelV2; ink: InkDoc } | null;
@@ -80,10 +86,11 @@ const ROLE_INK: Partial<Record<Role, InkColor>> = {
   spikes: 'red', lava: 'red', saw: 'red', enemy: 'red', goal: 'green', checkpoint: 'green', coin: 'blue', big_coin: 'blue', key: 'blue',
 };
 
-type Tool = 'marker' | 'eraser' | 'select' | 'stamp' | 'pan';
+type Tool = 'marker' | 'eraser' | 'select' | 'stamp' | 'pan' | 'rectangle' | 'ellipse';
 
 type Mode =
   | { k: 'idle' }
+  | { k: 'shape'; pid: number; kind: 'rectangle' | 'ellipse'; from: CellXY; to: CellXY }
   | { k: 'draw'; pid: number; raw: Pt[]; t0: number; px0: [number, number]; movedPx: number; straight: boolean; holdAt: number; lastHoldPx: [number, number] }
   | { k: 'erase'; pid: number; path: { x: number; y: number }[]; startPx: [number, number]; movedPx: number; t0: number }
   | { k: 'lasso'; pid: number; path: { x: number; y: number }[]; additive: boolean }
@@ -114,8 +121,12 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
   let hidden = new Set<string>(); // strokes hidden during an eraser scrub
   let extra: InkStroke[] = []; // pieces created during an eraser scrub
   let hints: HintsResult | null = null;
-  let hintsOn = !store.flag('hintsOff');
-  let rowSnap = store.flag('rowSnap');
+  let freeSketch = o.freeSketch ?? false;
+  const modernSketch = !!o.simpleToolbar && freeSketch;
+  let brushPx = 6;
+  let gridOn = true;
+  let hintsOn = !freeSketch && !store.flag('hintsOff');
+  let rowSnap = !freeSketch && store.flag('rowSnap');
   let hintsResting = false;
   const chipUntil = new Map<string, number>();
   let recentStrokes = new Set<string>();
@@ -150,13 +161,45 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
   const colorBtns = MARKERS.map((m) =>
     h('button', {
       type: 'button', class: 'marker-btn', title: t(m.meaning), data: { color: m.color },
-      onclick: () => { color = m.color; setTool('marker'); },
+      onclick: () => { color = m.color; if (tool === 'rectangle' || tool === 'ellipse') syncTools(); else setTool('marker'); },
     }, h('span', { class: 'dot', style: { background: INK[m.color] } }, m.glyph), h('span', { class: 'lbl' }, t(m.meaning))));
   const toolBtn = (id: Tool, ic: string, label: string): HTMLButtonElement =>
     h('button', { type: 'button', class: 'tool', data: { tool: id }, title: label, onclick: () => setTool(id) }, icon(ic), h('span', { class: 'lbl' }, label));
   const eraserBtn = toolBtn('eraser', 'eraser', t('tool.eraser'));
   const selectBtn = toolBtn('select', 'select', t('tool.select'));
   const panBtn = toolBtn('pan', 'pan', t('tool.pan'));
+  const brushBtn = toolBtn('marker', 'marker', t('sketch.brush'));
+  const rectangleBtn = toolBtn('rectangle', 'rectangle', t('sketch.rectangle'));
+  const ellipseBtn = toolBtn('ellipse', 'ellipse', t('sketch.ellipse'));
+  const brushValue = h('output', { class: 'sketch-brush-value' }, `${brushPx}px`);
+  const brushSize = h('input', { type: 'range', min: 2, max: 20, step: 1, value: brushPx, 'aria-label': t('sketch.brush_size'),
+    oninput: (event: Event) => { brushPx = Number((event.target as HTMLInputElement).value); brushValue.textContent = `${brushPx}px`; } });
+  const zoomValue = h('output', { class: 'sketch-zoom-value', 'aria-label': t('sketch.zoom') });
+  const gridBtn = h('button', { type: 'button', class: 'tool', title: t('sketch.grid'), 'aria-label': t('sketch.grid'), 'aria-pressed': 'true',
+    onclick: () => { gridOn = !gridOn; gridBtn.setAttribute('aria-pressed', String(gridOn)); requestDraw(); } }, icon('grid'));
+  const noteInput = h('input', { class: 'text', maxLength: 240, placeholder: t('sketch.note_placeholder'), 'aria-label': t('sketch.note') });
+  const noteList = h('div', { class: 'sketch-note-list' });
+  const noteForm = h('div', { class: 'sketch-note-form', hidden: true }, noteInput,
+    h('button', { type: 'button', onclick: () => saveNote() }, t('sketch.add_note')),
+    h('button', { type: 'button', 'aria-label': t('ui.close'), onclick: () => { noteForm.hidden = true; } }, icon('close')));
+  function saveNote(): void {
+    if (readOnly || !noteInput.value.trim()) return;
+    const rules = [...doc.data.rules, { id: `note-${doc.newId()}`, text: noteInput.value.trim(), strokeId: [...selection][0] ?? null }];
+    doc.apply({ removed: [], added: [], rules: [doc.data.rules, rules] });
+    noteInput.value = ''; noteForm.hidden = true;
+  }
+  noteInput.addEventListener('keydown', event => {
+    if (event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); saveNote(); }
+  });
+  const noteBtn = h('button', { type: 'button', class: 'tool', title: t('sketch.note'), 'aria-label': t('sketch.note'),
+    onclick: () => { if (readOnly) return; noteForm.hidden = !noteForm.hidden; if (!noteForm.hidden) noteInput.focus(); } }, icon('note'));
+  function renderSketchNotes(): void {
+    if (!modernSketch) return;
+    noteList.replaceChildren(...doc.data.rules.map(rule => h('span', { class: 'sketch-note-chip' }, icon('note'), rule.text,
+      h('button', { type: 'button', disabled: !!readOnly, 'aria-label': t('sketch.remove_note', { note: rule.text }), onclick: () => {
+        if (!readOnly) doc.apply({ removed: [], added: [], rules: [doc.data.rules, doc.data.rules.filter(r => r.id !== rule.id)] });
+      } }, icon('close')))));
+  }
   const stampBtn = h('button', { type: 'button', class: 'tool', data: { tool: 'stamp' }, title: t('tool.stamps'), onclick: () => toggleStampPicker() }, icon('stamp'), h('span', { class: 'lbl' }, t('tool.stamps')));
   const stampPicker = h('div', { class: 'stamp-picker hidden' });
   const undoBtn = h('button', { type: 'button', class: 'tool', title: t('tool.undo'), onclick: () => doc.undo() }, icon('undo'));
@@ -185,8 +228,37 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
     h('div', { class: 'grp' }, zoomOut, zoomIn, fitBtn, snapBtn, hintsBtn),
     h('div', { class: 'grp' }, charBtn, creatureBtn, rulesBtn, unlockBtn, changesBtn, inkItBtn),
     h('div', { class: 'grp right' }, playBtn, submitBtn));
+  function freeTools(): void {
+    submitBtn.classList.toggle('hidden', o.showSubmit === false);
+    for (let i = 0; i < colorBtns.length; i++) {
+      const m = MARKERS[i], button = colorBtns[i];
+      const label = t(freeSketch ? `imagine.color.${m.color}` : m.meaning);
+      button.title = label;
+      button.querySelector('.lbl')!.textContent = label;
+      button.querySelector('.dot')!.textContent = freeSketch ? '' : m.glyph;
+    }
+    hintsBtn.classList.toggle('hidden', freeSketch);
+    snapBtn.classList.toggle('hidden', freeSketch);
+    playBtn.classList.toggle('hidden', freeSketch);
+    submitBtn.replaceChildren(icon('check'), freeSketch ? t('imagine.build') : o.submitLabel ?? t('editor.make_level'));
+  }
+  freeTools();
+  if (o.simpleToolbar) {
+    toolbar.classList.add('ed-toolbar-simple');
+    toolbar.replaceChildren(h('div', { class: 'grp markers' }, ...colorBtns),
+      h('div', { class: 'grp sketch-draw-tools' }, brushBtn, eraserBtn, selectBtn, panBtn, rectangleBtn, ellipseBtn, noteBtn),
+      h('label', { class: 'grp sketch-brush-size', title: t('sketch.brush_size') }, brushSize, brushValue),
+      h('div', { class: 'grp' }, undoBtn, redoBtn));
+  }
   const bottom = h('div', { class: 'ed-bottom' }, minimap.el, trimBtn);
-  const shell = h('div', { class: 'editor' }, toolbar, h('div', { class: 'ed-main' }, canvasWrap, sidePanel), selBar, bottom, status);
+  const emptyHint = h('div', { class: 'sketch-empty', 'aria-hidden': 'true' }, h('span', null, '✦'),
+    h('strong', null, t('sketch.empty_title')), h('span', null, t('sketch.empty_help')));
+  if (modernSketch) canvasWrap.append(emptyHint);
+  const sketchFooter = h('div', { class: 'sketch-footer' }, h('span', { class: 'sketch-gesture-hint' }, t('sketch.navigation_hint')),
+    h('div', { class: 'sketch-viewport-tools' }, gridBtn, zoomOut, zoomValue, zoomIn, fitBtn));
+  const shell = h('div', { class: `editor${modernSketch ? ' sketch-editor' : ''}` }, toolbar,
+    h('div', { class: 'ed-main' }, canvasWrap, sidePanel), selBar, bottom, status,
+    modernSketch ? [sketchFooter, noteForm, noteList] : []);
   root.append(shell);
 
   // ---- tool state ----------------------------------------------------------------------------------------------------
@@ -198,8 +270,14 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
   }
 
   function syncTools(): void {
-    for (const b of colorBtns) b.classList.toggle('on', tool === 'marker' && b.dataset.color === color);
-    for (const b of [eraserBtn, selectBtn, panBtn, stampBtn]) b.classList.toggle('on', b.dataset.tool === tool);
+    for (const b of colorBtns) {
+      const selected = ['marker', 'rectangle', 'ellipse'].includes(tool) && b.dataset.color === color;
+      b.classList.toggle('on', selected); b.setAttribute('aria-pressed', String(selected));
+    }
+    for (const b of [brushBtn, eraserBtn, selectBtn, panBtn, stampBtn, rectangleBtn, ellipseBtn]) {
+      const selected = b.dataset.tool === tool;
+      b.classList.toggle('on', selected); b.setAttribute('aria-pressed', String(selected));
+    }
     undoBtn.disabled = !doc.canUndo();
     redoBtn.disabled = !doc.canRedo();
     snapBtn.classList.toggle('on', rowSnap);
@@ -216,6 +294,7 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
     addScreenBtn.classList.toggle('hidden', doc.data.screens >= WORLD.max_screens);
     trimBtn.classList.toggle('hidden', !doc.lastScreenEmpty());
     canvas.dataset.tool = spaceDown ? 'pan' : tool;
+    emptyHint.hidden = doc.data.strokes.length > 0 || mode.k !== 'idle';
   }
 
   function setSelection(next: Set<string>): void {
@@ -541,17 +620,19 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
   let hintsTimer = 0;
   function scheduleHints(ms: number = CANVAS.hints_debounce_ms): void {
     window.clearTimeout(hintsTimer);
+    if (freeSketch) return;
     hintsTimer = window.setTimeout(() => void runHints(), ms);
   }
 
   async function runHints(): Promise<HintsResult | null> {
+    if (freeSketch) return null;
     const rev = doc.rev;
     try {
       const r = await coreClient().hints({
         rev, strokes: doc.data.strokes, screens: doc.data.screens, character: doc.data.character, rules: doc.data.rules,
         parent: doc.data.parent, rules_game: o.rules, library: doc.data.library, parentLevel,
       });
-      if (!r || destroyed) return null;
+      if (!r || destroyed || freeSketch) return null;
       if (parentLevel && doc.data.parent) {
         // the object-level remix diff; until the core has it, "new" means ink that is not the parent's
         coreClient().remix({ parent: parentLevel, ink: r.ink }).then((d) => {
@@ -635,8 +716,10 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
       : doc.data;
     const st: RenderState = {
       view, doc: dataView, locked, selection, highlight, pick, now, font: FONT, hints, hintsOn, chipUntil,
+      modern: modernSketch, gridOn,
       flagGhost: hints?.start ?? null,
-      live: mode.k === 'draw' ? { pts: mode.raw, color, straight: mode.straight, flash } : null,
+      live: mode.k === 'draw' ? { pts: mode.raw, color, straight: mode.straight, flash } : mode.k === 'shape' ?
+        { pts: sketchShape(mode.kind, mode.from, mode.to, brushPx / WORLD.cell_px, view.worldW, WORLD.h), color, straight: false, flash: 0 } : null,
       lasso: mode.k === 'lasso' ? mode.path : null,
       eraser: tool === 'eraser' && lastPointer ? { x: lastPointer[0], y: lastPointer[1], r: eraserR() } : null,
       dragOffset: mode.k === 'move' ? mode.offset : null,
@@ -645,6 +728,8 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
     };
     if (mode.k === 'flag') st.doc = { ...st.doc, startAt: mode.at };
     render(ctx, st);
+    zoomValue.textContent = `${Math.round(view.zoom * 100)}%`;
+    emptyHint.hidden = doc.data.strokes.length > 0 || mode.k !== 'idle';
     overlayAnim = overlay ? overlay(ctx, view, now) === true : false;
     // "+ Add screen" sits on the world's right edge.
     const [rx] = view.toPx(view.worldW, 0);
@@ -721,10 +806,14 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
     switch (tool) {
       case 'marker':
         mode = {
-          k: 'draw', pid: e.pointerId, raw: [{ x: cx, y: cy, w: markerWidth(e.pressure, e.pointerType) }], t0: performance.now(),
+          k: 'draw', pid: e.pointerId, raw: [{ x: cx, y: cy, w: strokeWidth(e.pressure, e.pointerType) }], t0: performance.now(),
           px0: [px, py], movedPx: 0, straight: false, holdAt: performance.now(), lastHoldPx: [px, py],
         };
         armHold();
+        break;
+      case 'rectangle':
+      case 'ellipse':
+        mode = { k: 'shape', pid: e.pointerId, kind: tool, from: [cx, cy], to: [cx, cy] };
         break;
       case 'eraser':
         mode = { k: 'erase', pid: e.pointerId, path: [{ x: cx, y: cy }], startPx: [px, py], movedPx: 0, t0: performance.now() };
@@ -757,6 +846,9 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
   });
 
   let holdTimer = 0;
+  function strokeWidth(pressure: number, pointerType: string): number {
+    return markerWidth(pressure, pointerType) * (modernSketch ? brushPx / CANVAS.marker_px : 1);
+  }
   function armHold(): void {
     window.clearTimeout(holdTimer);
     holdTimer = window.setTimeout(checkHold, CANVAS.line_hold_ms);
@@ -833,7 +925,7 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
           const dpx = Math.hypot(qx - last.x, qy - last.y) * view.scale;
           if (dpx < 0.75) continue;
           mode.movedPx = Math.max(mode.movedPx, Math.hypot(sx - mode.px0[0], sy - mode.px0[1]));
-          const w = markerWidth(s.pressure, s.pointerType);
+          const w = strokeWidth(s.pressure, s.pointerType);
           if (mode.straight) mode.raw = straightLine(mode.raw[0], { x: qx, y: qy, w: mode.raw[0].w });
           else mode.raw.push({ x: qx, y: qy, w });
         }
@@ -856,6 +948,11 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
       case 'lasso':
         if (e.pointerId !== mode.pid) return;
         mode.path.push({ x: cx, y: cy });
+        requestDraw();
+        return;
+      case 'shape':
+        if (e.pointerId !== mode.pid) return;
+        mode.to = [cx, cy];
         requestDraw();
         return;
       case 'move':
@@ -904,6 +1001,16 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
     mode = { k: 'idle' };
     window.clearTimeout(holdTimer);
     switch (m.k) {
+      case 'shape': {
+        if (e.type === 'pointercancel') break;
+        const pts = sketchShape(m.kind, m.from, [cx, cy], brushPx / WORLD.cell_px, view.worldW, WORLD.h);
+        if (!pts.length) break;
+        const arr = toStrokeArrays(pts);
+        const stroke: InkStroke = { id: doc.newId('s'), color, kind: 'line', pts: arr.pts, w: arr.w,
+          closed: true, sheet: sheetOf(pts[0].x), origin: 'kid', t: doc.nextT() };
+        addKidStrokes([stroke]);
+        break;
+      }
       case 'draw':
         if (e.type === 'pointercancel') break;
         finishDraw(m);
@@ -979,7 +1086,7 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
     if (isTap(m.movedPx, dt)) {
       // A tap stamps a 14 px dot (coin-sized) [B F7].
       stroke = {
-        id, color, kind: 'dot', pts: [[q(first.x), q(first.y)]], w: [CANVAS.tap_dot_c], closed: true, sheet: sheetOf(first.x),
+        id, color, kind: 'dot', pts: [[q(first.x), q(first.y)]], w: [modernSketch ? first.w : CANVAS.tap_dot_c], closed: true, sheet: sheetOf(first.x),
         origin: 'kid', t: doc.nextT(),
       };
     } else if (m.raw.length < 2) {
@@ -1041,8 +1148,9 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
 
   // ---- keyboard -----------------------------------------------------------------------------------------------------
   const onKeyDown = (e: KeyboardEvent): void => {
-    if (!shell.isConnected || isTyping(e)) return;
-    if (document.querySelector('.modal-back')) return; // a studio is open: its own keys
+    if (!shell.isConnected || !shell.getClientRects().length || readOnly || isTyping(e)) return;
+    if (document.querySelector('.modal-back:not(.creation-modal), dialog[open]')) return;
+    if (document.querySelector('.creation-modal') && !shell.closest('.creation-modal')) return;
     if (!playOverlay.classList.contains('hidden')) {
       if (e.key === 'Escape') stopTestPlay();
       return;
@@ -1077,7 +1185,9 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
       else if (k === 'e') setTool('eraser');
       else if (k === 'v') setTool('select');
       else if (k === 'h') setTool('pan');
-      else if (k === 'p') void testPlay(null);
+      else if (k === 'p' && !freeSketch) void testPlay(null);
+      else if (k === 'r' && modernSketch) setTool('rectangle');
+      else if (k === 'o' && modernSketch) setTool('ellipse');
       else if (k === 'f') {
         view.fitScreen();
         requestDraw();
@@ -1227,6 +1337,7 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
   let saveTimer = 0;
   const off = doc.on((why) => {
     syncTools();
+    renderSketchNotes();
     renderStatus();
     requestDraw();
     window.clearTimeout(saveTimer);
@@ -1248,11 +1359,23 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
   view.x = -0.5;
   view.clamp();
   syncTools();
+  renderSketchNotes();
   renderStatus();
   scheduleHints(0);
   raf = requestAnimationFrame(frame);
 
   return {
+    setFreeSketch(enabled: boolean) {
+      freeSketch = enabled;
+      hintsOn = !enabled && !store.flag('hintsOff');
+      rowSnap = !enabled && store.flag('rowSnap');
+      hints = null;
+      freeTools();
+      syncTools();
+      scheduleHints(0);
+      renderStatus();
+      requestDraw();
+    },
     doc,
     lastBuild: () => (hints && hints.rev === doc.rev ? { level: hints.level, ink: hints.ink } : null),
     useLibraryStamp: (typeId: string) => pickLibraryStamp(typeId),
@@ -1287,6 +1410,13 @@ export function createEditor(root: HTMLElement, o: EditorOptions): EditorHandle 
     },
     setReadOnly(onBlocked: (() => void) | null) {
       readOnly = onBlocked;
+      if (modernSketch) {
+        for (const button of toolbar.querySelectorAll<HTMLButtonElement>('button')) button.disabled = !!readOnly;
+        noteInput.disabled = !!readOnly;
+        noteBtn.disabled = !!readOnly;
+        if (!readOnly) syncTools();
+        renderSketchNotes();
+      }
     },
     requestDraw,
   };
@@ -1296,4 +1426,3 @@ function isTyping(e: KeyboardEvent): boolean {
   const el = e.target as HTMLElement | null;
   return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
 }
-

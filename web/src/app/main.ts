@@ -7,6 +7,7 @@
  * Chrome is paper and ink (§7.9); every sentence comes from shared/spec/messages.json.
  */
 import './style.css';
+import { arcadeScreen, arcadePlayScreen } from '../arcade/index.ts';
 import { card, h, icon } from './dom.ts';
 import { t } from './messages.ts';
 import { parseHash } from './router.ts';
@@ -15,8 +16,11 @@ import { devScreen } from './screens/dev.ts';
 import { drawScreen } from './screens/draw.ts';
 import { gameScreen } from './screens/game.ts';
 import { homeScreen } from './screens/home.ts';
+import { createGameScreen } from './screens/create-game.ts';
+import { imagineScreen } from './screens/imagine.ts';
 import { libraryScreen } from './screens/library.ts';
 import { playScreen } from './screens/play.ts';
+import { raceScreen } from './screens/race.ts';
 import { previewScreen } from './screens/preview.ts';
 import { promptScreen } from './screens/prompt.ts';
 import { rulesScreen } from './screens/rules.ts';
@@ -54,16 +58,18 @@ function header(): HTMLElement {
     sync();
   };
   sync();
-  return h('header', { class: 'app-head' },
+  const el = h('header', { class: 'app-head' },
     h('a', { class: 'logo', href: '#/' }, h('span', { class: 'logo-mark' }, '✎'), ' draw-a-level'),
     h('nav', null,
       h('a', { href: '#/', data: { nav: '' } }, icon('home'), h('span', null, t('ui.home'))),
-      h('a', { href: '#/draw', data: { nav: 'draw' } }, icon('marker'), h('span', null, t('home.draw'))),
-      h('a', { href: '#/scan', data: { nav: 'scan' } }, icon('camera'), h('span', null, t('home.scan'))),
-      h('a', { href: '#/prompt', data: { nav: 'prompt' } }, icon('pencil'), h('span', null, t('home.prompt'))),
-      h('a', { href: '#/jams', data: { nav: 'jams' } }, h('span', { class: 'emo' }, '🎪'), h('span', null, t('collab.jams.nav')))),
+      h('a', { href: '#/studio', data: { nav: 'studio' } }, icon('marker'), h('span', null, t('creator_studio.title')))),
     collabChrome(),
     mute);
+  for (const link of el.querySelectorAll<HTMLAnchorElement>('nav a')) {
+    link.setAttribute('aria-label', link.textContent ?? '');
+    link.title = link.textContent ?? '';
+  }
+  return el;
 }
 
 const app = document.getElementById('app')!;
@@ -84,15 +90,27 @@ function route(): void {
   const { path, query } = parseHash();
   const [first = '', second] = path;
   for (const a of head.querySelectorAll<HTMLAnchorElement>('nav a')) a.classList.toggle('on', a.dataset.nav === first);
-  document.body.dataset.screen = first || 'home';
+  document.body.dataset.screen = first === 'arcade' ? 'arcade' : first || 'home';
   if (first === 'draw' || first === 'scan' || first === 'prompt' || (first === 'game' && path[2] === 'library')) captureContribution(query);
   try {
     switch (first) {
       case '':
+        cleanup = arcadeScreen(app, query);
+        break;
+      case 'arcade':
+        cleanup = second ? arcadePlayScreen(app, second) : arcadeScreen(app, query);
+        break;
+      case 'studio':
         cleanup = homeScreen(app);
         break;
       case 'draw':
-        cleanup = drawScreen(app, query);
+        cleanup = query.size ? drawScreen(app, query) : homeScreen(app, true);
+        break;
+      case 'create':
+        cleanup = query.has('from') || query.has('game') ? createGameScreen(app, query) : homeScreen(app, true);
+        break;
+      case 'imagine':
+        cleanup = imagineScreen(app, second ?? '');
         break;
       case 'scan':
         cleanup = scanScreen(app, query);
@@ -103,6 +121,9 @@ function route(): void {
         break;
       case 'play':
         if (second) cleanup = playScreen(app, second, query);
+        break;
+      case 'race':
+        if (second) cleanup = raceScreen(app, second, query);
         break;
       case 'game':
         if (second && path[2] === 'rules') cleanup = rulesScreen(app, second);

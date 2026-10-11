@@ -108,6 +108,7 @@ export const creativeApi = {
     f.append('bbox_cells', JSON.stringify(j.bbox_cells));
     if (j.game_id) f.append('game_id', j.game_id);
     if (j.hint) f.append('hint', j.hint);
+    f.append('provider', 'claude-svg');
     const r = await call<{ job_id: string; job?: unknown }>('POST', `${BASE}/jobs`, f);
     return { job_id: r.job_id, job: normJob(r.job) };
   },
@@ -137,7 +138,7 @@ export const creativeApi = {
 
   /** 202 {job_id}: a wide parallax backdrop for the level. */
   backdrop(body: BackdropBody): Promise<{ job_id: string }> {
-    return call('POST', `${BASE}/backdrop`, body);
+    return call('POST', `${BASE}/backdrop`, { ...body, provider: 'claude-svg' });
   },
 
   /** The game's style reference, from words or from a picture (image_url is null without Firefly). */

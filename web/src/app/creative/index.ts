@@ -1,5 +1,5 @@
 /**
- * "Firefly brings it to life" on the client (v3 lane 2). The screens call three hooks:
+ * Optional SVG artwork on the client. The screens call three hooks:
  * - draw.ts: mountCreativeDraw() groups strokes into objects, prefetches art in the background and docks the tray;
  * - preview.ts: mountCreativePreview() dresses the stage with the art and plays the fly-in reveal;
  * - preview.ts publish: showSubmission() when the level went to a game's review queue instead of going live.
@@ -23,6 +23,7 @@ export { docIdOf } from './session.ts';
 export function mountCreativeDraw(o: { editor: EditorHandle; root: HTMLElement; rules: GameRules }): () => void {
   const { editor } = o;
   const data = editor.doc.data;
+  if (!data.betterGraphics) return () => undefined;
   const hadId = !!docIdOf(data);
   const docId = docIdOf(data, true)!;
   if (!hadId) editor.doc.setMeta({}); // saves the new id with the working drawing
@@ -53,7 +54,7 @@ export function mountCreativeDraw(o: { editor: EditorHandle; root: HTMLElement; 
       strokes: () => editor.doc.data.strokes,
       objects: () => editor.lastBuild()?.level.objects ?? null,
       screens: () => editor.doc.data.screens,
-      theme: () => o.rules.theme ?? null,
+      theme: () => o.rules.guidance?.setting ?? o.rules.theme ?? null,
       status: () => status,
     });
     void doc.load().then(() => prefetch?.kick());

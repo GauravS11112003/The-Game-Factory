@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import base64
 import time
+import os
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict
@@ -117,7 +118,7 @@ async def art_prompt(crop_png: bytes, *, hint: str | None, style_text: str | Non
         return fallback_idea(hint, style_text), None
     content = [_image_block(crop_png), {"type": "text", "text": (
         f"Hint from the child: {sanitize.text(hint, 60) or '(none)'}\n"
-        f"Game style: {sanitize.text(style_text, 300) or '(none: bright, friendly cartoon)'}\n"
+        f"Game style: {sanitize.text(style_text, 300) or '(none: cohesive, dimensional game illustration)'}\n"
         "The child's drawing of ONE game object is attached. Name it and write the Firefly prompt.")}]
     dl = deadline if deadline is not None else time.monotonic() + client.CALLS["art_prompt"].timeout_s
     try:
@@ -148,7 +149,7 @@ async def art_svg(crop_png: bytes, *, hint: str | None, style_text: str | None, 
     """Claude draws the sprite as SVG (claude-svg provider). Never raises; value is SvgArt or None."""
     text = (
         f"Hint from the child: {sanitize.text(hint, 60) or '(none)'}\n"
-        f"Game style: {sanitize.text(style_text, 300) or '(none: bright, friendly cartoon)'}\n"
+        f"Game style: {sanitize.text(style_text, 300) or '(none: cohesive, dimensional game illustration)'}\n"
         f"Ink colours the child used: {', '.join(colors or []) or '(unknown)'}\n"
         f'Use exactly viewBox="0 0 {view_w} {view_h}" (the drawing\'s proportions).\n'
         + (f"Variation: {sanitize.text(variation, 120)}\n" if variation else "")
@@ -157,7 +158,8 @@ async def art_svg(crop_png: bytes, *, hint: str | None, style_text: str | None, 
     content = [_image_block(crop_png), {"type": "text", "text": text}]
     dl = deadline if deadline is not None else time.monotonic() + client.CALLS["art_svg"].timeout_s
     try:
-        return await client.call("art_svg", SvgArt, content, draft_id=None, deadline=dl)
+        return await client.call("art_svg", SvgArt, content, draft_id=None, deadline=dl,
+                                 model=os.environ.get("DAL_SONNET_MODEL") or "claude-sonnet-5-5")
     except Exception as e:  # noqa: BLE001
         return MindResult[SvgArt](kind="art_svg", status="failed", error=f"{type(e).__name__}")
 
@@ -167,13 +169,14 @@ async def art_backdrop(*, theme: str | None, style_text: str | None, view_w: int
     """Claude paints a wide, horizontally tileable parallax backdrop as SVG. Never raises."""
     text = (
         f"Theme: {sanitize.text(theme, 200) or '(none: a sunny meadow with hills)'}\n"
-        f"Game style: {sanitize.text(style_text, 300) or '(none: bright, friendly cartoon)'}\n"
+        f"Game style: {sanitize.text(style_text, 300) or '(none: cohesive, dimensional game illustration)'}\n"
         f"The level is {screens} screen(s) wide. Use exactly viewBox=\"0 0 {view_w} {view_h}\".\n"
         "Paint the backdrop SVG."
     )
     content = [{"type": "text", "text": text}]
     dl = deadline if deadline is not None else time.monotonic() + client.CALLS["art_backdrop"].timeout_s
     try:
-        return await client.call("art_backdrop", SvgArt, content, draft_id=None, deadline=dl)
+        return await client.call("art_backdrop", SvgArt, content, draft_id=None, deadline=dl,
+                                 model=os.environ.get("DAL_SONNET_MODEL") or "claude-sonnet-5-5")
     except Exception as e:  # noqa: BLE001
         return MindResult[SvgArt](kind="art_backdrop", status="failed", error=f"{type(e).__name__}")

@@ -16,6 +16,9 @@ import { card, h, icon, toast } from '../dom.ts';
 import { kidText, t } from '../messages.ts';
 import { navigate } from '../router.ts';
 import { store, type StoredPack } from '../store.ts';
+import { emptyDoc } from '../../editor/doc.ts';
+import { graphicsOption } from '../graphics-option.ts';
+import { docIdOf, setGameLife } from '../creative/session.ts';
 
 async function downscale(file: Blob): Promise<Blob> {
   try {
@@ -118,6 +121,7 @@ interface Photo {
 export function scanScreen(root: HTMLElement, query: URLSearchParams): () => void {
   let disposed = false;
   const gameId = query.get('game');
+  const graphics = graphicsOption(false, () => undefined);
   const remixId = query.get('remix');
   const extendId = query.get('extend');
   const parentId = remixId ?? extendId;
@@ -316,6 +320,10 @@ export function scanScreen(root: HTMLElement, query: URLSearchParams): () => voi
     try {
       const b = await api.createBuild(form);
       store.setDraftBuild(b.draft_id, { build_id: b.build_id, events_url: b.events_url });
+      const artGameId = gameId ?? pack?.game_id ?? null;
+      const doc = emptyDoc({ gameId: artGameId, betterGraphics: graphics.input.checked });
+      docIdOf(doc, true); setGameLife(artGameId, graphics.input.checked);
+      store.setDraftDoc(b.draft_id, doc);
       navigate(`#/preview/${encodeURIComponent(b.draft_id)}?b=${encodeURIComponent(b.build_id)}`);
     } catch (e) {
       toast(t(e instanceof ApiError ? e.messageKey : 'error.upload_failed', e instanceof ApiError ? e.args : {}));
@@ -333,7 +341,7 @@ export function scanScreen(root: HTMLElement, query: URLSearchParams): () => voi
       h('div', { class: 'row wrap' }, camBtn, addBtn),
       tray,
       trayNote,
-      h('label', { class: 'small' }, t('editor.rules')), rules,
+      h('label', { class: 'small' }, t('editor.rules')), rules, graphics.element,
       h('div', { class: 'row end' }, go),
       file, camera));
   renderPrint();

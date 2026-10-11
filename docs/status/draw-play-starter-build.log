@@ -1,0 +1,13 @@
+
+> draw-a-level-web@0.1.0 starter:build
+> node src/core/cli.ts starter:build
+
+L1 Doodle Meadow: 3 screens, solvable yes, C 0.26 (authored for 0.1), band easy, fastest 19.0 s, casual 32 s, flags [], fixes 0, R edits 0, 2274 ms → dist/L1.level.json
+L2 Spike Garden: 4 screens, solvable yes, C 0.93 (authored for 0.3), band normal, fastest 28.1 s, casual 53 s, flags [], fixes 0, R edits 0, 3380 ms → dist/L2.level.json
+L3 Crumble Cliffs: 4 screens, solvable yes, C 2.17 (authored for 0.6), band hard, fastest 28.3 s, casual 105 s, flags [tight_window], fixes 0, R edits 0, dropped 3.4, 3797 ms → dist/L3.level.json
+L4 Keyhole Castle: 5 screens, solvable yes, C 1.09 (authored for 1), band hard, fastest 35.1 s, casual 75 s, flags [tight_window invisible_lethal], fixes 0, R edits 0, 6441 ms → dist/L4.level.json
+L5 Ink Gauntlet: 3 screens, solvable yes, C 0.95 (authored for 1.8), band normal, fastest 16.3 s, casual 36 s, flags [], fixes 0, R edits 0, 1723 ms → dist/L5.level.json
+classic First Steps: migrated (v1-classic), solvable yes → dist/classic/1.level.json
+classic Spike Valley: migrated (v1-classic), solvable yes → dist/classic/2.level.json
+classic Key Cave: migrated (v1-classic), solvable yes → dist/classic/3.level.json
+wrote shared/starter/dist/index.json

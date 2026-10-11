@@ -1,0 +1,10 @@
+{
+  "draft_id": "d_02622692",
+  "play_url": "http://localhost:5173/#/imagine/d_02622692",
+  "character_sources": [
+    "https://fortnite-api.com/images/cosmetics/br/character_agilerug/featured.png",
+    "https://fortnite-api.com/images/cosmetics/br/cid_a_439_athena_commando_m_trifle/featured.png",
+    "https://fortnite-api.com/images/cosmetics/br/cid_843_athena_commando_m_hightowertomato_casual/featured.png"
+  ],
+  "notes": "Character renders are third-party prototype references, not licensed original sprite sheets. Body poses are static; movement and effects run in the game."
+}

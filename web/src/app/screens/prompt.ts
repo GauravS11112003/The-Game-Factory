@@ -20,6 +20,8 @@ import { DEFAULT_RULES } from '../rules.ts';
 import { store } from '../store.ts';
 import { drawLevelThumb } from '../thumbs.ts';
 import { emptyDoc } from '../../editor/doc.ts';
+import { graphicsOption } from '../graphics-option.ts';
+import { docIdOf, setGameLife } from '../creative/session.ts';
 
 const EXAMPLES = ['prompt.example_1', 'prompt.example_2', 'prompt.example_3', 'prompt.example_4'];
 
@@ -68,6 +70,7 @@ export function promptScreen(root: HTMLElement, query: URLSearchParams): () => v
   const dialRow = h('div', { class: 'chips' });
   const go = h('button', { type: 'button', class: 'pill primary big' }, icon('pencil'), t('prompt.make'));
   const out = h('div', { class: 'prompt-out' });
+  const graphics = graphicsOption(false, () => undefined);
 
   function renderOptions(): void {
     screensRow.replaceChildren(h('span', { class: 'small muted' }, t('prompt.how_long')),
@@ -99,7 +102,9 @@ export function promptScreen(root: HTMLElement, query: URLSearchParams): () => v
       const b = await api.promptLevel({ prompt, game_id: gameId, screens, dial, band: dial === 'challenging' ? band : null });
       if (!b.draft_id || !b.build_id) throw new ApiError(501, 'error.not_implemented');
       store.setDraftBuild(b.draft_id, { build_id: b.build_id, events_url: b.events_url });
-      store.setDraftDoc(b.draft_id, emptyDoc({ screens, gameId, title: '' }));
+      const doc = emptyDoc({ screens, gameId, title: '', betterGraphics: graphics.input.checked });
+      docIdOf(doc, true); setGameLife(gameId, graphics.input.checked);
+      store.setDraftDoc(b.draft_id, doc);
       const tier = dial === 'faithful' ? 'faithful' : dial === 'challenging' ? band : 'polished';
       navigate(`#/preview/${encodeURIComponent(b.draft_id)}?b=${encodeURIComponent(b.build_id)}&dial=${tier}`);
       return;
@@ -144,7 +149,7 @@ export function promptScreen(root: HTMLElement, query: URLSearchParams): () => v
   function openDraft(d: PlanResult): void {
     let n = 1;
     const strokes = d.ink.strokes.map((s) => ({ ...s, origin: 'draft' as const, t: s.t ?? n++ }));
-    const doc = emptyDoc({ screens: d.ink.world.screens, strokes, gameId, title: kidText(d.plan.title ?? '') });
+    const doc = emptyDoc({ screens: d.ink.world.screens, strokes, gameId, title: kidText(d.plan.title ?? ''), betterGraphics: graphics.input.checked });
     store.setEditorDoc(doc);
     navigate(`#/draw?from=prompt${gameId ? `&game=${encodeURIComponent(gameId)}` : ''}`);
   }
@@ -157,7 +162,7 @@ export function promptScreen(root: HTMLElement, query: URLSearchParams): () => v
   root.append(card('prompt-card',
     h('h1', { class: 'marker-underline' }, t('ui.prompt')),
     h('p', null, t('prompt.help')),
-    text, examples, screensRow, dialRow,
+    text, examples, screensRow, dialRow, graphics.element,
     h('div', { class: 'row end' }, go)), out);
   renderOptions();
   text.focus();

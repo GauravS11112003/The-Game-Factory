@@ -1,0 +1,5 @@
+
+> draw-a-level-web@0.1.0 golden
+> node src/core/cli.ts golden
+
+cli.ts golden: test / eval tooling, not part of the product build (the owner runs verification)

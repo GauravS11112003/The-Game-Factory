@@ -1,0 +1,60 @@
+[
+  {
+    "method": "POST",
+    "path": "/api/v2/levels/lvl_53fa476c/runs",
+    "status": 422,
+    "ms": 85,
+    "summary": [
+      "message_key",
+      "args"
+    ],
+    "response": {
+      "message_key": "run.rejected",
+      "args": {
+        "why": "claim_time"
+      }
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/api/v2/levels/lvl_53fa476c/runs",
+    "status": 422,
+    "ms": 38,
+    "summary": [
+      "message_key",
+      "args"
+    ],
+    "response": {
+      "message_key": "run.rejected",
+      "args": {
+        "why": "bad_input"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/levels/lvl_53fa476c",
+    "status": 200,
+    "ms": 13,
+    "summary": [
+      "level",
+      "stats",
+      "children"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/levels/lvl_970dee49",
+    "status": 200,
+    "ms": 7,
+    "summary": [
+      "level",
+      "stats",
+      "children"
+    ]
+  },
+  {
+    "check": "Export/import gameplay hash preserved",
+    "same_hash": true
+  }
+]

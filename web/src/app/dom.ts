@@ -47,6 +47,12 @@ const SVGNS = 'http://www.w3.org/2000/svg';
 
 /** Hand-drawn style icons (24 × 24 viewBox, round marker strokes). */
 const ICONS: Record<string, string> = {
+  rectangle: 'M5 5h14v14H5z',
+  ellipse: 'M12 4a8 8 0 100 16 8 8 0 000-16z',
+  grid: 'M6 6h.01M12 6h.01M18 6h.01M6 12h.01M12 12h.01M18 12h.01M6 18h.01M12 18h.01M18 18h.01',
+  note: 'M5 4h14v12l-5 5H5V4zM14 21v-5h5M8 8h8M8 12h5',
+  more: 'M5 12h.01M12 12h.01M19 12h.01',
+  back: 'M19 12H5m5-5-5 5 5 5',
   marker: 'M4 20l3-1 11-11-2-2L5 17l-1 3zM14 6l2-2 4 4-2 2',
   eraser: 'M4 16l8-8 6 6-6 6H8l-4-4zM10 20h10',
   select: 'M5 4c5-2 13 0 14 5s-6 9-11 8M8 17l-2 4M4 4l1 7',

@@ -5,8 +5,10 @@
  */
 import type { Replay } from '../core/types.gen.ts';
 import type { EditorDocData } from '../editor/doc.ts';
+import type { CreationDraft } from './game-brief.ts';
 
 const P = 'dal.v2.';
+const draftTokens = new Map<string, string>();
 
 function get<T>(k: string): T | null {
   try {
@@ -27,6 +29,41 @@ function set(k: string, v: unknown): void {
 }
 
 export const store = {
+  studioGames: (): string[] => (get<string[]>('studio-games') ?? []).filter((id) => typeof id === 'string'),
+  rememberGame(gameId: string | null | undefined): void {
+    if (gameId) set('studio-games', [gameId, ...store.studioGames().filter((id) => id !== gameId)].slice(0, 200));
+  },
+  /** New games never restore a level's IDs, prompt, or canvas. Keep old shared drafts recoverable. */
+  creationDraft: (): CreationDraft | null => {
+    const saved = get<CreationDraft>('creation.game');
+    if (saved?.kind === 'game') return saved;
+    const legacy = get<CreationDraft>('creation');
+    return legacy && !legacy.gameId && !legacy.doc.gameId && !legacy.appendLevel && !legacy.levelId
+      ? { ...legacy, kind: 'game' } : null;
+  },
+  setCreationDraft(draft: CreationDraft | null): void {
+    if (draft && (draft.kind === 'level' || draft.appendLevel || draft.levelId)) {
+      if (draft.gameId) store.setLevelCreationDraft(draft.gameId, draft.levelId ?? 'new', draft);
+      return;
+    }
+    set('creation.game', draft ? { ...draft, kind: 'game', appendLevel: false, levelId: undefined } : null);
+    // Retire only the old new-game draft; leave legacy level work intact.
+    const legacy = get<CreationDraft>('creation');
+    if (!draft && legacy && !legacy.gameId && !legacy.appendLevel && !legacy.levelId) set('creation', null);
+  },
+  levelCreationDraft(gameId: string, slot: string): CreationDraft | null {
+    const saved = get<CreationDraft>(`creation.level.${gameId}.${slot}`);
+    if (saved?.gameId === gameId) return saved;
+    const legacy = get<CreationDraft>('creation');
+    if (legacy?.gameId !== gameId || !(slot === 'new' ? legacy.appendLevel : legacy.levelId === slot)) return null;
+    const recovered: CreationDraft = { ...legacy, kind: 'level' };
+    set(`creation.level.${gameId}.${slot}`, recovered);
+    set('creation.legacy-backup', legacy);
+    set('creation', null);
+    return recovered;
+  },
+  setLevelCreationDraft: (gameId: string, slot: string, draft: CreationDraft | null): void =>
+    set(`creation.level.${gameId}.${slot}`, draft ? { ...draft, kind: 'level', gameId } : null),
   author: (): string => get<string>('author') ?? '',
   setAuthor: (name: string): void => set('author', name.trim().slice(0, 16)),
 
@@ -36,6 +73,13 @@ export const store = {
   draftDoc: (draftId: string): EditorDocData | null => get<EditorDocData>(`draft.${draftId}`),
   setDraftDoc: (draftId: string, doc: EditorDocData): void => set(`draft.${draftId}`, doc),
 
+  chatInput: (draftId: string): string => get<string>(`chat-input.${draftId}`) ?? '',
+  setChatInput: (draftId: string, text: string): void => set(`chat-input.${draftId}`, text || null),
+  chatCanvas: (draftId: string): EditorDocData | null => get<EditorDocData>(`chat-canvas.${draftId}`),
+  setChatCanvas: (draftId: string, doc: EditorDocData | null): void => set(`chat-canvas.${draftId}`, doc),
+
+  draftToken: (draftId: string): string | null => get<string>(`draft-token.${draftId}`) ?? draftTokens.get(draftId) ?? null,
+  setDraftToken: (draftId: string, token: string): void => { draftTokens.set(draftId, token); set(`draft-token.${draftId}`, token); },
   draftBuild: (draftId: string): { build_id: string; events_url: string } | null => get(`build.${draftId}`),
   setDraftBuild: (draftId: string, b: { build_id: string; events_url: string }): void => set(`build.${draftId}`, b),
 
@@ -46,8 +90,8 @@ export const store = {
   pb: (levelId: string, version: number): { time_ms: number; replay: Replay | null } | null => get(`pb.${levelId}@${version}`),
   setPb: (levelId: string, version: number, v: { time_ms: number; replay: Replay | null }): void => set(`pb.${levelId}@${version}`, v),
 
-  flag: (name: 'hintsOff' | 'rowSnap' | 'muted' | 'hideChanges'): boolean => get<boolean>(name) === true,
-  setFlag: (name: 'hintsOff' | 'rowSnap' | 'muted' | 'hideChanges', v: boolean): void => set(name, v),
+  flag: (name: 'hintsOff' | 'rowSnap' | 'muted' | 'hideChanges' | 'faithfulSketch'): boolean => get<boolean>(name) === true,
+  setFlag: (name: 'hintsOff' | 'rowSnap' | 'muted' | 'hideChanges' | 'faithfulSketch', v: boolean): void => set(name, v),
 
   /** Packs printed on this device (newest first, ≤ 12), so the scan tray knows k without reading a QR (§6.4). */
   packs: (): StoredPack[] => (get<StoredPack[]>('packs') ?? []).filter((p) => p && typeof p.pack_id === 'string'),

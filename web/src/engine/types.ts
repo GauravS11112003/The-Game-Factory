@@ -10,7 +10,7 @@ export interface OverlaySpec {
   reachHalo?: CellXY[];
 }
 
-export type GameEvent = 'ready' | 'win' | 'die' | 'coin' | 'big_coin' | 'checkpoint' | 'entity_error';
+export type GameEvent = 'ready' | 'win' | 'die' | 'coin' | 'big_coin' | 'checkpoint' | 'entity_error' | 'race_progress' | 'race_lost';
 
 /** A rect in viewport CSS px: a DOMRect (x, y, width, height, left, top, …) that also carries `w` / `h`. */
 export type ScreenRect = DOMRect & { readonly w: number; readonly h: number };
@@ -47,6 +47,11 @@ export interface MountOptions {
   debug?: boolean;
   /** The "Art: Adobe Firefly · drawn by …" pill while a Firefly skin shows (default true). */
   credits?: boolean;
+  /** Race controls cannot reset the replay or pause the match clock. */
+  race?: boolean;
+  startPaused?: boolean;
+  /** Restore a locally saved input log after reopening Messages. */
+  raceResume?: Replay;
 }
 
 export interface GameHandle {

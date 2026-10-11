@@ -1,0 +1,3983 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "draw-a-level vision",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Api Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scan": {
+      "post": {
+        "tags": [
+          "scan"
+        ],
+        "summary": "Scan",
+        "operationId": "scan_api_scan_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_scan_api_scan_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Scan Api Scan Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/drafts/{draft_id}": {
+      "get": {
+        "tags": [
+          "scan"
+        ],
+        "summary": "Get Draft",
+        "operationId": "get_draft_api_drafts__draft_id__get",
+        "parameters": [
+          {
+            "name": "draft_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Draft Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Draft Api Drafts  Draft Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/levels": {
+      "post": {
+        "tags": [
+          "levels"
+        ],
+        "summary": "Publish Level",
+        "operationId": "publish_level_api_levels_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Publish Level Api Levels Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/levels/{level_id}": {
+      "get": {
+        "tags": [
+          "levels"
+        ],
+        "summary": "Get Level Endpoint",
+        "operationId": "get_level_endpoint_api_levels__level_id__get",
+        "parameters": [
+          {
+            "name": "level_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Level Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Level Endpoint Api Levels  Level Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/levels/{level_id}/tree": {
+      "get": {
+        "tags": [
+          "levels"
+        ],
+        "summary": "Get Tree",
+        "operationId": "get_tree_api_levels__level_id__tree_get",
+        "parameters": [
+          {
+            "name": "level_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Level Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Tree Api Levels  Level Id  Tree Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/levels/{level_id}/like": {
+      "post": {
+        "tags": [
+          "levels"
+        ],
+        "summary": "Like Level",
+        "operationId": "like_level_api_levels__level_id__like_post",
+        "parameters": [
+          {
+            "name": "level_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Level Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "integer"
+                  },
+                  "title": "Response Like Level Api Levels  Level Id  Like Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/fixtures": {
+      "get": {
+        "tags": [
+          "levels"
+        ],
+        "summary": "List Fixtures",
+        "operationId": "list_fixtures_api_fixtures_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "type": "object",
+                  "title": "Response List Fixtures Api Fixtures Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/fixtures/{name}": {
+      "get": {
+        "tags": [
+          "levels"
+        ],
+        "summary": "Get Fixture",
+        "operationId": "get_fixture_api_fixtures__name__get",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/games": {
+      "get": {
+        "tags": [
+          "games"
+        ],
+        "summary": "List Games",
+        "operationId": "list_games_api_games_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response List Games Api Games Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/games/{game_id}": {
+      "get": {
+        "tags": [
+          "games"
+        ],
+        "summary": "Get Game Endpoint",
+        "operationId": "get_game_endpoint_api_games__game_id__get",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Game Endpoint Api Games  Game Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/games/{game_id}/levels": {
+      "post": {
+        "tags": [
+          "games"
+        ],
+        "summary": "Add Level To Game",
+        "operationId": "add_level_to_game_api_games__game_id__levels_post",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddLevelBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Add Level To Game Api Games  Game Id  Levels Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/templates/blank.pdf": {
+      "get": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "Blank Pdf",
+        "operationId": "blank_pdf_api_templates_blank_pdf_get",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Game Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/templates/remix/{level_id}.pdf": {
+      "get": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "Remix Pdf",
+        "operationId": "remix_pdf_api_templates_remix__level_id__pdf_get",
+        "parameters": [
+          {
+            "name": "level_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Level Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/health": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Health",
+        "operationId": "health_api_v2_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Api V2 Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/builds": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Create Build",
+        "operationId": "create_build_api_v2_builds_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Create Build Api V2 Builds Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/builds/{build_id}/events": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Build Events",
+        "operationId": "build_events_api_v2_builds__build_id__events_get",
+        "parameters": [
+          {
+            "name": "build_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Build Id"
+            }
+          },
+          {
+            "name": "last",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "same as Last-Event-ID, for clients that cannot set headers",
+              "title": "Last"
+            },
+            "description": "same as Last-Event-ID, for clients that cannot set headers"
+          },
+          {
+            "name": "Last-Event-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Last-Event-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Build Events Api V2 Builds  Build Id  Events Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/drafts/{draft_id}": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Draft State",
+        "operationId": "draft_state_api_v2_drafts__draft_id__get",
+        "parameters": [
+          {
+            "name": "draft_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Draft Id"
+            }
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Draft State Api V2 Drafts  Draft Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/drafts/{draft_id}/edits": {
+      "put": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Put Edits",
+        "operationId": "put_edits_api_v2_drafts__draft_id__edits_put",
+        "parameters": [
+          {
+            "name": "draft_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Draft Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Put Edits Api V2 Drafts  Draft Id  Edits Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/drafts/{draft_id}/answers": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Post Answer",
+        "operationId": "post_answer_api_v2_drafts__draft_id__answers_post",
+        "parameters": [
+          {
+            "name": "draft_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Draft Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Answer Api V2 Drafts  Draft Id  Answers Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/drafts/{draft_id}/dial": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Post Dial",
+        "operationId": "post_dial_api_v2_drafts__draft_id__dial_post",
+        "parameters": [
+          {
+            "name": "draft_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Draft Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Dial Api V2 Drafts  Draft Id  Dial Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/drafts/{draft_id}/redesign": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Post Redesign",
+        "operationId": "post_redesign_api_v2_drafts__draft_id__redesign_post",
+        "parameters": [
+          {
+            "name": "draft_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Draft Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Redesign Api V2 Drafts  Draft Id  Redesign Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/drafts/{draft_id}/critic": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Post Critic",
+        "operationId": "post_critic_api_v2_drafts__draft_id__critic_post",
+        "parameters": [
+          {
+            "name": "draft_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Draft Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Critic Api V2 Drafts  Draft Id  Critic Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/levels": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Post Level",
+        "operationId": "post_level_api_v2_levels_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Level Api V2 Levels Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/levels/{level_id}/moderate": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Moderate Level",
+        "operationId": "moderate_level_api_v2_levels__level_id__moderate_post",
+        "parameters": [
+          {
+            "name": "level_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Level Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Moderate Level Api V2 Levels  Level Id  Moderate Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/levels/{level_id}/upgrade": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Upgrade Level",
+        "description": "\u00a72.6 \"Upgrade to v2\": re-run a migrated v1-classic level under v2-standard through the Faithful build (v1\npatrollers become walkers with gravity) and save it as a new version. 409 upgrade.not_needed for levels that are\nnot migrated v1-classic levels; 409 upgrade.breaks when the bot cannot finish the result even with repairs.",
+        "operationId": "upgrade_level_api_v2_levels__level_id__upgrade_post",
+        "parameters": [
+          {
+            "name": "level_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Level Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Upgrade Level Api V2 Levels  Level Id  Upgrade Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/levels/{level_id}": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Get Level",
+        "operationId": "get_level_api_v2_levels__level_id__get",
+        "parameters": [
+          {
+            "name": "level_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Level Id"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Level Api V2 Levels  Level Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/levels/{level_id}/tree": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Get Tree",
+        "operationId": "get_tree_api_v2_levels__level_id__tree_get",
+        "parameters": [
+          {
+            "name": "level_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Level Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Tree Api V2 Levels  Level Id  Tree Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/levels/{level_id}/runs": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Post Run",
+        "operationId": "post_run_api_v2_levels__level_id__runs_post",
+        "parameters": [
+          {
+            "name": "level_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Level Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Run Api V2 Levels  Level Id  Runs Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Get Runs",
+        "operationId": "get_runs_api_v2_levels__level_id__runs_get",
+        "parameters": [
+          {
+            "name": "level_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Level Id"
+            }
+          },
+          {
+            "name": "board",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "any",
+              "title": "Board"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 10,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Runs Api V2 Levels  Level Id  Runs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/runs/{run_id}": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Get Run",
+        "operationId": "get_run_api_v2_runs__run_id__get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Run Api V2 Runs  Run Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/levels/{level_id}/attempts": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Post Attempts",
+        "operationId": "post_attempts_api_v2_levels__level_id__attempts_post",
+        "parameters": [
+          {
+            "name": "level_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Level Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/levels/{level_id}/thumbnail": {
+      "put": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Put Thumbnail",
+        "operationId": "put_thumbnail_api_v2_levels__level_id__thumbnail_put",
+        "parameters": [
+          {
+            "name": "level_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Level Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/games": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "List Games",
+        "operationId": "list_games_api_v2_games_get",
+        "parameters": [
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "new",
+              "title": "Sort"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response List Games Api V2 Games Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Create Game",
+        "operationId": "create_game_api_v2_games_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Create Game Api V2 Games Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/games/{game_id}": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Get Game",
+        "operationId": "get_game_api_v2_games__game_id__get",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Game Api V2 Games  Game Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/games/{game_id}/library": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Get Library",
+        "operationId": "get_library_api_v2_games__game_id__library_get",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Library Api V2 Games  Game Id  Library Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Add Type",
+        "operationId": "add_type_api_v2_games__game_id__library_post",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Add Type Api V2 Games  Game Id  Library Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/library/{type_id}": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Get Type",
+        "operationId": "get_type_api_v2_library__type_id__get",
+        "parameters": [
+          {
+            "name": "type_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Type Id"
+            }
+          },
+          {
+            "name": "v",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "V"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Type Api V2 Library  Type Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/library/{type_id}/versions": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "New Version",
+        "operationId": "new_version_api_v2_library__type_id__versions_post",
+        "parameters": [
+          {
+            "name": "type_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Type Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response New Version Api V2 Library  Type Id  Versions Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/library/{type_id}/update-levels": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Update Levels",
+        "operationId": "update_levels_api_v2_library__type_id__update_levels_post",
+        "parameters": [
+          {
+            "name": "type_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Type Id"
+            }
+          },
+          {
+            "name": "v",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "V"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Update Levels Api V2 Library  Type Id  Update Levels Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/library/interpret": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Interpret",
+        "operationId": "interpret_api_v2_library_interpret_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Interpret Api V2 Library Interpret Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/scan/library-sheet": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Scan Library Sheet",
+        "description": "Lane C's OMR reads the boxes (no model); the name lines are then transcribed by the handwriting call, so a\ncreature arrives named \"Grumpo\" instead of \"Creature 1\" whenever the model can read it.",
+        "operationId": "scan_library_sheet_api_v2_scan_library_sheet_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Scan Library Sheet Api V2 Scan Library Sheet Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/games/{game_id}/rules": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Get Rules",
+        "operationId": "get_rules_api_v2_games__game_id__rules_get",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Rules Api V2 Games  Game Id  Rules Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Put Rules",
+        "operationId": "put_rules_api_v2_games__game_id__rules_put",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          },
+          {
+            "name": "apply",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "none",
+              "title": "Apply"
+            }
+          },
+          {
+            "name": "repair",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1,
+              "minimum": 0,
+              "default": 0,
+              "title": "Repair"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Put Rules Api V2 Games  Game Id  Rules Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/games/{game_id}/rules/check": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Check Rules",
+        "operationId": "check_rules_api_v2_games__game_id__rules_check_post",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Check Rules Api V2 Games  Game Id  Rules Check Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/scan/rules-sheet": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Scan Rules Sheet",
+        "description": "Lane C's deterministic OMR \u2192 {patch, asks}; the \"My world is\u2026\" line is transcribed by the handwriting call\n(title and blurb) when the model is available. The game named by the sheet's QR gets the resolved rules too.",
+        "operationId": "scan_rules_sheet_api_v2_scan_rules_sheet_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Scan Rules Sheet Api V2 Scan Rules Sheet Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/prompt-levels": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Create Prompt Level",
+        "operationId": "create_prompt_level_api_v2_prompt_levels_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Create Prompt Level Api V2 Prompt Levels Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/packs": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Create Pack",
+        "operationId": "create_pack_api_v2_packs_post",
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Create Pack Api V2 Packs Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/packs/{pack_id}": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Get Pack",
+        "operationId": "get_pack_api_v2_packs__pack_id__get",
+        "parameters": [
+          {
+            "name": "pack_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Pack Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Pack Api V2 Packs  Pack Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/templates/pack/{pack_id}.pdf": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Pack Pdf",
+        "operationId": "pack_pdf_api_v2_templates_pack__pack_id__pdf_get",
+        "parameters": [
+          {
+            "name": "pack_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Pack Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Pack Pdf Api V2 Templates Pack  Pack Id  Pdf Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/templates/rules.pdf": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Rules Pdf",
+        "operationId": "rules_pdf_api_v2_templates_rules_pdf_get",
+        "parameters": [
+          {
+            "name": "game",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Game"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Rules Pdf Api V2 Templates Rules Pdf Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/templates/library.pdf": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Library Pdf",
+        "operationId": "library_pdf_api_v2_templates_library_pdf_get",
+        "parameters": [
+          {
+            "name": "game",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Game"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Library Pdf Api V2 Templates Library Pdf Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/levels/{level_id}/export": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Export Level",
+        "operationId": "export_level_api_v2_levels__level_id__export_get",
+        "parameters": [
+          {
+            "name": "level_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Level Id"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Export Level Api V2 Levels  Level Id  Export Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/games/{game_id}/export": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Export Game",
+        "operationId": "export_game_api_v2_games__game_id__export_get",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Export Game Api V2 Games  Game Id  Export Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/import": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Post Import",
+        "operationId": "post_import_api_v2_import_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Import Api V2 Import Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/creative/status": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Creative Status",
+        "operationId": "creative_status_api_v2_creative_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Creative Status Api V2 Creative Status Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/creative/jobs": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Post Job",
+        "operationId": "post_job_api_v2_creative_jobs_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Job Api V2 Creative Jobs Post"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "List Jobs",
+        "operationId": "list_jobs_api_v2_creative_jobs_get",
+        "parameters": [
+          {
+            "name": "doc_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Doc Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response List Jobs Api V2 Creative Jobs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/creative/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Get Job",
+        "operationId": "get_job_api_v2_creative_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Job Api V2 Creative Jobs  Job Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/creative/jobs/{job_id}/reroll": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Post Reroll",
+        "operationId": "post_reroll_api_v2_creative_jobs__job_id__reroll_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Reroll Api V2 Creative Jobs  Job Id  Reroll Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/creative/jobs/{job_id}/choose": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Post Choose",
+        "operationId": "post_choose_api_v2_creative_jobs__job_id__choose_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Choose Api V2 Creative Jobs  Job Id  Choose Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/creative/jobs/{job_id}/pin": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Post Pin",
+        "operationId": "post_pin_api_v2_creative_jobs__job_id__pin_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Pin Api V2 Creative Jobs  Job Id  Pin Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/creative/backdrop": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Post Backdrop",
+        "operationId": "post_backdrop_api_v2_creative_backdrop_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Backdrop Api V2 Creative Backdrop Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/creative/style": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Post Style",
+        "operationId": "post_style_api_v2_creative_style_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Style Api V2 Creative Style Post"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Get Style",
+        "operationId": "get_style_api_v2_creative_style_get",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Game Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Style Api V2 Creative Style Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/drafts/{draft_id}/skin": {
+      "put": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Put Skin",
+        "operationId": "put_skin_api_v2_drafts__draft_id__skin_put",
+        "parameters": [
+          {
+            "name": "draft_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Draft Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Put Skin Api V2 Drafts  Draft Id  Skin Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/collab/players": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Create Player",
+        "operationId": "create_player_api_v2_collab_players_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Create Player Api V2 Collab Players Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/collab/players/me": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Get Me",
+        "operationId": "get_me_api_v2_collab_players_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Me Api V2 Collab Players Me Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Update Me",
+        "operationId": "update_me_api_v2_collab_players_me_put",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Update Me Api V2 Collab Players Me Put"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/collab/players/{player_id}": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Get Player",
+        "operationId": "get_player_api_v2_collab_players__player_id__get",
+        "parameters": [
+          {
+            "name": "player_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Player Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Player Api V2 Collab Players  Player Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/collab/games/{game_id}/bible": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Get Bible",
+        "operationId": "get_bible_api_v2_collab_games__game_id__bible_get",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Bible Api V2 Collab Games  Game Id  Bible Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Put Bible",
+        "operationId": "put_bible_api_v2_collab_games__game_id__bible_put",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Put Bible Api V2 Collab Games  Game Id  Bible Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/collab/games/{game_id}/members": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Get Members",
+        "operationId": "get_members_api_v2_collab_games__game_id__members_get",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Members Api V2 Collab Games  Game Id  Members Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Add Member",
+        "operationId": "add_member_api_v2_collab_games__game_id__members_post",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Add Member Api V2 Collab Games  Game Id  Members Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/collab/games/{game_id}/members/{player_id}": {
+      "delete": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Remove Member",
+        "operationId": "remove_member_api_v2_collab_games__game_id__members__player_id__delete",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          },
+          {
+            "name": "player_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Player Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Remove Member Api V2 Collab Games  Game Id  Members  Player Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/collab/games/{game_id}/join": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Join Game",
+        "operationId": "join_game_api_v2_collab_games__game_id__join_post",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Join Game Api V2 Collab Games  Game Id  Join Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/collab/games/{game_id}/submissions": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "List Submissions",
+        "operationId": "list_submissions_api_v2_collab_games__game_id__submissions_get",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response List Submissions Api V2 Collab Games  Game Id  Submissions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/collab/submissions/{sub_id}": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Get Submission",
+        "operationId": "get_submission_api_v2_collab_submissions__sub_id__get",
+        "parameters": [
+          {
+            "name": "sub_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sub Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Submission Api V2 Collab Submissions  Sub Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/collab/submissions/{sub_id}/review": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Review Submission",
+        "operationId": "review_submission_api_v2_collab_submissions__sub_id__review_post",
+        "parameters": [
+          {
+            "name": "sub_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sub Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Review Submission Api V2 Collab Submissions  Sub Id  Review Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/collab/submissions/{sub_id}/comments": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Comment Submission",
+        "operationId": "comment_submission_api_v2_collab_submissions__sub_id__comments_post",
+        "parameters": [
+          {
+            "name": "sub_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sub Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Comment Submission Api V2 Collab Submissions  Sub Id  Comments Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/collab/submissions/{sub_id}/vote": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Vote Submission",
+        "operationId": "vote_submission_api_v2_collab_submissions__sub_id__vote_post",
+        "parameters": [
+          {
+            "name": "sub_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sub Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Vote Submission Api V2 Collab Submissions  Sub Id  Vote Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/collab/games/{game_id}/quests": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "List Quests",
+        "operationId": "list_quests_api_v2_collab_games__game_id__quests_get",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response List Quests Api V2 Collab Games  Game Id  Quests Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Create Quest",
+        "operationId": "create_quest_api_v2_collab_games__game_id__quests_post",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Create Quest Api V2 Collab Games  Game Id  Quests Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/collab/quests/{quest_id}/claim": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Claim Quest",
+        "operationId": "claim_quest_api_v2_collab_quests__quest_id__claim_post",
+        "parameters": [
+          {
+            "name": "quest_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Quest Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Claim Quest Api V2 Collab Quests  Quest Id  Claim Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/collab/quests/{quest_id}/done": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Finish Quest",
+        "operationId": "finish_quest_api_v2_collab_quests__quest_id__done_post",
+        "parameters": [
+          {
+            "name": "quest_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Quest Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Finish Quest Api V2 Collab Quests  Quest Id  Done Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/collab/games/{game_id}/credits": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Get Credits",
+        "operationId": "get_credits_api_v2_collab_games__game_id__credits_get",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Credits Api V2 Collab Games  Game Id  Credits Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/collab/activity": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Get Activity",
+        "operationId": "get_activity_api_v2_collab_activity_get",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Game Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Activity Api V2 Collab Activity Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/collab/notifications": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Get Notifications",
+        "operationId": "get_notifications_api_v2_collab_notifications_get",
+        "parameters": [
+          {
+            "name": "unread",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Unread"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Notifications Api V2 Collab Notifications Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/collab/notifications/read": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Read Notifications",
+        "operationId": "read_notifications_api_v2_collab_notifications_read_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Read Notifications Api V2 Collab Notifications Read Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/collab/jams": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Get Jams",
+        "operationId": "get_jams_api_v2_collab_jams_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Jams Api V2 Collab Jams Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Create Jam",
+        "operationId": "create_jam_api_v2_collab_jams_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Create Jam Api V2 Collab Jams Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/live/{room}/info": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Live Info",
+        "operationId": "live_info_api_v2_live__room__info_get",
+        "parameters": [
+          {
+            "name": "room",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Room"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/live/{room}/qr.svg": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Live Qr",
+        "operationId": "live_qr_api_v2_live__room__qr_svg_get",
+        "parameters": [
+          {
+            "name": "room",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Room"
+            }
+          },
+          {
+            "name": "url",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 600,
+              "title": "Url"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/games/{game_id}/export/phaser": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Export Phaser",
+        "operationId": "export_phaser_api_v2_games__game_id__export_phaser_get",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Export Phaser Api V2 Games  Game Id  Export Phaser Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AddLevelBody": {
+        "properties": {
+          "level_id": {
+            "type": "string",
+            "title": "Level Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "level_id"
+        ],
+        "title": "AddLevelBody"
+      },
+      "Body_scan_api_scan_post": {
+        "properties": {
+          "image": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Image"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode",
+            "default": "paper"
+          },
+          "prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "game_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Game Id"
+          },
+          "debug": {
+            "type": "boolean",
+            "title": "Debug",
+            "default": false
+          },
+          "character": {
+            "anyOf": [
+              {
+                "type": "string",
+                "contentMediaType": "application/octet-stream"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Character"
+          }
+        },
+        "type": "object",
+        "required": [
+          "image"
+        ],
+        "title": "Body_scan_api_scan_post"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "PublishBody": {
+        "properties": {
+          "draft_id": {
+            "type": "string",
+            "title": "Draft Id"
+          },
+          "author": {
+            "type": "string",
+            "title": "Author"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "solvable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Solvable"
+          },
+          "game_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Game Id"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "draft_id",
+          "author"
+        ],
+        "title": "PublishBody"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

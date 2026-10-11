@@ -20,6 +20,8 @@ import { creativeApi } from './api.ts';
 import { creativeDoc, creativeStatus, docIdOf } from './session.ts';
 import { CreativeTray } from './tray.ts';
 import type { CreativeStatus, Credit, Job, Skin, SkinMode, SkinObject } from './types.ts';
+import { StrokeGrouper } from '../../editor/groups.ts';
+import { Prefetcher } from './prefetch.ts';
 
 const STAGGER_MS = 350;
 const FLIGHT_MS = 760;
@@ -145,6 +147,8 @@ export function mountCreativePreview(o: { draftId: string; stage: Stage; ink: ()
   let status: CreativeStatus | null = null;
   let destroyed = false;
   let lastShow: StageShow | null = null;
+  let artGrouper: StrokeGrouper | undefined;
+  let artPrefetch: Prefetcher | undefined;
   let revealStarted = false;
   let backdropLanded = false;
   let runToken = 0;
@@ -255,6 +259,7 @@ export function mountCreativePreview(o: { draftId: string; stage: Stage; ink: ()
   const dress = (s: StageShow): StageShow => ({ ...s, level: dressLevel(s.level, shownSkin(s.level)) });
   stage.show = (s: StageShow, opt?: { when?: 'now' | 'safe' }): void => {
     lastShow = s;
+    artGrouper?.flush();
     const d = dress(s);
     shownSig = sigOf(d.level);
     rawShow(d, opt);
@@ -339,6 +344,19 @@ export function mountCreativePreview(o: { draftId: string; stage: Stage; ink: ()
     revealStarted = true;
     await Promise.all([doc.load(), creativeStatus().then((s) => (status = s))]);
     if (destroyed) return;
+    if (draftDoc?.betterGraphics && !artGrouper) {
+      doc.setLife(true);
+      artGrouper = new StrokeGrouper({
+        strokes: () => currentInk()?.strokes ?? [], objects: () => lastShow?.level.objects ?? null,
+        onChange: () => () => undefined,
+      }, { seed: doc.list().map(r => ({ group_id: r.group_id, stroke_ids: r.stroke_ids })) });
+      artPrefetch = new Prefetcher({ doc, grouper: artGrouper,
+        strokes: () => currentInk()?.strokes ?? [], objects: () => lastShow?.level.objects ?? null,
+        screens: () => currentInk()?.world.screens ?? 1,
+        theme: () => lastShow?.rules?.guidance?.setting ?? lastShow?.rules?.theme ?? null,
+        status: () => status });
+      artGrouper.flush();
+    }
     tray.render();
     reveal(false);
   }
@@ -601,6 +619,7 @@ export function mountCreativePreview(o: { draftId: string; stage: Stage; ink: ()
       for (const id of timers) window.clearTimeout(id);
       timers.clear();
       window.clearTimeout(putTimer);
+      artPrefetch?.destroy(); artGrouper?.destroy();
       offDoc();
       tray.destroy();
       layer.remove();

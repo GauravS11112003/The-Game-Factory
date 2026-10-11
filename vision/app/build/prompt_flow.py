@@ -121,6 +121,8 @@ async def draft_ink(run: Any) -> dict[str, Any] | None:
     prompt = sanitize.text(req.prompt or "", 400)
     screens = max(1, min(6, int(req.screens or 1)))
     rules = run.rules()
+    if req.typed_rules:
+        rules = {**rules, "x_creation_context": [r["text"] for r in req.typed_rules]}
     pp = mplan.prompt_params()
     run.stage("upload", "done")
     run.stage("cv", "start", PLAN_STAGE_NOTE)

@@ -1,0 +1,16 @@
+.git
+**/node_modules
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/*.pyc
+**/*.egg-info
+**/.env
+**/.env.*
+**/data
+**/backups
+out
+web/dist
+web/dist-export
+.DS_Store
+# Keep shared/starter/dist: the API seeds playable levels from it.

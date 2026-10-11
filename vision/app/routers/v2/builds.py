@@ -23,6 +23,7 @@ from pydantic import ValidationError
 from starlette.datastructures import UploadFile
 
 from app import db_v2
+from app.game_brief import brief_rules
 from app.build import drafts, runner
 from app.build.events import format_sse, read_events, read_events_from
 from app.build.orchestrator import BuildRequest
@@ -121,6 +122,8 @@ async def create_build(request: Request) -> Any:
         return err(404, "error.not_found", {"what": "level"})
     if game_id and db_v2.get_game(str(game_id)) is None:
         return err(404, "error.not_found", {"what": "game"})
+    if game_id:
+        typed = [*brief_rules(db_v2.get_game(str(game_id))), *typed]
     if dial == "challenging" and band is None:
         rules = (db_v2.get_game(str(game_id)) or {}).get("rules") if game_id else None
         band = (rules or {}).get("default_band", "normal")

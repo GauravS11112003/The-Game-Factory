@@ -1,0 +1,159 @@
+/* Scoped arcade chrome; the creation studio retains its own style. */
+body[data-screen="arcade"],body[data-screen="home"]{background:#f8f9f5;color:#282d29;background-image:none}
+body[data-screen="arcade"]>.app-head,body[data-screen="home"]>.app-head{display:none}
+body[data-screen="arcade"] main.v2,body[data-screen="home"] main.v2{max-width:none;margin:0;padding:0}
+.arcade{--ar-ink:#292f2b;--ar-muted:#858981;--ar-line:#e7e9e0;--ar-lime:#deefa9;font-family:'Avenir Next','Segoe UI',sans-serif;font-size:14px;line-height:1.5;color:var(--ar-ink);display:flex;min-height:100vh;letter-spacing:-.15px}
+.arcade *{box-sizing:border-box}.arcade h1,.arcade h2,.arcade h3,.arcade p{font-family:inherit;margin:0;transform:none}.arcade h1,.arcade h2,.arcade h3{font-weight:700;letter-spacing:-1px}.arcade a{color:inherit;text-decoration:none}.arcade button,.arcade input{font-family:inherit;font-size:inherit}.arcade button{cursor:pointer}.arcade button:disabled{opacity:.45;cursor:default}
+.arcade button:focus-visible,.arcade a:focus-visible,.arcade input:focus-visible,.arcade canvas:focus-visible{outline:3px solid #7b8f51;outline-offset:4px}
+.arcade .ar-icon{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ar-side{width:224px;flex-shrink:0;background:#f0f2e9;border-right:1px solid #e3e6db;padding:32px 20px 22px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.ar-brand{display:flex;align-items:center;font-size:27px;font-weight:800;letter-spacing:-1.6px;gap:0;margin:0 5px 47px}.ar-brand-icon{display:inline-grid;place-items:center;background:#2e3b2d;color:#e7f0ce;width:34px;height:34px;border-radius:11px;margin-right:10px;transform:rotate(-8deg)}.ar-brand-icon .ar-icon{width:22px;height:22px;fill:currentColor;stroke:none}.ar-brand-dot{color:#9bb267}
+.ar-side-label{font-size:9px;letter-spacing:1.5px;font-weight:700;color:#8d9383;padding-left:14px;margin-bottom:14px}.ar-nav{display:flex;flex-direction:column;gap:5px}.ar-nav a{display:flex;align-items:center;gap:11px;border-radius:9px;padding:12px 14px;color:#737b6e;font-size:12px;font-weight:600}.ar-nav a:hover{background:#e7eade}.ar-nav a.active{background:#dfe8cb;color:#394f30}.ar-nav-count{margin-left:auto;background:#edf3e0;border-radius:6px;padding:1px 7px;font-size:10px}
+.ar-side-divider{border-bottom:1px solid #dee3d4;margin:26px 12px}.ar-studio-link{display:flex;align-items:center;gap:10px;padding:8px 13px;color:#737b6e!important;font-size:12px}.ar-studio-link>.ar-icon:last-child{margin-left:auto;width:15px}.ar-studio-link:hover{color:#2e3b2d!important}.ar-side-bottom{margin-top:auto;padding-top:45px}
+.ar-side-note{border:1px solid #d9decf;padding:17px 17px 19px;border-radius:12px;position:relative}.ar-side-note strong{font-size:13px;display:block;margin-top:5px}.ar-side-note p{font-size:11px;line-height:1.7;color:#8a9080;margin-top:6px;white-space:pre-line}.ar-note-stars{color:#91a863;font-size:29px;line-height:1;display:block}.ar-profile{display:flex;gap:10px;align-items:center;padding:24px 0 0}.ar-avatar{display:grid;place-items:center;background:#dfc9ae;color:#64503e;font-size:12px;font-weight:700;width:34px;height:34px;border-radius:50%}.ar-profile strong{display:block;font-size:11px;font-weight:600}.ar-profile small{display:block;color:#939789;font-size:9px;margin-top:2px}.ar-online{width:6px;height:6px;border-radius:50%;background:#91a76d;margin-left:auto}
+.ar-main{flex:1;min-width:0}.ar-topbar{height:78px;border-bottom:1px solid var(--ar-line);display:flex;align-items:center;padding:0 42px;gap:20px}.ar-breadcrumb{font-size:11px;color:#93978e;display:flex;gap:14px;align-items:center}.ar-breadcrumb strong{font-weight:500;color:#50564b}.ar-breadcrumb span{color:#bfc2b8}.ar-search{position:relative;margin-left:auto;display:flex;align-items:center;gap:9px}.ar-search .ar-icon{width:16px;color:#9da294}.ar-search-input{width:211px;border:0;background:transparent;outline:none;font-size:11px!important;color:#585e52;padding:10px 0}.ar-search-input::placeholder{color:#9b9f94}.ar-top-status{font-size:10px;color:#7e8870;display:flex;align-items:center;gap:7px;white-space:nowrap;padding-left:22px;border-left:1px solid #e4e7dc}.ar-top-status i{width:5px;height:5px;background:#9dae7d;border-radius:50%}
+.ar-content{max-width:1420px;padding:35px 42px 20px;margin:0 auto}.ar-heading{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:29px}.ar-eyebrow{color:#8b927e;letter-spacing:1.6px;font-size:9px;font-weight:700}.ar-heading h1{font-size:clamp(25px,2.5vw,36px);line-height:1.25;margin:10px 0 9px}.ar-heading p{font-size:12px;color:#8d9286}.ar-heading-star{font-size:32px;color:#9aad78;display:inline-block;margin-left:12px;vertical-align:middle}
+.arcade .ar-btn{border:1px solid #dfe4d5;border-radius:9px;background:#f9fbf5;display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:11px 17px;font-size:11px;font-weight:600;white-space:nowrap;transition:transform .18s,background .18s}.arcade .ar-btn:hover:not(:disabled){transform:translateY(-2px);background:#eef3e4}.ar-surprise{align-self:center}.ar-surprise .ar-icon{width:16px}
+.ar-hero{overflow:hidden;position:relative;display:flex;border-radius:18px;min-height:328px;background:#2e2b44;color:#fff}.ar-hero-copy{padding:35px 39px;position:relative;z-index:2;width:52%}.ar-hero-label{letter-spacing:1.8px;font-weight:600;font-size:9px;color:#dce5b7;display:flex;gap:8px;align-items:center}.ar-hero-label span{font-size:14px}.ar-hero h2{font-size:clamp(32px,3.7vw,49px);line-height:1.13;font-weight:600;letter-spacing:-1.8px;margin:17px 0 12px;color:#fbf6e9}.ar-hero-copy>p{font-size:11px;line-height:1.8;color:#bbb8ca;white-space:pre-line}.arcade .ar-hero-btn{background:#dceda8;color:#34422c;border:0;padding:11px 19px;margin-top:20px}.arcade .ar-hero-btn:hover{background:#eff9cc!important}.ar-hero-btn .ar-icon{width:15px;fill:currentColor;stroke:none}.ar-hero-foot{display:flex;align-items:center;gap:10px;font-size:8px;color:#aaa8bb;margin-top:22px}.ar-hero-avatars{display:inline-flex;color:#f5e5ba;font-size:16px;letter-spacing:-1px;background:#62566e;padding:1px 8px;border-radius:20px}.ar-hero-art{position:absolute;right:-13px;top:-15px;bottom:-15px;width:58%}.ar-hero-art svg{width:100%;height:100%;object-fit:contain}.ar-hero-corner{position:absolute;right:25px;bottom:19px;font-size:7px;color:#918ca8;letter-spacing:1.7px}
+.ar-games-section{margin-top:31px}.ar-section-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:20px}.ar-section-heading h2{font-size:20px;letter-spacing:-.6px;display:flex;align-items:center;gap:12px}.ar-game-count{font-size:10px;letter-spacing:0;font-weight:500;background:#e9eddf;color:#84926d;border-radius:5px;padding:3px 7px}.ar-curated{color:#9da394;font-size:10px;display:flex;align-items:center;gap:6px}.ar-curated .ar-icon{width:13px;height:13px}.ar-tabs{display:flex;gap:9px;margin-bottom:23px;flex-wrap:wrap}.ar-tab{border:1px solid #e3e7da;background:transparent;border-radius:7px;padding:7px 16px;color:#87907c;font-size:10px!important;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:background .15s}.ar-tab .ar-icon{width:12px;height:12px}.ar-tab.active{background:#303d2f;color:#f7f9ed;border-color:#303d2f}.ar-tab:hover:not(.active){background:#eef2e5}
+.ar-game-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:23px}.ar-game-card{border:1px solid #e4e7dc;background:#fff;border-radius:13px;overflow:hidden;transition:transform .2s,box-shadow .2s}.ar-game-card:hover{transform:translateY(-4px);box-shadow:0 8px 24px #3a4f3010}.ar-card-image{position:relative;height:auto;aspect-ratio:1.56;overflow:hidden}.ar-image-link{display:block;width:100%;height:100%}.ar-thumbnail{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s}.ar-game-card:hover .ar-thumbnail{transform:scale(1.05)}.ar-card-tag{position:absolute;pointer-events:none;top:13px;left:13px;padding:4px 7px;color:#5c5c56;background:#ffffffe8;border-radius:4px;font-size:7px;letter-spacing:.7px;font-weight:700}.ar-favorite{position:absolute;top:11px;right:11px;width:29px;height:29px;display:grid;place-items:center;border-radius:50%;background:#ffffffed;border:0;color:#787b71;transition:transform .2s}.ar-favorite .ar-icon{width:13px;height:13px}.ar-favorite:hover{transform:scale(1.1)}.ar-favorite.saved{color:#cc6e7e}.ar-favorite.saved .ar-icon{fill:#cc6e7e}.ar-image-play{opacity:0;pointer-events:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(.8);background:#f7f9efdf;color:#303d2f;padding:16px;border-radius:50%;display:flex;transition:.2s}.ar-image-play .ar-icon{width:24px;height:24px;fill:currentColor;stroke:none}.ar-game-card:hover .ar-image-play{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.ar-card-body{padding:16px 18px 13px}.ar-card-category{text-transform:uppercase;letter-spacing:1.3px;font-size:8px;color:#9aa18d}.ar-card-body h3{font-size:18px;letter-spacing:-.5px;margin:3px 0}.ar-card-body h3 a:hover{color:#6f884f}.ar-card-body p{font-size:10px;color:#929888}.ar-card-bottom{border-top:1px solid #ecefe5;margin-top:15px;padding-top:11px;display:flex;align-items:center;justify-content:space-between}.ar-card-bottom>span{display:flex;align-items:center;gap:5px;font-size:8px;color:#9ca28f}.ar-card-bottom>span .ar-icon{width:11px;height:11px}.ar-card-go{width:27px;height:27px;border-radius:50%;display:grid;place-items:center;background:#f1f4e9;color:#63774c!important}.ar-card-go .ar-icon{width:15px;height:15px}.ar-card-go:hover{background:#e1edc9}.ar-empty{grid-column:1/-1;text-align:center;padding:50px 20px;color:#8a947c;min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center}.ar-empty>.ar-icon{width:32px;height:32px;margin-bottom:16px}.ar-empty h3{color:#38492e;font-size:24px;margin-bottom:8px}.ar-empty .ar-btn{margin-top:24px}.ar-footer{border-top:1px solid #e5e9dc;padding:21px 0 10px;margin-top:32px;display:flex;justify-content:space-between;color:#a1a691;font-size:9px;gap:15px}.ar-footer-spark{color:#9caa7e;font-size:15px;padding-right:7px}
+.ar-back{display:flex;align-items:center;gap:9px;font-size:11px;color:#697b58!important}.ar-topbar .ar-back+.ar-top-status{margin-left:auto}.ar-player-heading{display:flex;align-items:center;justify-content:space-between;gap:25px;margin-bottom:24px}.ar-player-heading h1{font-size:34px;margin:5px 0 7px;line-height:1.2}.ar-player-heading p{font-size:11px;color:#909986;max-width:530px}.ar-scoreboard{display:flex;gap:28px;white-space:nowrap;text-align:right}.ar-scoreboard small{display:block;font-size:8px;letter-spacing:1.5px;color:#99a18e;margin-bottom:4px}.ar-scoreboard strong{font-size:24px;font-weight:600}.ar-play-stage{position:relative;overflow:hidden;border-radius:16px;border:1px solid #d8dece;background:#192a30;width:100%;aspect-ratio:16/9;isolation:isolate}.ar-game-canvas{display:block;width:100%;height:100%;object-fit:contain;outline:none!important}.ar-play-overlay{position:absolute;inset:0;background:#15202c69;backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto}.ar-play-overlay[hidden]{display:none}.ar-overlay-card{padding:26px 34px;background:#fbfcf3f2;box-shadow:0 15px 60px #15202c3d;border:1px solid #ffffff80;border-radius:19px;width:min(410px,95%);text-align:center}.ar-overlay-symbol{font-size:30px;color:#839b5d;display:block;line-height:1.3;margin-bottom:12px}.ar-overlay-card h2{font-size:30px;margin-top:9px}.ar-overlay-card p{font-size:12px;color:#7d8870;margin-top:12px;line-height:1.7}.arcade .ar-start-btn{background:#d7e99f;color:#384e29;border:0;margin-top:22px;padding:13px 24px;font-size:12px}.arcade .ar-start-btn:hover{background:#e6f1c5!important}.ar-start-btn .ar-icon{width:15px;height:15px;fill:currentColor;stroke:none}.ar-overlay-hint{display:block;font-size:9px;margin-top:13px;color:#a0a790}.ar-modes{display:flex;gap:5px;background:#e9eddc;padding:4px;border-radius:8px;margin:18px 0 0}.ar-mode{width:50%;border:0;background:transparent;color:#7c8870;padding:8px 0;border-radius:6px;font-size:10px!important}.ar-mode.active{background:#fffdf6;box-shadow:0 2px 7px #2831240c;color:#405735}
+.ar-play-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:15px;padding:16px 0;border-bottom:1px solid var(--ar-line)}.ar-play-info{font-size:10px;color:#798969;font-weight:600;letter-spacing:.5px}.ar-play-actions{display:flex;gap:8px}.arcade .ar-control-btn{padding:7px 10px;font-size:9px;border-color:#e4e9db}.ar-control-btn .ar-icon{width:14px;height:14px}.ar-instructions{display:flex;justify-content:space-between;gap:30px;padding:25px 0}.ar-instructions h2{font-size:16px;letter-spacing:-.3px;margin-bottom:7px}.ar-instructions p{max-width:380px;font-size:11px;color:#939d84;line-height:1.7}.ar-keys{display:flex;align-items:flex-start;flex-wrap:wrap;gap:15px}.ar-keys>div{display:flex;flex-direction:column;align-items:center;gap:6px}.ar-keys kbd{font-family:inherit;font-size:9px;background:#eef1e4;color:#6b7b59;border:1px solid #dfe5d3;box-shadow:0 2px 0 #dfe5d3;border-radius:5px;padding:6px 9px;white-space:nowrap}.ar-keys span{font-size:8px;color:#9da78e}.ar-player2-help,.ar-local-note{font-size:10px;color:#9aa68b;margin-bottom:14px!important}.ar-result-score{font-size:35px;font-weight:700;margin-top:16px}.ar-result-score small{display:block;font-size:8px;letter-spacing:2px;color:#939f82}.ar-overlay-back{font-size:10px;color:#87996d!important;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:18px}.ar-overlay-back .ar-icon{width:13px}.ar-touch{display:none;gap:10px;justify-content:center;flex-wrap:wrap;padding-top:16px}.ar-touch-key{user-select:none;touch-action:none;min-width:56px;min-height:48px;padding:12px 18px;border:1px solid #d8e2c7;border-radius:10px;background:#e9efdd;color:#637b4b;font-size:13px!important;font-weight:600}.ar-touch-key.held{background:#cddbaf;transform:translateY(2px)}.ar-play-stage:fullscreen{border:0;border-radius:0;width:100vw;height:100vh;background:#141c24;aspect-ratio:auto}.ar-play-stage.ar-expanded{position:fixed;inset:0;width:100vw;height:100dvh;border-radius:0;z-index:100}
+@media(min-width:1500px){.ar-hero{min-height:365px}.ar-hero-copy{padding:40px 45px}.ar-card-image{aspect-ratio:1.65}}
+@media(max-width:1100px){.ar-side{width:190px;padding-left:14px;padding-right:14px}.ar-topbar{padding:0 28px}.ar-content{padding:28px}.ar-top-status{display:none}.ar-hero-copy{padding:30px;width:56%}.ar-hero-art{right:-65px;width:64%}.ar-game-grid{gap:17px}.ar-game-card .ar-card-body{padding:13px}.ar-card-bottom>span{font-size:7px}.ar-card-tag{top:9px;left:9px}.ar-instructions{flex-direction:column;gap:18px}}
+@media(max-width:850px){.ar-side{width:76px;padding:28px 12px 16px}.ar-brand{font-size:0;margin:0 5px 30px}.ar-brand-icon{margin-right:0}.ar-side-label,.ar-nav-count,.ar-side-note,.ar-profile>div,.ar-online{display:none}.ar-nav a,.ar-studio-link{font-size:0;padding:13px 16px}.ar-studio-link>.ar-icon:last-child{display:none}.ar-profile{justify-content:center}.ar-side-divider{margin:19px 0}.ar-side-bottom{padding:0}.ar-content{padding:26px}.ar-heading h1{font-size:26px}.ar-heading-star{font-size:25px}.ar-heading p{font-size:11px}.ar-hero{min-height:330px}.ar-hero h2{font-size:35px}.ar-game-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ar-curated{display:none}.ar-player-heading{align-items:flex-start}.ar-scoreboard{gap:18px}.ar-play-info{font-size:9px}}
+@media(max-width:600px){.arcade{display:block}.ar-side{position:static;flex-direction:row;align-items:center;width:100%;height:64px;padding:12px 16px;border-right:0;border-bottom:1px solid #e3e6db;gap:16px}.ar-brand{font-size:21px;margin:0}.ar-brand-icon{width:29px;height:29px;margin-right:8px;border-radius:9px}.ar-nav{margin-left:auto;flex-direction:row;gap:3px}.ar-nav a{padding:10px}.ar-side-divider,.ar-studio-link,.ar-side-bottom{display:none}.ar-topbar{height:54px;padding:0 20px}.ar-breadcrumb{font-size:10px;gap:7px}.ar-search-input{width:155px;font-size:10px!important}.ar-content{padding:24px 20px 15px}.ar-heading{margin-bottom:22px;flex-wrap:wrap;gap:16px}.ar-heading h1{font-size:25px}.ar-heading-star{display:none}.ar-eyebrow{font-size:8px}.ar-heading p{max-width:300px;line-height:1.7}.ar-surprise{padding:8px 12px!important}.ar-hero{min-height:390px}.ar-hero-copy{width:100%;padding:26px 24px}.ar-hero h2{font-size:35px;margin-top:14px}.ar-hero-art{width:78%;height:270px;right:-47px;top:140px;bottom:auto;opacity:.83;z-index:0}.ar-hero-copy>p{max-width:220px}.ar-hero-btn{margin-top:16px!important}.ar-hero-foot{margin-top:62px}.ar-hero-corner{display:none}.ar-section-heading h2{font-size:19px}.ar-tabs{gap:6px;margin-bottom:18px}.ar-tab{padding:7px 11px;font-size:9px!important}.ar-game-grid{gap:13px}.ar-card-image{aspect-ratio:1.25}.ar-card-body{padding:11px!important}.ar-card-body h3{font-size:16px}.ar-card-body p{font-size:9px;line-height:1.5;min-height:27px}.ar-card-bottom{margin-top:11px}.ar-card-bottom>span{max-width:80px;line-height:1.5}.ar-card-bottom>span .ar-icon{display:none}.ar-card-tag{font-size:6px;padding:3px 5px;top:8px;left:8px}.ar-favorite{width:24px;height:24px;right:7px;top:7px}.ar-favorite .ar-icon{width:11px}.ar-footer{flex-direction:column;margin-top:25px;gap:6px}.ar-player-heading{flex-wrap:wrap;gap:16px}.ar-player-heading h1{font-size:30px}.ar-player-heading p{font-size:11px}.ar-scoreboard{text-align:left}.ar-scoreboard strong{font-size:20px}.ar-play-stage{aspect-ratio:auto;height:min(65vw,320px);border-radius:12px}.ar-overlay-card{width:92%;padding:15px 20px}.ar-overlay-symbol,.ar-overlay-hint{display:none}.ar-overlay-card h2{font-size:22px;margin-top:4px}.ar-overlay-card p{font-size:10px;margin-top:6px}.arcade .ar-start-btn{margin-top:12px;padding:8px 18px;font-size:10px}.ar-modes{margin-top:9px}.ar-mode{font-size:9px!important;padding:6px}.ar-result-score{font-size:25px;margin-top:8px}.ar-play-toolbar{padding:14px 0;gap:11px}.ar-play-actions{flex-wrap:wrap;gap:5px}.ar-control-btn{padding:7px 8px!important}.ar-overlay-back{margin-top:9px}.ar-keys{gap:14px}.ar-keys span{font-size:9px}.ar-keys kbd{font-size:10px}}
+@media(pointer:coarse),(max-width:700px){.ar-touch{display:flex}}
+@media(prefers-reduced-motion:reduce){.arcade *,.arcade *::before,.arcade *::after{transition:none!important;scroll-behavior:auto!important}}
+
+/* Minimal game layout, in the original paper-and-marker theme. */
+.ar-focused .ar-side { display: none; }
+.ar-focused .ar-main { width: 100%; }
+.ar-minimal-head { height: 88px; display: flex; align-items: center; gap: 18px; padding: 0 38px; max-width: 1440px; margin: auto; }
+.ar-minimal-head h1 { font-size: 28px; }
+.ar-minimal-brand { margin-left: auto; font: 1.5rem var(--hand); }
+.arcade .ar-icon-button { display: inline-flex; align-items: center; justify-content: center; width: 50px; height: 50px; border: 2.5px solid var(--ink); border-radius: 15px 12px 17px 13px; background: var(--card); color: var(--ink); padding: 0; font-size: 24px; flex: none; box-shadow: var(--shadow); }
+.arcade .ar-icon-button:hover { background: #fff8d8; transform: rotate(-1deg); }
+.arcade .ar-icon-button.active { background: var(--hi); }
+.ar-focused .ar-player-content { padding: 8px 38px 32px; max-width: 1440px; margin: 0 auto; }
+.ar-game-layout { display: grid; grid-template-columns: minmax(0,1fr) 66px; gap: 22px; align-items: center; }
+.ar-focused .ar-play-stage { width: 100%; height: min(62vw,calc(100svh - 260px)); min-height: 250px; aspect-ratio: auto; border: 3px solid var(--ink); border-radius: 22px 18px 24px 19px; box-shadow: var(--shadow); background: var(--paper-2); }
+.ar-focused .ar-game-canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+.ar-game-rail { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.arcade .ar-add-level { background: var(--hi); }
+.ar-focused .ar-play-overlay { background: transparent; backdrop-filter: none; align-items: flex-end; padding-bottom: 22px; pointer-events: none; }
+.ar-simple-overlay { display: flex; flex-direction: column; align-items: center; gap: 14px; pointer-events: auto; }
+.ar-focused .ar-start-btn { font: 1.4rem var(--hand); min-width: 140px; min-height: 52px; border-radius: 999px; margin: 0; background: var(--ink); color: var(--paper); border: 2.5px solid var(--ink); box-shadow: 2px 3px 0 #1f1b1830; padding: 10px 24px; }
+.ar-simple-result { display: flex; align-items: center; gap: 16px; padding: 14px 24px; background: var(--card); border: 2.5px solid var(--ink); border-radius: var(--r); color: var(--ink); font-size: 25px; }
+.ar-focused .ar-play-toolbar { justify-content: flex-end; border: 0; padding: 12px 88px 0 0; }
+.ar-focused .ar-play-actions { gap: 8px; }
+.ar-focused .ar-play-actions .ar-icon-button { width: 38px; height: 38px; border-width: 1.5px; border-radius: 50%; }
+.ar-custom-levels { display: flex; gap: 12px; overflow-x: auto; padding: 12px 4px; max-width: calc(100% - 88px); }
+.arcade .ar-level-preview { position: relative; padding: 4px; width: 126px; flex: 0 0 126px; border: 2.5px solid var(--ink); border-radius: var(--r); background: var(--card); overflow: hidden; }
+.arcade .ar-level-preview.active { background: var(--hi); box-shadow: 0 0 0 2px var(--hi); }
+.ar-level-preview canvas { display: block; width: 100%; border-radius: 9px; }
+.ar-level-preview span { position: absolute; top: 8px; left: 8px; width: 22px; height: 22px; display: grid; place-items: center; background: var(--card); color: var(--ink); border: 1.5px solid var(--ink); border-radius: 50%; font-size: 13px; }
+.arcade .ar-level-new { align-self: center; border-style: dashed; background: transparent; }
+.arcade.ar-rules-dialog,.arcade.ar-builder-dialog { min-height: 0; color: var(--ink); background: var(--paper); border: 3px solid var(--ink); border-radius: var(--r); box-shadow: 0 24px 100px #1f1b1830; padding: 24px; }
+.arcade.ar-rules-dialog:not([open]),.arcade.ar-builder-dialog:not([open]) { display: none; }
+.arcade.ar-rules-dialog[open],.arcade.ar-builder-dialog[open] { display: block; }
+.ar-rules-dialog::backdrop,.ar-builder-dialog::backdrop { background: #1f1b1860; backdrop-filter: blur(5px); }
+.arcade.ar-rules-dialog { width: min(560px,calc(100vw - 32px)); }
+.ar-rules-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.ar-rules-dialog p { margin: 16px 0; line-height: 1.8; color: var(--ink-soft); }
+.ar-rules-dialog .ar-keys { flex-wrap: wrap; }
+.arcade.ar-builder-dialog { width: min(1220px,calc(100vw - 32px)); max-height: calc(100svh - 32px); overflow: auto; }
+.ar-builder-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.arcade .ar-level-name { font: 1.6rem var(--hand); border: 0; padding: 8px 0; background: transparent; width: min(300px,40vw); border-radius: 0; }
+.ar-builder-commands { display: flex; align-items: center; gap: 8px; }
+.ar-builder-workspace { display: grid; grid-template-columns: minmax(0,1fr) 50px; align-items: start; gap: 18px; }
+.ar-builder-canvas { width: 100%; height: auto; display: block; border: 2.5px solid var(--ink); border-radius: var(--r); cursor: crosshair; touch-action: none; }
+.ar-builder-tools { display: flex; flex-direction: column; gap: 8px; }
+.ar-builder-bottom { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-top: 18px; }
+.ar-builder-pages { display: flex; gap: 8px; }
+.ar-builder-pages .ar-icon-button { width: 36px; height: 36px; border-radius: 50%; font-size: 16px; }
+.ar-builder-status { color: var(--red); font-size: 13px; }
+.ar-builder-settings { display: flex; gap: 22px; flex-wrap: wrap; }
+.ar-builder-settings label { display: flex; align-items: center; gap: 12px; font-size: 22px; }
+.ar-builder-settings output { font-size: 16px; min-width: 36px; }
+.ar-builder-settings input { accent-color: var(--ink); width: 120px; }
+.arcade .ar-builder-save { background: var(--ink); color: var(--paper); border: 2.5px solid var(--ink); font: 1.2rem var(--hand); border-radius: 999px; padding: 8px 22px; }
+@media(max-width:700px) {
+  .ar-minimal-head { height: 74px; padding: 0 16px; gap: 10px; }
+  .ar-minimal-head h1 { font-size: 22px; }
+  .ar-minimal-brand { font-size: 19px; }
+  .ar-focused .ar-player-content { padding: 0 16px 24px; }
+  .ar-game-layout { grid-template-columns: 1fr; gap: 18px; }
+  .ar-focused .ar-play-stage { height: auto; aspect-ratio: 16 / 9; min-height: 0; border-radius: var(--r); }
+  .ar-game-rail { flex-direction: row; justify-content: center; }
+  .ar-focused .ar-play-toolbar { padding: 12px 0 0; justify-content: center; }
+  .ar-custom-levels { max-width: 100%; }
+  .ar-focused .ar-play-overlay { padding-bottom: 14px; }
+  .ar-focused .ar-start-btn { min-height: 42px; min-width: 110px; padding: 6px 18px; font-size: 1.2rem; }
+  .arcade.ar-builder-dialog { padding: 14px; width: calc(100vw - 16px); max-height: calc(100svh - 16px); }
+  .ar-builder-top { flex-wrap: wrap; gap: 10px; }
+  .ar-builder-workspace { grid-template-columns: 1fr; gap: 14px; }
+  .ar-builder-tools { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+  .ar-builder-commands .ar-icon-button,.ar-builder-tools .ar-icon-button { width: 40px; height: 40px; }
+  .ar-builder-top .ar-level-name { width: 100%; }
+  .ar-builder-commands { margin-left: auto; }
+  .ar-builder-bottom { gap: 14px; }
+}
+.ar-focused .ar-play-stage:fullscreen { height: 100vh; border-radius: 0; }
+.ar-focused .ar-play-stage.ar-expanded { height: 100dvh; }
+
+/* Carry the studio's original typography and paper theme into the arcade. */
+body[data-screen='arcade'],body[data-screen='home'] { color: var(--ink); background-color: var(--paper); background-image: radial-gradient(#1f1b1812 1px,transparent 1.2px); background-size: 16px 16px; }
+.arcade { --ar-ink: var(--ink); --ar-muted: var(--ink-soft); --ar-line: var(--ink); --ar-lime: var(--hi); font-family: var(--body); color: var(--ink); letter-spacing: 0; }
+.arcade h1,.arcade h2,.arcade h3,.arcade button,.arcade .ar-brand,.arcade .ar-nav a,.arcade .ar-studio-link,.arcade .ar-tab,.arcade .ar-card-tag,.arcade .ar-eyebrow { font-family: var(--hand); letter-spacing: 0; }
+.arcade h1,.arcade h2,.arcade h3 { font-weight: 700; }
+.arcade .ar-side { background: var(--paper); border-right: 2.5px solid var(--ink); }
+.arcade .ar-brand { font-size: 30px; }
+.arcade .ar-brand-icon { border: 2.5px solid var(--ink); background: var(--hi); color: var(--ink); border-radius: 50%; box-shadow: var(--shadow); }
+.arcade .ar-brand-dot { color: var(--ink); }
+.arcade .ar-nav a { font-size: 19px; color: var(--ink); }
+.arcade .ar-nav a.active { background: var(--hi); border: 2px solid var(--ink); border-radius: 999px; }
+.arcade .ar-studio-link { font-size: 18px; }
+.arcade .ar-topbar { border-bottom: 2.5px solid var(--ink); background: var(--paper); }
+.arcade .ar-heading h1 { font-size: clamp(30px,4vw,44px); display: inline; background: linear-gradient(transparent 64%,var(--hi) 64%,var(--hi) 90%,transparent 90%); }
+.arcade .ar-eyebrow,.arcade .ar-side-label { font-size: 13px; }
+.arcade .ar-hero { position: relative; background: var(--card); border: 2.5px solid var(--ink); border-radius: var(--r); box-shadow: var(--shadow); overflow: visible; }
+.arcade .ar-hero::before,.arcade .ar-hero::after { content:''; position:absolute; width:64px; height:20px; background:#f0dca09e; border:1px solid #a08c5a40; top:-10px; z-index:2; pointer-events:none; }
+.arcade .ar-hero::before { left:18px; transform:rotate(-4deg); }
+.arcade .ar-hero::after { right:22px; transform:rotate(5deg); }
+.arcade .ar-hero h2 { font-size: 46px; color: var(--ink); }
+.arcade .ar-btn { border: 2.5px solid var(--ink); border-radius: 999px; font-family: var(--hand); font-size: 18px; background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
+.arcade .ar-hero-btn { background: var(--ink); color: var(--paper); }
+.arcade .ar-tab { font-size: 17px; border: 2px solid var(--ink); border-radius: 999px; background: var(--card); padding: 5px 16px; }
+.arcade .ar-tab.active { background: var(--ink); color: var(--paper); }
+.arcade .ar-game-card { border: 2.5px solid var(--ink); border-radius: var(--r); background: var(--card); box-shadow: var(--shadow); }
+.arcade .ar-card-image { border-bottom: 2.5px solid var(--ink); }
+.arcade .ar-card-body h3 { font-size: 25px; }
+.arcade .ar-card-body p { font-size: 12px; }
+.arcade .ar-card-category { font: 15px var(--hand); color: var(--ink-soft); }
+.arcade .ar-card-tag { font-size: 12px; border: 1.5px solid var(--ink); background: var(--card); color: var(--ink); }
+.arcade .ar-favorite,.arcade .ar-card-go { border: 2px solid var(--ink); color: var(--ink); background: var(--card); }
+.arcade .ar-footer,.arcade .ar-top-status,.arcade .ar-side-note,.arcade .ar-side-label,.arcade .ar-hero-label,.arcade .ar-hero-foot,.arcade .ar-hero-corner,.arcade .ar-curated,.arcade .ar-card-bottom > span { display: none; }
+.arcade .ar-search-input { border: 0; background: transparent; }
+.arcade .ar-start-btn { background: var(--ink); color: var(--paper); font-size: 23px; }
+.arcade .ar-keys kbd { border: 2px solid var(--ink); background: var(--card); color: var(--ink); font-family: var(--hand); font-size: 18px; }
+.arcade .ar-touch-key { border: 2px solid var(--ink); background: var(--card); color: var(--ink); font-family: var(--hand); font-size: 18px!important; }
+.arcade .ar-touch-key.held { background: var(--hi); }
+@media(max-width:850px) { .arcade .ar-brand,.arcade .ar-nav a,.arcade .ar-studio-link { font-size: 0; } }
+@media(max-width:600px) { .arcade .ar-brand { font-size: 25px; } .arcade .ar-side { border-bottom:2.5px solid var(--ink);border-right:0; } .arcade .ar-hero h2 { font-size: 36px; } .arcade .ar-tab { font-size:15px!important; } .arcade .ar-card-tag { font-size:9px; } }
+.ar-focused { background: transparent; }
+.ar-focused .ar-minimal-head h1 { background: linear-gradient(transparent 64%,var(--hi) 64%,var(--hi) 90%,transparent 90%); }
+.arcade .ar-start-btn:hover { background:#3a332d!important; color:var(--paper); }
+.arcade .ar-card-body { padding:16px; }
+.arcade .ar-section-heading h2 { font-size:28px; }
+.arcade .ar-instructions,.arcade .ar-local-note { display:none; }
+.arcade .ar-hero-copy p { color:var(--ink-soft); font-size:14px; }
+.ar-focused .ar-touch { justify-content:center; }
+
+.ar-generated-cover { background: radial-gradient(circle at 75% 30%, #ffd86b 0 12%, transparent 13%), linear-gradient(145deg, #dbd2ff, #9d86dc); color: #3d285b; }
+.ar-generated-cover .ar-image-link { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 28px; gap: 10px; text-align: center; }
+.ar-generated-cover strong { font-size: 24px; line-height: 1.1; max-width: 90%; }
+.ar-generated-spark { font-size: 60px; color: #5d407e; text-shadow: 3px 4px 0 #fff8; }
+
+.ar-game-card .generated-input-button { margin: 12px 0; }

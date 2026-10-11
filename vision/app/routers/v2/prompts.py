@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
 from app import db_v2
+from app.game_brief import brief_rules
 from app.build import drafts, runner
 from app.build.orchestrator import BuildRequest
 from app.mind import client, moderate, sanitize
@@ -50,6 +51,7 @@ async def create_prompt_level(request: Request) -> Any:
         if game is None or game.get("format") != 2:
             return err(404, "error.not_found", {"what": "game"})
     band = body.band
+    context = brief_rules(game)
     if body.dial == "challenging" and band is None:
         band = ((game or {}).get("rules") or {}).get("default_band", "normal")
     draft_id, build_id = drafts.new_draft_id(), drafts.new_build_id()
@@ -57,6 +59,7 @@ async def create_prompt_level(request: Request) -> Any:
     drafts.save_state(draft_id, drafts.new_state(draft_id, "prompt", model=client.mode(), dial=body.dial, band=band,
                                                  game_id=body.game_id, prompt=prompt))
     runner.start(BuildRequest(build_id=build_id, draft_id=draft_id, kind="prompt", prompt=prompt,
-                              screens=int(body.screens), game_id=body.game_id, dial=body.dial, band=band))
+                              screens=int(body.screens), game_id=body.game_id, dial=body.dial, band=band,
+                              typed_rules=context))
     return JSONResponse(BuildAccepted(build_id=build_id, draft_id=draft_id,
                                       events_url=f"/api/v2/builds/{build_id}/events").model_dump(), status_code=202)

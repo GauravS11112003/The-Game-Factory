@@ -1,8 +1,8 @@
 import { defineConfig } from 'vite';
 
 // The browser (and a phone on the LAN) only ever talks to the Vite port:
-// /api and /uploads are proxied to the FastAPI app on 8000.
-const API = 'http://localhost:8000';
+// /api and /uploads are proxied to the FastAPI port selected by scripts/dev.sh.
+const API = `http://localhost:${process.env.DAL_PORT || '8000'}`;
 
 export default defineConfig({
   server: {

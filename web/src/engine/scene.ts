@@ -23,7 +23,7 @@ import type { ArtDoc, ArtPath } from '../core/art/types.ts';
 import { buildArt, characterOf } from '../core/art/artdoc.ts';
 import { layerWidth } from '../core/art/parallax.ts';
 import { decodeGrid, isFloor, at as tileAt } from '../core/art/terrain.ts';
-import { CORE_VERSION, encodeReplay, levelHash, profileHash } from '../core/index.ts';
+import { CORE_VERSION, decodeReplay, encodeReplay, levelHash, profileHash } from '../core/index.ts';
 import type { CameraState, Sim, SimEvent, SimSnapshot, SimView } from '../core/sim/types.ts';
 import { PROFILES } from '../core/sim/profiles.ts';
 import type { CellXY, GameRules, InkDoc, LevelInk, LevelV2, Morph, RectCells, Replay, Theme } from '../core/types.gen.ts';
@@ -233,6 +233,25 @@ export class PlayScene extends Phaser.Scene {
     if (ul) this.underlay.set(true);
 
     this.newSim(this.d.mount.startAt);
+    if (this.d.mount.race && this.d.mount.raceResume && this.host.real) {
+      const replay = this.d.mount.raceResume;
+      if (replay.level_id === level.id && replay.level_version === level.version) {
+        const inputs = decodeReplay(replay.input);
+        if (inputs.length <= 36000) {
+          for (const bits of inputs) {
+            if (this.cur.won) break;
+            if (this.firstInput === null && bits !== 0) this.firstInput = this.sim.frame;
+            this.record(bits);
+            this.sim.step(bits);
+            this.cur = this.sim.view();
+          }
+          this.prev = this.cur;
+          this.camPrev = this.camCur = this.sim.camera();
+          if (this.cur.won) this.onWin(this.time.now, this.sim.frame);
+        }
+      }
+    }
+    if (this.d.mount.startPaused) this.pauseGame();
     if (!this.host.real) this.hud.setNote('Look around with ← and →');
     this.camShown = this.camCur.x * CELL;
 
@@ -461,6 +480,12 @@ export class PlayScene extends Phaser.Scene {
     }
     this.ghosts?.advance(this.sim.frame, this.firstInput, now);
     for (const ev of events) this.onSimEvent(ev, now);
+    if (this.d.mount.race) {
+      if (this.sim.frame % 12 === 0) this.d.emit('race_progress', {
+        frame: this.sim.frame, x: this.cur.player.x, y: this.cur.player.y, deaths: this.cur.deaths,
+      });
+      if (events.some(ev => ev.type === 'game_over' || ev.type === 'lose')) this.d.emit('race_lost', {});
+    }
     if (this.cur.won && !this.won) this.onWin(now, this.sim.frame);
     if (this.sim.frame % ART.boil.every_f === 0) this.boilFrame = (this.boilFrame + 1) % ART.boil.frames;
   }
@@ -839,6 +864,7 @@ export class PlayScene extends Phaser.Scene {
       }
       return;
     }
+    if (this.d.mount.race && (a === 'pause' || a === 'restart')) return;
     if (a === 'pause') this.paused ? this.resumeGame() : this.pauseGame();
     else if (a === 'restart') this.restart('checkpoint');
     else if (a === 'mute') this.toggleMute();
@@ -855,7 +881,7 @@ export class PlayScene extends Phaser.Scene {
   pauseGame(): void {
     if (this.paused) return;
     this.paused = true;
-    this.hud?.setPaused(true);
+    if (!this.d.mount.race) this.hud?.setPaused(true);
     this.d.chrome?.setPaused(true);
     this.d.mixer?.music(false, { fadeMs: 200 });
     if (this.pending) this.applyPending();
@@ -870,6 +896,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   restart(from: 'start' | 'checkpoint' = 'start'): void {
+    if (this.d.mount.race) return;
     if (!this.sim) return;
     this.d.mixer?.setTempo(1);
     if (from === 'checkpoint' && !this.won && this.host.real) {

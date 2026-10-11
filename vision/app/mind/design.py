@@ -90,7 +90,8 @@ def refine_text(dig: DesignDigest, prev: dict[str, Any], deltas: str, ctx: Desig
         f"FRESH MENU (cid · summary · tiers · dC · dT · cost · fixes)\n{dig.menu_rows or '(empty)'}\n\n"
         f"SLOTS for novel ops: {digest.slots_text(dig)}\nSETPIECES: {digest.setpiece_text(dig)}\n"
         f"BUDGETS: {digest.budgets_text(dig, ctx.design)}\n"
-        "Return only new picks (and novel ops if useful) for the tiers that missed."
+        + (f"NOTE: {ctx.note}\n" if ctx.note else "")
+        + "Return only new picks (and novel ops if useful) for the tiers that missed."
     )
 
 

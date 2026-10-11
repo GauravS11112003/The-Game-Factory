@@ -183,6 +183,12 @@ def plan_content(prompt: str, screens: int, rules: dict[str, Any], retry: dict[s
             f"What went wrong: {retry.get('problem')}\n"
             "Return a corrected plan that keeps the child's idea and stays inside the envelope."
         )
+    context = rules.get("x_creation_context")
+    if isinstance(context, list):
+        text += "\n\nGAME DESIGN CONTEXT:\n" + "\n".join(sanitize.text(line, 600) for line in context[:5])
+    if rules.get("guidance"):
+        text += "\n\nRESOLVED AUTHOR GUIDANCE:\n" + json.dumps(rules["guidance"])
+        text += "\nUse the listed components and mechanics. Explicit author constraints override reference defaults."
     return [{"type": "text", "text": text}]
 
 

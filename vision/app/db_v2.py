@@ -24,7 +24,7 @@ from typing import Any
 from app.config import get_settings
 
 ADD_COLUMNS: dict[str, list[tuple[str, str]]] = {
-    "games": [("rules_json", "TEXT"), ("format", "INTEGER")],
+    "games": [("rules_json", "TEXT"), ("format", "INTEGER"), ("brief_json", "TEXT"), ("generated_json", "TEXT"), ("draft", "BOOLEAN NOT NULL DEFAULT 0"), ("published_generated_json", "TEXT"), ("generated_levels_json", "TEXT")],
     "levels": [
         ("format", "INTEGER DEFAULT 1"), ("version", "INTEGER"), ("json_v2", "TEXT"), ("level_hash", "TEXT"),
         ("c_casual", "REAL"), ("score", "INTEGER"), ("band", "TEXT"), ("screens", "INTEGER"), ("verified", "BOOLEAN"),
@@ -173,15 +173,18 @@ def builds_of_draft(draft_id: str) -> list[dict[str, Any]]:
 # ---- games --------------------------------------------------------------------------------------
 
 
-def create_game(game_id: str, title: str, author: str, rules: dict[str, Any]) -> dict[str, Any]:
+def create_game(game_id: str, title: str, author: str, rules: dict[str, Any],
+                brief: dict[str, Any] | None = None, *, draft: bool = False) -> dict[str, Any]:
     ensure()
     created = now_iso()
     with closing(connect()) as conn, conn:
         conn.execute(
-            "INSERT INTO games (id, title, author, created_at, rules_json, format) VALUES (?, ?, ?, ?, ?, 2)",
-            (game_id, title, author, created, json.dumps(rules, separators=(",", ":"))),
+            "INSERT INTO games (id, title, author, created_at, rules_json, format, brief_json, draft) VALUES (?, ?, ?, ?, ?, 2, ?, ?)",
+            (game_id, title, author, created, json.dumps(rules, separators=(",", ":")),
+             json.dumps(brief, separators=(",", ":")) if brief is not None else None, int(draft)),
         )
-    return {"id": game_id, "title": title, "author": author, "created_at": created, "rules": rules, "format": 2}
+    return {"id": game_id, "title": title, "author": author, "created_at": created, "rules": rules, "format": 2,
+            "brief": brief, "draft": draft}
 
 
 def get_game(game_id: str) -> dict[str, Any] | None:
@@ -198,7 +201,111 @@ def get_game(game_id: str) -> dict[str, Any] | None:
         except json.JSONDecodeError:
             rules = None
     return {"id": g["id"], "title": g["title"], "author": g["author"], "created_at": g["created_at"],
-            "rules": rules, "format": g.get("format") or 1}
+            "rules": rules, "format": g.get("format") or 1, "brief": _game_brief(g), "generated": _generated_game(g), "draft": bool(g.get("draft")),
+            "generated_levels": _generated_levels(g),
+            "published_generated_levels": _generated_levels(g, published=True),
+            "published_generated": _generated_game({"generated_json": g.get("published_generated_json")})}
+
+
+def _generated_game(g: dict[str, Any]) -> dict[str, Any] | None:
+    try:
+        value = json.loads(g.get("generated_json") or "null")
+        return value if isinstance(value, dict) else None
+    except (json.JSONDecodeError, TypeError):
+        return None
+
+
+def _level_entries(g: dict[str, Any]) -> list[dict[str, Any]]:
+    entries = json.loads(g.get("generated_levels_json") or "[]")
+    if not entries and (root := _generated_game(g)):
+        entries = [{"id": root.get("level_id") or root["draft_id"], "draft": root,
+                    "published": _generated_game({"generated_json": g.get("published_generated_json")})}]
+    return entries
+
+
+def _generated_levels(g: dict[str, Any], published: bool = False) -> list[dict[str, Any]]:
+    return [{**entry["published" if published else "draft"], "level_id": entry["id"], "level_number": i + 1}
+            for i, entry in enumerate(_level_entries(g)) if entry.get("published" if published else "draft")]
+
+
+def reserve_generated_level(game_id: str, state: dict[str, Any], *, append: bool = False,
+                            level_id: str | None = None) -> dict[str, Any]:
+    """Allocate a stable level slot atomically; retries/edits replace only that slot."""
+    ensure()
+    with closing(connect()) as conn, conn:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute("SELECT * FROM games WHERE id = ?", (game_id,)).fetchone()
+        if not row:
+            raise ValueError("game_not_found")
+        entries = _level_entries(dict(row))
+        if level_id:
+            index = next((i for i, entry in enumerate(entries) if entry["id"] == level_id), -1)
+            if index < 0:
+                raise ValueError("level_not_found")
+        elif append or not entries:
+            index = len(entries)
+            entries.append({"id": state["draft_id"], "draft": None, "published": None})
+        else:
+            index = 0
+        state.update(level_id=entries[index]["id"], level_number=index + 1)
+        entries[index]["draft"] = state
+        conn.execute("UPDATE games SET generated_levels_json = ?, generated_json = ? WHERE id = ?",
+                     (json.dumps(entries), json.dumps(entries[0]["draft"]), game_id))
+    return state
+
+
+def set_generated_game(game_id: str, state: dict[str, Any], expected_draft: str | None = None) -> None:
+    ensure()
+    with closing(connect()) as conn, conn:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute("SELECT * FROM games WHERE id = ?", (game_id,)).fetchone()
+        if not row:
+            return
+        entries = _level_entries(dict(row))
+        if state.get("level_id"):
+            index = next((i for i, entry in enumerate(entries) if entry["id"] == state["level_id"]), -1)
+            if index < 0:
+                return
+        else:
+            index = 0
+            if not entries:
+                entries.append({"id": state["draft_id"], "draft": None, "published": None})
+        if expected_draft and (entries[index].get("draft") or {}).get("draft_id") != expected_draft:
+            return
+        entries[index]["draft"] = state
+        conn.execute("UPDATE games SET generated_levels_json = ?, generated_json = ? WHERE id = ?",
+                     (json.dumps(entries), json.dumps(entries[0]["draft"]), game_id))
+        if index == 0 and state.get("status") == "ready" and state.get("infer_title") and state.get("title"):
+            conn.execute("UPDATE games SET title = ? WHERE id = ?", (state["title"][:40], game_id))
+
+
+def publish_generated_game(game_id: str, state: dict[str, Any]) -> bool:
+    ensure()
+    with closing(connect()) as conn, conn:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute("SELECT * FROM games WHERE id = ?", (game_id,)).fetchone()
+        if not row:
+            return False
+        entries = _level_entries(dict(row))
+        index = next((i for i, entry in enumerate(entries)
+                      if (entry.get("draft") or {}).get("draft_id") == state["draft_id"]), -1)
+        if index < 0:
+            return False
+        # Publish the initial game first so discovery always starts at Level 1.
+        if index > 0 and not entries[0].get("published"):
+            return False
+        entries[index].update(draft=state, published=state)
+        conn.execute("UPDATE games SET generated_levels_json = ?, generated_json = ?, published_generated_json = ?, draft = 0 WHERE id = ?",
+                     (json.dumps(entries), json.dumps(entries[0]["draft"]), json.dumps(entries[0]["published"]), game_id))
+        return True
+
+
+def _game_brief(g: dict[str, Any]) -> dict[str, Any] | None:
+    try:
+        brief = json.loads(g.get("brief_json") or "null")
+        return brief if isinstance(brief, dict) else None
+    except (json.JSONDecodeError, TypeError):
+        return None
 
 
 def list_games_v2() -> list[dict[str, Any]]:
@@ -213,7 +320,10 @@ def list_games_v2() -> list[dict[str, Any]]:
         except json.JSONDecodeError:
             rules = None
         out.append({"id": g["id"], "title": g["title"], "author": g["author"], "created_at": g["created_at"],
-                    "rules": rules, "format": 2})
+                    "rules": rules, "format": 2, "brief": _game_brief(g), "generated": _generated_game(g), "draft": bool(g.get("draft")),
+            "generated_levels": _generated_levels(g),
+            "published_generated_levels": _generated_levels(g, published=True),
+            "published_generated": _generated_game({"generated_json": g.get("published_generated_json")})})
     return out
 
 

@@ -6,6 +6,18 @@ from pydantic import Field
 from app.spec.common import ChallengeBand, Dial, ProfileId, Spec, Theme
 
 
+class GameGuidance(Spec):
+    theme_name: str
+    scene: Literal["castle", "haunted", "blocks", "meadow", "mountain", "cavern", "custom"]
+    setting: str
+    style_prompt: str
+    mechanics: list[str] = Field(default_factory=list)
+    excluded_mechanics: list[str] = Field(default_factory=list)
+    enemy_archetype: Literal["walker", "hopper", "flyer", "shooter", "chaser", "crusher"] = "walker"
+    palette: list[str] = Field(min_length=4, max_length=4)
+    author_context: list[str] = Field(default_factory=list)
+
+
 class Abilities(Spec):
     run: bool = True
     stomp: bool = True
@@ -27,7 +39,8 @@ class GameRules(Spec):
     default_dial: Dial = "polished"
     default_band: ChallengeBand = "normal"
     player_type: str | None = None  # the game's default character (library type id)
+    guidance: GameGuidance | None = None
 
 
-EXPORTS: list[Any] = [Abilities, GameRules]
+EXPORTS: list[Any] = [Abilities, GameGuidance, GameRules]
 ROOT = GameRules

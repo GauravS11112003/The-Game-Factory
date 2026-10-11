@@ -1,0 +1,11 @@
+{
+  "id": "heaven-clash",
+  "provider": "openai-imagegen",
+  "style": "Cinematic fantasy realism: crisp carved white marble, reflective gold trim, cool blue shadows, warm sunlight, detailed metallic props.",
+  "perspective": "side view, eye-level fighting arena",
+  "tags": ["heaven", "palace", "marble", "fighting", "realistic", "fantasy"],
+  "assets": [
+    {"key": "heaven_arena_backdrop", "filename": "heaven-arena.png", "kind": "backdrop", "frames": 1, "fps": 8, "description": "Detailed heavenly palace arena above clouds, carved marble columns, gold ornaments and a continuous marble floor. Includes the floor; do not overlay a flat terrain tile."},
+    {"key": "stormbreaker_axe", "filename": "stormbreaker-axe.png", "kind": "sprite", "frames": 1, "fps": 8, "description": "Isolated detailed double-headed steel fantasy axe, dark carved shaft and blue electric blade edges. Static prop; animate flight and rotation in code."}
+  ]
+}

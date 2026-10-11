@@ -370,8 +370,13 @@ def _clone(prev: dict[str, Any], doc_id: str, **fields: Any) -> dict[str, Any]:
     return job
 
 
-def _provider_or_raise() -> str:
-    prov = cs.provider()
+def _provider_or_raise(provider: str | None = None) -> str:
+    if provider == "claude-svg":
+        if not art_prompt.client.available():
+            raise CreativeError("creative.off", 409)
+        prov = "claude-svg"
+    else:
+        prov = cs.provider()
     if prov == "none":
         raise CreativeError("creative.off", 409)
     if budget_left() <= 0:
@@ -380,9 +385,9 @@ def _provider_or_raise() -> str:
 
 
 def create_object_job(crop_raw: bytes, *, doc_id: str, stroke_ids: Any, bbox_cells: Any, game_id: str | None,
-                      hint: str | None, by: str | None) -> tuple[dict[str, Any], bool]:
+                      hint: str | None, by: str | None, provider: str | None = None) -> tuple[dict[str, Any], bool]:
     """→ (job, cached). Raises CreativeError (off, budget, bad crop, bad doc id)."""
-    prov = _provider_or_raise()
+    prov = _provider_or_raise(provider)
     ddir = doc_dir(doc_id)
     crop = normalize_crop(crop_raw)
     st = cstyle.resolve(game_id)
@@ -417,8 +422,8 @@ def create_object_job(crop_raw: bytes, *, doc_id: str, stroke_ids: Any, bbox_cel
 
 
 def create_backdrop_job(*, doc_id: str, game_id: str | None, theme: str | None, screens: Any,
-                        by: str | None) -> tuple[dict[str, Any], bool]:
-    prov = _provider_or_raise()
+                        by: str | None, provider: str | None = None) -> tuple[dict[str, Any], bool]:
+    prov = _provider_or_raise(provider)
     doc_dir(doc_id).mkdir(parents=True, exist_ok=True)
     try:
         n = max(1, min(6, int(screens or 1)))

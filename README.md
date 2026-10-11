@@ -1,7 +1,9 @@
 # Draw-a-Level
 
-Draw a platformer on screen or on paper, and play it seconds later with your own doodle as the character. Black ink
-is ground, red is spikes and enemies, green is the goal, blue is coins and keys. Background and pitch:
+Sketch a game, describe its world, and let Sonnet turn the whole canvas and your brief into a playable browser game.
+Create supports ten game categories plus a custom definition, theme references, gameplay goals, and visual details.
+The optional faithful builder creates platformer levels with fixed marker roles: black ground, red hazards, green
+goals, and blue collectibles. Background and pitch:
 [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md).
 
 ## What v2 is
@@ -27,12 +29,15 @@ v1 still exists: open `/v1.html`. The v1 `/api/*` routes keep working.
 
 ## Run
 
+To host the app and Photon service on your Vultr server, follow
+[the server and phone launch guide](docs/vultr-launch.md).
+
 ```bash
 # one-time setup
 cd vision && uv venv --python 3.11 && uv sync && cd ..
 cd web && npm install && cd ..
 
-# the model key (optional; without it everything works offline with the deterministic perceiver)
+# the model key (required for Imagine; the faithful builder also works offline)
 cp .env.example .env        # then set ANTHROPIC_API_KEY=... in .env (git-ignored)
 
 # both servers: API on :8000, web on :5173 (prints the LAN URL for phones)
@@ -52,10 +57,50 @@ Environment (all optional): `ANTHROPIC_API_KEY`; `DAL_FAKE_LLM=1` (recorded mode
 `DAL_DESIGN_DEADLINE_S` (25); `DAL_CORE_WORKERS` (2); `DAL_FAST_MODE` (0); `DAL_REQUIRE_MODERATION` (0); `DAL_V2=0`
 turns v2 off.
 
+Imagine uses `DAL_SONNET_MODEL=claude-sonnet-5-5` by default. The model receives clean images spanning the entire
+canvas, any character sketch, the original creation brief, canvas notes, and extra author instructions. It writes
+a complete self-contained game with original graphics and mechanics. Imagine first creates a shared art direction
+and up to five SVG assets when the author selects **Better graphics**: scenery, terrain textures, transparent sprites,
+and horizontal animation sheets. The option is off by default and is available in new-game modals, level creation,
+legacy drawing, prompt and paper creation, and the saved game's chat. It uses the existing `ANTHROPIC_API_KEY` and
+`DAL_SONNET_MODEL` for a dedicated SVG art pass, not Firefly or an example-specific image library. Standard Imagine
+builds skip the extra art call and draw directly in Canvas. Saved drafts, retries, revisions and new levels retain
+the selected setting; turning it off for a revision skips further art generation while keeping existing artwork.
+Faithful platformer builds retain their verified geometry and apply optional SVG skins through the creative preview.
+
+The game receives an asset manifest and drawing helpers, while the server embeds image bytes after code generation,
+keeping artwork out of the code response budget. Image failures preserve completed assets and fall back to procedural
+drawing. Art generation is bounded to two minutes within the overall six-minute build limit and uses the existing
+daily art budget. `DAL_IMAGINE_ART=0` disables the extra Imagine art pass globally. The saved raster library remains
+available to other integrations, but Better graphics generates SVGs for the actual prompt. Medium effort and a compact-game prompt keep the model focused
+on finishing the playable artifact. Generation streams from Sonnet;
+the creation page shows elapsed time and switches to the writing stage as output arrives. A six-minute limit,
+bounded status requests, and explicit connection/timeout recovery prevent an endless loading screen. Generation jobs hold a shared process lock and save their model inputs.
+After a server reload, the creator’s next status check resumes the same draft, up to two times;
+other API processes can poll the active job without declaring it interrupted or creating a duplicate. Retry uses
+the saved canvas and details, and repeated retry requests follow the same active job. Generated games are saved in
+`DAL_DATA_DIR/generated-games/`, served with a restrictive sandbox policy, and displayed in an isolated iframe
+with network access blocked. They have their own controls and win/restart logic; the faithful builder's deterministic
+physics, bot proofs, leaderboards, and export formats apply to faithful levels only.
+
 ## The main flows
 
-- **Draw** (`#/draw`): a long-canvas editor (1-6 screens). Marker colors, stamps and role chips; live hints from the
-  core; ▶ test-plays locally, or "Play from here". Build → the preview.
+- **Race a friend**: open a faithful platformer and choose "Play with a friend". Share its two-seat lobby, ready up,
+  race from a shared countdown, and rematch after the server verifies both finishes. The optional Photon Spectrum
+  service sends app cards designed to open inside iMessage and reports results back to the chat. Setup and device
+  validation requirements: [docs/imessage.md](docs/imessage.md). Imagine games need multiplayer adapters first.
+
+- **Create** (`#/create`): one game-creation workspace with category, theme, gameplay, details, extra context, and a
+  drawing board (1-6 screens). "Create game" builds from all of these together and also works without drawing.
+  "Creative with Sonnet" is the default; "Follow my design closely" uses the faithful platformer builder.
+  After submission, the creation modal expands into a chat workspace with a playable preview.
+  Edit the sketch from that workspace to revisit the original canvas and context.
+  The old plain `#/draw` entry also opens Create; specialized faithful level-editing links remain compatible.
+- **Imagine** (`#/imagine/<draft>`): a saved conversation beside a playable preview. Send follow-up requests
+  to add features, change art, or fix mechanics; each revision receives the current game HTML, conversation,
+  and original sketch. The previous version stays playable while an update runs. Retry keeps the same change
+  request and level slot. Publish the latest completed revision directly from the workspace. Saved games
+  reopen with their conversation, and unsent messages stay on this device.
 - **Preview** (`#/preview/<draft>`): what the builder saw, every change as a card with Undo, questions ("Is this
   grass or spikes?"), the bot's path, the difficulty pill, and the **dial** (Faithful / Polished / Challenging·Normal
   / Challenging·Hard) that swaps tiers instantly. "Make it mine" undoes the designer, "Back to drawing" returns to

@@ -1,0 +1,19 @@
+.race-screen { max-width: 1100px; margin: 0 auto; }
+.race-status { font-size: 1.4rem; margin: .5rem 0 1rem; }
+.race-seats { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+.race-seat { display: grid; gap: .4rem; padding: .8rem; border: 2px solid var(--ink, #27231f); border-radius: 12px; }
+.race-seat progress { width: 100%; accent-color: #2c7be5; }
+.race-seat-2 progress { accent-color: #ce5573; }
+.race-actions { margin-bottom: .75rem; }
+.race-game { position: relative; }
+.race-cover { position: absolute; inset: 0; z-index: 4; display: grid; place-items: center; padding: 1rem;
+  background: rgba(255,253,246,.88); color: #27231f; font-size: clamp(1.5rem,5vw,3rem); text-align: center; border-radius: 12px; }
+.race-cover[hidden] { display: none; }
+.race-game:empty { display: none; }
+.race-error:empty { display: none; }
+.race-error { color: #a52c39; }
+.race-stage .dalg-btns [data-role="restart"], .race-stage .dalg-btns [data-role="pause"] { display: none; }
+@media (max-width: 540px) {
+  body[data-screen="race"] .app-head { display: none; }
+  .race-seats { gap: .5rem; } .race-seat { padding: .5rem; }
+}

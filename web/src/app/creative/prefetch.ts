@@ -110,6 +110,7 @@ export class Prefetcher {
   private destroyed = false;
   private backdropTimer = 0;
   private backdropBusy = false;
+  private backdropRetryAt = 0;
   /** Groups whose crop is being painted (not yet in the session's queue). */
   private rendering = new Set<string>();
 
@@ -205,12 +206,14 @@ export class Prefetcher {
 
   /** Once there is about a screen of ground: one backdrop per level width. */
   private checkBackdrop(): void {
-    if (this.destroyed || this.backdropBusy || !this.enabled()) return;
+    if (this.destroyed || this.backdropBusy || Date.now() < this.backdropRetryAt || !this.enabled()) return;
     const { doc } = this.o;
     const screens = this.o.screens();
     if (doc.backdrop && doc.backdrop.screens >= screens) return;
     if (groundCells(this.o.strokes(), this.o.objects()) < WORLD.screen_w * 0.8) return;
     this.backdropBusy = true;
+    // A failed request must not be retried on every object/session update.
+    this.backdropRetryAt = Date.now() + 30_000;
     void doc.requestBackdrop({ screens, theme: this.o.theme() }).finally(() => (this.backdropBusy = false));
   }
 }

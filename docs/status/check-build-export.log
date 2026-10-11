@@ -1,0 +1,11 @@
+
+> draw-a-level-web@0.1.0 build:export
+> vite build --config vite.export.config.ts
+
+vite v7.3.7 building client environment for production...
+transforming...
+✓ 141 modules transformed.
+rendering chunks...
+dist-export/export.html                      1.08 kB
+dist-export/player/drawplay-CcoXOEDu.js  1,539.39 kB
+✓ built in 3.99s

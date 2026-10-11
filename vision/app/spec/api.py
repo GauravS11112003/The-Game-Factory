@@ -435,9 +435,19 @@ class AttemptsBody(Spec):
     clears: int = Field(ge=0)
 
 
+class GameBrief(Spec):
+    category: Literal["action", "adventure", "rpg", "strategy", "simulation", "puzzle", "racing", "sports", "platformer", "survival", "custom"]
+    custom_definition: str = Field(default="", max_length=500)
+    theme: str = Field(default="", max_length=300)
+    gameplay: str = Field(default="", max_length=500)
+    details: str = Field(default="", max_length=500)
+
+
 class GameCreate(Spec):
+    draft: bool = False
     title: str
     author: str
+    brief: GameBrief | None = None
 
 
 class AffectedLevel(Spec):

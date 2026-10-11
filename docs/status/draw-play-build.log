@@ -1,0 +1,33 @@
+
+> draw-a-level-web@0.1.0 build
+> tsc --noEmit && vite build
+
+vite v7.3.7 building client environment for production...
+transforming...
+
+/fonts/PatrickHand-Regular.woff2 referenced in /fonts/PatrickHand-Regular.woff2 didn't resolve at build time, it will remain unchanged to be resolved at runtime
+✓ 274 modules transformed.
+rendering chunks...
+[plugin vite:reporter] 
+(!) /Users/pranayjoshi/Desktop/projects/draw.play/web/src/engine/index.ts is dynamically imported by /Users/pranayjoshi/Desktop/projects/draw.play/web/src/editor/index.ts but also statically imported by /Users/pranayjoshi/Desktop/projects/draw.play/web/src/app/creative/flyin.ts, /Users/pranayjoshi/Desktop/projects/draw.play/web/src/app/creative/session.ts, /Users/pranayjoshi/Desktop/projects/draw.play/web/src/app/screens/play.ts, /Users/pranayjoshi/Desktop/projects/draw.play/web/src/app/screens/preview.ts, /Users/pranayjoshi/Desktop/projects/draw.play/web/src/app/screens/rules.ts, /Users/pranayjoshi/Desktop/projects/draw.play/web/src/app/screens/tree.ts, /Users/pranayjoshi/Desktop/projects/draw.play/web/src/app/stage.ts, /Users/pranayjoshi/Desktop/projects/draw.play/web/src/app/thumbs.ts, /Users/pranayjoshi/Desktop/projects/draw.play/web/src/editor/studio.ts, dynamic import will not move module into another chunk.
+
+computing gzip size...
+dist/v2.html                             0.67 kB │ gzip:   0.37 kB
+dist/index.html                          0.73 kB │ gzip:   0.42 kB
+dist/v1.html                             0.81 kB │ gzip:   0.45 kB
+dist/dev.html                            2.36 kB │ gzip:   1.02 kB
+dist/assets/core.worker-D8Azp6eU.js    345.13 kB
+dist/assets/index-b8q3jVRG.css           9.58 kB │ gzip:   2.87 kB
+dist/assets/main-Bc_blzWD.css           50.57 kB │ gzip:  11.00 kB
+dist/assets/core_run-CoUqQxqY.js         0.89 kB │ gzip:   0.50 kB │ map:      3.14 kB
+dist/assets/dev-BT4bYtY6.js              8.92 kB │ gzip:   2.13 kB │ map:      7.53 kB
+dist/assets/v1-BYMW6Xcv.js              30.34 kB │ gzip:  10.69 kB │ map:    107.05 kB
+dist/assets/index-Q3mkGxcj.js           36.51 kB │ gzip:  12.93 kB │ map:    150.30 kB
+dist/assets/phaser-BG-AUGkI.js       1,208.86 kB │ gzip: 332.61 kB │ map: 10,130.72 kB
+dist/assets/main-Dn9wz8cD.js         1,285.09 kB │ gzip: 368.81 kB │ map:  3,716.57 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 7.88s

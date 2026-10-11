@@ -1,0 +1,33 @@
+.arcade.ar-input-dialog{display:none;min-height:0;width:min(960px,calc(100vw - 32px));max-height:calc(100svh - 32px);overflow:auto;padding:26px;color:var(--ink);background:var(--paper);border:3px solid var(--ink);border-radius:var(--r);box-shadow:0 24px 100px #1f1b1830}
+.arcade.ar-input-dialog[open]{display:block}
+.ar-input-dialog::backdrop{background:#1f1b1860;backdrop-filter:blur(5px)}
+.ar-input-header{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:20px}
+.ar-input-header h2{font-size:32px;line-height:1.15;margin:5px 0 0}
+.ar-input-eyebrow{font:18px var(--hand);color:var(--ink-soft);margin:0}
+.arcade .ar-source-close{display:grid;place-items:center;width:42px;height:42px;flex:none;border:1.5px solid var(--ink);border-radius:12px;background:var(--card);color:var(--ink);cursor:pointer}
+.ar-source-close svg{width:20px;height:20px}
+.ar-input-dialog [hidden]{display:none!important}
+.ar-input-help{font-size:14px;line-height:1.7;color:var(--ink-soft);margin:0 0 16px}
+.arcade .ar-prompt-text{display:block;width:100%;min-height:180px;resize:vertical;border:2px solid var(--ink);border-radius:16px;padding:18px;background:var(--card);color:var(--ink);font:20px/1.7 var(--hand)}
+.ar-prompt-text:focus-visible{outline:3px solid var(--hi);outline-offset:3px}
+.ar-sketch-surface{position:relative;border:2.5px solid var(--ink);border-radius:18px 15px 19px 14px;overflow:hidden;background:#fffdf6;box-shadow:var(--shadow)}
+.ar-source-canvas,.ar-source-image{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:contain}
+.ar-source-empty{padding:28px;border:2px dashed #1f1b1840;border-radius:16px;display:flex;flex-direction:column;gap:12px;color:var(--ink-soft)}
+.ar-source-empty svg{width:26px;height:26px}.ar-source-empty strong{font:25px var(--hand);color:var(--ink)}
+.ar-source-empty p{font-size:14px;margin:0}
+.ar-source-sections{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.ar-source-sections button{border:1.5px solid var(--ink);border-radius:50%;background:var(--card);color:var(--ink);width:36px;height:36px;font:18px var(--hand);cursor:pointer}
+.ar-source-sections button[aria-pressed=true]{background:var(--hi)}
+.ar-input-footer{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:24px;border-top:1px dashed #1f1b1840;padding-top:18px}
+.ar-input-status{color:var(--ink-soft);font-size:12px;line-height:1.5}
+.arcade .ar-input-done{background:var(--ink);color:var(--paper);padding:9px 22px;white-space:nowrap}
+@media(max-width:700px){
+  .ar-game-rail{flex-wrap:wrap;column-gap:16px;row-gap:12px}
+  .arcade.ar-input-dialog{width:calc(100vw - 16px);max-height:calc(100svh - 16px);padding:18px 14px}
+  .ar-input-header{margin-bottom:16px}.ar-input-header h2{font-size:28px}
+  .arcade .ar-prompt-text{font-size:18px;min-height:220px;padding:14px}
+  .ar-input-help{font-size:12px}.ar-input-status{font-size:11px}
+}
+
+.ar-input-dialog section + section { margin-top: 24px; }
+.ar-input-dialog section h3 { font: 24px var(--hand); margin-bottom: 12px; }

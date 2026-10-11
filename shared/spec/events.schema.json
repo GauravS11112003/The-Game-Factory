@@ -3350,6 +3350,82 @@
       "title": "Frontier",
       "type": "object"
     },
+    "GameGuidance": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x_": {}
+      },
+      "properties": {
+        "theme_name": {
+          "type": "string"
+        },
+        "scene": {
+          "enum": [
+            "castle",
+            "haunted",
+            "blocks",
+            "meadow",
+            "mountain",
+            "cavern",
+            "custom"
+          ],
+          "type": "string"
+        },
+        "setting": {
+          "type": "string"
+        },
+        "style_prompt": {
+          "type": "string"
+        },
+        "mechanics": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "excluded_mechanics": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "enemy_archetype": {
+          "default": "walker",
+          "enum": [
+            "walker",
+            "hopper",
+            "flyer",
+            "shooter",
+            "chaser",
+            "crusher"
+          ],
+          "type": "string"
+        },
+        "palette": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 4,
+          "minItems": 4,
+          "type": "array"
+        },
+        "author_context": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "theme_name",
+        "scene",
+        "setting",
+        "style_prompt",
+        "palette"
+      ],
+      "title": "GameGuidance",
+      "type": "object"
+    },
     "GameRules": {
       "additionalProperties": false,
       "patternProperties": {
@@ -3424,6 +3500,17 @@
           "anyOf": [
             {
               "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "guidance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GameGuidance"
             },
             {
               "type": "null"
