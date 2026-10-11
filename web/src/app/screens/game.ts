@@ -1,3 +1,4 @@
+import { startGeneratedRoom } from '../rooms/api.ts';
 /** #/game/:id — a visual game preview with play and level-building controls. */
 import { api, ApiError, type ImaginedGameStatus, type LevelCard } from '../api.ts';
 import { card, h, icon, saveBlob, toast } from '../dom.ts';
@@ -109,7 +110,7 @@ export function gameScreen(root: HTMLElement, id: string): () => void {
         inputs?.dispose(); guidelines?.dispose();
         guidelines = generatedGuidelines(level.title, level.summary ?? '', level.controls ?? []);
         inputs = gameInputTools(level.draft_id, `Level ${level.level_number ?? generatedLevels.indexOf(level) + 1} · ${level.title}`);
-        sourceTools.replaceChildren(guidelines.element, inputs.element);
+        sourceTools.replaceChildren(guidelines.element, inputs.element, ...(level.multiplayer && level.status === 'ready' ? [h('button', { class: 'pill primary', type: 'button', onclick: (event: Event) => void startGeneratedRoom(level.draft_id, event.currentTarget as HTMLButtonElement) }, 'Play with a friend')] : []));
         const key = level.level_id ?? level.draft_id;
         selectors.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.level === key)));
         play.href = `#/imagine/${enc(level.draft_id)}`;

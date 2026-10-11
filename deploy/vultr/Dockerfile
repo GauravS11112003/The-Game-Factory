@@ -17,9 +17,6 @@ FROM web-source AS starter
 RUN npm run starter:build
 
 FROM python:3.12-slim-bookworm AS api
-ARG DEPLOY_BRANCH=unknown
-ARG DEPLOY_REVISION=unknown
-LABEL org.opencontainers.image.ref.name=$DEPLOY_BRANCH org.opencontainers.image.revision=$DEPLOY_REVISION
 RUN apt-get update && apt-get install -y --no-install-recommends libgl1 libglib2.0-0 libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=web-source /usr/local/bin/node /usr/local/bin/node
@@ -33,26 +30,29 @@ RUN uv sync --locked --no-dev \
     && useradd --create-home --uid 10001 drawplay \
     && mkdir /data && chown drawplay:drawplay /data /app/web/dist-export
 ENV PATH="/app/vision/.venv/bin:$PATH" DAL_DATA_DIR=/data DAL_NODE=/usr/local/bin/node PYTHONUNBUFFERED=1
+ARG DEPLOY_BRANCH=unknown
+ARG DEPLOY_REVISION=unknown
+LABEL org.opencontainers.image.ref.name=$DEPLOY_BRANCH org.opencontainers.image.revision=$DEPLOY_REVISION
 USER drawplay
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*", "--no-access-log"]
 
 FROM node:24-bookworm-slim AS messaging
-ARG DEPLOY_BRANCH=unknown
-ARG DEPLOY_REVISION=unknown
-LABEL org.opencontainers.image.ref.name=$DEPLOY_BRANCH org.opencontainers.image.revision=$DEPLOY_REVISION
 WORKDIR /app/messaging
 COPY messaging/package.json messaging/package-lock.json ./
 RUN npm ci --omit=dev
 COPY messaging/src ./src
 RUN mkdir /data && chown node:node /data
 ENV NODE_ENV=production DAL_SPECTRUM_DATA_DIR=/data
+ARG DEPLOY_BRANCH=unknown
+ARG DEPLOY_REVISION=unknown
+LABEL org.opencontainers.image.ref.name=$DEPLOY_BRANCH org.opencontainers.image.revision=$DEPLOY_REVISION
 USER node
 CMD ["node", "src/index.ts"]
 
 FROM caddy:2-alpine AS web
+COPY --from=frontend /app/web/dist /srv
+COPY deploy/vultr/Caddyfile /etc/caddy/Caddyfile
 ARG DEPLOY_BRANCH=unknown
 ARG DEPLOY_REVISION=unknown
 LABEL org.opencontainers.image.ref.name=$DEPLOY_BRANCH org.opencontainers.image.revision=$DEPLOY_REVISION
-COPY --from=frontend /app/web/dist /srv
-COPY deploy/vultr/Caddyfile /etc/caddy/Caddyfile

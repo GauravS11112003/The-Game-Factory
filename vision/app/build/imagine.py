@@ -42,12 +42,26 @@ class GameSuggestion(BaseModel):
     kind: Literal["mechanic", "world", "feel"]
 
 
+class MultiplayerAction(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    id: Literal["left", "right", "up", "down", "jump", "attack", "special", "block", "confirm"]
+    label: str = Field(min_length=1, max_length=24)
+
+
+class MultiplayerSpec(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    version: Literal[1] = 1
+    mode: Literal["versus", "cooperative"]
+    actions: list[MultiplayerAction] = Field(min_length=1, max_length=9)
+
+
 class ImaginedGame(BaseModel):
     model_config = ConfigDict(extra="forbid")
     title: str
     summary: str
     controls: list[str]
     html: str
+    multiplayer_spec: MultiplayerSpec | None = None
     changes: list[str] = Field(default_factory=list, max_length=5)
     suggestions: list[GameSuggestion] = Field(default_factory=list, max_length=3)
 
@@ -149,6 +163,10 @@ async def generate(draft_id: str, ink: dict[str, Any], game: dict[str, Any] | No
                 if state.get("better_graphics", False) else
                 "GRAPHICS SETTING: Standard graphics. Draw new visuals directly in Canvas. "
                 "Do not create a separate SVG asset pack. Preserve supplied artwork on revisions and new levels.")
+            if state.get("multiplayer"):
+                content.append({"type": "text", "text": (Path(__file__).parents[1] / "mind/prompts/multiplayer.md").read_text()})
+            else:
+                content.append({"type": "text", "text": "MULTIPLAYER OFF: Generate a single-player game. Return multiplayer_spec=null."})
             source = state.get("art_source_draft") or state.get("revision_of") or state.get("base_draft_id")
             pack = {**imagine_assets.read_pack(source), "cost_usd": 0}
             try:
@@ -192,6 +210,12 @@ async def generate(draft_id: str, ink: dict[str, Any], game: dict[str, Any] | No
         else:
             output = result.value
             html = check_html(output.html)
+            if state.get("multiplayer"):
+                if output.multiplayer_spec is None or "drawPlayMultiplayer" not in html:
+                    raise ValueError("missing_multiplayer_adapter")
+                if len({action.id for action in output.multiplayer_spec.actions}) != len(output.multiplayer_spec.actions):
+                    raise ValueError("duplicate_multiplayer_actions")
+                state["multiplayer_spec"] = output.multiplayer_spec.model_dump(mode="json")
             html = imagine_assets.inject(html, pack)
             path = artifact_path(draft_id)
             path.parent.mkdir(parents=True, exist_ok=True)

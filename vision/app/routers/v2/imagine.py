@@ -27,6 +27,7 @@ class ImagineBody(BaseModel):
     game_id: str | None = None
     append_level: bool = False
     level_id: str | None = None
+    multiplayer: bool | None = None
     better_graphics: bool | None = None
     context: str = Field(default="", max_length=8000)
     title: str = Field(default="", max_length=80)
@@ -74,6 +75,7 @@ async def start_generation(body: ImagineBody, revision: dict[str, Any] | None = 
         previous_graphics = next((level for level in game["generated_levels"] if level["level_id"] == body.level_id), {})
     state["better_graphics"] = (body.better_graphics if body.better_graphics is not None
                                 else bool(previous_graphics.get("better_graphics", False)))
+    state["multiplayer"] = body.multiplayer if body.multiplayer is not None else bool(previous_graphics.get("multiplayer", False))
     if art_source_draft:
         state["art_source_draft"] = art_source_draft
     if canvas_updated:
@@ -134,7 +136,7 @@ async def retry(draft_id: str, request: Request) -> Any:
     revision = imagine.read(state["revision_of"]) if state.get("revision_of") else None
     result = await start_generation(ImagineBody(ink=InkDoc.model_validate(ink), game_id=game["id"] if game else None,
                                      level_id=state.get("level_id"), category=state.get("category"), context=state.get("context", ""),
-                                     better_graphics=state.get("better_graphics", False),
+                                     better_graphics=state.get("better_graphics", False), multiplayer=state.get("multiplayer", False),
                                      title="" if state.get("infer_title") else state.get("title", "")),
                                     revision=revision, conversation=state.get("conversation"), art_source_draft=draft_id,
                                     canvas_updated=state.get("canvas_updated", False))
@@ -158,6 +160,7 @@ class RefineGameBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
     message: str = Field(default="", max_length=8000)
     ink: InkDoc | None = None
+    multiplayer: bool | None = None
     better_graphics: bool | None = None
     token: str = Field(default="", max_length=200)
 
@@ -171,8 +174,11 @@ async def refine(draft_id: str, body: RefineGameBody, request: Request) -> Respo
         return JSONResponse({"message_key": "imagine.publish_denied"}, status_code=403)
     message = sanitize.text(body.message, 8000).strip()
     graphics_changed = body.better_graphics is not None and body.better_graphics != state.get("better_graphics", False)
-    if not message and body.ink is None and not graphics_changed:
+    multiplayer_changed = body.multiplayer is not None and body.multiplayer != state.get("multiplayer", False)
+    if not message and body.ink is None and not graphics_changed and not multiplayer_changed:
         return JSONResponse({"message_key": "imagine.prompt_required"}, status_code=400)
+    if not message and multiplayer_changed:
+        message = "Build this game for two remote human players." if body.multiplayer else "Make this game single player."
     if not message and graphics_changed:
         message = "Improve the graphics with detailed SVG artwork." if body.better_graphics else "Keep the existing game and skip the extra graphics pass."
     message = message or "Apply my canvas changes to the current game."
@@ -180,6 +186,8 @@ async def refine(draft_id: str, body: RefineGameBody, request: Request) -> Respo
     if state.get("revised_as"):
         child = imagine.read(state["revised_as"])
         if (child and child.get("context") == message
+                and (body.multiplayer is None or body.multiplayer == child.get("multiplayer", False))
+                and (body.better_graphics is None or body.better_graphics == child.get("better_graphics", False))
                 and bool(child.get("canvas_updated")) == (updated_ink is not None)
                 and (updated_ink is None or drafts.read_json(child["draft_id"], "original-ink.json") == updated_ink)):
             return JSONResponse(child, status_code=202)
@@ -196,7 +204,7 @@ async def refine(draft_id: str, body: RefineGameBody, request: Request) -> Respo
                                              {"role": "assistant", "content": state.get("summary", "")}]
     result = await start_generation(ImagineBody(ink=InkDoc.model_validate(ink), game_id=state.get("game_id"),
         level_id=state.get("level_id"), category=state.get("category"), context=message, title=state.get("title", ""),
-        better_graphics=body.better_graphics),
+        better_graphics=body.better_graphics, multiplayer=body.multiplayer),
         revision=state, conversation=[*history, {"role": "user", "content": message,
             **({"canvas_updated": True} if updated_ink is not None else {})}], canvas_updated=updated_ink is not None)
     if isinstance(result, JSONResponse) and result.status_code == 202:
@@ -272,7 +280,7 @@ def inputs(draft_id: str) -> Response:
     if (ink.get("character") or {}).get("strokes"):
         canvases.append(f"/api/v2/imagined-games/{draft_id}/canvas?character=true")
     return JSONResponse({"prompt": state.get("original_context", state.get("context", "")), "category": state.get("category"), "ink": ink,
-                         "canvases": canvases, "better_graphics": state.get("better_graphics", False)})
+                         "canvases": canvases, "multiplayer": state.get("multiplayer", False), "better_graphics": state.get("better_graphics", False)})
 
 
 @router.get("/imagined-games/{draft_id}/canvas")

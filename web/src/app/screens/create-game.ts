@@ -11,7 +11,7 @@ import { t } from '../messages.ts';
 import { navigate } from '../router.ts';
 import { store } from '../store.ts';
 import { imagineScreen } from './imagine.ts';
-import { graphicsOption } from '../graphics-option.ts';
+import { graphicsOption, multiplayerOption } from '../graphics-option.ts';
 
 type CreationIntent = { kind: 'game' } | {
   kind: 'level'; gameId: string; gameTitle: string; category: GameBrief['category'];
@@ -46,7 +46,7 @@ export function createGameScreen(root: HTMLElement, query = new URLSearchParams(
           rules: input.ink.typed_rules.map((rule, i) => ({ id: `note${i}`, text: rule.text, strokeId: null })) });
       }
       const category = game.generated?.category ?? game.brief?.category ?? 'platformer';
-      doc = { ...doc, betterGraphics: pending?.doc.betterGraphics ?? doc.betterGraphics ??
+      doc = { ...doc, multiplayer: pending?.doc.multiplayer ?? doc.multiplayer ?? original?.multiplayer ?? selected?.multiplayer ?? game.generated?.multiplayer ?? false, betterGraphics: pending?.doc.betterGraphics ?? doc.betterGraphics ??
         original?.better_graphics ?? selected?.better_graphics ?? game.generated?.better_graphics ?? false };
       if (disposed) return;
       root.replaceChildren();
@@ -149,13 +149,14 @@ function creationPage(root: HTMLElement, saved: CreationDraft | null, resumedDra
   const prompt = h('textarea', { id: 'create-prompt', class: 'text', rows: 7, required: true, maxLength: 8000,
     placeholder: t('create.prompt_placeholder'), value: creationPrompt(saved) });
   const graphics = graphicsOption(drawing.betterGraphics ?? false, () => save());
+  const multiplayer = multiplayerOption(drawing.multiplayer ?? false, () => save());
   const status = h('p', { class: 'creation-status small', role: 'status', 'aria-live': 'polite' });
   const go = h('button', { class: 'pill primary big', type: 'submit' }, icon('plus'), level?.append ? 'Create level' : level?.levelId ? 'Update level' : compact ? 'Make it playable' : t('create.submit'));
   const inputs = h('fieldset', { class: 'creation-inputs' },
     isLevel ? h('p', { class: 'muted small' }, `Game: ${level!.gameTitle} · ${t(`create.category.${level!.category}`)}`) :
       h('div', { class: 'creation-field' }, h('label', { htmlFor: category.id }, t('create.category_label')),
         h('div', { class: 'creation-category-select' }, category, h('span', { 'aria-hidden': 'true' }, '⌄'))),
-    h('div', { class: 'creation-field' }, h('label', { htmlFor: prompt.id }, isLevel ? 'Describe this level' : t('create.prompt')), prompt), graphics.element);
+    h('div', { class: 'creation-field' }, h('label', { htmlFor: prompt.id }, isLevel ? 'Describe this level' : t('create.prompt')), prompt), h('div', { class: 'generation-options' }, graphics.element, multiplayer.element));
   const canvasHost = h('div', { class: 'creation-context-canvas' });
   const liveContext = h('p', { class: 'muted small creation-live-context', role: 'status' });
   const canvasField = h('section', { class: 'creation-canvas-field' },
@@ -177,7 +178,7 @@ function creationPage(root: HTMLElement, saved: CreationDraft | null, resumedDra
       theme: '', gameplay: '', details: '' };
   }
   function doc() {
-    return { ...(editor?.doc.snapshot() ?? drawing), gameId, imaginationContext: prompt.value, betterGraphics: graphics.input.checked };
+    return { ...(editor?.doc.snapshot() ?? drawing), gameId, imaginationContext: prompt.value, betterGraphics: graphics.input.checked, multiplayer: multiplayer.input.checked };
   }
   function save(): void {
     if (completed) return;
@@ -217,7 +218,7 @@ function creationPage(root: HTMLElement, saved: CreationDraft | null, resumedDra
       if (!gameId) await reserveGame();
       if (disposed) return;
       const submit = () => api.imagineGame({ game_id: gameId, category: brief().category,
-        context: prompt.value.trim(), title: '', ink: creationInk(snapshot), better_graphics: graphics.input.checked,
+        context: prompt.value.trim(), title: '', ink: creationInk(snapshot), better_graphics: graphics.input.checked, multiplayer: multiplayer.input.checked,
         ...(level?.append ? { append_level: true } : {}), ...(level?.levelId ? { level_id: level.levelId } : {}) });
       let generated;
       try { generated = await submit(); }

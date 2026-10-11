@@ -109,3 +109,30 @@ test('a forfeited race does not invent verified times', () => {
   assert.match(text, /Neither player finished/);
   assert.doesNotMatch(text, /\(verified\)/);
 });
+
+test('generated-game cards route through play-rooms, pin the new game and leave two open seats', async () => {
+  const db = new DatabaseSync(':memory:');
+  const calls: unknown[] = [];
+  const api = new FakeApi();
+  api.current = { ...match(), id: 'room_' + 'c'.repeat(24), kind: 'generated' };
+  api.call = async <T>(method: string, path: string, body?: unknown, headers?: unknown, endpoint?: unknown): Promise<T> => {
+    calls.push({ method, path, body, endpoint });
+    return (method === 'POST' ? { match: api.current, invite } : api.current) as T;
+  };
+  const sent: unknown[] = [];
+  const worker = new MessageWorker(db, api, { async send(_s, _p, content) { sent.push(content); } }, 'https://draw.example');
+  assert.deepEqual(parseCommand('play d_12345678'), { kind: 'play', draftId: 'd_12345678' });
+  worker.enqueue('new-game', 'chat', 'line', 'play d_12345678');
+  await worker.tick();
+  assert.deepEqual(calls[0], { method: 'POST', path: '', body: { draft_id: 'd_12345678', reserve_host: false }, endpoint: 'play-rooms' });
+  assert.deepEqual(sent[0], { url: `https://draw.example/api/v2/play-rooms/${api.current.id}/card?invite=${invite}` });
+  api.current = { ...api.current, phase: 'finished', winner: 1, result: { scores: [3, 9], text: 'Sam wins!' }, players: [
+    { seat: 0, name: 'Maya', result: null, forfeit: false }, { seat: 1, name: 'Sam', result: null, forfeit: false },
+  ] };
+  await worker.tick();
+  assert.match((sent[1] as { text: string }).text, /Sam wins!/);
+  assert.match((sent[1] as { text: string }).text, /Sam: 9/);
+  assert.doesNotMatch((sent[1] as { text: string }).text, /verified|did not finish/);
+  assert.ok(calls.slice(1).every((call: any) => call.endpoint === 'play-rooms'));
+  db.close();
+});

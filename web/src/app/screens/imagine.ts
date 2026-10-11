@@ -1,3 +1,4 @@
+import { startGeneratedRoom } from '../rooms/api.ts';
 import { api, ApiError, type ImaginedGameStatus } from '../api.ts';
 import { h, icon } from '../dom.ts';
 import { kidText, t } from '../messages.ts';
@@ -8,7 +9,7 @@ import { emptyDoc, type EditorDocData } from '../../editor/doc.ts';
 import { createEditor, type EditorHandle } from '../../editor/index.ts';
 import { DEFAULT_RULES } from '../rules.ts';
 import { addIdea, briefReply, gameSuggestions, nextIdeas, type GameSuggestion } from '../builder-ideas.ts';
-import { graphicsOption } from '../graphics-option.ts';
+import { graphicsOption, multiplayerOption } from '../graphics-option.ts';
 
 /** The creation modal and saved drafts share the same persistent conversation workspace. */
 export function imagineScreen(root: HTMLElement, initialDraftId: string, options: { compact?: boolean } = {}): () => void {
@@ -31,6 +32,8 @@ export function imagineScreen(root: HTMLElement, initialDraftId: string, options
   let canvasLoadVersion = 0;
   let canvasOpen = false;
   let graphicsDirty = false;
+  let multiplayerDirty = false;
+  const multiplayer = multiplayerOption(false, () => { multiplayerDirty = true; sync(); });
   const graphics = graphicsOption(false, () => { graphicsDirty = true; sync(); });
   const title = h('h1', null, t('builder.title'));
   const publication = h('span', { class: 'builder-publication small', role: 'status' }, t('imagine.draft_short'));
@@ -44,7 +47,7 @@ export function imagineScreen(root: HTMLElement, initialDraftId: string, options
   const canvasAttachment = h('button', { class: 'builder-canvas-attachment small', type: 'button', hidden: !canvasDirty,
     onclick: () => showCanvas(true) }, icon('pencil'), t('builder.canvas_attached'));
   graphics.element.querySelector('label')!.title = t('create.graphics_help');
-  const composer = h('form', { class: 'builder-composer' }, canvasAttachment, prompt, graphics.element,
+  const composer = h('form', { class: 'builder-composer' }, canvasAttachment, prompt, h('div', { class: 'generation-options' }, graphics.element, multiplayer.element),
     h('div', { class: 'row between' }, h('span', { class: 'muted small' }, t('builder.send_hint')), send));
   const previewLabel = h('span', { class: 'small muted' }, t('builder.preview'));
   const restart = h('button', { class: 'tool', type: 'button', title: t('imagine.restart'), 'aria-label': t('imagine.restart'), disabled: true }, icon('retry'));
@@ -69,9 +72,10 @@ export function imagineScreen(root: HTMLElement, initialDraftId: string, options
     h('span', { class: 'imagine-orb', 'aria-hidden': 'true' }, '✦'), h('h2', null, t('builder.first_build')),
     h('p', { class: 'muted' }, t('builder.first_build_help'))));
   const details = h('div', { class: 'builder-details' });
+  const friend = h('button', { class: 'pill primary small', type: 'button', hidden: true, onclick: () => { if (current) void startGeneratedRoom(current.draft_id, friend); } }, 'Play with a friend');
   const gameLink = h('a', { class: 'pill small', hidden: true }, t('imagine.saved_game'));
   const previewPanel = h('div', { id: 'builder-preview-panel', role: 'tabpanel', 'aria-label': t('builder.preview') },
-    preview, h('div', { class: 'builder-result-actions row wrap' }, sketch, gameLink), details);
+    preview, h('div', { class: 'builder-result-actions row wrap' }, sketch, gameLink, friend), details);
   const workspace = h('section', { class: `builder-workspace${options.compact ? ' compact' : ''}`, 'aria-label': t('builder.title') },
     h('header', { class: 'builder-heading row between' }, h('div', null,
       options.compact ? '' : h('a', { class: 'small muted', href: '#/studio' }, t('create.back')), title),
@@ -93,10 +97,13 @@ export function imagineScreen(root: HTMLElement, initialDraftId: string, options
 
   function sync(): void {
     const canEdit = !!current && (!!store.draftToken(draftId) || !!current.can_publish);
+    multiplayer.input.disabled = busy || publishing || !canEdit;
+    if (!multiplayerDirty) multiplayer.input.checked = current?.multiplayer ?? false;
+    friend.hidden = !current?.multiplayer || current.status !== 'ready';
     graphics.input.disabled = busy || publishing || !canEdit;
     if (!graphicsDirty) graphics.input.checked = current?.better_graphics ?? false;
     prompt.disabled = !canEdit;
-    send.disabled = busy || publishing || canvasLoading || connectionLost || !canEdit || (!prompt.value.trim() && !canvasDirty && !(graphicsDirty && graphics.input.checked !== (current?.better_graphics ?? false))) || current?.status !== 'ready';
+    send.disabled = busy || publishing || canvasLoading || connectionLost || !canEdit || (!prompt.value.trim() && !canvasDirty && !(multiplayerDirty && multiplayer.input.checked !== (current?.multiplayer ?? false)) && !(graphicsDirty && graphics.input.checked !== (current?.better_graphics ?? false))) || current?.status !== 'ready';
     publish.hidden = !!current && (!current.game_id || !canEdit);
     publish.disabled = busy || publishing || canvasDirty || connectionLost || current?.status !== 'ready' || current.publication === 'published';
     publish.textContent = t(publishing ? 'imagine.publishing' : current?.publication === 'published' ? 'imagine.published_short' : 'imagine.publish');
@@ -260,7 +267,7 @@ export function imagineScreen(root: HTMLElement, initialDraftId: string, options
     draftId = next.draft_id;
     if (!prompt.value) prompt.value = store.chatInput(draftId);
     current = next;
-    graphicsDirty = false;
+    graphicsDirty = multiplayerDirty = false;
     busy = next.status === 'building';
     connectionLost = false;
     recovery.hidden = true;
@@ -339,7 +346,7 @@ export function imagineScreen(root: HTMLElement, initialDraftId: string, options
     const ink = canvasDirty && submittedCanvas ? creationInk(submittedCanvas) : undefined;
     busy = true; sync(); activity.textContent = t('builder.updating');
     try {
-      const next = await api.refineImaginedGame(draftId, message, ink, graphics.input.checked);
+      const next = await api.refineImaginedGame(draftId, message, ink, graphics.input.checked, multiplayer.input.checked);
       if (disposed) return;
       store.setChatInput(draftId, '');
       if (prompt.value.trim() === message) prompt.value = '';

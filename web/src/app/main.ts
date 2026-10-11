@@ -20,6 +20,7 @@ import { createGameScreen } from './screens/create-game.ts';
 import { imagineScreen } from './screens/imagine.ts';
 import { libraryScreen } from './screens/library.ts';
 import { playScreen } from './screens/play.ts';
+import { roomScreen } from './screens/room.ts';
 import { raceScreen } from './screens/race.ts';
 import { previewScreen } from './screens/preview.ts';
 import { promptScreen } from './screens/prompt.ts';
@@ -121,6 +122,9 @@ function route(): void {
         break;
       case 'play':
         if (second) cleanup = playScreen(app, second, query);
+        break;
+      case 'room':
+        if (second) cleanup = roomScreen(app, second, query);
         break;
       case 'race':
         if (second) cleanup = raceScreen(app, second, query);

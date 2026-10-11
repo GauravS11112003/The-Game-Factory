@@ -1466,3 +1466,28 @@ body[data-screen='game']:has(.game-screen) .app-head { background: #fbf6eaf0; bo
   .modal-back, .modal-back > .card, .generated-input-dialog[open], .creation-modal-panel, .creation-modal .creation-inputs, .creation-modal .creation-canvas-field { animation: none; }
   .creation-modal-heading > .tool, .creation-modal .creation-submit > .pill, .sketch-editor .ed-toolbar .tool { transition: none; }
 }
+
+.generation-options { display: flex; flex-wrap: wrap; gap: 12px; }
+.generation-options > .graphics-option { flex: 1 1 180px; min-width: 0; }
+.room-screen { max-width: 1000px; margin: 0 auto; display: grid; gap: 12px; padding: 12px; }
+.room-seats { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0; }
+.room-seats span { flex: 1 1 180px; border: 1px solid var(--ink); border-radius: 12px; padding: 12px; }
+.room-game { width: 100%; min-width: 0; }
+.room-game iframe { display: block; width: 100%; height: min(60vh, 600px); min-height: 270px; border: 0; border-radius: 16px; background: #101724; }
+.room-controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.room-controls button { min-height: 48px; min-width: 64px; touch-action: none; user-select: none; }
+.room-error { color: #9a321f; }
+.room-game iframe { pointer-events: none; }
+body[data-screen="room"] .app-head { position: relative; }
+
+.room-screen [hidden] { display: none !important; }
+
+@media (max-width: 600px) {
+  body[data-screen="room"] .app-head { gap: 8px; padding: 8px 12px; flex-wrap: wrap; }
+  body[data-screen="room"] .app-head .logo { font-size: 1.15rem; }
+  body[data-screen="room"] .app-head nav { gap: 0; }
+  body[data-screen="room"] .app-head nav a { padding: 6px; }
+  body[data-screen="room"] .app-head nav a > span { display: none; }
+  .room-game iframe { height: 45vh; }
+  .room-seats span { flex-basis: 120px; }
+}

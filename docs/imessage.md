@@ -1,3 +1,7 @@
+# Games you create
+
+New generated games support a **Multiplayer** checkbox beside **Better graphics**. See [phone play and Spectrum setup](generated-multiplayer.md). The `play d_<draft-id>` command creates a card for that generated game.
+
 # Two-player races in iMessage
 
 The first multiplayer mode races two players through the same faithful platformer

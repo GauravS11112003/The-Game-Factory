@@ -110,6 +110,8 @@ export interface GameCard {
 }
 
 export interface ImaginedGameStatus {
+  multiplayer?: boolean;
+  multiplayer_spec?: { version: 1; mode: 'versus' | 'cooperative'; actions: { id: string; label: string }[] };
   better_graphics?: boolean;
   level_id?: string;
   level_number?: number;
@@ -352,7 +354,7 @@ function toDraft(x: Any): LibraryDraft {
 export type Sort = 'new' | 'hot' | 'hard' | 'cleared';
 
 export const api = {
-  imagineGame: async (body: { better_graphics?: boolean; append_level?: boolean; level_id?: string; ink?: InkDoc; category?: GameBrief['category']; game_id: string | null; context: string; title: string }): Promise<ImaginedGameStatus> => {
+  imagineGame: async (body: { multiplayer?: boolean; better_graphics?: boolean; append_level?: boolean; level_id?: string; ink?: InkDoc; category?: GameBrief['category']; game_id: string | null; context: string; title: string }): Promise<ImaginedGameStatus> => {
     const result = await request<ImaginedGameStatus>('POST', '/imagined-games', body);
     store.rememberGame(body.game_id);
     if (result.publish_token) store.setDraftToken(result.draft_id, result.publish_token);
@@ -361,9 +363,10 @@ export const api = {
   imaginedGame: (draftId: string): Promise<ImaginedGameStatus> =>
     request<ImaginedGameStatus>('GET', `/imagined-games/${encodeURIComponent(draftId)}`, undefined,
       { timeoutMs: 10000, headers: store.draftToken(draftId) ? { 'X-DP-Draft': store.draftToken(draftId)! } : {} }),
-  refineImaginedGame: async (draftId: string, message: string, ink?: InkDoc, betterGraphics?: boolean): Promise<ImaginedGameStatus> => {
+  refineImaginedGame: async (draftId: string, message: string, ink?: InkDoc, betterGraphics?: boolean, multiplayer?: boolean): Promise<ImaginedGameStatus> => {
     const result = await request<ImaginedGameStatus>('POST', `/imagined-games/${encodeURIComponent(draftId)}/refine`,
       { message, token: store.draftToken(draftId) ?? '', ...(ink ? { ink } : {}),
+        ...(multiplayer === undefined ? {} : { multiplayer }),
         ...(betterGraphics === undefined ? {} : { better_graphics: betterGraphics }) }, { timeoutMs: 10000 });
     const token = result.publish_token ?? store.draftToken(draftId);
     if (token) store.setDraftToken(result.draft_id, token);
@@ -378,7 +381,7 @@ export const api = {
   },
   publishImaginedGame: (draftId: string): Promise<ImaginedGameStatus> =>
     request('POST', `/imagined-games/${encodeURIComponent(draftId)}/publish`, { token: store.draftToken(draftId) ?? '' }),
-  imaginedInputs: (draftId: string): Promise<{ prompt: string; category: GameBrief['category']; ink: InkDoc; canvases: string[]; better_graphics?: boolean }> =>
+  imaginedInputs: (draftId: string): Promise<{ prompt: string; category: GameBrief['category']; ink: InkDoc; canvases: string[]; multiplayer?: boolean; better_graphics?: boolean }> =>
     request('GET', `/imagined-games/${encodeURIComponent(draftId)}/inputs`),
   health: (): Promise<Health> => request<Health>('GET', '/health'),
 

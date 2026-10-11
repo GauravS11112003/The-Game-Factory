@@ -627,3 +627,41 @@ def test_graphics_choice_carries_to_revisions_and_levels_with_explicit_override(
     off = client.post(f"/api/v2/imagined-games/{revision['draft_id']}/refine",
                       json={'better_graphics': False, 'token': first['publish_token']})
     assert off.status_code == 202 and off.json()['better_graphics'] is False
+
+
+def test_multiplayer_choice_independent_of_art_survives_retry_levels_and_revision(client):
+    game = create_game()
+    single = client.post('/api/v2/imagined-games', json={'context': 'Practice tennis'}).json()
+    assert single['multiplayer'] is False
+    first = client.post('/api/v2/imagined-games', json={'game_id': game['id'], 'context': 'Tennis with a friend', 'multiplayer': True, 'better_graphics': False}).json()
+    assert first['multiplayer'] and not first['better_graphics']
+    assert client.get(f"/api/v2/imagined-games/{first['draft_id']}/inputs").json()['multiplayer']
+    finish_level(first, 'Friend Tennis')
+    level = client.post('/api/v2/imagined-games', json={'game_id': game['id'], 'context': 'A jungle court', 'append_level': True}).json()
+    assert level['multiplayer']
+    retry = client.post(f"/api/v2/imagined-games/{level['draft_id']}/retry").json()
+    assert retry['multiplayer']
+    # Switch off through a checkbox-only revision of a current, ready level.
+    finished = finish_level(retry, 'Jungle Tennis')
+    token_path = imagine.artifact_path(finished['draft_id']).with_name('creator.sha256')
+    import hashlib
+    token_path.write_text(hashlib.sha256(b'test-token').hexdigest())
+    changed = client.post(f"/api/v2/imagined-games/{finished['draft_id']}/refine", json={'token': 'test-token', 'multiplayer': False})
+    assert changed.status_code == 202 and changed.json()['multiplayer'] is False
+
+
+@pytest.mark.parametrize('has_adapter', [True, False])
+def test_multiplayer_generation_requests_network_contract_and_rejects_missing_adapter(client, monkeypatch, has_adapter):
+    state = client.post('/api/v2/imagined-games', json={'context': 'Space duel', 'multiplayer': True}).json()
+    html = '<html><body><script>' + '/* complete game */' * 100 + ('window.drawPlayMultiplayer={};' if has_adapter else '') + '</script></body></html>'
+    async def call(kind, schema, content, **kwargs):
+        assert 'TWO REMOTE HUMAN PLAYERS' in '\n'.join(c.get('text', '') for c in content)
+        return mind.MindResult(kind='imagine', status='ok', value=imagine.ImaginedGame(
+            title='Space Duel', summary='Duel a friend', controls=['Fire'], html=html,
+            multiplayer_spec={'version': 1, 'mode': 'versus', 'actions': [{'id': 'attack', 'label': 'Fire'}]} if has_adapter else None))
+    monkeypatch.setattr(mind, 'call', call)
+    asyncio.run(imagine.generate(state['draft_id'], routes.InkDoc.model_validate(ink()).model_dump(mode='json'), None, 'Space duel', ''))
+    result = imagine.read(state['draft_id'])
+    assert result['status'] == ('ready' if has_adapter else 'failed')
+    if has_adapter:
+        assert result['multiplayer_spec']['mode'] == 'versus'

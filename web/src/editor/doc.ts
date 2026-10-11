@@ -25,6 +25,7 @@ export interface EditorDocData {
   title: string;
   imaginationContext?: string;
   betterGraphics?: boolean;
+  multiplayer?: boolean;
   nextId: number;
   /** Edit statuses kept from the preview when going back to the drawing (edits are kept by stable id, §7.10). */
   keptStatuses: Record<string, 'applied' | 'undone'>;

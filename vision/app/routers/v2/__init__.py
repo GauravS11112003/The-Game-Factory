@@ -26,7 +26,7 @@ BOOT_DELAY_S = 1.5  # let uvicorn finish starting (and the first requests throug
 
 
 # v3 routers (docs/v3/CONTRACTS_V3.md); each is optional so a half-built module never takes the API down.
-V3_MODULES = ("creative", "collab", "live", "export_phaser", "matches")
+V3_MODULES = ("creative", "collab", "live", "export_phaser", "matches", "play_rooms")
 
 
 def mount(app: FastAPI) -> None:
