@@ -572,9 +572,9 @@ textarea.st-chat-in { overflow-y: hidden; flex: 1; min-height: 28px; max-height:
   .st-main { grid-template-columns: minmax(0, 1fr); }
   .st-side {
     position: fixed; left: 0; right: 0; bottom: 58px; z-index: 30; height: min(68vh, 560px); border: 0; border-radius: 18px 18px 0 0;
-    box-shadow: 0 -10px 40px rgba(31, 27, 24, 0.2); transform: translateY(105%); transition: transform 0.25s var(--st-ease);
+    box-shadow: 0 -10px 40px rgba(31, 27, 24, 0.2); transform: translateY(105%); visibility: hidden; transition: transform 0.25s var(--st-ease), visibility 0s linear 0.25s;
   }
-  .st-root[data-sheet='chat'] .st-side, .st-root[data-sheet='insp'] .st-side { transform: none; }
+  .st-root[data-sheet='chat'] .st-side, .st-root[data-sheet='insp'] .st-side { transform: none; visibility: visible; transition: transform 0.25s var(--st-ease), visibility 0s; }
   .st-root[data-sheet='chat'] .st-insp-panel { display: none; }
   .st-root[data-sheet='insp'] .st-chat-panel { display: none; }
   .st-root[data-sheet='insp'] .st-insp-panel { display: flex; }
