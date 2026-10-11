@@ -11,7 +11,9 @@ from fastapi import APIRouter, Header, HTTPException, Request, WebSocket, WebSoc
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, ConfigDict, Field
 from app import play_rooms as rooms
+from app import room_publishing as publishing
 from app.build import imagine
+from app.creative.imagine_assets import strip_runtime
 from app.routers.v2.matches import base_url, ticket
 from app.routers.v2.runs import rate_limited
 
@@ -28,6 +30,39 @@ class Join(BaseModel):
     invite: str = Field(min_length=32, max_length=100)
     name: str = Field(min_length=1, max_length=16)
     claim: str = Field(min_length=32, max_length=100)
+
+class ImportedBuild(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    title: str = Field(min_length=1, max_length=120)
+    spec: imagine.MultiplayerSpec
+    html: str = Field(min_length=1000, max_length=publishing.MAX_BUILD_BYTES)
+    request_key: str = Field(pattern=r"^[a-f0-9]{64}$")
+
+@router.post("/play-rooms/import", status_code=201)
+async def import_build(request: Request):
+    expected = os.environ.get("DAL_REMOTE_PUBLISH_SECRET", "")
+    supplied = request.headers.get("X-Draw-Play-Publish", "")
+    if not expected or not secrets.compare_digest(expected, supplied):
+        rooms.fail(403, "Online publishing access is unavailable.")
+    raw = bytearray()
+    async for chunk in request.stream():
+        if len(raw) + len(chunk) > publishing.MAX_BUILD_BYTES + 1_000_000:
+            rooms.fail(413, "This game's artwork is too large to share.")
+        raw.extend(chunk)
+    try:
+        body = ImportedBuild.model_validate_json(raw)
+        if len(body.html.encode()) > publishing.MAX_BUILD_BYTES or "drawPlayMultiplayer" not in body.html:
+            raise ValueError("multiplayer_adapter")
+        imagine.check_html(strip_runtime(body.html))
+    except ValueError:
+        rooms.fail(422, "This game needs a multiplayer repair before sharing.")
+    created = await asyncio.to_thread(rooms.import_build, body.title, body.spec.model_dump(), body.html,
+                                      "import:" + body.request_key)
+    return publishing.links(created, base_url(request))
+
+@router.post("/play-rooms/{room_id}/publish")
+def publish(room_id: str, authorization: str = Header(default="")):
+    return publishing.publish(room_id, ticket(authorization))
 
 @router.post("/play-rooms", status_code=201)
 def create(body: Create, request: Request, x_race_request: str = Header(default="", max_length=200)):

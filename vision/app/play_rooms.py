@@ -101,20 +101,50 @@ def create(draft_id, name="Player 1", reserve_host=True, request_key=""):
         source = imagine.artifact_path(draft_id)
         if not source.is_file():
             fail(404, "This game is unavailable.")
-        room_id = "room_" + secrets.token_hex(12)
-        invite = secrets.token_urlsafe(32)
-        token = secrets.token_urlsafe(32) if reserve_host else None
-        room = {"id": room_id, "draft_id": draft_id, "title": state["title"], "spec": state["multiplayer_spec"],
-                "phase": "waiting", "round": 1, "seed": secrets.randbelow(2**31), "start_at": None,
-                "expires_at": time.time() + 86400, "invite": invite, "invite_hash": digest(invite),
-                "players": [], "world": None, "world_seq": 0, "inputs": [[], []], "winner": None, "result": None}
-        if token:
-            room["players"].append(new_player(0, name, token))
-        artifact = artifact_path(room_id)
-        artifact.parent.mkdir(parents=True, exist_ok=True)
-        artifact.write_text(source.read_text())  # Pin the exact build; later edits never replace an active game.
-        conn.execute("INSERT INTO play_rooms VALUES(?,?,?)", (room_id, request_key or None, json.dumps(room)))
-        return {"match": public(room), "invite": invite, "token": token, "seat": 0 if token else None}
+        return create_build(conn, draft_id, state, source.read_text(), name, reserve_host, request_key)
+
+
+def create_build(conn, draft_id, state, html, name="Player 1", reserve_host=True, request_key=""):
+    room_id = "room_" + secrets.token_hex(12)
+    invite = secrets.token_urlsafe(32)
+    token = secrets.token_urlsafe(32) if reserve_host else None
+    room = {"id": room_id, "draft_id": draft_id, "title": state["title"], "spec": state["multiplayer_spec"],
+            "phase": "waiting", "round": 1, "seed": secrets.randbelow(2**31), "start_at": None,
+            "expires_at": time.time() + 86400, "invite": invite, "invite_hash": digest(invite),
+            "players": [], "world": None, "world_seq": 0, "inputs": [[], []], "winner": None, "result": None}
+    if token:
+        room["players"].append(new_player(0, name, token))
+    artifact = artifact_path(room_id)
+    artifact.parent.mkdir(parents=True, exist_ok=True)
+    artifact.write_text(html)  # Pin the exact build; later edits never replace an active game.
+    conn.execute("INSERT INTO play_rooms VALUES(?,?,?)", (room_id, request_key or None, json.dumps(room)))
+    return {"match": public(room), "invite": invite, "token": token, "seat": 0 if token else None}
+
+
+def import_build(title, spec, html, request_key):
+    """Owner-authenticated imports mint a new draft; never overwrite a server game."""
+    with transaction() as conn:
+        row = conn.execute("SELECT data FROM play_rooms WHERE request_key=?", (request_key,)).fetchone()
+        if row:
+            room = json.loads(row[0])
+            advance(room)
+            return {"match": public(room), "invite": room["invite"], "token": None}
+        while True:
+            draft_id = "d_" + secrets.token_hex(4)
+            source = imagine.artifact_path(draft_id)
+            if imagine.read(draft_id):
+                continue
+            try:
+                source.parent.mkdir(parents=True, exist_ok=False)
+                break
+            except FileExistsError:
+                continue
+        state = {"draft_id": draft_id, "status": "ready", "title": title,
+                 "summary": "Shared from the creator's local game.", "controls": [],
+                 "multiplayer": True, "multiplayer_spec": spec}
+        source.write_text(html)
+        imagine.save(draft_id, state)
+        return create_build(conn, draft_id, state, html, reserve_host=False, request_key=request_key)
 
 
 def new_player(seat, name, token, claim=""):

@@ -86,8 +86,9 @@ def urls(request: Request, match_id: str, invite: str) -> dict[str, str]:
 
 
 @router.get("/matches/config")
-def config() -> dict[str, str | None]:
-    return {"imessage_number": os.environ.get("DAL_SPECTRUM_NUMBER") or None}
+def config() -> dict:
+    from app.room_publishing import client_configuration
+    return client_configuration()
 
 
 @router.post("/matches", status_code=201)

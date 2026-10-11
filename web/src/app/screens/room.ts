@@ -1,7 +1,7 @@
 import { card, h, toast } from '../dom.ts';
 import { store } from '../store.ts';
 import { roomDocument } from '../rooms/bridge.ts';
-import { roomRequest, roomSession, type Room } from '../rooms/api.ts';
+import { localOnlyAddress, messagesLink, roomRequest, roomSession, type PublishedRoom, type Room, type SharingConfig } from '../rooms/api.ts';
 
 export function roomScreen(root: HTMLElement, id: string, query: URLSearchParams): () => void {
   let disposed = false;
@@ -17,6 +17,9 @@ export function roomScreen(root: HTMLElement, id: string, query: URLSearchParams
   let wasReady = false;
   let restoreHost = true;
   let gameFault = false;
+  let sharingConfig: SharingConfig = { imessage_number: null };
+  let published: PublishedRoom | null = null;
+  let publishing: Promise<PublishedRoom> | null = null;
   let frame: HTMLIFrameElement | null = null;
   const nonce = crypto.randomUUID();
   const held = new Set<string>();
@@ -31,12 +34,13 @@ export function roomScreen(root: HTMLElement, id: string, query: URLSearchParams
   const rematch = h('button', { class: 'pill', type: 'button', hidden: true }, 'Play again');
   const share = h('button', { class: 'pill', type: 'button' }, 'Invite a friend');
   const imessage = h('a', { class: 'pill', hidden: true }, 'Start in iMessage');
+  const online = h('a', { class: 'pill primary', hidden: true }, 'Open online game');
   const messagingNote = h('p', { class: 'small muted' });
   const joinPanel = h('div');
   const game = h('div', { class: 'room-game' });
   const touch = h('div', { class: 'room-controls', 'aria-label': 'Your game controls' });
   root.append(h('div', { class: 'room-screen' }, card(null, title, status, seats,
-    h('div', { class: 'row wrap' }, ready, rematch, share, imessage), joinPanel, error, messagingNote), game, touch));
+    h('div', { class: 'row wrap' }, ready, rematch, share, imessage, online), joinPanel, error, messagingNote), game, touch));
   const send = (data: Record<string, unknown>): void => {
     if (authenticated && socket?.readyState === WebSocket.OPEN && room) socket.send(JSON.stringify({ ...data, round: room.round }));
   };
@@ -57,13 +61,14 @@ export function roomScreen(root: HTMLElement, id: string, query: URLSearchParams
     if (!room) return;
     title.textContent = room.title;
     seats.replaceChildren(...[0, 1].map(seat => { const p = room!.players.find(x => x.seat === seat); return h('span', null, p ? `${p.name}${session?.seat === seat ? ' (you)' : ''} · ${p.ready ? 'Ready' : p.connected ? 'Joined' : 'Away'}` : 'Waiting for your friend'); }));
-    ready.hidden = !session || !['waiting', 'paused'].includes(room.phase);
+    ready.hidden = !!published || !session || !['waiting', 'paused'].includes(room.phase);
     ready.disabled = !loaded || !authenticated || gameFault;
     ready.textContent = wasReady ? 'Ready ✓' : 'Ready';
     rematch.hidden = room.phase !== 'finished' || !session;
     rematch.disabled = !authenticated || !!room.players.find(p => p.seat === session?.seat)?.rematch;
     rematch.textContent = rematch.disabled ? 'Waiting for your friend…' : 'Play again';
-    if (gameFault) status.textContent = 'This game needs a multiplayer repair.';
+    if (published) status.textContent = 'Your game is online. Both players open the online invitation to play together.';
+    else if (gameFault) status.textContent = 'This game needs a multiplayer repair.';
     else if (!authenticated && session) status.textContent = 'Reconnecting… Your game is paused.';
     else if (room.phase === 'waiting') status.textContent = loaded ? 'Both players tap Ready to begin.' : 'Loading the game…';
     else if (room.phase === 'countdown') status.textContent = 'Get ready…';
@@ -132,11 +137,37 @@ export function roomScreen(root: HTMLElement, id: string, query: URLSearchParams
   }
   ready.onclick = () => { wasReady = true; send({ type: 'ready' }); sync(); };
   rematch.onclick = () => { send({ type: 'rematch' }); rematch.disabled = true; };
+  async function putOnline(): Promise<PublishedRoom> {
+    if (published) return published;
+    if (!session || session.seat !== 0) throw new Error('The host needs to put this local game online first.');
+    if (!sharingConfig.local_publishing) throw new Error('This game is only on your Mac. Connect online sharing or create it on the live draw.play site.');
+    publishing ??= roomRequest<PublishedRoom>('POST', `/${id}/publish`, undefined, session.token).then(result => {
+      published = result;
+      online.href = result.invite_url; online.hidden = false;
+      messagingNote.textContent = 'Open online game on this device too. Both players must use the online invitation. For Messages, send the prepared text and share the returned Spectrum card.';
+      if (result.imessage_number) { imessage.hidden = false; imessage.href = messagesLink(result.imessage_number, result.match.draft_id); imessage.textContent = 'Open Messages'; }
+      sync();
+      return result;
+    }).catch(e => { publishing = null; throw e; });
+    return publishing;
+  }
+  imessage.onclick = async event => {
+    if (!sharingConfig.local_publishing || published) return;
+    event.preventDefault(); imessage.textContent = 'Putting game online…';
+    try { await putOnline(); toast('Your game is online. Tap Open Messages to send it.'); }
+    catch (e) { imessage.textContent = 'Start in iMessage'; report(e); }
+  };
   share.onclick = async () => {
-    const url = new URL(`/api/v2/play-rooms/${id}/card?invite=${encodeURIComponent(invite)}`, location.origin).href;
-    if (navigator.share) { try { await navigator.share({ title: room?.title, text: 'Play my new game with me!', url }); return; } catch (e) { if (e instanceof DOMException && e.name === 'AbortError') return; } }
-    try { await navigator.clipboard.writeText(url); toast('Invitation copied. Send it to your friend.'); }
-    catch { window.prompt('Send this invitation to your friend', url); }
+    share.disabled = true;
+    try {
+      const url = sharingConfig.local_publishing || localOnlyAddress(location.href)
+        ? (await putOnline()).card_url
+        : new URL(`/api/v2/play-rooms/${id}/card?invite=${encodeURIComponent(invite)}`, location.origin).href;
+      if (navigator.share) { try { await navigator.share({ title: room?.title, text: 'Play my new game with me!', url }); return; } catch (e) { if (e instanceof DOMException && e.name === 'AbortError') return; } }
+      try { await navigator.clipboard.writeText(url); toast(published ? 'Online invitation copied. Send it to your friend, then open the online game here too.' : 'Invitation copied. Send it to your friend.'); }
+      catch { window.prompt('Send this online invitation to your friend', url); }
+    } catch (e) { report(e); }
+    finally { share.disabled = false; }
   };
   const keydown = (e: KeyboardEvent): void => {
     const action = e.key === ' ' && !room?.spec.actions.some(a => a.id === 'jump') ? 'attack' : keys[e.key];
@@ -151,13 +182,14 @@ export function roomScreen(root: HTMLElement, id: string, query: URLSearchParams
       room = await roomRequest<Room>('GET', `/${id}`, undefined, session?.token, invite);
       if (disposed) return;
       sync();
-      const config = await fetch('/api/v2/matches/config').then(r => r.json());
+      const config: SharingConfig = await fetch('/api/v2/matches/config').then(r => r.json());
       if (disposed) return;
-      if (config.imessage_number) {
+      sharingConfig = config;
+      if (config.imessage_number && (!localOnlyAddress(location.href) || config.local_publishing)) {
         imessage.hidden = false;
-        imessage.href = `sms:${config.imessage_number}&body=${encodeURIComponent(`play ${room.draft_id}`)}`;
-        messagingNote.textContent = 'For play inside Messages, start a fresh card with the bot and forward it to your friend. Install Spectrum’s Messages app once.';
-      } else messagingNote.textContent = 'This invitation opens in a browser. Activate your Spectrum bot for play inside Messages.';
+        imessage.href = config.local_publishing ? '#' : messagesLink(config.imessage_number, room.draft_id);
+        messagingNote.textContent = config.local_publishing ? 'Your game is on this Mac. Invite a friend or Start in iMessage will put it online first.' : 'For play inside Messages, start a fresh card with the bot and share it with your friend. Install Spectrum’s Messages app once.';
+      } else messagingNote.textContent = localOnlyAddress(location.href) ? 'This game is only on your Mac. Connect online sharing before inviting a friend on another phone.' : 'This invitation opens in a browser. Activate your Spectrum bot for play inside Messages.';
       if (session) await mount();
       else {
         const name = h('input', { class: 'text', maxLength: 16, required: true, placeholder: 'Your name', value: (store.author() || '').slice(0, 16), 'aria-label': 'Your name' });

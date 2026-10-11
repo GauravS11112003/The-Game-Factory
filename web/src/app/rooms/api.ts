@@ -12,6 +12,15 @@ export interface Room {
   world?: Record<string, unknown> | null; world_seq?: number; inputs?: string[][];
 }
 export interface RoomSession { token: string; seat: number; invite: string }
+export interface SharingConfig { imessage_number: string | null; public_url?: string | null; local_publishing?: boolean }
+export interface PublishedRoom { match: Room; invite: string; invite_url: string; card_url: string; imessage_number: string | null }
+export function localOnlyAddress(url: string): boolean {
+  const { hostname, protocol } = new URL(url);
+  return protocol === 'http:' || ['localhost', '127.0.0.1', '[::1]'].includes(hostname);
+}
+export function messagesLink(number: string, draftId: string): string {
+  return `sms:${number}&body=${encodeURIComponent(`play ${draftId}`)}`;
+}
 const memory = new Map<string, RoomSession>();
 export function roomSession(id: string, value?: RoomSession): RoomSession | null {
   if (value) memory.set(id, value);
@@ -23,7 +32,7 @@ export function roomSession(id: string, value?: RoomSession): RoomSession | null
 export async function roomRequest<T>(method: string, path: string, body?: unknown, token?: string, invite?: string): Promise<T> {
   const response = await fetch(`/api/v2/play-rooms${path}`, { method,
     headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(invite ? { 'X-Race-Invite': invite } : {}) },
-    body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(15000) });
+    body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(path.endsWith('/publish') ? 45000 : 15000) });
   const data = await response.json();
   if (!response.ok) throw new Error(data.detail?.message ?? 'Could not connect. Try again.');
   return data as T;

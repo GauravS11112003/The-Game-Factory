@@ -14,6 +14,16 @@ Browser invitations open the web game. To play inside the Messages window, both 
 
 The bot also accepts `invite room_<24-hex-id> <invitation-token>`. Configure `DAL_SPECTRUM_NUMBER` only after verifying the receiving number assigned to the Photon project. A shared Photon line may vary by recipient; do not invent a universal contact. Without an activated project, browser play works and the app explains that Messages activation is pending.
 
+## Games created on your Mac
+
+A `localhost` invitation cannot open on a friend's phone, and a local draft does not exist on the live bot's server. Configure online publishing so **Invite a friend** uploads the exact room build, including its embedded artwork, to your HTTPS deployment. The returned invitation uses the public address. Click **Open online game** on the creator's device too; both players use that online room.
+
+**Start in iMessage** first puts the local build online, then changes to **Open Messages** with the uploaded draft ID. Tap it to send the prepared command. The bot creates a fresh card with both seats open, so the local browser never occupies a seat inside Messages.
+
+The server needs a separate `DAL_REMOTE_PUBLISH_SECRET`. On the local API, set `DAL_REMOTE_PUBLIC_URL`, the matching `DAL_REMOTE_PUBLISH_SECRET`, and `DAL_SPECTRUM_NUMBER`; alternatively save a private `messaging/publishing.json` under `DAL_DATA_DIR` with `public_url`, `secret`, and `imessage_number`. This file is ignored by Git and should have permissions `0600`. The key stays on the API and is never returned to the browser. Restart the local API after code or environment changes; the private file is read on each sharing request.
+
+Only the local host's player ticket can publish a room. Uploads are authenticated, bounded to 12 MiB including artwork, retry safely, mint new server draft IDs, and preserve existing games. HTML remains in the generated-game sandbox, and no creator prompts, account data, or player tickets are uploaded. Unconfigured local invitations show an explanation instead of copying an unusable localhost link.
+
 ## Developer contract
 
 A generated multiplayer game returns `multiplayer_spec` with version 1, versus/cooperative mode and allowed action IDs. The isolated HTML exposes `window.drawPlayMultiplayer` with `start`, `input`, `snapshot`, `restore`, `pause`, and `result`. See [the generation contract](../vision/app/mind/prompts/multiplayer.md).
