@@ -24,7 +24,7 @@ import { thumbnailBlob } from '../../studio/editor/snapshot.ts';
 import { Studio, type Tool } from '../../studio/editor/studio.ts';
 import { closePopover, menu, popover, toggle, typingIn } from '../../studio/editor/ui.ts';
 import { displayName, sceneOf, withScene } from '../../studio/model/doc.ts';
-import { asGameDoc, normalizeDoc, type SDoc, type SObj } from '../../studio/model/types.ts';
+import { asGameDoc, normalizeDoc, type AskDraw, type SDoc, type SObj } from '../../studio/model/types.ts';
 import { mountRuntime, type RuntimeHandle } from '../../studio/runtime/index.ts';
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'offline' | 'error' | 'readonly';
@@ -77,6 +77,19 @@ export function studioScreen(root: HTMLElement, gameId: string, query: URLSearch
 function buildStudio(rootEl: HTMLElement, initialId: string, loaded: Loaded, query: URLSearchParams): () => void {
   let gameId = initialId;
   const studio = new Studio(loaded.doc, query.get('scene') ?? undefined);
+  // pending "draw your …" prompts survive a reload (they are not part of the doc)
+  const ASKS = 'dp.studio.asks.';
+  try {
+    const raw = localStorage.getItem(ASKS + gameId);
+    const asks = raw ? (JSON.parse(raw) as AskDraw[]) : [];
+    if (Array.isArray(asks)) studio.asks = asks.filter((a) => a && typeof a.id === 'string' && typeof a.prompt === 'string' && studio.doc.scenes.some((sc) => sc.id === a.scene));
+  } catch { /* storage off */ }
+  const saveAsks = (): void => {
+    try {
+      if (studio.asks.length) localStorage.setItem(ASKS + gameId, JSON.stringify(studio.asks));
+      else localStorage.removeItem(ASKS + gameId);
+    } catch { /* storage off */ }
+  };
   const offs: (() => void)[] = [];
   rootEl.classList.remove('loading');
 
@@ -231,6 +244,7 @@ function buildStudio(rootEl: HTMLElement, initialId: string, loaded: Loaded, que
         gameId = created.id;
         dropDraft(oldId);
         moveChat(oldId, gameId);
+        saveAsks();
         history.replaceState(null, '', `#/studio/${encodeURIComponent(gameId)}`);
         toast(t('studio.save.now_online'));
       } else {
@@ -389,7 +403,10 @@ function buildStudio(rootEl: HTMLElement, initialId: string, loaded: Loaded, que
     }
     if (c.kind === 'scene') { renderInspector(); renderTabs(); }
     if (c.kind === 'history') renderHistory();
-    if (c.kind === 'asks' && studio.asks.length && !['pen', 'line', 'rect', 'circle'].includes(studio.tool)) studio.setTool('pen');
+    if (c.kind === 'asks') {
+      saveAsks();
+      if (studio.asks.length && !['pen', 'line', 'rect', 'circle'].includes(studio.tool)) studio.setTool('pen');
+    }
   }));
   renderTabs();
   renderInspector();

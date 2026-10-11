@@ -8,7 +8,8 @@ import { h, toast } from '../dom.ts';
 import { kidText, t } from '../messages.ts';
 import { navigate } from '../router.ts';
 import { store } from '../store.ts';
-import { BLANK_DOC, isOffline, loadDraft, localGameFrom, saveDraft, studioApi } from '../studio_api.ts';
+import { currentPlayer } from '../identity.ts';
+import { BLANK_DOC, isLocalId, isOffline, loadDraft, localGameFrom, saveDraft, studioApi } from '../studio_api.ts';
 import { sicon } from '../../studio/editor/icons.ts';
 import { mountRuntime, type RuntimeHandle } from '../../studio/runtime/index.ts';
 
@@ -81,6 +82,7 @@ export function studioPlayScreen(root: HTMLElement, gameId: string, _query: URLS
       btn('restart', t('studio.play.restart'), () => { if (runtime) runtime.restart(); else start(); }),
       btn('expand', t('studio.play.fullscreen'), full),
       btn('share', t('studio.share.copy'), () => void share()),
+      ...(isLocalId(gameId) || (doc.author && doc.author === currentPlayer()?.name) ? [btn('pen', t('studio.play.edit'), () => navigate(`#/studio/${encodeURIComponent(gameId)}`))] : []),
       btn('remix', t('studio.play.remix'), () => void remix(), 'primary'));
     start();
   });

@@ -67,5 +67,5 @@ function openInk(anchor: HTMLElement, studio: Studio): void {
       h('div', { class: 'st-widths' }, ...widths));
   };
   render();
-  popover(anchor, body, { side: 'right', cls: 'st-pop-ink' });
+  popover(anchor, body, window.innerWidth <= 760 ? { side: 'above', align: 'end', cls: 'st-pop-ink' } : { side: 'right', cls: 'st-pop-ink' });
 }

@@ -8,7 +8,7 @@ import blankTemplate from '../../../shared/studio/templates/blank.json';
 import type {
   GameDoc, RecognizeBody, RecognizeResult, StudioChatBody, StudioChatResult, StudioGameCard, StudioTheme, ThemeBody, ThemeResult,
 } from '../core/types.gen.ts';
-import { authHeaders } from './identity.ts';
+import { authHeaders, currentPlayer } from './identity.ts';
 import { hasMessage } from './messages.ts';
 
 const BASE = '/api/v2/studio';
@@ -176,5 +176,5 @@ export function localGames(): { id: string; title: string }[] {
 export function localGameFrom(template: GameDoc | null, title?: string): GameDoc {
   const src = JSON.parse(JSON.stringify(template ?? BLANK_DOC)) as GameDoc;
   const now = new Date().toISOString();
-  return { ...src, id: newLocalId(), title: title?.trim() || (template && template.id !== 'tpl_blank' ? src.title : 'Untitled game') || 'Untitled game', created_at: now, updated_at: now };
+  return { ...src, id: newLocalId(), author: currentPlayer()?.name ?? null, title: title?.trim() || (template && template.id !== 'tpl_blank' ? src.title : 'Untitled game') || 'Untitled game', created_at: now, updated_at: now };
 }

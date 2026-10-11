@@ -51,6 +51,8 @@ export class StudioCanvas {
   private ro: ResizeObserver;
   private fitted = false;
   private lastDims = '';
+  /** The maker panned or zoomed since the last fit (then resizes keep their view). */
+  private userMoved = false;
   private offs: (() => void)[] = [];
   /** Called after the view moved (bubbles reposition). */
   onView: (() => void) | null = null;
@@ -115,7 +117,7 @@ export class StudioCanvas {
     this.cv.height = Math.round(this.h * this.dpr);
     this.cv.style.width = `${this.w}px`;
     this.cv.style.height = `${this.h}px`;
-    if (!this.fitted && this.w > 10) this.fit(false);
+    if ((!this.fitted || !this.userMoved) && this.w > 10) this.fit(false);
     this.request();
   }
 
@@ -123,26 +125,31 @@ export class StudioCanvas {
   fit(animate = true): void {
     if (this.w < 10) return;
     const world = this.studio.scene.world;
-    const padX = this.w < 600 ? 16 : 88;
-    const padY = this.w < 600 ? 70 : 72;
+    // phones have the rail along the bottom; wider screens have it on the left
+    const phone = window.innerWidth <= 760;
+    const padX = phone ? 16 : 76;
+    const padY = phone ? 72 : 64;
     const fitW = (this.w - padX * 2) / world.width;
     const fitH = (this.h - padY * 2) / world.height;
     let zoom = Math.max(MIN_ZOOM, Math.min(2, fitW, fitH));
     let target = { zoom, x: world.width / 2 - this.w / 2 / zoom, y: world.height / 2 - this.h / 2 / zoom };
     // long worlds (racers, runners): fit the height and show the start, not a thin strip of the whole thing
-    if (fitH > fitW * 2.2) {
+    const aspect = world.width / world.height;
+    if (aspect > 3 && fitH > fitW * 2.2) {
       zoom = Math.max(MIN_ZOOM, Math.min(2, fitH));
       target = { zoom, x: -padX / zoom, y: world.height / 2 - this.h / 2 / zoom };
-    } else if (fitW > fitH * 2.2) {
+    } else if (aspect < 1 / 3 && fitW > fitH * 2.2) {
       zoom = Math.max(MIN_ZOOM, Math.min(2, fitW));
       target = { zoom, x: world.width / 2 - this.w / 2 / zoom, y: world.height - (this.h - padY) / zoom };
     }
     this.lastDims = `${this.studio.sceneId}:${world.width}x${world.height}`;
+    this.userMoved = false;
     this.fitted = true;
     this.animateTo(target, animate);
   }
 
   zoomTo(z: number): void {
+    this.userMoved = true;
     const c = this.screenToWorld(this.w / 2, this.h / 2);
     const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, z));
     this.animateTo({ zoom, x: c[0] - this.w / 2 / zoom, y: c[1] - this.h / 2 / zoom }, true);
@@ -651,6 +658,7 @@ export class StudioCanvas {
     }
     switch (d.kind) {
       case 'pinch': {
+        this.userMoved = true;
         const touches = [...this.pointers.values()].filter((p) => p.type === 'touch');
         if (touches.length < 2) return;
         const [p, q] = touches;
@@ -663,6 +671,7 @@ export class StudioCanvas {
         return;
       }
       case 'pan':
+        this.userMoved = true;
         this.view = { ...this.view, x: d.vx - (sx - d.sx) / this.view.zoom, y: d.vy - (sy - d.sy) / this.view.zoom };
         this.viewChanged();
         return;
@@ -759,7 +768,8 @@ export class StudioCanvas {
     const s = this.studio;
     const tol = 9 / this.view.zoom;
     const scope = s.selection.length ? s.selected : s.pending && s.object(s.pending.id) ? [s.object(s.pending.id)!] : s.scene.objects;
-    const order = drawOrder(scope).reverse();
+    // the selected / pending object first, then anything under the eraser
+    const order = [...drawOrder(scope).reverse(), ...drawOrder(s.scene.objects).reverse()];
     for (const o of order) {
       const i = strokeAt(o, w, tol);
       if (i >= 0) {
@@ -771,6 +781,7 @@ export class StudioCanvas {
 
   private wheel(e: WheelEvent): void {
     e.preventDefault();
+    this.userMoved = true;
     const [sx, sy] = this.local(e);
     if (e.shiftKey && !e.ctrlKey) {
       this.view = { ...this.view, x: this.view.x + (e.deltaY || e.deltaX) / this.view.zoom };
