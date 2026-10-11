@@ -41,7 +41,8 @@ router = APIRouter()
 
 BLOCK_ID = re.compile(r"^blk_[a-z0-9]{8}$")
 ID_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789"
-KINDS = ("creature", "platform", "hazard", "pickup", "prop", "player", "rules")
+KINDS = ("creature", "platform", "hazard", "pickup", "prop", "player", "rules", "object", "theme")
+STUDIO_KINDS = ("object", "theme")  # v6 Studio blocks (docs/v6/CONTRACTS_V6.md §5.3): a drawn object or a theme
 NAME_CHARS = 24
 AUTHOR_CHARS = 16
 TAG_CHARS = 24
@@ -95,6 +96,14 @@ def _shown_texts(doc: dict[str, Any]) -> list[str | None]:
     out += [str(x) for x in b.get("lines") or []] + [b.get("name")]
     for r in doc.get("logic") or []:
         out += [a.get("text") for a in r.get("then") or [] if a.get("kind") == "say"]
+    obj = doc.get("object") or {}
+    if obj:  # v6: a Studio object's name, kind, rule texts and speech bubbles
+        out += [obj.get("name"), obj.get("kind")]
+        for r in obj.get("rules") or []:
+            out.append(r.get("text"))
+            out += [str((a.get("params") or {}).get("text")) for a in r.get("then") or [] if a.get("type") == "say"]
+    if doc.get("theme"):
+        out.append((doc.get("theme") or {}).get("name"))
     return out
 
 
@@ -104,7 +113,20 @@ def prepare_block(body: BlockCreate, *, block_id: str, player: dict[str, Any]) -
     name = sanitize.text(raw.get("name"), NAME_CHARS)
     if not name:
         raise ValueError("error.bad_request")
-    if raw["kind"] == "rules":
+    if raw["kind"] == "object":
+        if not raw.get("object"):
+            raise ValueError("ai.err.needs_object")
+        raw["theme"] = None
+        raw["collision"] = "none"
+        raw["spiky"] = False
+    elif raw["kind"] == "theme":
+        if not raw.get("theme"):
+            raise ValueError("ai.err.needs_theme")
+        raw["object"] = None
+        raw["behavior"] = None
+        raw["collision"] = "none"
+        raw["spiky"] = False
+    elif raw["kind"] == "rules":
         if not raw.get("logic"):
             raise ValueError("blocks.err.needs_rules")
         raw["behavior"] = None
@@ -280,6 +302,8 @@ async def use_block(game_id: str, request: Request) -> Any:
     b = db_v2.get_block(body.block_id, body.version)
     if b is None:
         return err(404, "error.not_found", {"what": "block"})
+    if b["kind"] in STUDIO_KINDS:  # Studio objects and themes are used by the Studio editor, not v4 games
+        return err(400, "ai.err.studio_block")
     library_type: dict[str, Any] | None = None
     rules: dict[str, Any] | None = None
     try:
