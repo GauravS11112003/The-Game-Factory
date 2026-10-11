@@ -503,12 +503,15 @@ function paintLand(ctx: CanvasRenderingContext2D, pc: TerrainPiece, skin: Resolv
     const top = pc.runs[0] ?? [];
     const depths = [0, 64, 150, 290];
     const deep = pc.box.maxY + 10;
+    // the run's points around the window, keeping one neighbour outside on each side (long edge extensions)
+    let i0 = 0;
+    let i1 = top.length - 1;
+    while (i0 < top.length - 1 && top[i0 + 1][0] < view.minX - 400) i0++;
+    while (i1 > 0 && top[i1 - 1][0] > view.maxX + 400) i1--;
+    const near = top.slice(i0, i1 + 1);
     const band = (d: number, color: string, k: number): void => {
       const pts: Pt[] = [];
-      for (const p of top) {
-        if (p[0] < view.minX - 400 || p[0] > view.maxX + 400) continue;
-        pts.push([p[0], p[1] + d + Math.sin(p[0] / 157 + k * 1.7) * Math.min(10, d * 0.12)]);
-      }
+      for (const p of near) pts.push([p[0], p[1] + d + Math.sin(p[0] / 157 + k * 1.7) * Math.min(10, d * 0.12)]);
       if (pts.length < 2) return;
       pts.push([pts[pts.length - 1][0], deep], [pts[0][0], deep]);
       ctx.fillStyle = color;
@@ -538,7 +541,23 @@ function paintLand(ctx: CanvasRenderingContext2D, pc: TerrainPiece, skin: Resolv
   }
   // strata lines and pebbles (procedural land)
   if (skin.strata && pc.kind === 'ground' && zoom > 0.2) {
-    const top = (pc.runs[0] ?? []).filter((p) => p[0] >= view.minX - 300 && p[0] <= view.maxX + 300);
+    // strata lines need dense points (the wave and the dashes are sampled at the points)
+    const top: Pt[] = [];
+    const run = pc.runs[0] ?? [];
+    for (let i = 0; i < run.length; i++) {
+      const p = run[i];
+      const q = run[i + 1];
+      if (p[0] >= view.minX - 300 && p[0] <= view.maxX + 300) top.push(p);
+      if (!q) break;
+      const lo = Math.max(Math.min(p[0], q[0]), view.minX - 300);
+      const hi = Math.min(Math.max(p[0], q[0]), view.maxX + 300);
+      if (hi <= lo || Math.abs(q[0] - p[0]) < 24) continue;
+      for (let x = Math.ceil(lo / 12) * 12; x < hi; x += 12) {
+        const t = (x - p[0]) / (q[0] - p[0]);
+        if (t > 0 && t < 1) top.push([x, p[1] + (q[1] - p[1]) * t]);
+      }
+    }
+    top.sort((a, b) => a[0] - b[0]);
     ctx.lineWidth = 2.2;
     ctx.lineCap = 'round';
     [44, 108, 205, 340].forEach((d, k) => {

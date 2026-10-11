@@ -344,13 +344,22 @@ export class PlayScene extends Phaser.Scene {
     this.artUnsub = onArtReady(() => this.refreshPendingArt());
     const onResize = (): void => this.onResize();
     this.scale.on('resize', onResize);
-    this.events.once('shutdown', () => {
+    let cleaned = false;
+    const cleanup = (): void => {
+      if (cleaned) return;
+      cleaned = true;
       this.scale.off('resize', onResize);
       this.artUnsub?.();
       this.artUnsub = null;
-      for (const v of this.views.values()) v.terrain?.destroy();
-      this.clearBackdrop();
-    });
+      try {
+        for (const v of this.views.values()) v.terrain?.destroy();
+        this.clearBackdrop();
+      } catch {
+        /* the game is being torn down */
+      }
+    };
+    this.events.once('shutdown', cleanup);
+    this.events.once('destroy', cleanup);
     world.start();
     L.onWorld(world, this);
     this.updateTerrain(true);
@@ -981,8 +990,9 @@ export class PlayScene extends Phaser.Scene {
 
   /** The camera in the device-space convention shared with renderBackground / renderBackdrop. */
   private deviceCamera(): { x: number; y: number; zoom: number } {
+    // from the values centerOn() was given this frame (the camera's midPoint only updates at render time)
     const z = this.worldCam.zoom;
-    return { x: this.worldCam.midPoint.x - this.viewW / z / 2, y: this.worldCam.midPoint.y - this.viewH / z / 2, zoom: z };
+    return { x: this.camX - this.viewW / z / 2, y: this.camY - this.viewH / z / 2, zoom: z };
   }
 
   private updateBackground(): void {
