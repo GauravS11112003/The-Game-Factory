@@ -53,7 +53,10 @@ describe('game camera', () => {
 
   it('applies the doc zoom as a factor', () => {
     const world = { width: 12000, height: 4000 };
-    expect(baseZoom('follow', wide, world, { w: 100, h: 100 }, 'xy', 0.5)).toBeCloseTo(comfortableZoom(wide, world, { w: 100, h: 100 }) * 0.5);
+    const base = comfortableZoom(wide, world, { w: 100, h: 100 });
+    expect(baseZoom('follow', wide, world, { w: 100, h: 100 }, 'xy', 2)).toBeCloseTo(base * 2);
+    // zooming out is softened
+    expect(baseZoom('follow', wide, world, { w: 100, h: 100 }, 'xy', 0.64)).toBeCloseTo(base * 0.8);
   });
 
   it('eases out a little at speed', () => {

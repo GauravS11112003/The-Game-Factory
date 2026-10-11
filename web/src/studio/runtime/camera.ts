@@ -55,7 +55,10 @@ export function comfortableZoom(view: Size, world: CamWorld, target: Size | null
     vw = minW;
     vh = (vw * view.h) / Math.max(1, view.w);
   }
-  let z = (view.h / vh) * clamp(docZoom || 1, 0.2, 5);
+  // the world's zoom factor: zooming in applies fully, zooming out only gently (v6 docs were tuned for a fixed
+  // 1600 × 900 view and often ask for 0.8–0.9, which made the player tiny on big screens)
+  const dz = clamp(docZoom || 1, 0.2, 5);
+  let z = (view.h / vh) * (dz < 1 ? Math.sqrt(dz) : dz);
   const fz = fillZoom(view, world);
   // fill the screen with world when that only means zooming in a little; tiny worlds stay centred instead
   if (z < fz && fz <= z * 1.8) z = fz;

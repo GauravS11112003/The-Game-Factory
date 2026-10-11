@@ -968,9 +968,9 @@ export class PlayScene extends Phaser.Scene {
         const c = artCanvasSync({ svg: layer.svg, w: layer.w, h: layer.h }, p.scale);
         if (!c) return; // still loading: refreshPendingArt rebuilds when it lands
         const key = `bd_${++texSeq}`;
-        this.textures.addCanvas(key, c);
+        this.textures.addCanvas(key, p.repeat ? padTop(c) : c);
         const cs = (c as HTMLCanvasElement & { __scale?: number }).__scale ?? p.scale;
-        const s = p.repeat ? this.add.tileSprite(0, 0, W, c.height, key).setOrigin(0, 0) : this.add.image(0, 0, key).setOrigin(0, 0);
+        const s = p.repeat ? this.add.tileSprite(0, 0, W, c.height + STRIP_PAD, key).setOrigin(0, 0) : this.add.image(0, 0, key).setOrigin(0, 0);
         this.bgLayer.add(s);
         this.backdropSprites.push({ s, i, scale: cs, key });
       });
@@ -979,7 +979,8 @@ export class PlayScene extends Phaser.Scene {
     const layers = backgroundLayers(this.link.doc.theme);
     for (const layer of layers) {
       const key = `bg_${hashStr(String(layers.indexOf(layer)) + JSON.stringify(this.link.theme.background) + this.link.theme.id + JSON.stringify(this.link.theme.palette))}`;
-      if (!this.textures.exists(key)) this.textures.addCanvas(key, layer.canvas);
+      const strip = (layer.tileX || layer.tileY) && !layer.tileY && layer.anchor !== 'fill';
+      if (!this.textures.exists(key)) this.textures.addCanvas(key, strip ? padTop(layer.canvas) : layer.canvas);
       let s: Phaser.GameObjects.TileSprite | Phaser.GameObjects.Image;
       if (!layer.tileX && !layer.tileY) s = this.add.image(0, 0, key).setOrigin(0, 0).setDisplaySize(W, H);
       else s = this.add.tileSprite(0, 0, W, layer.anchor === 'fill' ? H : layer.canvas.height, key).setOrigin(0, 0);
@@ -1006,8 +1007,8 @@ export class PlayScene extends Phaser.Scene {
       const p = backdropPlacement(layer, this.scn.world, cam, view);
       const k = p.scale / b.scale; // texture px → view px
       if (b.s instanceof Phaser.GameObjects.TileSprite) {
-        b.s.setPosition(0, p.y);
-        b.s.setSize(view.w, p.h);
+        b.s.setPosition(0, p.y - STRIP_PAD * k);
+        b.s.setSize(view.w, p.h + STRIP_PAD * k);
         b.s.setTileScale(k, k);
         b.s.tilePositionX = p.offset / k;
         b.s.tilePositionY = 0;
@@ -1023,8 +1024,9 @@ export class PlayScene extends Phaser.Scene {
         continue;
       }
       const p = layerPlacement(layer, this.scn.world, cam, view, par);
-      s.setPosition(p.x, p.y);
-      s.setSize(p.w, layer.anchor === 'fill' ? p.h : layer.canvas.height * p.tileScale);
+      const strip = !layer.tileY && layer.anchor !== 'fill';
+      s.setPosition(p.x, strip ? p.y - STRIP_PAD * p.tileScale : p.y);
+      s.setSize(p.w, layer.anchor === 'fill' ? p.h : (layer.canvas.height + (strip ? STRIP_PAD : 0)) * p.tileScale);
       s.setTileScale(p.tileScale, p.tileScale);
       s.tilePositionX = p.tileX;
       s.tilePositionY = p.tileY;
@@ -1784,6 +1786,17 @@ export class PlayScene extends Phaser.Scene {
     this.engineLevel += (target - this.engineLevel) * 0.1;
     this.link.sound.engine(this.engineLevel);
   }
+}
+
+/** Transparent rows above a repeating strip, so the wrap-around of texture filtering cannot draw a line on top. */
+const STRIP_PAD = 3;
+
+function padTop(c: HTMLCanvasElement): HTMLCanvasElement {
+  const p = document.createElement('canvas');
+  p.width = c.width;
+  p.height = c.height + STRIP_PAD;
+  p.getContext('2d')?.drawImage(c, 0, STRIP_PAD);
+  return p;
 }
 
 function wheelRadius(e: Ent): number {
