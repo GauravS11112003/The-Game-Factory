@@ -76,7 +76,7 @@ def test_create_get_save_and_authorship(client: TestClient) -> None:
     assert bad.status_code == 400 and key(bad) == "ai.err.bad_game" and bad.json()["error"]["args"]["errors"] >= 1
     r = client.put(f"/api/v2/studio/games/{g['id']}", content=b"{nope", headers=maya["h"])
     assert r.status_code == 400 and key(r) == "ai.err.bad_request"
-    huge = json.dumps(dict(g, x_pad="x" * (4 * 1024 * 1024)))
+    huge = json.dumps(dict(g, x_pad="x" * (24 * 1024 * 1024)))
     r = client.put(f"/api/v2/studio/games/{g['id']}", content=huge, headers={**maya["h"],
                                                                             "content-type": "application/json"})
     assert r.status_code == 413 and key(r) == "ai.err.too_big"

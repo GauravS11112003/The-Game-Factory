@@ -12,6 +12,7 @@
     "ai.err.needs_object": "An object block needs the object it shares.",
     "ai.err.needs_theme": "A theme block needs the theme it shares.",
     "ai.err.studio_block": "This block is for the Studio. Open a Studio game to use it.",
+    "ai.err.art_busy": "Claude is already drawing {limit} sets of art for you. Let those finish first!",
 
     "ai.chat.done": "Done!",
     "ai.chat.blocked": "Let's keep it friendly. Try another idea!",
