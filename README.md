@@ -1,70 +1,108 @@
-# draw.play
+<div align="center">
 
-**Sketch it. Build it. Play it.** Turn a drawing or a written idea into a playable browser game, then refine it in chat and share it with friends.
+<img src="docs/assets/hero.jpg" alt="The Game Factory home screen: 'What would you play?' prompt box with idea cards" width="100%">
 
-![draw.play: sketch a world, build a game, and play with friends](docs/assets/readme-banner.svg)
+# The Game Factory
 
-## What you can do
+**Dream up a world. We'll help you make it playable.**
 
-- **Create with AI:** combine a sketch, theme, and gameplay brief. Claude generates a game; follow-up messages change its art and mechanics. Enable **Better graphics** for an extra SVG art pass.
-- **Build a faithful platformer:** turn colored ink into platforms, hazards, goals, and collectibles. Preview suggested edits, undo changes, and let a bot check that the level is beatable.
-- **Draw on paper:** print templates, scan your sheets, and turn them into levels.
-- **Play and share:** publish games, remix levels, race ghosts, or invite a friend to a two-player game. iMessage play is available with the optional Photon Spectrum integration.
+Describe a game, sketch your level, and get a game you can play in the browser and share with friends.
 
-## Run locally
+![TypeScript](https://img.shields.io/badge/TypeScript-Vite-3178C6?logo=typescript&logoColor=white)
+![Python](https://img.shields.io/badge/Python-FastAPI-009688?logo=fastapi&logoColor=white)
+![Claude](https://img.shields.io/badge/AI-Claude-D97757?logo=anthropic&logoColor=white)
+![Phaser](https://img.shields.io/badge/Engine-Phaser-8B5CF6)
 
-You need **Node.js 24+**, **Python 3.11+**, and **uv**. Run these commands from the project root:
+</div>
+
+---
+
+## How it works
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+### 1. Describe it ✏️
+Pick a genre, write your idea, and sketch the world if you like. **Black** ink becomes ground, **red** becomes spikes and enemies, **blue** becomes coins, and **green** becomes the goal.
+
+</td>
+<td width="50%"><img src="docs/assets/idea-desk.jpg" alt="Idea desk with a written prompt and a sketched level"></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/assets/agents.jpg" alt="Agents building the game"></td>
+<td width="50%" valign="top">
+
+### 2. Watch it build 🤖
+A team of agents designs the UI, physics, and graphics, then saves your game. Turn on **Better graphics** for richer art, or **Multiplayer** to play with a friend on separate phones.
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+### 3. Play & share 🎮
+Play right away, then refine the game in chat, add levels, remix it, or send it to a friend. You can also race over iMessage.
+
+</td>
+<td width="50%"><img src="docs/assets/gameplay.gif" alt="Super Jump gameplay"></td>
+</tr>
+</table>
+
+## The arcade
+
+Start with six built-in games: **Pocket Brawl**, **Pac-Man**, **Super Jump**, **Hill Climb**, **Pac-Man Neon**, and **Breach Point**. Each one runs on phones and desktops.
+
+<img src="docs/assets/arcade.jpg" alt="The arcade: six playable games" width="100%">
+
+---
+
+## Quick start
+
+**You need:** [Node.js 24+](https://nodejs.org), [Python 3.11+](https://www.python.org), and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-# Install dependencies.
+# 1. Install dependencies
 (cd vision && uv sync)
 (cd web && npm ci)
 
-# Configure the app, then start the API and frontend.
-cp .env.example .env
-# Add ANTHROPIC_API_KEY to .env to enable AI game generation.
+# 2. Add your Claude API key
+cp .env.example .env        # then set ANTHROPIC_API_KEY in .env
+
+# 3. Run the app
 bash scripts/dev.sh
 ```
 
-Open **[localhost:5173](http://localhost:5173)**. The API runs on port **8000**; check it at [`/api/v2/health`](http://localhost:8000/api/v2/health). The startup output also includes a LAN address for phones on the same Wi-Fi.
+**4. Open [localhost:5173](http://localhost:5173)** 🎉
 
-Without an API key, you can play starter levels and use the deterministic faithful builder. AI generation needs the key. Keep credentials in the ignored `.env` file; see [`.env.example`](.env.example) for optional Auth0, artwork, and messaging settings.
+> [!TIP]
+> - **Play on your phone:** the startup output prints a LAN address. Open it on any phone on the same Wi-Fi.
+> - **No API key?** The arcade and the sketch-to-platformer builder still work. Only AI game generation needs the key.
+> - **Is the API up?** Check [localhost:8000/api/v2/health](http://localhost:8000/api/v2/health).
 
-## How it fits together
+Optional settings for Auth0 sign-in, Firefly art, and iMessage play are documented in [`.env.example`](.env.example).
 
-```mermaid
-flowchart LR
-    A[Sketch / prompt / paper] --> B[Browser editor]
-    B --> C[FastAPI backend]
-    C --> D[Claude: generated game]
-    C --> E[TypeScript core: verified platformer]
-    D --> F[Play and share]
-    E --> F
-```
-
-| Folder | What's inside |
-| --- | --- |
-| `web/` | TypeScript + Vite frontend, Phaser platformer engine, editor, and deterministic game core |
-| `vision/` | Python + FastAPI backend, paper vision pipeline, AI generation, and SQLite storage |
-| `shared/` | Schemas, starter levels, fixtures, and art packs |
-| `messaging/` | Optional Node.js service for Photon Spectrum / iMessage |
-| `deploy/vultr/` | Docker Compose and Caddy deployment |
-
-Generated games run in an isolated browser sandbox. Faithful platformers use the shared simulation core for bot checks and replay verification.
-
-## Development
+## Tests
 
 ```bash
 (cd web && npm run typecheck && npm test && npm run build)
 (cd vision && uv run pytest)
 ```
 
-For the optional messaging service: `(cd messaging && npm ci && npm run typecheck && npm test)`.
+## What's inside
 
-Useful guides: [deployment](docs/vultr-launch.md) · [generated multiplayer](docs/generated-multiplayer.md) · [iMessage races](docs/imessage.md) · [level format](docs/spec/level-format-v2.md) · [project background](PROJECT_CONTEXT.md).
+| Folder | What it does |
+| --- | --- |
+| [`web/`](web) | TypeScript + Vite frontend, arcade games, Phaser platformer engine, and sketch editor |
+| [`vision/`](vision) | Python + FastAPI backend, Claude game generation, paper-scan pipeline, and SQLite storage |
+| [`shared/`](shared) | Schemas, starter levels, and art packs |
+| [`messaging/`](messaging) | Optional iMessage service (Photon Spectrum) |
+| [`deploy/vultr/`](deploy/vultr) | Docker Compose + Caddy production deploy |
 
-## Contributors
+Generated games run in an isolated browser sandbox.
 
-- Pranay Joshi
-- Gaurav Shrivastava
-- Kavya Gupta
+**More guides:** [Deploying](docs/vultr-launch.md) · [Multiplayer](docs/generated-multiplayer.md) · [iMessage races](docs/imessage.md) · [Level format](docs/spec/level-format-v2.md)
+
+## Team
+
+Built by **Pranay Joshi**, **Gaurav Shrivastava**, and **Kavya Gupta**.
