@@ -13,7 +13,7 @@
  */
 import type { ArtVariant, TerrainSkin } from '../../core/types.gen.ts';
 import { hexOr, isAchromatic, isDark, luminance, mix, toHsl, type FullTheme } from './color.ts';
-import { chaikin, simplify, type Pt } from './polish.ts';
+import { roundCorners, simplify, type Pt } from './polish.ts';
 import { hashNums, rng } from './rng.ts';
 
 export type { Pt } from './polish.ts';
@@ -228,7 +228,7 @@ export function classifyStroke(s: WorldStroke, all: WorldStroke[]): TerrainKind 
 // ---- pieces ------------------------------------------------------------------------------------------
 
 function smoothOpen(pts: Pt[]): Pt[] {
-  return pts.length > 2 ? chaikin(pts, false, 2) : pts.slice();
+  return pts.length > 2 ? roundCorners(pts, false, 6) : pts.slice();
 }
 
 function upwardRuns(poly: Pt[]): Pt[][] {
@@ -266,7 +266,7 @@ function upwardRuns(poly: Pt[]): Pt[][] {
 export function buildPiece(s: WorldStroke, kind: TerrainKind, world: { width: number; height: number }): TerrainPiece {
   const r = s.r;
   if (kind === 'closed') {
-    const outline = s.pts.length > 3 ? chaikin(s.pts, true, 2) : s.pts.slice();
+    const outline = s.pts.length > 2 ? roundCorners(s.pts, true, 6) : s.pts.slice();
     const poly = offsetLine(outline, r, true);
     return { kind, line: outline, poly, runs: upwardRuns(poly), r, color: s.color, box: boxOf(poly) };
   }

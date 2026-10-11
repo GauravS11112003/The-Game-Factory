@@ -5,6 +5,7 @@
  */
 import { t } from '../../app/messages.ts';
 import { renderDrawing } from '../theme/render.ts';
+import { objectBitmap } from '../theme/art.ts';
 import { fontStack, isDark, mix, type FullTheme } from '../theme/color.ts';
 import type { NDoc, NHudItem } from './normalize.ts';
 import type { Ent, World } from './world.ts';
@@ -139,7 +140,10 @@ export class Hud {
       if (o) {
         try {
           const big = Math.max(o.w, o.h, 1);
-          url = renderDrawing(o.drawing, this.doc.theme, { scale: Math.min(2, 48 / big), pad: 2 }).toDataURL();
+          const scale = Math.min(2, 48 / big);
+          // the icon shows the same look as the game (AI art or the cleaned-up sketch)
+          const bmp = this.doc.look === 'game' ? objectBitmap(o, this.doc, this.doc.theme, { scale, pad: 2 }) : null;
+          url = (bmp ? bmp.canvas : renderDrawing(o.drawing, this.doc.theme, { scale, pad: 2 })).toDataURL();
         } catch {
           url = null;
         }
