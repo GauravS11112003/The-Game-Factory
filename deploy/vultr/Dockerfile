@@ -12,6 +12,10 @@ RUN npm run build
 FROM web-source AS export-player
 RUN npm run build:export
 
+FROM web-source AS starter
+# Generated dist files are git-ignored; clean checkouts must build their own seeds.
+RUN npm run starter:build
+
 FROM python:3.12-slim-bookworm AS api
 ARG DEPLOY_BRANCH=unknown
 ARG DEPLOY_REVISION=unknown
@@ -21,7 +25,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends libgl1 libglib2
 COPY --from=web-source /usr/local/bin/node /usr/local/bin/node
 WORKDIR /app/vision
 COPY vision /app/vision
-COPY shared /app/shared
+COPY --from=starter /app/shared /app/shared
 # Source and built export player preserve the app's existing export feature.
 COPY --from=export-player /app/web /app/web
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv

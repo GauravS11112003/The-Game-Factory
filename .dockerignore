@@ -13,4 +13,4 @@ out
 web/dist
 web/dist-export
 .DS_Store
-# Keep shared/starter/dist: the API seeds playable levels from it.
+# Starter levels are generated from committed plans during the image build.

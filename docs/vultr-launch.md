@@ -57,8 +57,9 @@ git log -1 --format='%h %s'
 
 For a private repository, use an existing GitHub deploy key or transfer a Git
 bundle of the committed branch over SSH; do not store a personal GitHub token
-in the repository URL. Keep `shared/starter/dist/` in the checkout. It contains
-the starter levels the API seeds on first launch. This creates a fresh server database. To carry over
+in the repository URL. The Docker build generates `shared/starter/dist/` from
+the committed plans, so a clean checkout includes playable starter levels.
+This creates a fresh server database. To carry over
 your existing local games, stop the local API and migrate its complete data folder
 separately before starting the server; copying just the SQLite file misses assets.
 
