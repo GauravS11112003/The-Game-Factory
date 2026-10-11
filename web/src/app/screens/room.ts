@@ -57,7 +57,8 @@ export function roomScreen(root: HTMLElement, id: string, query: URLSearchParams
   safari.href = new URL(`/#/room/${id}?invite=${encodeURIComponent(invite)}`, location.origin).href;
   const fitStage = (): void => {
     const aspect = Number(screen.style.getPropertyValue('--room-aspect')) || 16 / 9;
-    game.style.maxWidth = enlarged ? `${Math.max(1, stage.clientHeight - touch.offsetHeight - 8) * aspect}px` : '';
+    const sideways = enlarged && matchMedia('(max-height: 480px) and (orientation: landscape)').matches && touch.children.length > 0;
+    game.style.maxWidth = enlarged ? `${Math.min(Math.max(1, stage.clientWidth - (sideways ? 192 : 0)), Math.max(1, stage.clientHeight - (sideways ? 0 : touch.offsetHeight + 8)) * aspect)}px` : '';
   };
   const resize = new ResizeObserver(fitStage);
   resize.observe(stage); resize.observe(touch);
@@ -182,6 +183,7 @@ export function roomScreen(root: HTMLElement, id: string, query: URLSearchParams
       for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(type, () => { hold(action.id, false); });
       return button;
     }));
+    screen.style.setProperty('--room-control-rows', String(Math.ceil(touch.children.length / 2)));
     connect();
   }
   function connect(): void {

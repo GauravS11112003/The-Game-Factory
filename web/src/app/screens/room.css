@@ -32,8 +32,11 @@ body.room-is-enlarged { overflow: hidden; }
   .room-controls button { font-size: 11px; }
 }
 @media (max-height: 480px) and (orientation: landscape) {
-  .room-enlarged .room-lobby { padding: 6px 10px; }
-  .room-enlarged .room-title { font-size: 1rem; }
-  .room-enlarged .room-seats { display: none; }
-  .room-enlarged .room-controls { grid-template-columns: repeat(9, minmax(0, 1fr)); }
+  .room-enlarged .room-lobby { display: flex; align-items: center; gap: 8px; padding: 4px 8px; }
+  .room-enlarged .room-title, .room-enlarged .room-seats { display: none; }
+  .room-enlarged .room-lobby [role='status'] { flex: 1; min-width: 0; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .room-enlarged .room-actions { flex-wrap: nowrap; }
+  .room-enlarged .room-stage { display: flex; align-items: center; position: relative; }
+  .room-enlarged .room-controls { position: absolute; inset: 0; grid-template-columns: 86px 86px; grid-template-rows: repeat(var(--room-control-rows, 4), 44px); grid-auto-flow: column; justify-content: space-between; align-content: center; pointer-events: none; }
+  .room-enlarged .room-controls button { pointer-events: auto; font-size: 11px; }
 }
