@@ -1,6 +1,7 @@
 /**
  * #/g/:id — play a Studio game full screen (docs/v6/CONTRACTS_V6.md §6): title, restart, fullscreen, copy the share
  * link, and Remix (a copy owned by the player, opened in the Studio). Works offline from a local draft.
+ * v7: a Sketch ↔ Game toggle (local to this page, never saved) restarts the game in the other look.
  */
 import '../../studio/studio.css';
 import type { GameDoc } from '../../core/types.gen.ts';
@@ -64,11 +65,12 @@ export function studioPlayScreen(root: HTMLElement, gameId: string, _query: URLS
       credits.replaceChildren(...bits);
       credits.classList.remove('hidden');
     }
+    let look: 'game' | 'sketch' = doc.look === 'sketch' ? 'sketch' : 'game';
     const start = (): void => {
       try { runtime?.stop(); } catch { /* already gone */ }
       stage.replaceChildren();
       try {
-        runtime = mountRuntime(stage, doc, { muted: store.flag('muted') });
+        runtime = mountRuntime(stage, { ...doc, look }, { muted: store.flag('muted') });
       } catch (e) {
         console.error('runtime failed', e);
         stage.append(h('p', { class: 'st-empty-note' }, t('studio.play.failed')));
@@ -93,9 +95,18 @@ export function studioPlayScreen(root: HTMLElement, gameId: string, _query: URLS
       if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
       else void page.requestFullscreen?.().catch(() => undefined);
     };
+    const toggle = h('div', { class: 'st-look-toggle dark', role: 'radiogroup', 'aria-label': t('studio.look.title') });
+    const renderToggle = (): void => {
+      toggle.dataset.look = look;
+      toggle.replaceChildren(...(['sketch', 'game'] as const).map((v) => h('button', {
+        type: 'button', role: 'radio', 'aria-checked': String(look === v), class: look === v ? 'on' : '', title: t(`studio.look.${v}_help`),
+        onclick: () => { if (look !== v) { look = v; renderToggle(); start(); } },
+      }, sicon(v === 'sketch' ? 'pen' : 'sparkle'), h('span', { class: 'st-hide-sm' }, t(`studio.look.${v}`)))), h('i', { class: 'st-look-thumb', 'aria-hidden': 'true' }));
+    };
+    renderToggle();
     bar.replaceChildren(
       h('a', { class: 'stp-btn', href: '#/', title: t('studio.top.home'), 'aria-label': t('studio.top.home') }, sicon('back')),
-      titleEl, h('span', { class: 'st-grow' }),
+      titleEl, h('span', { class: 'st-grow' }), toggle,
       btn('restart', t('studio.play.restart'), () => { if (runtime) runtime.restart(); else start(); }),
       btn('expand', t('studio.play.fullscreen'), full),
       btn('share', t('studio.share.copy'), () => void share()),

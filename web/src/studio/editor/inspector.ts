@@ -14,6 +14,7 @@ import { allCounters, allTags, displayName, worldToLocal } from '../model/doc.ts
 import { archetypeEdits, archetypeFor, cleanName } from '../model/edits.ts';
 import type { SObj, Vec } from '../model/types.ts';
 import { sicon } from './icons.ts';
+import { lookSection } from './look_panel.ts';
 import { COMMON_TAGS, paramControl, paramLabel, type ParamCtx } from './params.ts';
 import { addRuleButton, rulesList } from './rules_ui.ts';
 import type { Studio } from './studio.ts';
@@ -157,8 +158,10 @@ export function objectInspector(s: Studio, o: SObj): HTMLElement {
       btn(t('studio.insp.save_block'), () => saveAsBlock(o), { icon: 'stamp' }),
       btn(t('studio.sel.delete'), () => s.deleteSelection(), { icon: 'trash', cls: 'danger' })));
 
+  const look = lookSection(s, o);
   return h('div', { class: 'st-insp' },
     head, actsLike, quick,
+    look ? section('look', t('studio.sec.look'), 'sparkle', look, { open: true }) : null,
     section('control', t('studio.sec.control'), 'person', control, { open: true }),
     section('body', t('studio.sec.body'), 'body', body, { open: true }),
     section('behaviours', t('studio.sec.behaviours'), 'bolt', behaviours, { open: true, count: o.behaviors.length }),

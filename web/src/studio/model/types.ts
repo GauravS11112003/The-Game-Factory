@@ -4,8 +4,8 @@
  * turns any GameDoc (from the server, a template, a draft) into one; `asGameDoc` hands it back to APIs and the runtime.
  */
 import type {
-  ActionDef, BehaviorDef, CameraDef, Condition, GameDoc, HudItem, JointDef, PhysicsDef, Stroke, StudioEdit, StudioTheme,
-  WorldDef,
+  ActionDef, ArtDirection, ArtVariant, Backdrop, BackdropLayer, BehaviorDef, CameraDef, Condition, GameDoc, HudItem, JointDef,
+  PhysicsDef, Stroke, StudioEdit, StudioTheme, TerrainSkin, WorldDef,
 } from '../../core/types.gen.ts';
 
 export type Vec = [number, number];
@@ -40,7 +40,18 @@ export interface SObj {
   template: boolean;
   hidden: boolean;
   player: 0 | 1 | 2;
+  /** v7: AI art variants and which look plays (absent = never drawn by Claude). */
+  art?: SArt | null;
 }
+/** v7 ObjectArt with plain arrays (docs/v7/CONTRACTS_V7.md §1). */
+export interface SArt {
+  use: 'sketch' | 'ai';
+  chosen: string | null;
+  variants: ArtVariant[];
+  terrain: TerrainSkin | null;
+  asked: boolean;
+}
+export type SLook = 'game' | 'sketch';
 export interface SWorld {
   kind: string;
   width: number;
@@ -69,6 +80,12 @@ export interface SDoc {
   rules: SRule[];
   counters: Record<string, number>;
   scenes: SScene[];
+  /** v7: `game` plays the finished look (AI art, cleaned sketch, backdrop), `sketch` the raw strokes. Default game. */
+  look?: SLook;
+  /** v7: the one game-wide style guide every piece of AI art follows. */
+  art_direction?: ArtDirection | null;
+  /** v7: the AI-painted parallax world behind everything (replaces theme.background in the game look). */
+  backdrop?: Backdrop | null;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -150,7 +167,99 @@ export function normalizeObject(o: unknown): SObj {
     template: x.template === true,
     hidden: x.hidden === true,
     player,
+    ...(isObj(x.art) ? { art: normalizeArt(x.art) } : {}),
   };
+}
+
+const ID_RE = /^[A-Za-z0-9_-]{1,40}$/;
+const HEX6 = /^#[0-9a-fA-F]{6}$/;
+
+/** One AI variant, or null when it is not usable (no id, no SVG, no box). */
+export function normalizeVariant(v: unknown): ArtVariant | null {
+  if (!isObj(v) || typeof v.id !== 'string' || !ID_RE.test(v.id) || typeof v.svg !== 'string' || !v.svg.trim()) return null;
+  const w = num(v.w, 0);
+  const h = num(v.h, 0);
+  if (!(w > 0) || !(h > 0)) return null;
+  const out: ArtVariant = { id: v.id, svg: v.svg, w, h, rev: Math.max(0, Math.round(num(v.rev, 0))) };
+  if (typeof v.note === 'string' && v.note) out.note = v.note.slice(0, 200);
+  return out;
+}
+
+export function normalizeVariants(v: unknown, max = 6): ArtVariant[] {
+  const out: ArtVariant[] = [];
+  if (!Array.isArray(v)) return out;
+  for (const x of v) {
+    const n = normalizeVariant(x);
+    if (n && !out.some((o) => o.id === n.id)) out.push(n);
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
+export function normalizeTerrain(t: unknown): TerrainSkin | null {
+  if (!isObj(t)) return null;
+  const fill = Array.isArray(t.fill) ? t.fill.filter((c): c is string => typeof c === 'string' && HEX6.test(c)).slice(0, 4) : [];
+  const out: TerrainSkin = {
+    fill: (fill.length ? fill : ['#8d6e63', '#5d4037']) as TerrainSkin['fill'],
+    surface: typeof t.surface === 'string' && HEX6.test(t.surface) ? t.surface : '#3bb273',
+    surface_width: Math.min(80, Math.max(0, num(t.surface_width, 14))),
+    surface_svg: typeof t.surface_svg === 'string' && t.surface_svg.trim() ? t.surface_svg : null,
+    texture_svg: typeof t.texture_svg === 'string' && t.texture_svg.trim() ? t.texture_svg : null,
+    decor: normalizeVariants(t.decor) as TerrainSkin['decor'],
+    decor_every: Math.min(4000, Math.max(40, num(t.decor_every, 220))),
+    rev: Math.max(0, Math.round(num(t.rev, 0))),
+  };
+  return out;
+}
+
+/** Any ObjectArt-ish value → a complete SArt: `chosen` always names a variant when there is one; `ai` needs one. */
+export function normalizeArt(a: unknown): SArt {
+  const x = isObj(a) ? a : {};
+  const variants = normalizeVariants(x.variants);
+  const terrain = normalizeTerrain(x.terrain);
+  let chosen: string | null = typeof x.chosen === 'string' && variants.some((v) => v.id === x.chosen) ? x.chosen : variants[0]?.id ?? null;
+  if (!variants.length) chosen = null;
+  const use = x.use === 'ai' && (variants.length > 0 || !!terrain) ? 'ai' : 'sketch';
+  return { use, chosen, variants, terrain, asked: x.asked === true };
+}
+
+export function normalizeBackdrop(b: unknown): Backdrop | null {
+  if (!isObj(b)) return null;
+  const sky = Array.isArray(b.sky) ? b.sky.filter((c): c is string => typeof c === 'string' && HEX6.test(c)).slice(0, 4) : [];
+  const layers: BackdropLayer[] = [];
+  for (const l of Array.isArray(b.layers) ? b.layers : []) {
+    if (!isObj(l) || typeof l.svg !== 'string' || !l.svg.trim()) continue;
+    const w = num(l.w, 0);
+    const h = num(l.h, 0);
+    if (!(w > 0) || !(h > 0)) continue;
+    layers.push({
+      svg: l.svg, w, h,
+      depth: Math.min(1, Math.max(0, num(l.depth, 0.5))),
+      anchor: l.anchor === 'top' || l.anchor === 'fill' ? l.anchor : 'bottom',
+      tile_x: l.tile_x !== false,
+      height: Math.min(1, Math.max(0.01, num(l.height, 0.5))),
+    });
+    if (layers.length >= 4) break;
+  }
+  if (!sky.length && !layers.length) return null;
+  return { rev: Math.max(0, Math.round(num(b.rev, 0))), sky: sky as Backdrop['sky'], layers: layers as Backdrop['layers'] };
+}
+
+export function normalizeDirection(d: unknown): ArtDirection | null {
+  if (!isObj(d)) return null;
+  const kinds: Record<string, string> = {};
+  if (isObj(d.kinds)) for (const [k, v] of Object.entries(d.kinds)) if (typeof v === 'string' && k.trim()) kinds[k.trim().slice(0, 24)] = v.slice(0, 400);
+  const palette = Array.isArray(d.palette) ? d.palette.filter((c): c is string => typeof c === 'string' && HEX6.test(c)).slice(0, 10) : [];
+  const out: ArtDirection = {
+    rev: Math.max(1, Math.round(num(d.rev, 1))),
+    prompt: str(d.prompt, '').slice(0, 300),
+    summary: str(d.summary, '').slice(0, 300),
+    guide: str(d.guide, '').slice(0, 6000),
+    palette: palette as ArtDirection['palette'],
+    kinds,
+  };
+  if (!out.prompt && !out.summary && !out.guide && !palette.length && !Object.keys(kinds).length) return null;
+  return out;
 }
 
 export function normalizeWorld(w: unknown): SWorld {
@@ -216,6 +325,9 @@ export function normalizeDoc(doc: unknown): SDoc {
     rules: Array.isArray(x.rules) ? x.rules.map((r, i) => normalizeRule(r, `r${i + 1}`)) : [],
     counters: numMap(x.counters),
     scenes,
+    ...(x.look === 'sketch' || x.look === 'game' ? { look: x.look } : {}),
+    ...(normalizeDirection(x.art_direction) ? { art_direction: normalizeDirection(x.art_direction) } : {}),
+    ...(normalizeBackdrop(x.backdrop) ? { backdrop: normalizeBackdrop(x.backdrop) } : {}),
     created_at: typeof x.created_at === 'string' ? x.created_at : null,
     updated_at: typeof x.updated_at === 'string' ? x.updated_at : null,
     ...(Array.isArray(x.x_credits) ? { x_credits: normalizeCredits(x.x_credits) } : {}),

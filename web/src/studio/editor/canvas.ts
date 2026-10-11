@@ -11,7 +11,8 @@ import {
   strokeAt, worldBox, worldCorners, type Box,
 } from '../model/doc.ts';
 import type { SObj, Vec } from '../model/types.ts';
-import { BitmapCache, drawBackground, isDark } from './render.ts';
+import { BitmapCache, isDark } from './render.ts';
+import { chosenVariant, drawTerrain, drawWorldBack, isGroundObj, objectLook, variantBitmap, type ObjLook } from './look.ts';
 import { sicon } from './icons.ts';
 import type { Studio } from './studio.ts';
 import { menu, type MenuItem } from './ui.ts';
@@ -56,6 +57,8 @@ export class StudioCanvas {
   private offs: (() => void)[] = [];
   /** Called after the view moved (bubbles reposition). */
   onView: (() => void) | null = null;
+  /** Images (AI art) finished loading: draw again. */
+  private readonly ready = (): void => this.request();
 
   constructor(private readonly studio: Studio) {
     this.cv = h('canvas', { class: 'st-cv', 'aria-label': t('studio.canvas.label'), tabindex: '0' });
@@ -248,7 +251,7 @@ export class StudioCanvas {
     ctx.clip();
     ctx.translate(-this.view.x * z, -this.view.y * z);
     ctx.scale(z, z);
-    drawBackground(ctx, theme, world, { x: this.view.x, y: this.view.y, zoom: z, width: this.w, height: this.h });
+    drawWorldBack(ctx, this.studio.doc, world, { x: this.view.x, y: this.view.y, zoom: z, width: this.w, height: this.h }, this.ready);
     ctx.restore();
     ctx.strokeStyle = deskDark ? 'rgba(255,255,255,0.12)' : 'rgba(31,27,24,0.12)';
     ctx.lineWidth = 1;
@@ -264,16 +267,40 @@ export class StudioCanvas {
       const reach = (Math.max(o.drawing.w, o.drawing.h) * o.scale * z) / 2 + 60;
       if (sx < -reach || sy < -reach || sx > this.w + reach || sy > this.h + reach) continue;
       if (o.drawing.strokes.length) {
-        const bmp = this.cache.get(o, theme, z * o.scale * dpr, this.studio.doc);
-        if (!bmp) continue;
-        ctx.save();
-        ctx.globalAlpha = alpha;
-        ctx.translate(sx, sy);
-        ctx.rotate((o.rotation * Math.PI) / 180);
-        const k = (z * o.scale) / bmp.bucket;
-        ctx.scale(k, k);
-        ctx.drawImage(bmp.canvas, -bmp.canvas.width / 2, -bmp.canvas.height / 2);
-        ctx.restore();
+        const { look, variant } = this.lookOf(o);
+        if (look !== 'raw' && isGroundObj(o)) {
+          // ground in the game look: solid land down to the world's bottom (world coordinates, clipped to the world)
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.beginPath();
+          ctx.rect(wx, wy, ww, wh);
+          ctx.clip();
+          ctx.translate(-this.view.x * z, -this.view.y * z);
+          ctx.scale(z, z);
+          drawTerrain(ctx, o, look === 'ai' ? o.art?.terrain ?? null : null, theme, world, this.ready);
+          ctx.restore();
+        } else {
+          const v = look === 'ai' ? chosenVariant(o, variant) : null;
+          const vb = v ? variantBitmap(v, z * o.scale * dpr * Math.max(o.drawing.w / v.w, o.drawing.h / v.h), this.ready) : null;
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.translate(sx, sy);
+          ctx.rotate((o.rotation * Math.PI) / 180);
+          if (vb) {
+            const hw = (o.drawing.w * o.scale * z) / 2;
+            const hh = (o.drawing.h * o.scale * z) / 2;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(vb.canvas, -hw, -hh, hw * 2, hh * 2);
+          } else {
+            const bmp = this.cache.get(o, theme, z * o.scale * dpr, this.studio.doc, look !== 'raw');
+            if (bmp) {
+              const k = (z * o.scale) / bmp.bucket;
+              ctx.scale(k, k);
+              ctx.drawImage(bmp.canvas, -bmp.canvas.width / 2, -bmp.canvas.height / 2);
+            }
+          }
+          ctx.restore();
+        }
       } else if (o.drawing.w > 0 || o.drawing.h > 0) {
         this.drawBoxObject(o, deskDark || isDark(theme.palette?.bg) ? '#ffffff' : ink);
       }
@@ -281,6 +308,7 @@ export class StudioCanvas {
       else if (o.hidden && z > 0.25) this.badge(o, t('studio.canvas.hidden'));
     }
     this.cache.prune(ids);
+    this.shimmer(wx, wy, ww, wh);
 
     // pending group, hover, selection
     const pend = this.studio.pending ? this.studio.object(this.studio.pending.id) : null;
@@ -355,6 +383,73 @@ export class StudioCanvas {
       ctx.restore();
     }
     this.placeSelBar();
+    // shimmering objects need the next frame too
+    if (this.studio.artBusy.size || this.studio.backdropBusy) this.request();
+  }
+
+  /** Which look an object shows on the canvas (a compare-card hover previews a variant without changing the doc). */
+  private lookOf(o: SObj): { look: ObjLook; variant?: string | null } {
+    const p = this.studio.preview;
+    if (p && p.id === o.id) return p.variant ? { look: 'ai', variant: p.variant } : { look: 'sketch' };
+    return { look: objectLook(o, this.studio.doc) };
+  }
+
+  /** Objects Claude is drawing: a soft light sweeps across them and their box glows. */
+  private shimmer(wx: number, wy: number, ww: number, wh: number): void {
+    const s = this.studio;
+    if (!s.artBusy.size && !s.backdropBusy) return;
+    const { ctx } = this;
+    const z = this.view.zoom;
+    const now = performance.now();
+    if (s.backdropBusy) {
+      const t = (now % 2600) / 2600;
+      const x = wx - ww * 0.4 + t * ww * 1.8;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(wx, wy, ww, wh);
+      ctx.clip();
+      const g = ctx.createLinearGradient(x - ww * 0.25, 0, x + ww * 0.25, 0);
+      g.addColorStop(0, 'rgba(255,255,255,0)');
+      g.addColorStop(0.5, 'rgba(255,255,255,0.10)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(wx, wy, ww, wh);
+      ctx.restore();
+    }
+    for (const id of s.artBusy) {
+      const o = s.object(id);
+      if (!o) continue;
+      const hw = (Math.max(o.drawing.w, 8) * o.scale * z) / 2 + 6;
+      const hh = (Math.max(o.drawing.h, 8) * o.scale * z) / 2 + 6;
+      const [sx, sy] = this.worldToScreen([o.x, o.y]);
+      if (sx + hw < -40 || sx - hw > this.w + 40 || sy + hh < -40 || sy - hh > this.h + 40) continue;
+      const phase = ((now / 1400) + (id.length % 7) * 0.13) % 1;
+      const pulse = 0.55 + 0.45 * Math.sin(now / 420);
+      ctx.save();
+      ctx.translate(sx, sy);
+      ctx.rotate((o.rotation * Math.PI) / 180);
+      roundRect(ctx, -hw, -hh, hw * 2, hh * 2, Math.min(14, hw, hh));
+      ctx.save();
+      ctx.clip();
+      const band = Math.max(40, hw * 0.9);
+      const x = -hw - band + phase * (hw * 2 + band * 2);
+      const g = ctx.createLinearGradient(x - band, -hh, x + band, hh);
+      g.addColorStop(0, 'rgba(255,255,255,0)');
+      g.addColorStop(0.5, 'rgba(255,255,255,0.55)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = 'rgba(124,92,255,0.07)';
+      ctx.fillRect(-hw, -hh, hw * 2, hh * 2);
+      ctx.fillStyle = g;
+      ctx.fillRect(-hw, -hh, hw * 2, hh * 2);
+      ctx.restore();
+      ctx.shadowColor = `rgba(124,92,255,${0.35 + 0.35 * pulse})`;
+      ctx.shadowBlur = 14;
+      ctx.lineWidth = 1.6;
+      ctx.strokeStyle = `rgba(124,92,255,${0.45 + 0.35 * pulse})`;
+      ctx.setLineDash([]);
+      ctx.stroke();
+      ctx.restore();
+    }
   }
 
   private outline(o: SObj, color: string, dash: number[], pad: number, width = 1.5): void {

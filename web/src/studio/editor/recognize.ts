@@ -9,6 +9,7 @@ import { h } from '../../app/dom.ts';
 import { kidText, t } from '../../app/messages.ts';
 import { studioApi } from '../../app/studio_api.ts';
 import { archetypeEdits, archetypeFor } from '../model/edits.ts';
+import { slimDoc } from '../model/payload.ts';
 import { asGameDoc } from '../model/types.ts';
 import type { StudioCanvas } from './canvas.ts';
 import { sicon } from './icons.ts';
@@ -23,6 +24,8 @@ export class Recognizer {
   private objId: string | null = null;
   private seq = 0;
   private offs: (() => void)[] = [];
+  /** v7: the maker said what the drawing is (recognize -> art: Claude draws it next). */
+  onKnown: ((id: string) => void) | null = null;
 
   constructor(private readonly studio: Studio, private readonly canvas: StudioCanvas, private readonly host: HTMLElement, private readonly askCopilot: (text: string, id: string) => void) {
     this.offs.push(studio.on((c) => {
@@ -43,7 +46,7 @@ export class Recognizer {
     const png = objectPng(o, s.doc);
     try {
       if (!png) throw new Error('no picture');
-      const r = await studioApi.recognize({ game: asGameDoc(s.doc), scene: s.sceneId, object_id: id, image_png: png });
+      const r = await studioApi.recognize({ game: asGameDoc(slimDoc(s.doc)), scene: s.sceneId, object_id: id, image_png: png });
       if (n !== this.seq || !s.object(id)) return;
       if (!r.edits?.length) { this.offerPicks(id, r.question || t('studio.rec.what')); return; }
       this.offerGuess(id, r.question, r.kind, r.edits, r.name);
@@ -61,6 +64,7 @@ export class Recognizer {
       s.seal();
       s.select([id]);
       this.close();
+      this.onKnown?.(id);
     } }, sicon('check'), t('studio.rec.yes'));
     const no = h('button', { type: 'button', class: 'st-btn small', onclick: () => this.askWhat(id) }, t('studio.rec.no'));
     this.show(id, h('div', { class: 'st-bubble-col' },
@@ -75,6 +79,7 @@ export class Recognizer {
       s.seal();
       s.select([id]);
       this.close();
+      this.onKnown?.(id);
     };
     this.show(id, h('div', { class: 'st-bubble-col' },
       h('div', { class: 'st-bubble-row' }, h('span', { class: 'st-bubble-q' }, kidText(question))),

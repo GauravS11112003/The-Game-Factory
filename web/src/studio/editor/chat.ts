@@ -1,15 +1,18 @@
 /**
  * The Copilot chat (docs/v6/CONTRACTS_V6.md §6): maker and copilot messages, starter chips on an empty game,
  * suggestions as chips, and for every reply with edits "Changed N things · Undo" with a plain sentence per edit.
- * The request carries the doc, scene, selection, the last 20 turns and a canvas snapshot. Offline, a small local
- * helper answers (marked subtly). The conversation is kept per game on this device.
+ * The request carries the doc (v7: without its art, docs/v7/CONTRACTS_V7.md §5), scene, selection, the last 20 turns
+ * and a canvas snapshot. While Claude thinks, the bubble counts the seconds; a slow or failed model answer says so
+ * honestly. A reply with `art_prompt` restyles the game and shows the restyle card. Offline, a small local helper
+ * answers (marked subtly). The conversation is kept per game on this device.
  */
 import type { ChatTurn, StudioChatBody, StudioChatResult } from '../../core/types.gen.ts';
 import { h } from '../../app/dom.ts';
 import { kidText, t } from '../../app/messages.ts';
-import { isOffline, studioApi } from '../../app/studio_api.ts';
+import { isAborted, isOffline, isTimeout, studioApi } from '../../app/studio_api.ts';
 import { describeEdits } from '../model/describe.ts';
 import { displayName } from '../model/doc.ts';
+import { slimDoc } from '../model/payload.ts';
 import { asGameDoc, type SDoc } from '../model/types.ts';
 import { sicon } from './icons.ts';
 import { localCopilot } from './local_copilot.ts';
@@ -26,6 +29,17 @@ interface Msg {
   after?: SDoc | null;
   undone?: boolean;
   error?: boolean;
+  /** v7: a quiet line under the reply (why Claude's answer was a quick one). */
+  note?: string;
+  /** v7: this reply restyled the game (the restyle card follows the session while this page is open). */
+  restyle?: { id: number; prompt: string };
+}
+
+/** The server's `error` (the model path failed, v7 §3) → the quiet note under the reply. */
+export function errorNote(error: string | null | undefined): string | null {
+  if (!error) return null;
+  const known = ['timeout', 'failed', 'budget', 'off'];
+  return t(`studio.chat.note_${known.includes(error) ? error : 'failed'}`);
 }
 
 const KEY = 'dp.studio.chat.';
@@ -42,6 +56,11 @@ export class CopilotChat {
   private undoButtons = new Map<Msg, HTMLButtonElement>();
   private off: () => void;
   private status: HTMLElement;
+  private tick = 0;
+  /** v7: the copilot changed the game's look: restyle with these words (returns the restyle session id). */
+  onArtPrompt: ((prompt: string) => number | null) | null = null;
+  /** v7: the live restyle card for a session (null after a reload: then a short note shows instead). */
+  restyleCard: ((id: number) => HTMLElement | null) | null = null;
 
   constructor(private readonly studio: Studio, private readonly gameId: () => string) {
     this.list = h('div', { class: 'st-chat-list', role: 'log', 'aria-live': 'polite' });
@@ -137,8 +156,12 @@ export class CopilotChat {
 
   private bubble(m: Msg, last: boolean): HTMLElement {
     if (m.role === 'user') return h('div', { class: 'st-msg user' }, h('div', { class: 'st-msg-text' }, m.text));
-    if (m.pending) return h('div', { class: 'st-msg copilot pending', 'aria-label': t('studio.chat.thinking') }, h('span', { class: 'st-typing' }, h('i'), h('i'), h('i')));
-    const kids: HTMLElement[] = [h('div', { class: `st-msg-text${m.error ? ' err' : ''}` }, kidText(m.text))];
+    if (m.pending) {
+      return h('div', { class: 'st-msg copilot pending', 'aria-label': t('studio.chat.thinking') },
+        h('span', { class: 'st-typing' }, h('i'), h('i'), h('i')), h('span', { class: 'st-thinking' }, t('studio.chat.thinking')), h('span', { class: 'st-thinking-s' }));
+    }
+    const kids: HTMLElement[] = [];
+    if (m.text) kids.push(h('div', { class: `st-msg-text${m.error ? ' err' : ''}` }, kidText(m.text)));
     if (m.sentences?.length) {
       const undo = h('button', { type: 'button', class: 'st-undo-link' }, sicon('undo'), t('studio.chat.undo'));
       undo.onclick = () => this.undoReply(m);
@@ -147,7 +170,12 @@ export class CopilotChat {
         h('summary', null, sicon('check', 'ico st-changes-ico'), h('span', null, m.undone ? t('studio.chat.undone') : t(m.sentences.length === 1 ? 'studio.chat.changed_one' : 'studio.chat.changed', { n: m.sentences.length })), m.undone ? null : undo),
         h('ul', null, ...m.sentences.map((s) => h('li', null, s)))));
     }
-    if (m.source === 'offline' || m.source === 'keywords') kids.push(h('span', { class: 'st-msg-src' }, t(m.source === 'offline' ? 'studio.chat.src_offline' : 'studio.chat.src_keywords')));
+    if (m.restyle) {
+      const card = this.restyleCard?.(m.restyle.id) ?? null;
+      kids.push(card ?? h('div', { class: 'st-rs-note' }, sicon('sparkle'), h('span', null, t('studio.rs.note', { prompt: kidText(m.restyle.prompt) }))));
+    }
+    if (m.note) kids.push(h('span', { class: 'st-msg-note' }, sicon('info'), h('span', null, m.note)));
+    else if (m.source === 'offline' || m.source === 'keywords') kids.push(h('span', { class: 'st-msg-src' }, t(m.source === 'offline' ? 'studio.chat.src_offline' : 'studio.chat.src_keywords')));
     if (last && m.suggestions?.length) kids.push(h('div', { class: 'st-chips' }, ...m.suggestions.map((s) => h('button', { type: 'button', class: 'st-suggest', onclick: () => void this.send(s) }, kidText(s)))));
     const el = h('div', { class: 'st-msg copilot' }, ...kids);
     this.syncUndoFor(m);
@@ -191,19 +219,30 @@ export class CopilotChat {
     this.render();
     const selection = o.selection ?? s.selection;
     const body: StudioChatBody = {
-      game: asGameDoc(s.doc), scene: s.sceneId, selection: selection.slice(0, 50), message: text,
+      game: asGameDoc(slimDoc(s.doc)), scene: s.sceneId, selection: selection.slice(0, 50), message: text,
       history: history as StudioChatBody['history'], snapshot_png: snapshotPng(s.doc, s.scene),
     };
     let res: StudioChatResult;
     let source: Msg['source'];
     let error = false;
+    let note: string | null = null;
     this.ctl = new AbortController();
+    const started = Date.now();
+    window.clearInterval(this.tick);
+    this.tick = window.setInterval(() => this.renderThinking(started), 1000);
     try {
       res = await studioApi.chat(body, this.ctl.signal);
       source = res.source;
+      note = res.source === 'keywords' ? errorNote(res.error) : null;
       this.setOffline(false);
     } catch (e) {
-      if (isOffline(e)) {
+      if (isAborted(e)) { window.clearInterval(this.tick); return; }
+      if (isTimeout(e)) {
+        // our own clock ran out: say so plainly instead of pretending to be offline
+        res = { reply: t('studio.chat.too_long'), edits: [], suggestions: [], source: 'keywords' };
+        note = t('studio.chat.note_timeout');
+        error = true;
+      } else if (isOffline(e)) {
         res = localCopilot(text, s.doc, s.sceneId, selection, s.themes);
         source = 'offline';
         this.setOffline(true);
@@ -211,15 +250,23 @@ export class CopilotChat {
         res = { reply: t('studio.chat.error'), edits: [], suggestions: [], source: 'keywords' };
         error = true;
       }
+    } finally {
+      window.clearInterval(this.tick);
     }
     this.ctl = null;
     const msg: Msg = { role: 'copilot', text: res.reply || t('studio.chat.done'), source, suggestions: (res.suggestions ?? []).slice(0, 4), error };
+    if (note) msg.note = note;
     if (Array.isArray(res.edits) && res.edits.length) {
       const before = s.doc;
       s.apply(res.edits.slice(0, 40), { label: 'copilot' });
       s.seal();
       msg.after = s.doc;
       msg.sentences = describeEdits(res.edits.slice(0, 40), s.doc, before, s.sceneId, s.themes);
+    }
+    const artPrompt = typeof res.art_prompt === 'string' ? res.art_prompt.trim() : '';
+    if (artPrompt && this.onArtPrompt) {
+      const id = this.onArtPrompt(artPrompt.slice(0, 300));
+      if (id !== null) msg.restyle = { id, prompt: artPrompt.slice(0, 300) };
     }
     const i = this.msgs.indexOf(pending);
     if (i >= 0) this.msgs[i] = msg;
@@ -230,11 +277,31 @@ export class CopilotChat {
     this.render();
   }
 
+  /** "Thinking… 12s" in the pending bubble (and a gentle reassurance once it takes a while). */
+  private renderThinking(started: number): void {
+    const el = this.list.querySelector('.st-msg.pending .st-thinking-s');
+    if (!el) return;
+    const sec = Math.floor((Date.now() - started) / 1000);
+    el.textContent = `${sec}s`;
+    const label = this.list.querySelector('.st-msg.pending .st-thinking');
+    if (label) label.textContent = t(sec >= 45 ? 'studio.chat.thinking_long' : 'studio.chat.thinking');
+  }
+
+  /** Add a copilot line to the chat (v7: Make it real and Restyle everything show their restyle card here). */
+  announce(text: string, restyle?: { id: number; prompt: string }): void {
+    const msg: Msg = { role: 'copilot', text, source: 'model' };
+    if (restyle) msg.restyle = restyle;
+    this.msgs.push(msg);
+    this.save();
+    this.render();
+  }
+
   focus(): void {
     this.input.focus();
   }
 
   dispose(): void {
+    window.clearInterval(this.tick);
     this.ctl?.abort();
     this.off();
   }
