@@ -16,6 +16,7 @@ from __future__ import annotations
 import base64
 import binascii
 import logging
+import re
 import time
 from typing import Any, Literal
 
@@ -33,8 +34,9 @@ from app.studio.summary import game_summary, nearby, object_text, shape_of
 log = logging.getLogger("dal.v6.copilot")
 
 # kind: effort, max_tokens (thinking + output), timeout (§5.3). Registered here so client.py stays untouched.
-client.CALLS.setdefault("studio_chat", CallSpec("medium", 8000, 40))
-client.CALLS.setdefault("studio_recognize", CallSpec("low", 2500, 15))
+# v7: generous chat and recognize timeouts (CONTRACTS_V7 §3): a slow good answer beats a fast keyword one
+client.CALLS.setdefault("studio_chat", CallSpec("medium", 16000, 150))
+client.CALLS.setdefault("studio_recognize", CallSpec("low", 2500, 30))
 client.CALLS.setdefault("studio_theme", CallSpec("low", 2000, 12))
 budget.ESTIMATE_USD.setdefault("studio_chat", 0.12)
 budget.ESTIMATE_USD.setdefault("studio_recognize", 0.04)
@@ -73,6 +75,9 @@ class ChatFlat(_M):
     edits: list[FlatEdit] = Field(description="the changes, in order (at most 40); empty for a question or a chat")
     reply: str = Field(description="one or two short, warm sentences in plain words")
     suggestions: list[str] = Field(description="2 to 4 short things the maker could say next")
+    art_prompt: str = Field(default="", description="when this reply changes the game's kind, world look or theme, "
+                                                    "or the maker asks for a look: the words to restyle all the art "
+                                                    "with (\"hill climb racing on the moon\"); else empty")
 
 
 class RecognizeFlat(_M):
@@ -216,10 +221,66 @@ async def chat(body: dict[str, Any]) -> dict[str, Any]:
             if warnings:
                 log.info("studio_chat: %d edits kept, dropped/fixed: %s", len(edits), "; ".join(warnings[:8]))
             reply = clean_reply(r.value.reply, "ai.chat.done" if edits else "ai.chat.nothing")
+            art = clean_art_prompt(r.value.art_prompt) or derive_art_prompt(message, edits, doc, scene)
             return {"reply": reply, "edits": edits, "suggestions": clean_suggestions(r.value.suggestions),
-                    "source": "model"}
+                    "source": "model", "art_prompt": art}
         log.info("studio_chat: model path unavailable (%s %s); keywords", r.status, r.error or r.stop_reason or "")
-    return keyword_chat(doc, scene, selection, message)
+        return honest(keyword_chat(doc, scene, selection, message), chat_error(r))
+    return {**keyword_chat(doc, scene, selection, message), "error": "off"}
+
+
+def chat_error(r: MindResult[Any]) -> str:
+    """Why the model path gave nothing: timeout | budget | off | failed."""
+    if r.status == "skipped":
+        return "budget" if r.error == "budget" else ("timeout" if r.error == "deadline" else "off")
+    if r.status == "failed" and "timeout" in (r.error or "").lower():
+        return "timeout"
+    return "failed"
+
+
+def honest(res: dict[str, Any], error: str) -> dict[str, Any]:
+    """The keyword answer, told honestly: what went wrong, and that only the simple part was done."""
+    key = {"timeout": "timeout", "budget": "budget"}.get(error, "failed")
+    if res["edits"]:
+        reply = say(f"ai.chat.err.{key}_partial") + " " + res["reply"]
+    else:
+        reply = say(f"ai.chat.err.{key}")
+    return {**res, "reply": clean_reply(reply), "error": error}
+
+
+ART_CHARS = 300
+LOOK_WORDS = re.compile(
+    r"\b(look|looks|looking|style|styled|theme|themed|vibe|aesthetic|art|artwork|graphics|visuals|pretty|beautiful|"
+    r"realistic|make it real|in space|on the moon|on mars|underwater|under water|candy|neon|spooky|halloween|pixel|"
+    r"cartoon|anime|comic|land|planet|jungle|desert|winter|snowy|lava|volcano|cyberpunk|futuristic|retro|medieval|"
+    r"pirate|ocean|forest|reimagine|re-imagine)\b")
+
+
+def clean_art_prompt(v: Any) -> str | None:
+    t = sanitize.text(v, ART_CHARS)
+    return t if t and not moderate.blocklist_hit([t]) else None
+
+
+def derive_art_prompt(message: str, edits: list[dict[str, Any]], doc: dict[str, Any], scene: str) -> str | None:
+    """The restyle words when the reply changed the game's kind or theme, or the maker asked for a look."""
+    text = re.sub(r"\s+", " ", str(message or "")).strip()
+    asked = LOOK_WORDS.search(text.lower()) is not None
+    sc = next((x for x in doc.get("scenes") or [] if x.get("id") == scene), {})
+    old_kind = str((sc.get("world") or {}).get("kind") or "")
+    new_kind = next((str(e["data"]["kind"]) for e in edits if e.get("action") == "set_world"
+                     and isinstance(e.get("data"), dict) and e["data"].get("kind")
+                     and str(e["data"]["kind"]) != old_kind), "")
+    theme = next((e.get("data") or {} for e in edits if e.get("action") == "set_theme"), None)
+    if asked:
+        return clean_art_prompt(text)
+    if not new_kind and theme is None:
+        return None
+    bits = [new_kind or old_kind]
+    if theme is not None:
+        name = theme.get("name") or (assets.theme_by_id(str(theme.get("preset") or "")) or {}).get("name")
+        if name:
+            bits.append(f"{name} style")
+    return clean_art_prompt(", ".join(b for b in bits if b)) or None
 
 
 def keyword_chat(doc: dict[str, Any], scene: str, selection: list[str], message: str) -> dict[str, Any]:
@@ -227,7 +288,7 @@ def keyword_chat(doc: dict[str, Any], scene: str, selection: list[str], message:
     edits, _ = validate_edits(out["edits"], doc, scene)
     reply = out["reply"] if edits or not out["edits"] else say("ai.kw.rephrase")
     return {"reply": clean_reply(reply), "edits": edits, "suggestions": clean_suggestions(out["suggestions"]),
-            "source": "keywords"}
+            "source": "keywords", "art_prompt": derive_art_prompt(message, edits, doc, scene)}
 
 
 # ---- recognize ----------------------------------------------------------------------------------------------------
